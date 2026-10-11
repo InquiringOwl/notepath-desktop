@@ -1,0 +1,449 @@
+/* Note Office (NotePath): Main Menu → Note Office opens a window (the usual fogged window) with a little office where a
+   stick figure works. Based on the "Stickman v2" prototype (his poses, routines and timing are the prototype's), wired
+   to the real notes:
+   - every note is ONE sheet of paper. Unfiled notes lie on the desk and on the filing cabinets (75 at most there),
+     from the 76th on they stack on the floor in stacks of up to 100. Each sheet keeps its place (placed by its id).
+   - every folder is ONE open box, on the left or right of the room (by its id; a subfolder sits with its parent),
+     holding one upright sheet per note. Boxes widen to fit and stack up to 4 high.
+   - what changed since the last visit plays when the office opens: new notes flutter down, new folders drop in,
+     notes filed into a folder are carried to their box (up to 3 trips), deleted notes are crumpled into the bin.
+   - click a sheet: that note opens in My notes; click a box: that folder; click him: he waves.
+   - colours come from Settings → Appearance (the theme), and repaint when it changes.
+   Speed and memory: the room and every sheet are painted once into two cached bitmaps (behind him, and the front
+   floor strip in front of him), repainted only when notes, folders, theme or size change; each frame paints those
+   bitmaps, the desk and him. Nothing runs while the window is closed; Reduce motion shows a still office.
+   The scene is 800 × 480 at its core and widens / heightens to the window's shape (no letterboxing). */
+(function () {
+"use strict";
+const NS = () => window.InquireNotes;
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const TAU = Math.PI * 2, clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v)), mix = (a, b, t) => a + (b - a) * t;
+const smooth = t => { t = clamp(t); return t * t * t * (t * (t * 6 - 15) + 10); };
+const ramp = (t, a, b) => smooth((t - a) / (b - a));
+const pulse = (t, a, b, c, d) => ramp(t, a, b) * (1 - ramp(t, c, d));
+const point = (a, b, t) => [mix(a[0], b[0], t), mix(a[1], b[1], t)];
+const rand = i => { const n = Math.sin(i * 127.1 + 311.7) * 43758.5453; return n - Math.floor(n); };
+const hash = s => { let h = 2166136261; s = String(s); for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); h ^= h >>> 13; h = Math.imul(h, 0x5bd1e995); h ^= h >>> 15; return (h >>> 0) / 4294967296; };
+const hk = (s, k) => hash(s + "|" + k);
+const clone = p => Object.fromEntries(Object.entries(p).map(([k, v]) => [k, Array.isArray(v) ? [...v] : v]));
+function blend(a, b, t) { const p = {}; for (const k in b) p[k] = Array.isArray(b[k]) ? point(a[k] ?? b[k], b[k], t) : mix(a[k] ?? b[k], b[k], t); return p; }
+
+/* ---------- the layout: where every sheet and box goes (pure: notes + folders + room width → positions) ---------- */
+const SURFACE_MAX = 75, STACK_MAX = 100, BOX_STACK = 4, BOX_H = 34;
+// unfiled sheets on furniture: two piles on the desk (drawn with the desk), one on each filing cabinet
+const PILES = [{ x: 456, y: 309, s: .84, cap: 22, layer: "desk" }, { x: 500, y: 310, s: .78, cap: 22, layer: "desk" }, { x: 138, y: 246, s: .8, cap: 18, layer: "back" }, { x: 213, y: 286, s: .66, cap: 13, layer: "back" }];
+// stackMax: how many boxes high a column may go (taller rooms allow more). L.overflow = something had to overlap (the caller then widens the room)
+function layout(notes, folders, W, stackMax = BOX_STACK) {
+  const ox = (W - 800) / 2, xL = -ox + 16, xR = 800 + ox - 16;
+  const L = { xL, xR, sheets: [], boxes: [], byNote: new Map(), byFolder: new Map(), overflow: false };
+  const fids = new Set(folders.map(f => f.id)), byCreated = (a, b) => (a.created || 0) - (b.created || 0) || (a.id < b.id ? -1 : 1);
+  const unfiled = notes.filter(n => !n.folder || !fids.has(n.folder)).sort(byCreated);
+  // 1. furniture piles (first 75 unfiled, each to a pile picked by its id; a full pile passes it on)
+  const fill = PILES.map(() => 0);
+  unfiled.slice(0, SURFACE_MAX).forEach(n => {
+    let k = Math.floor(hash(n.id) * PILES.length); for (let i = 0; i < PILES.length && fill[k] >= PILES[k].cap; i++) k = (k + 1) % PILES.length;
+    const P = PILES[k], j = fill[k]++;
+    add({ id: n.id, title: n.title, kind: "flat", x: P.x + (hk(n.id, 1) - .5) * 7, y: P.y - j * 1.6, a: (hk(n.id, 2) - .5) * .12, s: P.s, layer: P.layer, base: P.y });
+  });
+  // 2. folders → boxes in columns along the side walls (left or right by the top folder's id), then the front of the room
+  const rows = { BL: { y: 402, a: xL + 6, b: 94, dir: 1 }, BR: { y: 406, a: 604, b: xR - 6, dir: -1 } };
+  const cols = { BL: [], BR: [] }; const cursor = { BL: rows.BL.a, BR: rows.BR.b };
+  const front = [{ y: 468, a: xL + 4, b: 214 }, { y: 470, a: 590, b: xR - 4 }, { y: 474, a: 216, b: 588 }, { y: 450, a: xL + 30, b: 214 }, { y: 452, a: 590, b: xR - 30 }, { y: 434, a: xL + 10, b: 230 }, { y: 436, a: 600, b: xR - 10 }];
+  const fcur = front.map(r => r.a);
+  const takeFront = w => { for (let i = 0; i < front.length; i++) if (fcur[i] + w <= front[i].b) { const x = fcur[i]; fcur[i] += w + 6; return { x, y: front[i].y }; }
+    L.overflow = true; const i = Math.floor(rand(L.sheets.length) * 2), r = front[i]; return { x: r.a + rand(L.boxes.length + 3) * Math.max(10, r.b - r.a - w), y: r.y - 14 * (1 + Math.floor(rand(fcur.length + L.sheets.length) * 4)) }; };
+  const inFolder = new Map(); notes.forEach(n => { if (n.folder && fids.has(n.folder)) (inFolder.get(n.folder) || inFolder.set(n.folder, []).get(n.folder)).push(n); });
+  const rootOf = f => { let r = f, seen = 0; while (r.parent && seen++ < 64) { const p = folders.find(x => x.id === r.parent); if (!p) break; r = p; } return r; };
+  folders.forEach(f => {
+    const papers = (inFolder.get(f.id) || []).sort(byCreated), w = clamp(papers.length * 2.6 + 20, 58, 196);
+    const prefer = hash(rootOf(f).id) < .5 ? "BL" : "BR", order = prefer === "BL" ? ["BL", "BR"] : ["BR", "BL"];
+    let pos = null;
+    for (const side of order) {
+      const R = rows[side], cs = cols[side], top = cs[cs.length - 1];
+      if (top && top.n < stackMax) { pos = { x: clamp(top.cx - w / 2, Math.min(R.a, R.b - w), Math.max(R.a, R.b - w)), y: R.y - top.n * (BOX_H + 20), layer: "back" }; top.n++; break; } // a wider box on top stays inside the room
+      const x = R.dir > 0 ? cursor[side] : cursor[side] - w;
+      if ((R.dir > 0 && x + w <= R.b) || (R.dir < 0 && x >= R.a)) { cs.push({ cx: x + w / 2, n: 1 }); cursor[side] = R.dir > 0 ? x + w + 8 : x - 8; pos = { x, y: R.y, layer: "back" }; break; }
+    }
+    if (!pos) { const q = takeFront(w); pos = { x: q.x, y: q.y, layer: "front" }; }
+    const box = { id: f.id, name: f.name, depth: f.depth || 0, x: pos.x, y: pos.y, w, h: BOX_H, layer: pos.layer, base: pos.y, n: papers.length, papers: [] };
+    L.boxes.push(box); L.byFolder.set(f.id, box);
+    const gap = Math.min(2.6, (w - 16) / Math.max(1, papers.length)), x0 = box.x + (w - (papers.length - 1) * gap) / 2; // the sheets sit in the middle of the box
+    papers.forEach((n, i) => { const sh = { id: n.id, title: n.title, kind: "up", x: x0 + i * gap + (hk(n.id, 3) - .5) * .8, y: box.y - box.h + 4, a: (hk(n.id, 4) - .5) * .5 - .08, s: 1, layer: box.layer, box }; box.papers.push(sh); add(sh); });
+  });
+  // 3. unfiled sheets from the 76th: floor stacks of up to 100 (front of the room, either side of the desk, then the middle)
+  const rest = unfiled.slice(SURFACE_MAX);
+  for (let i = 0; i < rest.length; i += STACK_MAX) {
+    const q = takeFront(52), cx = q.x + 26;
+    rest.slice(i, i + STACK_MAX).forEach((n, j) => add({ id: n.id, title: n.title, kind: "flat", x: cx + (hk(n.id, 1) - .5) * 4, y: q.y - j * 1.15, a: (hk(n.id, 2) - .5) * .07, s: .78, layer: "front", base: q.y, stack: i / STACK_MAX }));
+  }
+  function add(sh) { L.sheets.push(sh); L.byNote.set(sh.id, sh); }
+  // the front of the room is drawn far → near, so a nearer stack or box covers the ones behind it
+  L.front = [...L.boxes.filter(b => b.layer === "front").map((b, i) => ({ b, base: b.base, i })), ...L.sheets.filter(s => s.layer === "front" && !s.box).map((sh, i) => ({ sh, base: sh.base, i: i + 1e6 }))].sort((a, b) => a.base - b.base || a.i - b.i);
+  return L;
+}
+
+/* ---------- colours from the theme ---------- */
+function palette() {
+  const probe = document.createElement("span"); probe.style.display = "none"; document.body.appendChild(probe);
+  const rgb = c => { probe.style.color = ""; probe.style.color = c; const m = getComputedStyle(probe).color.match(/[\d.]+/g) || [0, 0, 0]; return m.slice(0, 3).map(Number); };
+  const wall = rgb("var(--panel)"), deep = rgb("var(--ink)"), text = rgb("var(--text)"), muted = rgb("var(--muted)"), line2 = rgb("var(--line-2)"), frame = rgb("var(--frame)"), amber = rgb("var(--amber)");
+  probe.remove();
+  const css = a => `rgb(${a.map(v => Math.round(v)).join(",")})`, mx = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
+  return { bg: css(wall), floor: css(mx(wall, deep, .55)), ink: css(text), soft: css(muted), faint: css(line2), line: css(mx(wall, text, .32)), paper: css(mx(wall, text, .2)), edge: css(mx(wall, text, .55)),
+    accent: css(frame), star: css(amber), shade: `rgba(${deep.map(Math.round).join(",")},.55)`, mouth: css(wall) };
+}
+
+/* ---------- the office ---------- */
+function mount(host, o = {}) {
+  const stage = document.createElement("div"); stage.className = "no-stage";
+  stage.innerHTML = `<canvas role="img" aria-label="Note Office: a stick figure at work in an office. Every note is a sheet of paper, every folder a box. Click a sheet to open the note, a box to open the folder."></canvas><span class="no-bubble" aria-hidden="true"></span>`;
+  host.appendChild(stage);
+  const canvas = stage.querySelector("canvas"), bubble = stage.querySelector(".no-bubble"), ctx = canvas.getContext("2d");
+  const back = document.createElement("canvas"), frontC = document.createElement("canvas");
+  const abort = new AbortController(), on = (el, ev, fn, opt) => el.addEventListener(ev, fn, Object.assign({ signal: abort.signal }, opt || {}));
+  const motionQ = matchMedia("(prefers-reduced-motion: reduce)"), still = () => motionQ.matches || document.documentElement.hasAttribute("data-reduce-motion");
+  const config = { limb: 11.5, desk: 3.5 };
+  let C = palette();
+  let notes = [], folders = [], L = null, hidden = new Set(), hiddenBoxes = new Set();
+  let W = 1060, H = 640, OX = 130, OY = 160, SC = 1, dpr = 1, BAND = 290;
+  let time = 0, act = "idle", startTime = 0, nextAt = 2.2, greeting = true, round = 0, queue = [], errand = null, trash = [];
+  let restingBall = false, restingPlane = false, arrivals = [], lastFrame = 0, frameId = 0, dirty = true, cacheDirty = true, playing = !still(), currentPose = null, fromPose = null;
+  let gaze = { x: 400, y: 210, active: false }, hoverT = 0;
+  const duration = { idle: 6, surprise: .85, wave: 3.4, drum: 7, read: 9, ball: 9.4, trash: 9.4, plane: 12, sing: 10, walk: 18.5, stretch: 6.2 };
+  const words = { idle: "Very busy doing nothing.", surprise: "Oh! An audience.", wave: "Hey, you.", drum: "The desk has excellent acoustics.", read: "A serious reader. Mostly.", ball: "An idea with a little bounce.",
+    trash: "That one's going in the bin.", plane: "Let that thought take flight.", sing: "Absolutely convinced he can sing.", walk: "A very important little stroll.", file: "Filing. Somebody has to.", stretch: "A stretch. He's earned it." };
+  const say = t => { if (o.onStatus) o.onStatus(t); };
+
+  /* ----- data ----- */
+  function readData() {
+    const N = NS(); if (!N) return;
+    notes = N.list().map(n => ({ id: n.id, title: n.title, folder: n.folder || null, created: n.created || n.updated || 0 }));
+    folders = N.folders().map(f => ({ id: f.id, name: f.name, parent: f.parent || null, depth: f.depth || 0 }));
+    relayout();
+    if (o.onCounts) o.onCounts({ notes: notes.length, folders: folders.length, unfiled: notes.filter(n => !n.folder || !folders.some(f => f.id === n.folder)).length });
+  }
+  // the room starts at the window's shape and widens (zooms out) until every box and stack has a place of its own
+  let aspect = 1.7, cssW = 1;
+  function relayout() {
+    let w = Math.max(1040, 580 * aspect);
+    for (let k = 0; k < 14; k++) { const h = w / aspect, oy = h - 480, stackMax = clamp(Math.floor((402 + oy - 40) / 54), 4, 7); L = layout(notes, folders, w, stackMax); if (!L.overflow || w > 3200) break; w *= 1.15; }
+    W = w; H = W / aspect; SC = cssW / W; OX = (W - 800) / 2; OY = aspect >= 1.2 ? H - 480 : (H - 480) * .55; cacheDirty = true; dirty = true; // a tall window: the room sits a little above the bottom
+  }
+
+  /* ----- drawing helpers (the prototype's) ----- */
+  let g = ctx; // the context being drawn into (the screen, or a cache while it is rebuilt)
+  function path(points, color = C.ink, width = 1.5, fill = null) { g.beginPath(); g.moveTo(...points[0]); for (let i = 1; i < points.length; i++) g.lineTo(...points[i]); if (fill) { g.closePath(); g.fillStyle = fill; g.fill(); } if (color) { g.strokeStyle = color; g.lineWidth = width; g.stroke(); } }
+  function line(a, b, c = C.ink, w = 1.5) { path([a, b], c, w); }
+  function curve(pts, c = C.ink, w = 1.5) { g.beginPath(); g.moveTo(pts[0], pts[1]); g.bezierCurveTo(...pts.slice(2)); g.strokeStyle = c; g.lineWidth = w; g.stroke(); }
+  function circle(x, y, r, fill = C.ink, stroke = null, width = 1.5) { g.beginPath(); g.arc(x, y, r, 0, TAU); if (fill) { g.fillStyle = fill; g.fill(); } if (stroke) { g.strokeStyle = stroke; g.lineWidth = width; g.stroke(); } }
+  function ellipse(x, y, rx, ry, fill) { g.beginPath(); g.ellipse(x, y, rx, ry, 0, 0, TAU); g.fillStyle = fill; g.fill(); }
+  function rect(x, y, w, h, color = C.soft, width = 1.5, fill = C.bg) { path([[x, y], [x + w, y], [x + w, y + h], [x, y + h], [x, y]], color, width, fill); }
+  function paper(x, y, angle = 0, scale = 1, flat = false, fold = false) { g.save(); g.translate(x, y); g.rotate(angle); g.scale(scale, scale);
+    if (flat) { path([[-30, -5], [16, -12], [31, -2], [-16, 5], [-30, -5]], C.edge, 1.05, C.paper); line([-21, -5], [13, -9], C.line, .7); }
+    else { path([[-22, -16], [20, -16], [23, 15], [-20, 15], [-22, -16]], C.edge, 1.2, C.paper); if (fold) { line([-22, -16], [23, 15], C.line, .8); line([20, -16], [-20, 15], C.line, .8); } else for (let i = 0; i < 3; i++) line([-13, -7 + i * 6], [i === 2 ? 5 : 13, -7 + i * 6], C.line, .8); }
+    g.restore(); }
+  function upright(x, y, a) { g.save(); g.translate(x, y); g.rotate(a); path([[-1.2, 0], [-1.2, -19], [1.2, -20], [1.2, 0]], C.edge, .7, C.paper); g.restore(); }
+  function sheet(sh) { if (sh.kind === "up") upright(sh.x, sh.y, sh.a); else paper(sh.x, sh.y, sh.a, sh.s, true); }
+  function ball(x, y, r = 6, angle = 0) { g.save(); g.translate(x, y); g.rotate(angle); path([[-r, -2], [-r * .6, -r], [r * .3, -r], [r, -r * .3], [r * .8, r * .6], [0, r], [-r * .8, r * .6], [-r, -2]], C.edge, 1.1, C.paper); path([[-r * .6, -r], [0, -1], [-r * .5, r * .7]], C.line, .8); line([0, -1], [r * .7, r * .5], C.line, .8); g.restore(); }
+  function plane(x, y, a = 0, s = 1) { g.save(); g.translate(x, y); g.rotate(a); g.scale(s, s); path([[-24, -11], [26, 0], [-22, 12], [-12, 1], [-24, -11]], C.edge, 1.3, C.paper); path([[-24, -11], [-6, -1], [26, 0], [-12, 1], [-6, -1], [-8, 9], [-12, 1]], C.soft, .85); g.restore(); }
+  function musicalNote(x, y, angle, size, dbl = false) { g.save(); g.translate(x, y); g.rotate(angle); g.scale(size, size); ellipse(0, 0, 3.6, 2.6, C.accent); line([3, -1], [3, -15], C.accent, 1.5);
+    if (dbl) { line([3, -15], [13, -18], C.accent, 2); line([13, -18], [13, -4], C.accent, 1.5); ellipse(10, -3, 3.6, 2.6, C.accent); } else curve([3, -15, 12, -12, 10, -7, 5, -8], C.accent, 1.5); g.restore(); }
+
+  /* ----- the room, furniture and the folder boxes (into the caches) ----- */
+  function drawCabinet(x, y, w, h, drawers) { path([[x, y], [x + 12, y - 9], [x + w + 12, y - 9], [x + w, y], [x, y]], C.soft, 1.8, C.bg); path([[x + w, y], [x + w + 12, y - 9], [x + w + 12, y + h - 9], [x + w, y + h]], C.soft, 1.8, C.bg); rect(x, y, w, h, C.ink, 2, C.bg);
+    const dh = (h - 14) / drawers; for (let i = 0; i < drawers; i++) { rect(x + 6, y + 6 + i * dh, w - 12, dh - 5, C.soft, 1.2, C.bg); rect(x + w / 2 - 9, y + 17 + i * dh, 18, 5, C.soft, 1.1, null); line([x + w / 2 - 11, y + 29 + i * dh], [x + w / 2 + 11, y + 29 + i * dh], C.line, .8); }
+    line([x + 5, y + h], [x + 5, y + h + 5], C.ink, 2); line([x + w - 5, y + h], [x + w - 5, y + h + 5], C.ink, 2); }
+  function drawRoom() {
+    const xL = L.xL, xR = L.xR, top = -OY - 4;
+    // floor, wall line and the two side corners (the room is as wide as the window)
+    const fb = H - OY + 6; // the floor runs to the bottom of the window
+    path([[xL, 362], [xR, 362], [xR + 70 * (fb - 362) / 124, fb], [xL - 70 * (fb - 362) / 124, fb]], null, 0, C.floor);
+    line([xL, 362], [xR, 362], C.faint, 1.1); line([xL, top], [xL, 362], C.faint, 1); line([xR, top], [xR, 362], C.faint, 1);
+    line([xL, 362], [xL - 70 * (fb - 362) / 124, fb], C.faint, .9); line([xR, 362], [xR + 70 * (fb - 362) / 124, fb], C.faint, .9);
+    drawCabinet(104, 250, 67, 148, 3); drawCabinet(182, 289, 61, 109, 2);
+    for (const y of [157, 246]) { line([591, y], [733, y], C.ink, 2.9); path([[605, y + 1], [605, y + 17], [624, y + 1]], C.soft, 1.4); path([[702, y + 1], [702, y + 17], [722, y + 1]], C.soft, 1.4); }
+    for (let i = 0; i < 4; i++) { const x = 666 + i * 12, h = [35, 42, 37, 32][i]; rect(x, 155 - h, 9, h, C.soft, 1.35, C.bg); line([x + 3, 149], [x + 6, 149], C.soft, .8); }
+    // the plant moved to the lower shelf: the cabinet tops hold papers now
+    g.save(); g.translate(475, -23); path([[196, 270], [199, 287], [215, 287], [219, 270]], C.soft, 1.4, C.bg); line([194, 269], [221, 269], C.soft, 1.6); curve([207, 269, 204, 253, 212, 243, 209, 235], C.soft, 1.6); curve([207, 258, 192, 257, 191, 247, 193, 244], C.soft, 1.4); curve([193, 244, 204, 244, 207, 252, 207, 258], C.soft, 1.4); curve([209, 249, 223, 245, 221, 236, 220, 233], C.soft, 1.4); curve([220, 233, 212, 232, 209, 242, 209, 249], C.soft, 1.4); g.restore();
+    circle(325, 132, 17, null, C.line, 1.3); line([325, 132], [325, 121], C.soft, 1.1); line([325, 132], [334, 135], C.soft, 1.1); circle(325, 132, 1.5, C.soft);
+    // the bin, for deleted notes
+    path([[534, 400], [538, 428], [560, 428], [564, 400]], C.soft, 1.6, C.bg); ellipse(549, 400, 15, 3.2, C.floor); g.beginPath(); g.ellipse(549, 400, 15, 3.2, 0, 0, TAU); g.strokeStyle = C.soft; g.lineWidth = 1.4; g.stroke();
+    trash.slice(-4).forEach((t, i) => ball(541 + i * 5.5, 398 - (i % 2) * 3, 4.2, t));
+    ellipse(405, 430, 123, 5, C.shade);
+  }
+  function drawBox(b) {
+    const x = b.x, y = b.y, w = b.w, h = b.h, d = 9;
+    // back rim and inside, then the upright sheets, then the front and side faces cover their feet
+    path([[x, y - h], [x + d, y - h - 7], [x + w + d, y - h - 7], [x + w, y - h]], C.soft, 1.3, C.floor);
+    b.papers.forEach(sh => { if (!hidden.has(sh.id)) sheet(sh); });
+    path([[x + w, y - h], [x + w + d, y - h - 7], [x + w + d, y - 7], [x + w, y]], C.soft, 1.5, C.bg);
+    rect(x, y - h, w, h, C.ink, 1.8, C.bg);
+    line([x - 2, y - h], [x + w + 1, y - h], C.ink, 2);
+    // label: the folder's name, handwritten-ish on a strip of tape
+    g.save(); g.beginPath(); g.rect(x + 5, y - h + 6, w - 10, h - 12); g.clip();
+    g.font = `600 ${b.depth ? 8.5 : 9.5}px "Saira Semi Condensed","Arial Narrow",sans-serif`; try { g.letterSpacing = "0.6px"; } catch (e) {}
+    g.fillStyle = C.ink; g.textBaseline = "middle";
+    const label = (b.depth ? "↳ " : "") + String(b.name).toUpperCase();
+    g.fillText(label, x + 8, y - h / 2 + .5); g.restore();
+    if (b.n) { g.save(); g.font = `500 8px "IBM Plex Mono",monospace`; g.fillStyle = C.soft; g.textAlign = "right"; g.fillText(String(b.n), x + w - 5, y - 4); g.restore(); }
+  }
+  function rebuildCaches() {
+    const pw = canvas.width, ph = canvas.height; if (!pw || !ph || !L) return;
+    back.width = pw; back.height = ph;
+    const bandPx = Math.floor((OY + BAND) * SC * dpr); frontC.width = pw; frontC.height = Math.max(1, ph - bandPx);
+    // behind him: room, furniture, cabinet piles, back boxes
+    g = back.getContext("2d"); g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = C.bg; g.fillRect(0, 0, pw, ph);
+    g.setTransform(SC * dpr, 0, 0, SC * dpr, OX * SC * dpr, OY * SC * dpr); g.lineCap = "round"; g.lineJoin = "round";
+    drawRoom();
+    L.boxes.forEach(b => { if (b.layer === "back" && !hiddenBoxes.has(b.id)) drawBox(b); });
+    L.sheets.forEach(sh => { if (sh.layer === "back" && !sh.box && !hidden.has(sh.id)) sheet(sh); });
+    // in front of him: the floor stacks and any boxes on the front of the floor
+    g = frontC.getContext("2d"); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, frontC.width, frontC.height);
+    g.setTransform(SC * dpr, 0, 0, SC * dpr, OX * SC * dpr, OY * SC * dpr - bandPx); g.lineCap = "round"; g.lineJoin = "round";
+    L.front.forEach(it => { if (it.b) { if (!hiddenBoxes.has(it.b.id)) drawBox(it.b); } else if (!hidden.has(it.sh.id)) sheet(it.sh); });
+    g = ctx; cacheDirty = false;
+  }
+
+  /* ----- poses (the prototype's) ----- */
+  function seated() { const b = Math.sin(time * 1.6), s = Math.sin(time * .68); return { hip: [401, 323], chest: [399 + s, 253 + b * .8], head: [397 + s * 1.8, 215 + b * 1.2], lh: [366, 313], rh: [437, 312], lf: [358, 418], rf: [448, 418], lk: [366, 348], rk: [435, 349], face: 0, tilt: -.04, chair: 0 }; }
+  function standing(x = 400, y = 420) { return { hip: [x, y - 119], chest: [x + 2, y - 191], head: [x + 3, y - 228], lh: [x - 20, y - 115], rh: [x + 23, y - 113], lf: [x - 12, y], rf: [x + 14, y], lk: [x - 17, y - 60], rk: [x + 20, y - 59], face: 1, tilt: .05, chair: 9 }; }
+  function joint(a, b, l1, l2, side) { const dx = b[0] - a[0], dy = b[1] - a[1], raw = Math.hypot(dx, dy), d = clamp(raw, .001, l1 + l2 - .001), ux = dx / (raw || 1), uy = dy / (raw || 1), along = (l1 * l1 - l2 * l2 + d * d) / (2 * d), height = Math.sqrt(Math.max(0, l1 * l1 - along * along)); return [a[0] + ux * along - uy * height * side, a[1] + uy * along + ux * height * side]; }
+  function gait(x, ground, distance, dir, amount = 1, carry = false) {
+    const p = standing(x, ground), phase = distance / 59, bob = Math.cos(phase * TAU * 2) * 2.1 * amount;
+    p.hip[1] += bob; p.chest[0] += dir * 4 * amount; p.chest[1] += bob * .75; p.head[0] += dir * 6 * amount; p.head[1] += bob * .5; p.face = dir;
+    for (let k = 0; k < 2; k++) { const f = (phase + k * .5) % 1, shift = (.5 - f) * 59 + (f > .6 ? 59 * smooth((f - .6) / .4) : 0), lift = f > .6 ? Math.sin((f - .6) / .4 * Math.PI) * 16 : 0; const foot = [x + dir * shift * amount + (k ? 6 : -6) * (1 - amount), ground - lift * amount]; p[k ? "rf" : "lf"] = foot; p[k ? "rk" : "lk"] = joint(p.hip, foot, 61, 62, -dir); }
+    const swing = Math.sin(phase * TAU) * 24 * amount; p.lh = [x - 8 + dir * swing, p.chest[1] + 73 - 5 * amount]; p.rh = [x + 8 - dir * swing, p.chest[1] + 73 - 5 * amount]; p.tilt = dir * .06 + Math.sin(phase * TAU - .4) * .045 * amount;
+    if (carry) { p.lh = [x + dir * 18 - 17, p.chest[1] + 53]; p.rh = [x + dir * 18 + 17, p.chest[1] + 51]; p.head[0] -= dir * 2; } return p;
+  }
+  function travel(t, a, b, x0, x1, carry = false) { const u = ramp(t, a, b), d = Math.abs(x1 - x0) * u, dir = x1 > x0 ? 1 : -1, amount = Math.min(ramp(t, a, a + .4), 1 - ramp(t, b - .4, b)); return gait(mix(x0, x1, u), 420, d, dir, amount, carry); }
+  function rise(t, a = 0, b = 1.6) { const p = blend(seated(), standing(), ramp(t, a + .35, b)), an = pulse(t, a, a + .28, a + .55, b); p.head[0] += an * 17; p.head[1] += an * 7; p.chest[0] += an * 11; p.lh = point(p.lh, [358, 313], an * .65); p.rh = point(p.rh, [440, 313], an * .65); p.chair = ramp(t, a + .25, b) * 9; return p; }
+  function sit(t, a, b) { const p = blend(standing(), seated(), ramp(t, a, b)), settle = Math.sin(clamp((t - b) / .6) * Math.PI) * 3; if (t > b) { p.hip[1] += settle; p.chest[1] += settle * .7; p.head[1] += settle * .4; } return p; }
+  function walkingPose(t) { let p; if (t < 1.8) p = rise(t, 0, 1.8); else if (t < 5) p = travel(t, 1.8, 5, 400, 560); else if (t < 6.4) { p = standing(560); const a = pulse(t, 5, 5.4, 5.9, 6.4); p.chest[0] -= a * 7; p.head[0] -= a * 11; p.lh = [540 - 8 * a, 309 - 30 * a]; p.rh = [584 + 12 * a, 307 - 35 * a]; p.tilt = -.1 * a; }
+    else if (t < 11.7) p = travel(t, 6.4, 11.7, 560, 249); else if (t < 13) { p = standing(249); p.face = -1; p.head[0] -= ramp(t, 11.7, 12.1) * 7 * (1 - ramp(t, 12.5, 13)); } else if (t < 16.8) p = travel(t, 13, 16.8, 249, 400); else p = sit(t, 16.8, 18); return p; }
+  // filing a note: grab it off the desk, walk to its folder's box, put it in (with a little flourish), walk back, sit
+  function makeErrand(note, box) {
+    const tx = box.x + box.w / 2, ty = box.y - box.h - 2, dir = tx >= 400 ? 1 : -1, stand = clamp(tx - dir * 44, L.xL + 30, L.xR - 30), dist = Math.abs(stand - 400), wt = clamp(dist / 76, 1.6, 6.5);
+    const T = { grab: 1.3, up: 2.9 }; T.go = T.up + wt; T.reach = T.go + 2.4; T.flair = T.reach + .9; T.back = T.flair + wt; T.sit = T.back + 1.3;
+    return { note, box, tx, ty, dir, stand, dist, T, picked: false, done: false, total: T.sit + .3 };
+  }
+  function errandPose(t) {
+    const E = errand, T = E.T; let p;
+    if (t < T.grab) { p = seated(); const k = ramp(t, 0, .75); p.chest[0] += k * 19; p.head[0] += k * 27; p.head[1] += k * 8; p.lh = point(p.lh, [447, 306], k); p.rh = point(p.rh, [478, 304], k); p.tilt = .16 * k; }
+    else if (t < T.up) { p = rise(t, T.grab, T.up); const k = ramp(t, T.grab, T.up); p.lh = point([447, 306], [401, 282], k); p.rh = point([478, 304], [435, 280], k); }
+    else if (t < T.go) p = travel(t, T.up, T.go, 400, E.stand, true);
+    else if (t < T.reach) {
+      p = gait(E.stand, 420, E.dist, E.dir, 0, true); const reach = pulse(t, T.go, T.go + .95, T.go + 1.6, T.reach), bend = clamp((E.ty - 245) / 90);
+      p.hip[1] += reach * 8 * bend; p.chest[0] += E.dir * reach * (14 + 9 * bend); p.chest[1] += reach * 29 * bend; p.head[0] += E.dir * reach * (21 + 11 * bend); p.head[1] += reach * 38 * bend - reach * 6 * (1 - bend);
+      p.lh = point(p.lh, [E.tx - 15, E.ty + 1], reach); p.rh = point(p.rh, [E.tx + 15, E.ty - 1], reach); p.tilt = E.dir * .27 * reach * bend; p.face = E.dir;
+    }
+    else if (t < T.flair) { p = standing(E.stand); const a = pulse(t, T.reach, T.reach + .3, T.reach + .6, T.flair); p.face = E.dir; p.lh = [E.stand - 20, 305]; p.rh = [E.stand + 24, 300 - a * 30]; p.head[1] -= a * 3; p.tilt = -a * .1 * E.dir; } // dusts off his hands
+    else if (t < T.back) p = travel(t, T.flair, T.back, E.stand, 400);
+    else p = sit(t, T.back, T.sit);
+    return p;
+  }
+  function soften(fn, t, bounds) { const b = [...bounds].reverse().find(b => t >= b); return b !== undefined && t < b + .4 ? blend(fn(b - .0001), fn(t), smooth((t - b) / .4)) : fn(t); }
+  function flight(u) { u = clamp(u); const pts = [[[469, 238], [740, 170], [677, 62], [440, 111]], [[440, 111], [157, 151], [97, 255], [266, 246]], [[266, 246], [460, 224], [643, 307], [265, 404]]]; const i = Math.min(2, Math.floor(u * 3)), t = u === 1 ? 1 : u * 3 - i, v = 1 - t, [a, b, c, d] = pts[i]; return [v * v * v * a[0] + 3 * v * v * t * b[0] + 3 * v * t * t * c[0] + t * t * t * d[0], v * v * v * a[1] + 3 * v * v * t * b[1] + 3 * v * t * t * c[1] + t * t * t * d[1]]; }
+  function actionPose(name, t) {
+    let p = seated(), k;
+    if (name === "walk") return soften(walkingPose, t, [1.8, 5, 6.4, 11.7, 13, 16.8]);
+    if (name === "file") { const T = errand.T; return soften(errandPose, t, [T.grab, T.up, T.go, T.reach, T.flair, T.back]); }
+    const dur = duration[name] || 6, envelope = Math.min(ramp(t, 0, .5), 1 - ramp(t, dur - .65, dur));
+    if (name === "surprise") { k = pulse(t, 0, .16, .32, .85); p.head[1] -= 9 * k; p.chest[1] -= 5 * k; p.lh[1] -= 15 * k; p.rh[1] -= 17 * k; p.tilt = 0; }
+    if (name === "wave") { k = envelope; const w = Math.sin((t - .3) * 9); p.chest[0] -= k * 5; p.head[0] -= k * 9; p.head[1] -= k * 3; p.rh = point(p.rh, [455 + w * 10, 205 + Math.cos(t * 9) * 4], k); p.tilt = -.13 * k; p.rf[0] += k * 6; }
+    if (name === "drum") { const beat = t * 10.5; p.hip[0] += Math.sin(beat / 2) * 2 * envelope; p.chest[0] += Math.sin(beat / 2 - .3) * 6 * envelope; p.head[0] += Math.sin(beat / 2 - .7) * 9 * envelope; p.head[1] += Math.sin(beat - .8) * 3 * envelope; p.lh = [365, 311 - Math.pow(Math.max(0, Math.sin(beat)), 2) * 24 * envelope]; p.rh = [440, 311 - Math.pow(Math.max(0, Math.sin(beat + 2.6)), 2) * 29 * envelope]; p.rf[1] -= Math.pow(Math.max(0, Math.sin(beat / 2)), 2) * 8 * envelope; p.tilt = Math.sin(beat / 2 - 1) * .1 * envelope; }
+    if (name === "read") { const grab = pulse(t, 0, .8, 1.1, 2), read = pulse(t, .9, 2, 6.7, 8.2); p.chest[0] += grab * 13 - read * 7; p.head[0] += grab * 19 - read * 9; p.head[1] += grab * 6 + read * 4; p.lh = point(p.lh, [382, 271], read); p.rh = point(point(p.rh, [480, 304], grab), [425, 270], read); p.tilt = -read * .12 + Math.sin(t * 1.3) * read * .035; p.rf[0] += read * 9; }
+    if (name === "sing") { const b = t * TAU * 1.62, sw = Math.sin(b / 2) * envelope; p.hip[0] += sw * 4; p.chest[0] += Math.sin(b / 2 - .35) * 11 * envelope; p.head[0] += Math.sin(b / 2 - .7) * 15 * envelope; p.chest[1] += Math.sin(b) * 2.8 * envelope; p.head[1] += Math.sin(b - .45) * 4.5 * envelope; p.tilt = Math.sin(b / 2 - .8) * .2 * envelope; p.rh = point(p.rh, [p.head[0] + 25, p.head[1] + 17], envelope); p.lh = point(p.lh, [352 + Math.sin(b / 2) * 10, 266 + Math.sin(b) * 7], envelope); p.lf[1] -= Math.max(0, Math.sin(b)) * 9 * envelope; p.rf[1] -= Math.max(0, -Math.sin(b)) * 9 * envelope; p.face = .6; }
+    if (name === "stretch") { k = pulse(t, .2, 1.4, 3.7, 5.7); p.hip[0] -= k * 3; p.chest[0] -= k * 8; p.chest[1] -= k * 7; p.head[0] -= k * 12; p.head[1] -= k * 10; p.lh = point(p.lh, [355 + Math.sin(t * 1.3) * 3, 171], k); p.rh = point(p.rh, [441, 170], k); p.lf[0] -= k * 13; p.rf[0] += k * 15; p.tilt = -k * .18; }
+    if (name === "ball" || name === "trash") { const crush = pulse(t, 0, .65, 1.9, 2.4), wind = pulse(t, 2, 2.65, 2.8, 3.3), throwing = pulse(t, 2.8, 3.12, 3.45, 4.4), catching = pulse(t, 4.7, 5.4, 5.9, 6.7), bounce = pulse(t, 6.6, 7, 7.3, 8.2);
+      p.lh = point(p.lh, [391 + Math.sin(t * 22) * 2, 281], crush); p.rh = point(p.rh, [413 - Math.sin(t * 22) * 2, 280], crush); p.rh = point(p.rh, [425, 216], wind); p.rh = point(p.rh, [472, 237], throwing); p.rh = point(p.rh, [477, 283], catching); p.rh = point(p.rh, [467, 307], bounce);
+      p.chest[0] -= wind * 8; p.head[0] -= wind * 12; p.chest[0] += throwing * 9 + catching * 6; p.head[0] += throwing * 14 + catching * 10; p.tilt = -wind * .13 + throwing * .15;
+      if (name === "trash") { const look = pulse(t, 7.4, 7.9, 8.6, 9.3); p.head[0] += look * 14; p.head[1] += look * 6; p.tilt += look * .12; } }
+    if (name === "plane") { const fold = pulse(t, 0, .6, 2.7, 3.3), wind = pulse(t, 2.8, 3.45, 3.6, 4.05), throwing = pulse(t, 3.6, 4, 4.2, 5.1); p.lh = point(p.lh, [394 + Math.sin(t * 9) * 4, 301], fold); p.rh = point(p.rh, [415 + Math.sin(t * 9 + 1) * 4, 300], fold); p.rh = point(p.rh, [421, 218], wind); p.rh = point(p.rh, [475, 239], throwing); p.chest[0] -= wind * 9; p.head[0] -= wind * 14; p.chest[0] += throwing * 12; p.head[0] += throwing * 17; p.tilt = -wind * .18 + throwing * .2; if (t > 4.1) { const q = flight((t - 4.05) / 7); p.head[0] += (q[0] - 400) / 32 * envelope; p.head[1] += (q[1] - 215) / 47 * envelope; } }
+    return p;
+  }
+
+  /* ----- him ----- */
+  function limb(a, j, b, width) { const q1 = point(a, j, .8), q2 = point(b, j, .8); g.beginPath(); g.moveTo(...a); g.lineTo(...q1); g.quadraticCurveTo(j[0], j[1], q2[0], q2[1]); g.lineTo(...b); g.strokeStyle = C.ink; g.lineWidth = width; g.stroke(); }
+  function drawLegs(p) { limb(p.hip, p.lk, p.lf, config.limb); limb(p.hip, p.rk, p.rf, config.limb); const dir = p.face; line(p.lf, [p.lf[0] + (dir < -.3 ? -10 : dir > .3 ? 10 : -10), p.lf[1] + .5], C.ink, config.limb * .86); line(p.rf, [p.rf[0] + (dir < -.3 ? -10 : 10), p.rf[1] + .5], C.ink, config.limb * .86); }
+  function drawBody(p) { const [hx, hy] = p.hip, [cx, cy] = p.chest; curve([hx, hy, hx - 3, hy - 28, cx + 2, cy + 23, cx, cy], C.ink, config.limb * 1.17); line(p.chest, [p.head[0], p.head[1] + 13], C.ink, config.limb * .91); circle(p.head[0], p.head[1], 19.5, C.ink); }
+  function drawArms(p) { const ls = [p.chest[0] - 7, p.chest[1] + 1], rs = [p.chest[0] + 7, p.chest[1] + 1]; let le = joint(ls, p.lh, 42, 45, 1), re = joint(rs, p.rh, 42, 45, -1); const t = time - startTime, dur = duration[act] || 6, e = Math.min(ramp(t, 0, .5), 1 - ramp(t, dur - .65, dur));
+    if (act === "wave") re = point(re, [p.chest[0] + 49, p.chest[1] - 5], e); if (act === "sing") re = point(re, [p.head[0] + 44, p.head[1] + 49], e);
+    if (act === "stretch") { const k = pulse(t, .2, 1.4, 3.7, 5.7); le = point(le, [p.chest[0] - 43, p.chest[1] - 38], k); re = point(re, [p.chest[0] + 47, p.chest[1] - 37], k); }
+    limb(ls, le, p.lh, config.limb * .9); limb(rs, re, p.rh, config.limb * .9); }
+  function drawChair(offset) { g.save(); g.translate(offset, 0); path([[372, 322], [365, 250], [367, 240], [375, 236], [424, 236], [432, 244], [429, 321]], C.soft, 2.4); curve([368, 250, 390, 255, 411, 255, 429, 250], C.line, 1.1); path([[368, 321], [430, 321], [432, 328], [369, 328], [368, 321]], C.soft, 2, C.bg); line([377, 330], [369, 408], C.soft, 2); line([424, 330], [433, 408], C.soft, 2); g.restore(); }
+  function drawDesk() {
+    line([337, 331], [329, 412], C.soft, config.desk * .7); line([479, 327], [487, 412], C.soft, config.desk * .7);
+    path([[294, 325], [507, 325], [532, 308], [321, 308], [294, 325]], C.ink, config.desk, C.bg); path([[294, 325], [294, 331], [507, 331], [532, 314], [532, 308]], C.ink, config.desk * .82); line([507, 325], [507, 331], C.ink, config.desk * .7); line([303, 333], [295, 430], C.ink, config.desk); line([497, 333], [508, 430], C.ink, config.desk);
+    path([[323, 293], [325, 311], [339, 311], [341, 293]], C.soft, 1.5, C.bg); ellipse(332, 293, 9, 2.5, C.bg); g.beginPath(); g.ellipse(332, 293, 9, 2.5, 0, 0, TAU); g.strokeStyle = C.soft; g.lineWidth = 1.3; g.stroke(); curve([341, 296, 351, 292, 353, 307, 340, 307], C.soft, 1.5);
+    g.save(); g.globalAlpha = .4; curve([333, 287, 327 + Math.sin(time) * 3, 280, 340, 277, 332, 271], C.soft, 1); g.restore();
+    // the desk piles (unfiled notes) are drawn with the desk so he sits behind them
+    for (const sh of L.sheets) if (sh.layer === "desk" && !hidden.has(sh.id)) sheet(sh);
+    if (restingBall) ball(489, 312, 5, 1);
+  }
+  function drawProps(p, t) {
+    if (act === "surprise") { const a = pulse(t, 0, .12, .45, .85); g.save(); g.globalAlpha = a; line([p.head[0] + 23, p.head[1] - 19], [p.head[0] + 29, p.head[1] - 28], C.accent, 2); line([p.head[0] + 29, p.head[1] - 9], [p.head[0] + 38, p.head[1] - 13], C.accent, 2); g.restore(); }
+    if (act === "drum") for (let i = 0; i < 2; i++) { const v = (t * 10.5 + i * 2.6) % TAU; if (v > 3 && v < 4.1) { const x = i ? 440 : 365; g.save(); g.globalAlpha = (4.1 - v) / 1.1; line([x - 7, 307], [x - 11, 302], C.accent, 1.5); line([x + 7, 307], [x + 10, 301], C.accent, 1.5); g.restore(); } }
+    if (act === "read" && t > .65 && t < 8.45) { const up = ramp(t, .65, 2), down = ramp(t, 6.8, 8.3), x = mix(mix(474, 403, up), 474, down), y = mix(mix(303, 270, up), 304, down); g.save(); g.globalAlpha = Math.min(ramp(t, .65, .9), 1 - ramp(t, 8.2, 8.45)); paper(x, y, -.07 * Math.sin(t), .94, false); g.restore(); }
+    if (act === "sing" && t > .5 && t < 9.55) { const strength = pulse(t, .5, 1, 8.8, 9.55); g.save(); g.globalAlpha = strength; ellipse(p.head[0] + 10, p.head[1] + 7, 2.3, 2.5 + Math.max(0, Math.sin(t * 10)) * 1.8, C.mouth); g.restore();
+      for (let i = 0; i < 6; i++) { const age = t - .65 - i * .48; if (age < 0) continue; const u = (age % 2.6) / 2.6; g.save(); g.globalAlpha = Math.sin(u * Math.PI) * strength * .8; musicalNote(p.head[0] + 24 + u * 82 + Math.sin(u * TAU + i) * 8, p.head[1] + 4 - u * 85 + Math.sin(u * 6 + i) * 6, Math.sin(u * 5 + i) * .25, .75 + u * .45, i % 3 === 0); g.restore(); } }
+    if (act === "file" && errand && errand.picked && !errand.done) { const c = point(p.lh, p.rh, .5); paper(c[0], c[1] - 3, Math.sin(time * 6) * .012, .85, true); }
+    if (act === "ball" || act === "trash") {
+      if (t < 2.15) { const k = ramp(t, .5, 2.15); g.save(); g.globalAlpha = ramp(t, 0, .5); if (k < .6) paper(402, 281, Math.sin(t * 20) * .035, 1 - k); else ball(402, 281, 9 - k * 4, t * 5); g.restore(); }
+      else if (t < 3.12) { const c = point([402, 281], [p.rh[0], p.rh[1] - 5], ramp(t, 2.15, 2.55)); ball(...c, 6, t * 3); }
+      else if (t < 5.4) { const u = (t - 3.12) / 2.28; ball(mix(471, 477, u) + Math.sin(u * Math.PI) * 63, mix(232, 277, u) - 4 * 102 * u * (1 - u), 6, t * 5); }
+      else if (t < 6.8) ball(p.rh[0], p.rh[1] - 6, 6, t * 2);
+      else if (act === "ball") { if (t < 8.55) { const u = (t - 6.8) / 1.75; ball(mix(467, 481, u) + Math.sin(u * Math.PI) * 47, mix(302, 300, u) + Math.sin(u * Math.PI) * 111, 6, t * 4); } else { const u = ramp(t, 8.55, 9.3); ball(mix(481, 489, u), mix(300, 312, u) - Math.sin(u * Math.PI) * 8, 6, t); } }
+      else if (t < 8.3) { const u = clamp((t - 6.8) / 1.5); ball(mix(470, 549, u), mix(300, 396, u) - Math.sin(u * Math.PI) * 70, 6, t * 6); } // a lob into the bin
+    }
+    if (act === "plane") {
+      if (t < 3.1) { g.save(); g.globalAlpha = ramp(t, 0, .6); paper(404, 300, Math.sin(t * 8) * .025, .88 - ramp(t, 1, 3.1) * .26, true, true); g.restore(); }
+      else if (t < 4.05) plane(p.rh[0] + 7, p.rh[1] - 5, -.3, .69);
+      else if (t < 11.05) { const u = (t - 4.05) / 7, q = flight(u), q2 = flight(Math.min(1, u + .001)), a = Math.atan2(q2[1] - q[1], q2[0] - q[0]); g.save(); g.globalAlpha = .6; g.setLineDash([2, 7]); const pts = []; for (let v = Math.max(0, u - .08); v < u; v += .004) pts.push(flight(v)); if (pts.length > 1) path(pts, C.line, 1); g.restore(); plane(...q, a, .72); }
+      else plane(265, mix(404, 413, ramp(t, 11.05, 11.5)), .11, .64);
+    }
+    if (restingPlane && act !== "plane") plane(265, 413, .11, .64);
+  }
+  // new notes flutter down to their place, new folders drop in
+  function drawArrivals() {
+    const top = -OY - 30; let ended = false;
+    arrivals = arrivals.filter(a => { const t = time - a.at; if (t < 1.65) return true; if (a.kind === "note") hidden.delete(a.id); else hiddenBoxes.delete(a.id); ended = true; return false; });
+    if (ended) cacheDirty = true;
+    for (const a of arrivals) { const t = time - a.at; if (t < 0) continue; const u = ramp(t, 0, 1.65);
+      if (a.kind === "note") { const sh = L.byNote.get(a.id); if (!sh) continue; const x = mix(400 + (rand(a.seed) - .5) * 200, sh.x, u) + Math.sin(u * TAU * 2) * 20 * (1 - u), y = mix(top, sh.y, u); if (sh.kind === "up" && u > .85) upright(sh.x, sh.y, sh.a); else paper(x, y, Math.sin(u * 7) * .6 * (1 - u) + (sh.kind === "up" ? 0 : sh.a * u), sh.kind === "up" ? .6 : sh.s, true); }
+      else { const b = L.byFolder.get(a.id); if (!b) continue; g.save(); g.translate(0, mix(top - b.y, 0, Math.min(1, u * 1.08)) - Math.sin(clamp((u - .92) / .08) * Math.PI) * 6); drawBox(b); g.restore(); } }
+  }
+
+  /* ----- routine control ----- */
+  function begin(name) {
+    fromPose = currentPose ? clone(currentPose) : null; act = name; startTime = time; dirty = true; say(words[name] || "");
+    if (name === "ball") restingBall = false; if (name === "plane") restingPlane = false;
+    if (name === "idle") nextAt = time + 3.1 + rand(round + 10) * 2;
+  }
+  function next() {
+    if (greeting) { greeting = false; begin("surprise"); return; }
+    const job = queue.shift();
+    if (job && job.kind === "file") { const box = L.byFolder.get(job.folder), sh = L.byNote.get(job.id); if (!(box && sh)) { hidden.delete(job.id); cacheDirty = true; } if (box && sh) { errand = makeErrand(sh, box); duration.file = errand.total; hidden.add(job.id); cacheDirty = true; begin("file"); say(`Filing “${clip(sh.title)}” in ${clip(box.name)}.`); return; } }
+    if (job && job.kind === "trash") { begin("trash"); say(job.n > 1 ? `${job.n} notes deleted. Into the bin.` : words.trash); return; }
+    const seq = ["sing", "walk", "drum", "read", "plane", "stretch", "ball"]; begin(seq[round++ % seq.length]);
+  }
+  const clip = s => { s = String(s || "Untitled"); return s.length > 28 ? s.slice(0, 26) + "…" : s; };
+  function advance(dt) {
+    time += dt; const t = time - startTime;
+    if (act === "file" && errand) { if (t >= 1.05 && !errand.picked) errand.picked = true; if (t >= errand.T.go + 1.25 && !errand.done) { errand.done = true; hidden.delete(errand.note.id); cacheDirty = true; } }
+    if (act === "idle" && time >= nextAt) next();
+    else if (act !== "idle" && t >= (duration[act] || 6)) {
+      if (act === "ball") restingBall = true; if (act === "plane") restingPlane = true;
+      if (act === "trash") { trash.push(rand(trash.length + 7) * 3); cacheDirty = true; }
+      if (act === "file" && errand) { if (!errand.done) { hidden.delete(errand.note.id); cacheDirty = true; } errand = null; }
+      if (act === "surprise") begin("wave"); else begin("idle");
+    }
+  }
+
+  /* ----- frame ----- */
+  function draw() {
+    if (!L) return; if (cacheDirty) rebuildCaches();
+    g = ctx; ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(back, 0, 0);
+    ctx.setTransform(SC * dpr, 0, 0, SC * dpr, OX * SC * dpr, OY * SC * dpr); ctx.lineCap = "round"; ctx.lineJoin = "round";
+    const t = time - startTime; let p = actionPose(act, t); if (fromPose && t < .45) p = blend(fromPose, p, smooth(t / .45));
+    if (act === "idle" && gaze.active) { p.head[0] += clamp((gaze.x - 400) / 100, -6, 6); p.head[1] += clamp((gaze.y - 220) / 180, -3, 3); }
+    currentPose = p;
+    drawChair(p.chair); const outside = p.hip[0] < 285 || p.hip[0] > 538;
+    if (outside) { drawDesk(); drawLegs(p); drawBody(p); drawArms(p); } else { drawLegs(p); drawBody(p); drawDesk(); drawArms(p); }
+    drawProps(p, t); drawArrivals();
+    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(frontC, 0, Math.floor((OY + BAND) * SC * dpr));
+    const show = act === "wave" && t > .3 && t < 2.9; bubble.style.opacity = show ? "1" : "0";
+    if (show) { bubble.textContent = "oh, hey."; bubble.style.left = ((OX + p.head[0] + 33) * SC) + "px"; bubble.style.top = ((OY + p.head[1] - 43) * SC) + "px"; }
+  }
+  function resize() {
+    const r = canvas.getBoundingClientRect(); if (!r.width || !r.height) return;
+    dpr = Math.min(2, devicePixelRatio || 1); canvas.width = Math.round(r.width * dpr); canvas.height = Math.round(r.height * dpr);
+    // the room is at least 1040 wide (the 800-wide core plus space for boxes and stacks), takes the window's shape, and widens with the paperwork
+    aspect = r.width / r.height; cssW = r.width;
+    relayout(); draw();
+  }
+  function frame(ts) {
+    if (!stage.isConnected) return;
+    const dt = lastFrame ? Math.min((ts - lastFrame) / 1000, .04) : 0;
+    // an idle office needs fewer frames: ~30 fps when nothing much is moving
+    const calm = act === "idle" && !arrivals.length && !gaze.active;
+    if (calm && lastFrame && ts - lastFrame < 31) { frameId = requestAnimationFrame(frame); return; }
+    lastFrame = ts;
+    if (playing && !document.hidden) { advance(dt); dirty = true; }
+    if (dirty || cacheDirty) { draw(); dirty = false; }
+    frameId = requestAnimationFrame(frame);
+  }
+
+  /* ----- what changed since the last visit (kept in notepath.office.seen) ----- */
+  const SEEN = "notepath.office.seen";
+  function catchUp() {
+    let prev = null; try { prev = JSON.parse(localStorage.getItem(SEEN) || "null"); } catch (e) {}
+    const now = { n: Object.fromEntries(notes.map(n => [n.id, n.folder || ""])), f: folders.map(f => f.id) };
+    try { localStorage.setItem(SEEN, JSON.stringify(now)); } catch (e) {}
+    if (!prev || !prev.n || still()) return;
+    const added = notes.filter(n => !(n.id in prev.n)), fset = new Set(prev.f || []), fNew = folders.filter(f => !fset.has(f.id));
+    const moved = notes.filter(n => n.id in prev.n && n.folder && prev.n[n.id] !== n.folder && L.byFolder.has(n.folder));
+    const removed = Object.keys(prev.n).filter(id => !now.n[id]).length;
+    if (added.length && added.length <= 12) added.forEach((n, i) => { hidden.add(n.id); arrivals.push({ kind: "note", id: n.id, at: time + 1 + i * .12, seed: i }); });
+    if (fNew.length && fNew.length <= 6) fNew.forEach((f, i) => { hiddenBoxes.add(f.id); arrivals.push({ kind: "folder", id: f.id, at: time + .6 + i * .18 }); });
+    moved.slice(0, 3).forEach(n => { hidden.add(n.id); queue.push({ kind: "file", id: n.id, folder: n.folder }); }); // he still has to carry these over
+    if (removed) queue.push({ kind: "trash", n: removed });
+    cacheDirty = true;
+  }
+
+  /* ----- input: click a sheet / box / him; hover shows the title ----- */
+  const toCore = e => { const r = canvas.getBoundingClientRect(); return [(e.clientX - r.left) / SC - OX, (e.clientY - r.top) / SC - OY]; };
+  function hit(x, y) {
+    if (!L) return null;
+    for (let i = L.sheets.length - 1; i >= 0; i--) { const s = L.sheets[i]; if (hidden.has(s.id)) continue;
+      if (s.kind === "up") { if (x > s.x - 3 && x < s.x + 3 && y > s.y - 21 && y < s.y - 1) return { note: s.id, title: s.title }; }
+      else { const w = 30 * s.s; if (x > s.x - w && x < s.x + w && y > s.y - 8 * s.s && y < s.y + 3) return { note: s.id, title: s.title }; } }
+    for (let i = L.boxes.length - 1; i >= 0; i--) { const b = L.boxes[i]; if (x > b.x && x < b.x + b.w + 9 && y > b.y - b.h - 8 && y < b.y) return { folder: b.id, title: `${b.name} · ${b.n} ${b.n === 1 ? "note" : "notes"}` }; }
+    return null;
+  }
+  on(canvas, "pointermove", e => { const [x, y] = toCore(e); gaze = { x, y, active: true }; dirty = true;
+    if (!hoverT) hoverT = requestAnimationFrame(() => { hoverT = 0; const h = hit(x, y), me = currentPose && Math.hypot(x - currentPose.head[0], y - currentPose.head[1]) < 60; canvas.style.cursor = h || me ? "pointer" : ""; canvas.title = h ? h.title : me ? "Say hello" : ""; }); });
+  on(canvas, "pointerleave", () => { gaze.active = false; dirty = true; });
+  on(canvas, "click", e => { const [x, y] = toCore(e);
+    if (currentPose && Math.hypot(x - currentPose.head[0], y - currentPose.head[1]) < 60) { if (act === "idle" || act === "drum" || act === "read" || act === "sing" || act === "stretch") begin("wave"); return; }
+    const h = hit(x, y); if (h && h.note && o.openNote) o.openNote(h.note); else if (h && h.folder && o.openFolder) o.openFolder(h.folder); });
+  on(document, "visibilitychange", () => { lastFrame = 0; });
+  on(window, "inquire:theme", () => { C = palette(); cacheDirty = true; dirty = true; });
+  on(window, "inquire:notes-changed", () => { readData(); });
+  on(motionQ, "change", () => { playing = !still(); dirty = true; });
+  const ro = new ResizeObserver(() => resize()); ro.observe(canvas);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { cacheDirty = true; dirty = true; });
+
+  readData(); resize(); catchUp(); if (!playing) { greeting = false; act = "idle"; } draw();
+  frameId = requestAnimationFrame(frame);
+  return {
+    destroy() { abort.abort(); cancelAnimationFrame(frameId); ro.disconnect(); back.width = back.height = frontC.width = frontC.height = 0; canvas.width = canvas.height = 0; stage.remove(); },
+    setPlaying(v) { playing = !!v && !still(); lastFrame = 0; dirty = true; }, get playing() { return playing; },
+    state: () => ({ notes: notes.length, folders: folders.length, sheets: L ? L.sheets.length : 0, boxes: L ? L.boxes.length : 0, act, queue: queue.length, arrivals: arrivals.length, W, H, OX, OY, SC }),
+    layout: () => L, poke: name => begin(name)
+  };
+}
+
+/* ---------- the window (Main Menu → Note Office) ---------- */
+let cur = null;
+function open() {
+  const A = window.InquireApp; if (!A || !A.modal) return;
+  const m = A.modal("office", { title: "Note Office", cls: "mw-office", sub: `<span class="no-status">Very busy doing nothing.</span>` });
+  if (cur) return m;
+  m.head.innerHTML = `<span class="no-counts num" aria-live="polite"></span><button type="button" class="np-hb no-pause" aria-pressed="false" title="Pause or play the office">❚❚ Pause</button>`;
+  const counts = m.head.querySelector(".no-counts"), status = m.win.querySelector(".no-status"), pause = m.head.querySelector(".no-pause");
+  const goNotes = x => { m.close(); A.go(Object.assign({ view: "notes" }, x)); };
+  cur = mount(m.body, {
+    onStatus: t => { status.textContent = t; },
+    onCounts: c => { counts.textContent = `${c.notes.toLocaleString()} ${c.notes === 1 ? "note" : "notes"} · ${c.folders.toLocaleString()} ${c.folders === 1 ? "folder" : "folders"} · ${c.unfiled.toLocaleString()} unfiled`; },
+    openNote: id => goNotes({ sel: id, folder: "all" }), openFolder: id => goNotes({ folder: id })
+  });
+  const paint = () => { pause.textContent = cur.playing ? "❚❚ Pause" : "▶ Play"; pause.setAttribute("aria-pressed", String(!cur.playing)); };
+  pause.onclick = () => { cur.setPlaying(!cur.playing); paint(); }; paint();
+  // once the window has faded in, the fogged app behind it is hidden: the window covers it all but a thin margin, and a
+  // blurred page under an animating canvas would be re-blurred on every frame
+  const fogT = setTimeout(() => document.body.classList.add("office-on"), 450);
+  m.cleanup.push(() => { clearTimeout(fogT); document.body.classList.remove("office-on"); if (cur) { cur.destroy(); cur = null; } });
+  return m;
+}
+window.NoteOffice = { open, mount, layout, get current() { return cur; } };
+})();

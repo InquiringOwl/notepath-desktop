@@ -51,5 +51,23 @@ const ln = G.analyse({ pts: [[0, 0], [2, 2], [4, 0]], fit: 'lines' }).eqs.map(e 
 ok(JSON.stringify(ln) === '["y = x","y = −x + 4"]', 'graph: straight lines between neighbours', ln);
 ok(G.fmt(0.333333333) === '1/3' && G.fmt(-2.5) === '−5/2' && G.fmt(3.14159) === '3.142', 'graph: number formatting', [G.fmt(0.333333333), G.fmt(-2.5), G.fmt(3.14159)]);
 
+// 5. Note Office layout (office.js): one sheet per note, ≤ 75 on the furniture, floor stacks of ≤ 100, one box per folder holding its notes
+vm.runInContext(read('web/src/office.js'), ctx);
+{
+  const O = ctx.NoteOffice, mk = (n, folder, t0 = 0) => Array.from({ length: n }, (_, i) => ({ id: (folder || 'u') + i, title: 'N' + i, folder: folder || null, created: t0 + i }));
+  const fl = [{ id: 'fa', name: 'A', parent: null, depth: 0 }, { id: 'fb', name: 'B', parent: 'fa', depth: 1 }];
+  const notes = [...mk(260), ...mk(6, 'fa'), ...mk(2, 'fb')], L = O.layout(notes, fl, 1600, 7);
+  const ids = new Set(L.sheets.map(s => s.id));
+  ok(L.sheets.length === notes.length && ids.size === notes.length, 'office: every note is exactly one sheet', [L.sheets.length, ids.size]);
+  const furn = L.sheets.filter(s => !s.box && s.layer !== 'front'), floor = L.sheets.filter(s => !s.box && s.layer === 'front');
+  ok(furn.length === 75 && floor.length === 185, 'office: 75 unfiled on the desk and cabinets, the rest on the floor', [furn.length, floor.length]);
+  const stacks = {}; floor.forEach(s => { stacks[s.stack] = (stacks[s.stack] || 0) + 1; });
+  ok(Object.values(stacks).every(n => n <= 100) && Object.keys(stacks).length === 2 && stacks[0] === 100, 'office: floor stacks hold up to 100 sheets', stacks);
+  ok(L.boxes.length === 2 && L.byFolder.get('fa').papers.length === 6 && L.byFolder.get('fb').papers.length === 2, 'office: a box per folder, one upright sheet per note in it', L.boxes.map(b => b.papers.length));
+  const L2 = O.layout([...notes, ...mk(1, null, 1e9)], fl, 1600, 7), a = L.byNote.get('u10'), b2 = L2.byNote.get('u10');
+  ok(a.x === b2.x && a.y === b2.y && L.byFolder.get('fa').x === L2.byFolder.get('fa').x, 'office: sheets and boxes keep their places when a note is added');
+  ok(O.layout(mk(40), [], 1040).sheets.every(s => s.layer !== 'front'), 'office: 40 unfiled notes all sit on the furniture');
+}
+
 console.log(`unit: ${pass.length} passed${fails.length ? ', ' + fails.length + ' failed' : ''}`);
 if (fails.length) { console.error(fails.map(x => '  ✗ ' + x).join('\n')); process.exit(1); }

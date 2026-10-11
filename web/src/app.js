@@ -129,7 +129,7 @@ async function newNote(o = {}){
 }
 
 /* ---------- start menu ----------
-   The Notes console: My notes and, beside it, three slots that are not linked to anything yet ("Coming soon"); under them
+   The Notes console: My notes, Note Office (office.js) and two slots not linked to anything yet ("Coming soon"); under them
    the three most recent notes. New notes are made in My notes (＋ New Note). */
 function renderMenu(){
   const s = h("div", { class: "screen" });
@@ -139,7 +139,8 @@ function renderMenu(){
       <header class="win-h npn-h"><span class="dot"></span><span id="npn-t">Notes</span><span class="npn-count num"></span></header>
       <div class="slots npn-acts">
         <button type="button" class="slot big" data-a="open"><span class="glyph">▤</span><span><h3>My notes</h3><p>Every note, folder and photo, with search and your own order. Start a new note there with ＋ New Note.</p></span><span class="tag num" data-n="all"></span></button>
-        ${[1, 2, 3].map(() => `<button type="button" class="slot big locked npn-soon" aria-disabled="true" tabindex="-1"><span class="glyph">◇</span><span><h3>Coming soon</h3></span></button>`).join("")}
+        <button type="button" class="slot big npn-office" data-a="office"><span class="glyph">⌂</span><span><h3>Note Office</h3><p>Your notes as a little office: a sheet for every note, a box for every folder. Someone works there.</p></span></button>
+        ${[1, 2].map(() => `<button type="button" class="slot big locked npn-soon" aria-disabled="true" tabindex="-1"><span class="glyph">◇</span><span><h3>Coming soon</h3></span></button>`).join("")}
       </div>
       <div class="npn-recent"><h2 class="npn-sub">Recent</h2><div class="mnotes-list"></div></div>
     </section>
@@ -147,6 +148,7 @@ function renderMenu(){
   viewEl.appendChild(s);
   if (window.inquireDesktop) $("#verline", s).innerHTML = `<span>NotePath <span class="num">v${esc(DESK_VERSION || "")}</span></span>`; // updates: Settings → About
   $('[data-a="open"]', s).onclick = () => go({ view: "notes", folder: "all" });
+  $('[data-a="office"]', s).onclick = () => { if (window.NoteOffice) NoteOffice.open(); };
   const NS = window.InquireNotes, list = $(".mnotes-list", s);
   const draw = () => {
     const all = NS ? NS.list() : [], top = all.slice(0, 3);

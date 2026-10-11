@@ -50,9 +50,9 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
 
   /* ---------- start menu ---------- */
   ok(await p.$eval('.hello h1', e => e.textContent) === 'Main Menu', 'start menu heading is Main Menu');
-  ok(JSON.stringify(await p.$$eval('.npn-acts .slot h3', e => e.map(x => x.textContent))) === '["My notes","Coming soon","Coming soon","Coming soon"]', 'the Notes console: My notes, then the three Coming soon buttons');
+  ok(JSON.stringify(await p.$$eval('.npn-acts .slot h3', e => e.map(x => x.textContent))) === '["My notes","Note Office","Coming soon","Coming soon"]', 'the Notes console: My notes, Note Office, then two Coming soon buttons');
   ok(await p.$$eval('.npn-acts .slot', e => e.every(x => Math.abs(x.getBoundingClientRect().top - e[0].getBoundingClientRect().top) < 2)), 'Coming soon sits beside My notes, in one row');
-  ok(await p.$$eval('.slot.npn-soon', e => e.length === 3 && e.every(x => x.querySelector('h3').textContent === 'Coming soon' && !x.querySelector('p') && x.getAttribute('aria-disabled') === 'true')), 'three Coming soon buttons, labelled only that');
+  ok(await p.$$eval('.slot.npn-soon', e => e.length === 2 && e.every(x => x.querySelector('h3').textContent === 'Coming soon' && !x.querySelector('p') && x.getAttribute('aria-disabled') === 'true')), 'two Coming soon buttons, labelled only that');
   await p.click('.slot.npn-soon >> nth=0', { force: true }); await wait(300);
   ok(!(await p.$('.mw-ov, .ask-ov')) && await p.evaluate(() => location.hash) === '#menu', 'a Coming soon button is not linked to anything');
   ok(/No notes yet/.test(await p.$eval('.npn-recent', e => e.textContent)), 'empty recent list says how to start');
@@ -288,6 +288,25 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   await p.click('.p2 [data-a=close]'); await wait(150);
   ok(await p.$eval('.p2', e => e.hidden) && await p.$eval('.nb-tabs', e => e.hidden), '✕ closes the side note');
   await p.locator('.nb-it', { hasText: 'Note A' }).click(); await wait(200);
+
+  /* ---------- Note Office: a sheet per note, a box per folder; click a sheet → that note ---------- */
+  await p.click('#brand'); await wait(300); await p.click('[data-a=office]'); await wait(900);
+  ok(!!(await p.$('.mw-ov[data-mw=office] .no-stage canvas')) && await p.evaluate(() => document.body.classList.contains('mw-open')), 'Note Office opens in a fogged window');
+  const ost = await p.evaluate(() => ({ s: NoteOffice.current.state(), n: InquireNotes.list().length, f: InquireNotes.folders().length }));
+  ok(ost.s.sheets === ost.n && ost.s.boxes === ost.f, 'the office has one sheet per note and one box per folder', ost);
+  ok(/notes · \d+ folders · \d+ unfiled/.test(await p.$eval('.no-counts', e => e.textContent)), 'the window header counts notes, folders and unfiled');
+  await wait(1200);
+  const tgt = await p.evaluate(() => { const O = NoteOffice.current, st = O.state(), L = O.layout(), cand = L.sheets.filter(s => !s.box && s.layer === 'back'), sh = cand[cand.length - 1] || L.sheets[L.sheets.length - 1], r = document.querySelector('.no-stage canvas').getBoundingClientRect();
+    return { x: r.left + (sh.x + st.OX) * st.SC, y: r.top + (sh.y - 2 + st.OY) * st.SC, title: InquireNotes.get(sh.id).title }; });
+  await p.mouse.move(tgt.x, tgt.y); await wait(100);
+  ok(await p.$eval('.no-stage canvas', e => e.title) === tgt.title, 'hovering a sheet shows its note\'s title', [await p.$eval('.no-stage canvas', e => e.title), tgt.title]);
+  await p.mouse.click(tgt.x, tgt.y); await wait(500);
+  ok(!(await p.$('.mw-ov[data-mw=office]:not(.out)')) && await p.$eval('.p1 .nb-title', e => e.value).catch(() => '') === tgt.title, 'clicking a sheet opens that note in My notes', tgt.title);
+  await p.click('#brand'); await wait(300); await p.click('[data-a=office]'); await wait(700);
+  await p.evaluate(() => window.dispatchEvent(new CustomEvent('inquire:theme'))); await wait(100);
+  await p.keyboard.press('Escape'); await wait(400);
+  ok(!(await p.$('.mw-ov[data-mw=office]:not(.out)')) && await p.evaluate(() => !NoteOffice.current && !document.body.classList.contains('office-on')), 'Esc closes Note Office and it stops');
+  await p.click('[data-a=open]'); await wait(400);
 
   /* ---------- new note kinds: code note, music chart (lead sheet) ---------- */
   await p.click('.np-newb'); await wait(300); await p.click('.ask-kind[data-k=code]'); await p.keyboard.type('Sorting'); await p.keyboard.press('Enter'); await wait(600);

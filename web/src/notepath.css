@@ -257,3 +257,18 @@
 .tm-trtext{margin:0;font:400 14px/1.5 var(--sans);color:var(--text);max-height:180px;overflow:auto;user-select:text}
 .tm-tr .tm-dacts{display:flex;flex-wrap:wrap;gap:14px}
 .tm-tr .tm-dfoot{margin:0;font-size:11px;color:var(--faint)}
+
+/* ---------- Note Office (office.js): a fogged window, the office canvas fills it ---------- */
+.mw-win.mw-office{width:min(1500px,100%);height:calc(100dvh - 32px)}
+.mw-office .mw-body{position:relative;display:flex;flex-direction:column}
+.no-stage{position:relative;flex:1;min-height:0;overflow:hidden;border-top:1px solid var(--line);border-radius:0 0 3px 3px}
+.no-stage canvas{display:block;width:100%;height:100%;touch-action:pan-y}
+.no-bubble{position:absolute;pointer-events:none;white-space:nowrap;font:italic 16px/1.3 var(--math);color:var(--text);opacity:0;transition:opacity .25s}
+.mw-office .no-status{font-style:italic}
+.no-counts{font:500 12px/1 var(--mono);color:var(--muted);white-space:nowrap}
+@media (max-width:860px){ .mw-win.mw-office{height:calc(100dvh - 16px)} .no-counts{display:none} }
+.npn-acts .slot.npn-office .glyph{color:var(--frame)}
+.npn-acts .slot.npn-office{border-color:color-mix(in srgb,var(--frame) 40%,var(--line-2))}
+/* the office canvas animates and covers the window: a backdrop blur behind it would be recomputed every frame for nothing */
+.mw-win.mw-office{backdrop-filter:none;-webkit-backdrop-filter:none;background:linear-gradient(180deg,var(--panel-2),var(--panel))}
+body.office-on #app{visibility:hidden}

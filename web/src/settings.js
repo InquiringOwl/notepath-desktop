@@ -134,6 +134,7 @@ function applyAll() {
   document.documentElement.style.setProperty("--note-link", hexOk(S.noteLink) ? S.noteLink : DEF.noteLink);
   applySizes();
   document.documentElement.toggleAttribute("data-reduce-motion", !!S.reduceMotion);
+  window.dispatchEvent(new CustomEvent("inquire:theme")); // canvases that paint with the theme (Note Office) repaint
 }
 applyAll();
 

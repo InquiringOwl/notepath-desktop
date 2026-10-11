@@ -12,7 +12,7 @@ const css = ['web/src/style.css', 'web/src/settings.css', 'web/src/menu.css', 'w
 // Top-bar mark, inlined so the page works anywhere.
 const markUri = 'data:image/png;base64,' + fs.readFileSync(path.join(R, 'app/brand/np-mark-64.png')).toString('base64');
 // Order matters: helper rules (Python highlighting, music theory) → notes engine → widgets → app → right-click menu → documents → settings.
-const files = ['web/lib/python-tokens.js', 'web/lib/music-theory.js', 'web/src/notes.js', 'web/src/notes-widgets.js', 'web/src/notes-graph.js', 'web/src/notes-sheet.js', 'web/src/app.js', 'web/src/textmenu.js', 'web/src/eula.js', 'web/src/settings.js'];
+const files = ['web/lib/python-tokens.js', 'web/lib/music-theory.js', 'web/src/notes.js', 'web/src/notes-widgets.js', 'web/src/notes-graph.js', 'web/src/notes-sheet.js', 'web/src/app.js', 'web/src/office.js', 'web/src/textmenu.js', 'web/src/eula.js', 'web/src/settings.js'];
 const scripts = files.map(f => {
   const src = read(f);
   if (/<\/script/i.test(src)) throw new Error(f + ' contains </script>, which would break the page.');
