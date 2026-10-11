@@ -1,0 +1,38 @@
+/* NotePath's own styles: the start menu's Notes console (.npn) and the Coming soon row. Everything else is Inquire's. */
+.npn{display:flex;flex-direction:column}
+.npn-h{gap:10px}
+.npn-count{margin-left:auto;font:500 12px/1 var(--mono);letter-spacing:.06em;color:var(--faint);text-transform:none}
+.npn-acts{padding:16px}
+.npn-acts .slot .tag{color:var(--frame)}
+.npn-acts .slot[data-a="fav"] .tag{color:var(--amber)}
+/* New note: the one action lit in the theme colour, like Inquire's "＋ New note" and "All subjects" buttons */
+.npn-new{border-color:color-mix(in srgb,var(--frame) 55%,var(--line-2));background:linear-gradient(180deg,color-mix(in srgb,var(--frame) 14%,var(--slot-1)),var(--slot-2))}
+.npn-new .glyph{color:var(--ink);background:radial-gradient(circle at 35% 30%,color-mix(in srgb,var(--frame) 95%,#fff),var(--frame) 70%);border-color:var(--frame);box-shadow:0 0 18px color-mix(in srgb,var(--frame) 45%,transparent)}
+.npn-new:hover{box-shadow:0 0 22px color-mix(in srgb,var(--frame) 30%,transparent)}
+.npn-recent{border-top:1px solid var(--line);padding:14px 16px 16px}
+.npn-sub{margin:0 0 10px;font:600 11px/1 var(--ui);letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+.mnote-t .nb-star{color:var(--amber);font-style:normal}
+/* Coming soon: three slots not linked to anything yet */
+.npn-soon .slot.big{min-height:112px}
+.npn-soon .slot h3{color:var(--muted)}
+.slot.locked:focus-visible{outline:none}
+@media (max-width:860px){ .npn-acts{padding:12px} .npn-recent{padding:12px} }
+@media (max-width:760px){ .crumbs{display:none} }
+@media (prefers-reduced-motion: reduce){ *{transition:none!important} }
+/* notes: strikethrough, checklists (ul[data-ck] > li[data-done]; toolbar ☑ in notes-widgets.js) */
+.nb-rich strike,.nb-rich s{text-decoration-thickness:1.5px}
+.nb-rich ul[data-ck]{list-style:none;padding-left:30px}
+.nb-rich ul[data-ck]>li{position:relative}
+.nb-rich ul[data-ck]>li::before{content:"";position:absolute;left:-26px;top:.32em;width:15px;height:15px;border:1.5px solid color-mix(in srgb,var(--frame) 70%,var(--line-2));border-radius:3px;cursor:pointer;background:rgba(0,0,0,.2);box-sizing:border-box}
+.nb-rich ul[data-ck]>li:hover::before{border-color:var(--frame);box-shadow:0 0 8px color-mix(in srgb,var(--frame) 40%,transparent)}
+.nb-rich ul[data-ck]>li[data-done]::before{content:"✓";display:grid;place-items:center;font:700 11px/1 var(--sans);color:var(--ink);background:var(--green);border-color:var(--green)}
+.nb-rich ul[data-ck]>li[data-done]{color:var(--muted);text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--muted) 70%,transparent)}
+.nr-tools>button[data-blk]{font:600 12.5px/1 var(--sans)}
+/* top bar: Settings on the right (Inquire's progress meter used to push it there) */
+.topbar .gear{margin-left:auto}
+.npn-acts .slot[data-a="fav"] .glyph{color:var(--amber)}
+@media (max-width:860px){ .npn-acts .slot.big,.npn-soon .slot.big{min-height:0;padding:14px} .npn-acts .slot .glyph,.npn-soon .slot .glyph{width:46px;height:46px;font-size:22px} }
+/* the toolbar carries five more buttons than Inquire's: a little tighter so it stays on one row on most windows */
+.nr-tools>button,.nr-tools .nr-sym{min-width:26px;padding:0 5px}
+.nr-tools .nr-sep{margin:0 3px}
+.nr-cols{gap:2px}
