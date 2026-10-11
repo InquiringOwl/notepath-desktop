@@ -38,5 +38,18 @@ ok(toks.some(t => t.t === 'kw' && t.s === 'def') && toks.some(t => t.t === 'num'
 ok(ctx.MusicTheory.name(ctx.MusicTheory.up('C4', 'M3')) === 'E4' && ctx.MusicTheory.name(ctx.MusicTheory.up('A3', 'm3')) === 'C4', 'MusicTheory.up: C4 + M3 = E4, A3 + m3 = C4',
   [ctx.MusicTheory.name(ctx.MusicTheory.up('C4', 'M3')), ctx.MusicTheory.name(ctx.MusicTheory.up('A3', 'm3'))]);
 
+// 4. the graph widget's maths (notes-graph.js)
+vm.runInContext(read('web/src/notes-graph.js'), ctx);
+const G = ctx.NPGraph, eq = pts => G.analyse({ pts, fit: 'curve' }).eqs.map(e => e.eq).join(' | ');
+ok(eq([[0, 1], [1, 3], [2, 7]]) === 'y = x² + x + 1', 'graph: a curve through (0,1) (1,3) (2,7) is y = x² + x + 1', eq([[0, 1], [1, 3], [2, 7]]));
+ok(eq([[0, 0], [2, 1]]) === 'y = (1/2)x', 'graph: two points give a line with a fraction slope', eq([[0, 0], [2, 1]]));
+ok(eq([[1, -2], [3, -2]]) === 'y = −2', 'graph: a flat line', eq([[1, -2], [3, -2]]));
+ok(eq([[3, 1], [3, 5]]) === 'x = 3', 'graph: a vertical line', eq([[3, 1], [3, 5]]));
+const bf = G.analyse({ pts: [[0, 0], [1, 1], [2, 2], [3, 3]], fit: 'best' });
+ok(bf.eqs[0].eq === 'y = x' && bf.facts.some(f => f[0] === 'r²' && /^1\.000/.test(f[1])), 'graph: best-fit line and r²', bf);
+const ln = G.analyse({ pts: [[0, 0], [2, 2], [4, 0]], fit: 'lines' }).eqs.map(e => e.eq);
+ok(JSON.stringify(ln) === '["y = x","y = −x + 4"]', 'graph: straight lines between neighbours', ln);
+ok(G.fmt(0.333333333) === '1/3' && G.fmt(-2.5) === '−5/2' && G.fmt(3.14159) === '3.142', 'graph: number formatting', [G.fmt(0.333333333), G.fmt(-2.5), G.fmt(3.14159)]);
+
 console.log(`unit: ${pass.length} passed${fails.length ? ', ' + fails.length + ' failed' : ''}`);
 if (fails.length) { console.error(fails.map(x => '  ✗ ' + x).join('\n')); process.exit(1); }

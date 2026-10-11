@@ -226,3 +226,15 @@ body.ask-open .ask-win{transform:none}
 .set-pdel:hover,.set-pdel.armed{color:var(--red);border-color:var(--red)}
 @media (max-width:900px){ .set-presets{grid-template-columns:minmax(0,1fr)} }
 @media (max-width:700px){ .set-cedit{grid-template-columns:minmax(0,1fr)} .set-cf{grid-template-columns:minmax(0,1fr) 40px 96px} }
+
+/* New note: which kind (NotePath) */
+.ask-win:has(.ask-kinds){width:min(560px,100%)}
+.ask-kinds{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:6px}
+.ask-kind{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:5px;padding:12px;border:1px solid var(--line-2);border-radius:3px;background:rgba(0,0,0,.18);color:var(--muted);text-align:left}
+.ask-kind b{font:600 13px/1.2 var(--sans);color:var(--text)}
+.ask-kind small{font:400 11.5px/1.35 var(--sans)}
+.ask-kg{font:600 20px/1 var(--math);color:var(--frame)}
+.ask-kind:hover{border-color:color-mix(in srgb,var(--frame) 60%,var(--line-2))}
+.ask-kind[aria-checked="true"]{border-color:var(--frame);background:color-mix(in srgb,var(--frame) 14%,transparent);box-shadow:0 0 14px color-mix(in srgb,var(--frame) 30%,transparent)}
+.ask-kind:focus-visible{outline:2px solid var(--frame);outline-offset:2px}
+@media (max-width:520px){ .ask-kinds{grid-template-columns:minmax(0,1fr)} .ask-kind{flex-direction:row;flex-wrap:wrap;align-items:center} .ask-kind small{flex-basis:100%} }

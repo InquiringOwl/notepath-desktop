@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' notepath:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' notepath:; img-src 'self' data: blob: https: notepath:; media-src 'self' blob: https: notepath:; connect-src 'self' notepath: https://en.wiktionary.org https://en.wikipedia.org https://api.dictionaryapi.dev; frame-src https://www.youtube-nocookie.com https://player.vimeo.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' notepath:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' notepath:; img-src 'self' data: blob: https: notepath:; media-src 'self' blob: https: notepath:; connect-src 'self' notepath: https://en.wiktionary.org https://en.wikipedia.org https://api.dictionaryapi.dev https://api.mymemory.translated.net; frame-src https://www.youtube-nocookie.com https://player.vimeo.com">
 <title>NotePath</title>
 <link rel="stylesheet" href="fonts/fonts.css">
 <style>
@@ -138,6 +138,10 @@ pre.code .out{color:var(--pink)}
 /* ---------- desktop app chrome ---------- */
 .desktop .topbar{-webkit-app-region:drag}
 .desktop .topbar button,.desktop .topbar input{-webkit-app-region:no-drag}
+/* windows over the app sit on top of the top bar's drag strip; Electron still treats the strip as "drag" through them, so a
+   window's ✕ (and anything else up there) only clicked at its edges. Overlays opt out, and the strip stops dragging while one is open. */
+.desktop .mw-ov,.desktop .set-ov,.desktop .ask-ov,.desktop .nr-panel,.desktop .tm-menu,.desktop .np-pop,.desktop .np-ck{-webkit-app-region:no-drag}
+.desktop body.mw-open .topbar,.desktop body.set-open .topbar,.desktop body.ask-open .topbar{-webkit-app-region:no-drag}
 .os-darwin .topbar{padding-left:84px}
 .verline{display:flex;align-items:center;gap:12px;font:500 12px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
 .upd{position:fixed;right:16px;top:calc(56px + env(safe-area-inset-top,0px));z-index:50;display:flex;flex-wrap:wrap;align-items:center;gap:10px;max-width:min(560px,calc(100% - 32px));
@@ -375,6 +379,18 @@ body.ask-open .ask-win{transform:none}
 .set-pdel:hover,.set-pdel.armed{color:var(--red);border-color:var(--red)}
 @media (max-width:900px){ .set-presets{grid-template-columns:minmax(0,1fr)} }
 @media (max-width:700px){ .set-cedit{grid-template-columns:minmax(0,1fr)} .set-cf{grid-template-columns:minmax(0,1fr) 40px 96px} }
+
+/* New note: which kind (NotePath) */
+.ask-win:has(.ask-kinds){width:min(560px,100%)}
+.ask-kinds{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:6px}
+.ask-kind{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:5px;padding:12px;border:1px solid var(--line-2);border-radius:3px;background:rgba(0,0,0,.18);color:var(--muted);text-align:left}
+.ask-kind b{font:600 13px/1.2 var(--sans);color:var(--text)}
+.ask-kind small{font:400 11.5px/1.35 var(--sans)}
+.ask-kg{font:600 20px/1 var(--math);color:var(--frame)}
+.ask-kind:hover{border-color:color-mix(in srgb,var(--frame) 60%,var(--line-2))}
+.ask-kind[aria-checked="true"]{border-color:var(--frame);background:color-mix(in srgb,var(--frame) 14%,transparent);box-shadow:0 0 14px color-mix(in srgb,var(--frame) 30%,transparent)}
+.ask-kind:focus-visible{outline:2px solid var(--frame);outline-offset:2px}
+@media (max-width:520px){ .ask-kinds{grid-template-columns:minmax(0,1fr)} .ask-kind{flex-direction:row;flex-wrap:wrap;align-items:center} .ask-kind small{flex-basis:100%} }
 
 /* Menu notes strip (.mnotes), My notes (.nb), rich editor, toolbar, widgets, picker, right-click menu, toast, windows over the app (.mw-*). Cut from Inquire's menu.css (display box, Assist dock and Achievements removed). */
 /* ---- notes on the menu ---- */
@@ -729,17 +745,17 @@ body.mw-open .mw-win{transform:none}
 .npn-count{margin-left:auto;font:500 12px/1 var(--mono);letter-spacing:.06em;color:var(--faint);text-transform:none}
 .npn-acts{padding:16px}
 .npn-acts .slot .tag{color:var(--frame)}
-.npn-acts .slot[data-a="fav"] .tag{color:var(--amber)}
 /* New note: the one action lit in the theme colour, like Inquire's "＋ New note" and "All subjects" buttons */
-.npn-new{border-color:color-mix(in srgb,var(--frame) 55%,var(--line-2));background:linear-gradient(180deg,color-mix(in srgb,var(--frame) 14%,var(--slot-1)),var(--slot-2))}
-.npn-new .glyph{color:var(--ink);background:radial-gradient(circle at 35% 30%,color-mix(in srgb,var(--frame) 95%,#fff),var(--frame) 70%);border-color:var(--frame);box-shadow:0 0 18px color-mix(in srgb,var(--frame) 45%,transparent)}
-.npn-new:hover{box-shadow:0 0 22px color-mix(in srgb,var(--frame) 30%,transparent)}
 .npn-recent{border-top:1px solid var(--line);padding:14px 16px 16px}
 .npn-sub{margin:0 0 10px;font:600 11px/1 var(--ui);letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
 .mnote-t .nb-star{color:var(--amber);font-style:normal}
 /* Coming soon: three slots not linked to anything yet */
-.npn-soon .slot.big{min-height:112px}
-.npn-soon .slot h3{color:var(--muted)}
+/* My notes and the three Coming soon slots share one row (Devon, Oct 2026) */
+.npn-acts{grid-template-columns:minmax(0,1.7fr) repeat(3,minmax(0,1fr))}
+.npn-acts .slot.npn-soon{min-height:112px}
+.slot.npn-soon h3{color:var(--muted)}
+@media (max-width:1000px){ .npn-acts{grid-template-columns:repeat(3,minmax(0,1fr))} .npn-acts .slot[data-a="open"]{grid-column:1 / -1} }
+@media (max-width:600px){ .npn-acts{grid-template-columns:minmax(0,1fr)} }
 .slot.locked:focus-visible{outline:none}
 @media (max-width:860px){ .npn-acts{padding:12px} .npn-recent{padding:12px} }
 @media (max-width:760px){ .crumbs{display:none} }
@@ -755,12 +771,233 @@ body.mw-open .mw-win{transform:none}
 .nr-tools>button[data-blk]{font:600 12.5px/1 var(--sans)}
 /* top bar: Settings on the right (Inquire's progress meter used to push it there) */
 .topbar .gear{margin-left:auto}
-.npn-acts .slot[data-a="fav"] .glyph{color:var(--amber)}
-@media (max-width:860px){ .npn-acts .slot.big,.npn-soon .slot.big{min-height:0;padding:14px} .npn-acts .slot .glyph,.npn-soon .slot .glyph{width:46px;height:46px;font-size:22px} }
+@media (max-width:860px){ .npn-acts .slot.big,.npn-acts .slot.npn-soon{min-height:0;padding:14px} .npn-acts .slot .glyph{width:46px;height:46px;font-size:22px} }
 /* the toolbar carries five more buttons than Inquire's: a little tighter so it stays on one row on most windows */
 .nr-tools>button,.nr-tools .nr-sym{min-width:26px;padding:0 5px}
 .nr-tools .nr-sep{margin:0 3px}
 .nr-cols{gap:2px}
+
+/* notes: numeric text sizes (span[data-s="18"], relative to the note's normal 15) and fonts (span[data-f]); toolbar menus in notes-widgets.js */
+.nb-rich span[data-s="8"]{font-size:calc(var(--nb-base) * 8 / 15)} .nb-rich span[data-s="9"]{font-size:calc(var(--nb-base) * 9 / 15)} .nb-rich span[data-s="10"]{font-size:calc(var(--nb-base) * 10 / 15)} .nb-rich span[data-s="11"]{font-size:calc(var(--nb-base) * 11 / 15)} .nb-rich span[data-s="12"]{font-size:calc(var(--nb-base) * 12 / 15)}
+.nb-rich span[data-s="13"]{font-size:calc(var(--nb-base) * 13 / 15)} .nb-rich span[data-s="14"]{font-size:calc(var(--nb-base) * 14 / 15)} .nb-rich span[data-s="15"]{font-size:calc(var(--nb-base) * 15 / 15)} .nb-rich span[data-s="16"]{font-size:calc(var(--nb-base) * 16 / 15)} .nb-rich span[data-s="18"]{font-size:calc(var(--nb-base) * 18 / 15)}
+.nb-rich span[data-s="20"]{font-size:calc(var(--nb-base) * 20 / 15)} .nb-rich span[data-s="22"]{font-size:calc(var(--nb-base) * 22 / 15)} .nb-rich span[data-s="24"]{font-size:calc(var(--nb-base) * 24 / 15);line-height:1.35} .nb-rich span[data-s="28"]{font-size:calc(var(--nb-base) * 28 / 15);line-height:1.35} .nb-rich span[data-s="32"]{font-size:calc(var(--nb-base) * 32 / 15);line-height:1.35}
+.nb-rich span[data-s="36"]{font-size:calc(var(--nb-base) * 36 / 15);line-height:1.35} .nb-rich span[data-s="40"]{font-size:calc(var(--nb-base) * 40 / 15);line-height:1.35} .nb-rich span[data-s="48"]{font-size:calc(var(--nb-base) * 48 / 15);line-height:1.35} .nb-rich span[data-s="60"]{font-size:calc(var(--nb-base) * 60 / 15);line-height:1.35} .nb-rich span[data-s="72"]{font-size:calc(var(--nb-base) * 72 / 15);line-height:1.35}
+
+.nb-rich span[data-f="serif"]{font-family:"STIX Two Text","Noto Sans Symbols",Georgia,serif}
+.nb-rich span[data-f="sans"]{font-family:"IBM Plex Sans","Noto Sans Symbols",system-ui,sans-serif}
+.nb-rich span[data-f="mono"]{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+.nb-rich span[data-f="cond"]{font-family:"Saira Semi Condensed","Arial Narrow",sans-serif}
+.nb-rich span[data-f="georgia"]{font-family:Georgia,serif}
+.nb-rich span[data-f="times"]{font-family:"Times New Roman",Times,serif}
+.nb-rich span[data-f="palatino"]{font-family:"Palatino Linotype",Palatino,"Book Antiqua",serif}
+.nb-rich span[data-f="garamond"]{font-family:Garamond,"EB Garamond","Adobe Garamond Pro",serif}
+.nb-rich span[data-f="arial"]{font-family:Arial,Helvetica,sans-serif}
+.nb-rich span[data-f="helvetica"]{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif}
+.nb-rich span[data-f="verdana"]{font-family:Verdana,Geneva,sans-serif}
+.nb-rich span[data-f="trebuchet"]{font-family:"Trebuchet MS",sans-serif}
+.nb-rich span[data-f="tahoma"]{font-family:Tahoma,Geneva,sans-serif}
+.nb-rich span[data-f="courier"]{font-family:"Courier New",Courier,monospace}
+.nb-rich span[data-f="comic"]{font-family:"Comic Sans MS","Comic Neue",cursive}
+.nb-rich span[data-f="brush"]{font-family:"Brush Script MT","Snell Roundhand",cursive}
+.nr-tools .nr-dd{all:unset;box-sizing:border-box;cursor:pointer;height:28px;display:inline-flex;align-items:center;gap:5px;padding:0 6px;border:1px solid var(--line-2);border-radius:2px;color:var(--text);background:rgba(0,0,0,.18);font:500 12.5px/1 var(--sans)}
+.nr-tools .nr-dd+.nr-dd{margin-left:3px}
+.nr-tools .nr-dd:hover{border-color:var(--frame)}
+.nr-tools .nr-dd:focus-visible{outline:2px solid var(--frame)}
+.nr-car{font-size:9px;color:var(--faint)}
+.nr-font{width:118px}.nr-font .nr-ddv{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--ff,var(--sans))}
+.nr-size{min-width:46px}.nr-size .nr-ddv{flex:1;text-align:center;font:500 12.5px/1 var(--mono)}
+.nr-colb .nr-cola{font:700 14px/1 var(--math);padding-bottom:2px;border-bottom:3px solid var(--c,var(--text));min-width:12px;text-align:center}
+.np-pop.win{position:fixed;z-index:2100;padding:8px;box-shadow:0 18px 60px rgba(0,0,0,.6),0 0 30px var(--glow);animation:vt-in .16s ease}
+.np-pop-h{font:600 10.5px/1 var(--ui);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);padding:2px 4px 8px;display:flex;gap:10px;align-items:baseline}
+.np-pop-h span{font:400 11.5px/1 var(--sans);letter-spacing:0;text-transform:none;color:var(--faint)}
+.np-pop-sub{font:600 9.5px/1 var(--ui);letter-spacing:.18em;text-transform:uppercase;color:var(--faint);padding:8px 6px 4px}
+.np-fonts{display:flex;flex-direction:column;width:230px;max-height:min(360px,60vh);overflow:auto}
+.np-fonts button,.np-sizes button{all:unset;box-sizing:border-box;cursor:pointer;border-radius:2px;color:var(--text)}
+.np-fonts button{padding:7px 8px;font-size:15px;line-height:1.2}
+.np-sizes{display:grid;grid-template-columns:repeat(5,40px);gap:3px}
+.np-sizes button{height:32px;display:grid;place-items:center;font:500 13px/1 var(--mono);border:1px solid var(--line)}
+.np-fonts button:hover,.np-sizes button:hover,.np-fonts button:focus-visible,.np-sizes button:focus-visible{background:color-mix(in srgb,var(--frame) 18%,transparent);outline:none}
+.np-fonts button[aria-selected="true"],.np-sizes button[aria-selected="true"]{box-shadow:inset 2px 0 0 var(--frame);background:color-mix(in srgb,var(--frame) 12%,transparent);border-color:var(--frame)}
+.np-pop-color{width:266px}
+.np-spec,.np-grey{display:block;width:248px;border-radius:2px;cursor:crosshair;touch-action:none;margin:0 auto}
+.np-spec{height:132px;box-shadow:0 0 0 1px var(--line-2)}
+.np-grey{height:16px;margin-top:6px;box-shadow:0 0 0 1px var(--line-2)}
+.np-crow{display:flex;align-items:center;gap:6px;margin:8px 1px 2px}
+.np-cprev{width:28px;height:28px;border-radius:2px;box-shadow:0 0 0 1px var(--line-2);flex:none}
+.np-hex{flex:1;min-width:0;background:var(--ink);color:var(--text);border:1px solid var(--line-2);border-radius:2px;padding:6px 7px;font:500 12.5px/1 var(--mono);text-transform:uppercase}
+.np-hex:focus{outline:none;border-color:var(--frame)}
+.np-recent{display:flex;flex-wrap:wrap;gap:4px;padding:0 4px}
+.np-recent button{all:unset;cursor:pointer;width:18px;height:18px;border-radius:50%;background:var(--c);box-shadow:0 0 0 1px rgba(255,255,255,.25)}
+.np-recent button:hover,.np-recent button:focus-visible{box-shadow:0 0 0 1px var(--text),0 0 8px var(--c);outline:none}
+.np-cnorm{all:unset;cursor:pointer;display:block;margin-top:8px;padding:6px 6px;border-radius:2px;color:var(--muted);font:500 12.5px/1 var(--sans)}
+.np-cnorm:hover,.np-cnorm:focus-visible{color:var(--text);background:rgba(255,255,255,.05);outline:none}
+
+/* checklists: "Uncheck all" appears over a selection that covers ticked items (notes.js) */
+.np-ck{position:fixed;z-index:2050;display:inline-flex;align-items:center;gap:7px;padding:7px 11px;cursor:pointer;border:1px solid var(--frame);border-radius:3px;
+  background:linear-gradient(180deg,var(--win-1),var(--win-2));color:var(--text);font:600 10.5px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;box-shadow:0 10px 30px rgba(0,0,0,.5),0 0 16px var(--glow);animation:vt-in .16s ease}
+.np-ck:hover{background:color-mix(in srgb,var(--frame) 18%,var(--win-1))}
+.np-ck:focus-visible{outline:2px solid var(--frame);outline-offset:2px}
+.np-ck .num{font:500 11px/1 var(--mono);color:var(--muted);letter-spacing:0}
+.np-ck-box{width:12px;height:12px;border:1.5px solid color-mix(in srgb,var(--frame) 70%,var(--line-2));border-radius:2px;box-sizing:border-box}
+
+/* graph widget (notes-graph.js) */
+.nb-rich .nw[data-w="graph"]{border-left-color:var(--green);container-type:inline-size}
+.nw[data-w="graph"] .nw-tag{color:var(--green);font-size:15px}
+.ng-body{display:grid;grid-template-columns:minmax(0,1fr) 240px;min-height:0}
+.ng-plot{padding:8px;border-right:1px solid var(--line);min-width:0}
+.ng-svg{display:block;width:100%;height:auto;max-height:440px;background:rgba(0,0,0,.18);border:1px solid var(--line);border-radius:2px;cursor:crosshair;touch-action:none;user-select:none}
+.ng-grid{stroke:var(--line);stroke-width:1}
+.ng-axis{stroke:var(--muted);stroke-width:1.4}
+.ng-lab{fill:var(--faint);font:400 11px var(--mono)}
+.ng-curve{stroke:var(--cyan);stroke-width:2.2;fill:none;stroke-linejoin:round;stroke-linecap:round;filter:drop-shadow(0 0 3px color-mix(in srgb,var(--cyan) 50%,transparent))}
+.ng-pt{cursor:grab}
+.ng-pt circle{fill:var(--amber);stroke:var(--ink);stroke-width:1.5}
+.ng-pt .ng-hit{fill:transparent;stroke:none}
+.ng-pt:hover circle:not(.ng-hit){r:7}
+.ng-pt text{fill:var(--amber);font:600 12px var(--sans);paint-order:stroke;stroke:var(--ink);stroke-width:3px}
+.ng-hint{margin-top:6px;font:400 11.5px/1.3 var(--sans);color:var(--faint)}
+.ng-side{padding:10px 12px;display:flex;flex-direction:column;gap:8px;min-width:0;user-select:text}
+.ng-eq{display:flex;flex-direction:column;gap:3px;padding:7px 9px;border:1px solid var(--line-2);border-left:2px solid var(--cyan);border-radius:2px;background:rgba(0,0,0,.16)}
+.ng-eql{font:600 9.5px/1 var(--ui);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.ng-eqv{font:400 17px/1.3 var(--math);color:var(--text);overflow-wrap:anywhere}
+.ng-dom{font:400 11.5px/1.2 var(--sans);color:var(--faint)}
+.ng-facts dl{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;margin:0;font:400 12.5px/1.35 var(--sans)}
+.ng-facts dt{color:var(--muted)} .ng-facts dd{margin:0;color:var(--text);font-family:var(--math)}
+.ng-note{font:400 12px/1.4 var(--sans);color:var(--faint)} .ng-note:empty{display:none}
+.ng-pts-h{font:600 9.5px/1 var(--ui);letter-spacing:.18em;text-transform:uppercase;color:var(--faint);margin-top:4px}
+.ng-pts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;max-height:150px;overflow:auto}
+.ng-pts li{display:flex;align-items:center;gap:8px;font:400 13px/1.3 var(--math);color:var(--text)}
+.ng-pts b{color:var(--amber);font:600 12px/1 var(--sans);width:16px}
+.ng-pts li span{flex:1}
+.ng-pts button{all:unset;cursor:pointer;color:var(--faint);padding:2px 5px;font-size:11px}
+.ng-pts button:hover{color:var(--red)}
+.ng-add{display:flex;gap:5px}
+.ng-in{flex:1;min-width:0;background:var(--ink);color:var(--text);border:1px solid var(--line-2);border-radius:2px;padding:5px 7px;font:400 12.5px/1.2 var(--mono);user-select:text}
+.ng-in:focus{outline:none;border-color:var(--frame)} .ng-in.bad{border-color:var(--red)}
+.nw[data-w="graph"] .nw-b.armed{color:var(--red);border-color:var(--red)}
+@container (max-width:640px){ .ng-body{grid-template-columns:minmax(0,1fr)} .ng-plot{border-right:0;border-bottom:1px solid var(--line)} }
+
+/* ---------- My notes as a page (#notes, renderNotesPage in app.js): no fog, no window over the menu ---------- */
+.npage{height:100%;box-sizing:border-box;padding:14px 16px 16px;display:flex;flex-direction:column;overflow:hidden}
+.np-win{flex:1;min-height:0;width:min(1440px,100%);margin:0 auto;display:flex;flex-direction:column}
+.np-win .mw-body>.nb{flex:1;min-height:0;height:auto}
+.np-newb{all:unset;box-sizing:border-box;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:2px;
+  font:700 12px/1 var(--ui);letter-spacing:.16em;text-transform:uppercase;color:var(--ink);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--frame) 82%,#fff),var(--frame));border:1px solid color-mix(in srgb,var(--frame) 70%,#fff);
+  box-shadow:0 0 18px color-mix(in srgb,var(--frame) 45%,transparent),inset 0 1px 0 rgba(255,255,255,.35);transition:box-shadow .15s,filter .15s}
+.np-newb:hover{filter:brightness(1.08);box-shadow:0 0 26px color-mix(in srgb,var(--frame) 65%,transparent),inset 0 1px 0 rgba(255,255,255,.4)}
+.np-newb:focus-visible{outline:2px solid var(--text);outline-offset:2px}
+@media (max-width:860px){ .npage{overflow:auto;padding:8px} .np-win{flex:none} .np-win .mw-body>.nb{flex:none} }
+/* the note bar: ☆ on the left, the buttons on the right (no folder picker or "Saved": Devon, Oct 2026) */
+.nb-bar .nb-bar-r{margin-left:auto}
+
+/* folders column: every folder folds (▾/▸) and lists its notes under its folders */
+.nb{--nb-fw:var(--nb-fw-user,200px)}
+@media (max-width:1100px){ .nb{--nb-fw:var(--nb-fw-user,170px)} }
+.nb-fnote{display:flex;align-items:center;gap:7px;padding:5px 8px 5px calc(10px + var(--d,1) * 14px);border-radius:2px;cursor:pointer;position:relative;
+  font:400 12.5px/1.25 var(--sans);color:var(--muted);-webkit-user-drag:element}
+.nb-fnote:hover{color:var(--text);background:rgba(255,255,255,.04)}
+.nb-fnote.sel{color:var(--text);background:linear-gradient(90deg,color-mix(in srgb,var(--frame) 12%,transparent),transparent)}
+.nb-fnote.sel::before{content:"";position:absolute;left:calc(var(--d,1) * 14px);top:5px;bottom:5px;width:2px;background:var(--frame)}
+.nb-fnote:focus-visible{outline:2px solid var(--frame);outline-offset:-2px}
+.nb-fnote.dragging{opacity:.45}
+.nb-fni{flex:none;width:12px;text-align:center;color:var(--faint);font-size:11px}
+.nb-fnote .nb-fni:not(:empty){color:var(--faint)}
+.nb-fnt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nb-fd.user .nb-fcar{color:var(--frame)}
+.nb-rzf{position:absolute;z-index:5;top:0;bottom:0;left:var(--nb-fw);width:10px;transform:translateX(-50%);cursor:col-resize;touch-action:none;transition:left .32s cubic-bezier(.2,.7,.2,1)}
+.nb-rzf::after{content:"";position:absolute;left:4px;top:0;bottom:0;width:2px;background:transparent;transition:background .15s,box-shadow .15s}
+.nb-rzf:hover::after,.nb.rz .nb-rzf::after,.nb-rzf:focus-visible::after{background:var(--frame);box-shadow:0 0 8px var(--frame)}
+.nb-rzf:focus-visible{outline:none}
+.nb.ffold .nb-rzf,.nb.rz .nb-rzf{transition:none}
+.nb.ffold .nb-rzf{display:none}
+@media (max-width:860px){ .nb-rzf{display:none} .nb-fnote{flex:0 0 auto;padding-left:8px} .nb-fnote.sel::before{left:0} }
+
+/* editor: one note, or two side by side (.split); a minimised side note is a tab above (.nb-tabs) */
+.nb-ed{display:flex;flex-direction:column;min-height:0;min-width:0}
+.nb-panes{flex:1;min-height:0;display:flex}
+.nb-pane{flex:1 1 0;min-width:0;min-height:0;display:flex;flex-direction:column}
+.nb-pane[hidden]{display:none}
+.nb-pane.p2{border-left:1px solid var(--line);background:rgba(0,0,0,.08)}
+.nb-p2h{display:flex;align-items:center;gap:6px;padding:8px 10px 8px 14px;border-bottom:1px solid var(--line)}
+.nb-p2tag{margin-right:auto;font:600 10.5px/1 var(--ui);letter-spacing:.18em;text-transform:uppercase;color:var(--frame)}
+.nb-p2b{all:unset;cursor:pointer;width:28px;height:28px;display:grid;place-items:center;border:1px solid transparent;border-radius:2px;color:var(--muted);font-size:13px}
+.nb-p2b:hover{color:var(--text);border-color:var(--line-2)}
+.nb-p2b:focus-visible{outline:2px solid var(--frame)}
+.nb-tabs{display:flex;gap:6px;padding:6px 10px 0;border-bottom:1px solid var(--line);background:rgba(0,0,0,.12)}
+.nb-tabs[hidden]{display:none}
+.nb-tab{display:flex;align-items:center;max-width:300px;border:1px solid var(--line-2);border-bottom:0;border-radius:3px 3px 0 0;background:linear-gradient(180deg,color-mix(in srgb,var(--frame) 12%,var(--panel-2)),var(--panel-2));box-shadow:inset 0 2px 0 var(--frame)}
+.nb-tab-t{all:unset;cursor:pointer;min-width:0;display:flex;gap:6px;align-items:center;padding:7px 10px;font:500 13px/1.2 var(--sans);color:var(--text)}
+.nb-tab-t span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nb-tab-b{all:unset;cursor:pointer;padding:6px 8px;color:var(--muted);font-size:12px}
+.nb-tab-t:focus-visible,.nb-tab-b:focus-visible{outline:2px solid var(--frame);outline-offset:-2px}
+.nb-tab-b:hover{color:var(--text)}
+.nb-trow{display:flex;align-items:center;gap:10px;padding-right:12px}
+.nb-trow .nb-title{flex:1;min-width:0}
+/* ⧉ drop spot: only while a note is being dragged */
+.nb-split{display:none;align-items:center;gap:8px;padding:8px 12px;border:1px dashed var(--frame);border-radius:3px;color:var(--frame);font:600 10.5px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;white-space:nowrap;
+  background:color-mix(in srgb,var(--frame) 10%,transparent);box-shadow:0 0 14px color-mix(in srgb,var(--frame) 30%,transparent);animation:np-pulse 1.4s ease-in-out infinite}
+.nb-split-ic{font-size:16px;letter-spacing:0}
+.nb.dragnote .p1 .nb-split{display:flex}
+.nb.dragnote.dragself .p1 .nb-split{display:none}
+.nb-split.over{background:color-mix(in srgb,var(--frame) 28%,transparent);color:var(--text);border-style:solid;box-shadow:0 0 24px color-mix(in srgb,var(--frame) 60%,transparent)}
+@keyframes np-pulse{50%{box-shadow:0 0 4px color-mix(in srgb,var(--frame) 20%,transparent)}}
+.nb.dragnote .nb-rich{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--frame) 35%,transparent)}
+.nb-dcaret{position:fixed;z-index:2200;width:2px;background:var(--frame);box-shadow:0 0 8px var(--frame);pointer-events:none}
+@media (max-width:860px){ .nb-panes{flex-direction:column} .nb-pane{flex:none;min-height:360px} .nb-pane.p2{border-left:0;border-top:1px solid var(--line)} .nb-split span:not(.nb-split-ic){display:none} }
+@media (prefers-reduced-motion:reduce){ .nb-split{animation:none} }
+
+/* starred folders: ★ stays lit and the folder sits at the top of its level */
+.nb-fx.nb-ffav.on{opacity:1;color:var(--amber)}
+.nb-fx.nb-ffav:hover{color:var(--amber)}
+
+/* ↶ Undo / ↷ Redo in the My notes header */
+.np-hist{display:inline-flex;gap:4px}
+.np-hb{all:unset;box-sizing:border-box;cursor:pointer;padding:8px 11px;border:1px solid var(--line-2);border-radius:2px;color:var(--muted);font:600 11px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;background:rgba(0,0,0,.18)}
+.np-hb:hover:not(:disabled){color:var(--text);border-color:var(--frame)}
+.np-hb:focus-visible{outline:2px solid var(--frame)}
+.np-hb:disabled{opacity:.4;cursor:default}
+@media (max-width:860px){ .np-hb{padding:8px 8px} }
+
+/* lead sheet widget (notes-sheet.js) */
+.nb-rich .nw[data-w="sheet"]{border-left-color:var(--magenta)}
+.nw[data-w="sheet"] .nw-tag{color:var(--magenta);font-size:17px}
+.nw .sh-comp{flex:0 1 150px;min-width:80px;text-transform:none;letter-spacing:0;font:400 12.5px/1.2 var(--sans)}
+.nw-h select.sh-key,.nw-h select.sh-clef,.nw-h select.sh-time{background:var(--ink);color:var(--text);border:1px solid var(--line-2);border-radius:2px;padding:3px 5px;font:400 12px/1.2 var(--sans)}
+.sh-head{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;padding:12px 16px 0;min-height:10px}
+.sh-t{grid-column:2;font:400 24px/1.2 var(--math);color:var(--text);text-align:center}
+.sh-c{grid-column:3;justify-self:end;font:italic 400 13px/1.2 var(--math);color:var(--muted)}
+.sh-staff{padding:2px 8px 6px;overflow-x:auto}
+.sh-svg{width:100%;min-width:560px;height:auto}
+.sh-svg .sh-bar{fill:transparent;cursor:pointer;stroke:none}
+.sh-svg .sh-bar:hover{fill:color-mix(in srgb,var(--frame) 6%,transparent)}
+.sh-svg .sh-bar.on{fill:color-mix(in srgb,var(--frame) 13%,transparent);stroke:color-mix(in srgb,var(--frame) 60%,transparent);stroke-width:1}
+.sh-svg .sh-chord{font:600 16px/1 var(--math);fill:var(--text);pointer-events:none}
+.sh-svg .sh-num{font:400 10px/1 var(--mono);fill:var(--faint);pointer-events:none}
+.sh-svg .sh-over{font:600 9px/1 var(--ui);letter-spacing:.1em;fill:var(--red);text-transform:uppercase}
+.sh-svg text,.sh-svg line,.sh-svg path,.sh-svg ellipse,.sh-svg circle{pointer-events:none}
+.sh-barrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.sh-barn{font:600 11px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--frame);min-width:96px;text-align:center}
+.sh-chordl{display:inline-flex;align-items:center;gap:6px;font:600 10.5px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.sh-chords,.sh-mel{background:var(--ink);color:var(--text);border:1px solid var(--line-2);border-radius:2px;padding:5px 8px;font:500 14px/1.2 var(--math);user-select:text}
+.sh-chords{width:150px}.sh-mel{width:100%;box-sizing:border-box;font:400 12.5px/1.3 var(--mono)}
+.sh-chords:focus,.sh-mel:focus{outline:none;border-color:var(--frame)}
+.sh-sp{flex:1}
+.sh-all summary{cursor:pointer;font:600 10.5px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);padding:4px 0}
+.sh-all[open] summary{color:var(--text)}
+
+/* right-click → Translate: the language box under the menu (textmenu.js) */
+.tm-tr{margin-top:5px;padding:8px;border:1px solid color-mix(in srgb,var(--frame) 45%,var(--line-2));border-radius:3px;background:rgba(0,0,0,.22);display:grid;gap:8px;animation:vt-in .16s ease}
+.tm-trh{font:600 10px/1 var(--ui);letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+.tm-langs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.tm-menu .tm-lang{display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:8px 9px;border:1px solid var(--line-2);border-radius:2px;grid-template-columns:none}
+.tm-menu .tm-lang b{font:600 12.5px/1.1 var(--sans)}
+.tm-menu .tm-lang small{font-size:10.5px}
+.tm-menu .tm-lang[aria-pressed="true"]{border-color:var(--frame);background:color-mix(in srgb,var(--frame) 16%,transparent)}
+.tm-trout:empty{display:none}
+.tm-trtext{margin:0;font:400 14px/1.5 var(--sans);color:var(--text);max-height:180px;overflow:auto;user-select:text}
+.tm-tr .tm-dacts{display:flex;flex-wrap:wrap;gap:14px}
+.tm-tr .tm-dfoot{margin:0;font-size:11px;color:var(--faint)}
 
 </style>
 </head><body>
@@ -1001,7 +1238,7 @@ window.InquireKeys = {
    Notes live in localStorage "notepath.notes.<username>" (lower-case), or "notepath.notes._local" with nobody signed in.
    Each note: { id, title, html (sanitised rich text), body (plain text made from html: search, previews, .md),
      created, updated, fav, folder (folder id | null), links: ["s:<subject>", "f:<field>", "t:<topic>"], src: { topic, title } | null }.
-   Older notes (body only) get html on read. Folders: "notepath.notefolders.<username>" = [{ id, name, parent, order }] (nested; drag to move/reorder). Notes may carry `order` (My order).
+   Older notes (body only) get html on read. Folders: "notepath.notefolders.<username>" = [{ id, name, parent, order, fav? }] (nested; drag to move/reorder). Notes may carry `order` (My order).
    Photos: IndexedDB "notepath-notes" / "images" (Blob by id); a note holds <img data-img="id">, a linked photo <img src="https://…">.
    Links inside a note: <a class="nlink" data-note="id"> (another note) or data-topic="id" (a lesson); colour = --note-link (Settings).
    Every change fires "inquire:notes-changed" so open views redraw. */
@@ -1017,17 +1254,33 @@ const changed = () => window.dispatchEvent(new CustomEvent("inquire:notes-change
 /* ---------- rich text: sanitise, plain text ---------- */
 const KEEP = new Set(["B", "STRONG", "I", "EM", "U", "S", "STRIKE", "BR", "DIV", "P", "UL", "OL", "LI", "H3", "BLOCKQUOTE", "A", "IMG", "SPAN"]);
 const TCOL = { "#f2b84b": "amber", "#5cc8e0": "cyan", "#f07ca0": "pink", "#b49bff": "violet", "#7bd88f": "green", "#d97ae6": "magenta", "#b5d65a": "lime", "#e5675b": "red", "#8b97ae": "muted" };
-const TKEYS = new Set(Object.values(TCOL));
+const TKEYS = new Set(Object.values(TCOL)), HEX = /^#[0-9a-f]{6}$/;
+// any colour from the spectrum picker is kept as span[data-c="#rrggbb"] with a matching inline colour (the sanitiser writes the style itself)
+const hexOf = v => { v = String(v || "").trim().toLowerCase(); if (/^#[0-9a-f]{3}$/.test(v)) v = "#" + v[1] + v[1] + v[2] + v[2] + v[3] + v[3];
+  const m = v.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/); if (m) v = "#" + [m[1], m[2], m[3]].map(x => (+x).toString(16).padStart(2, "0")).join(""); return HEX.test(v) ? v : ""; };
+const CLEARC = "#010203"; // stand-in colour for "normal colour": becomes span[data-c="_def"] for a moment, then lift() takes the colour off
+// numeric text sizes (toolbar size menu): span[data-s="18"]; the note's normal text is 15. Old notes keep s / n / l / xl.
+const NSIZES = [8, 9, 10, 11, 12, 13, 14, 15, 16, 18, 20, 22, 24, 28, 32, 36, 40, 48, 60, 72];
+// fonts (toolbar font menu): span[data-f="key"]; the first four are bundled with the app, the rest fall back to a close system font
+const NFONTS = [["serif", "STIX Two Text"], ["sans", "IBM Plex Sans"], ["mono", "IBM Plex Mono"], ["cond", "Saira Semi Condensed"], ["georgia", "Georgia"], ["times", "Times New Roman"],
+  ["palatino", "Palatino"], ["garamond", "Garamond"], ["arial", "Arial"], ["helvetica", "Helvetica"], ["verdana", "Verdana"], ["trebuchet", "Trebuchet MS"], ["tahoma", "Tahoma"],
+  ["courier", "Courier New"], ["comic", "Comic Sans MS"], ["brush", "Brush Script MT"]];
+const FKEYS = new Set(NFONTS.map(f => f[0]));
 // text sizes from the toolbar (execCommand fontSize 2/3/5/6 → span[data-s=s|n|l|xl]); sizes are relative to the note's base size (--nb-base), so they never compound
-const TSIZE = { "1": "s", "2": "s", "3": "n", "4": "l", "5": "l", "6": "xl", "7": "xl" }, SKEYS = new Set(["s", "n", "l", "xl"]);
-function fontToSpan(f) {
-  const k = TCOL[String(f.getAttribute("color") || "").toLowerCase()], sz = f.getAttribute("size"), s = TSIZE[sz];
-  if (sz) f.querySelectorAll("span[data-s]").forEach(x => { x.removeAttribute("data-s"); if (!x.hasAttribute("data-c")) x.replaceWith(...x.childNodes); }); // a new size replaces older sizes inside it
-  if (!k && !s) { f.replaceWith(...f.childNodes); return; }
-  const sp = document.createElement("span"); if (k) sp.setAttribute("data-c", k); if (s) sp.setAttribute("data-s", s);
+const TSIZE = { "1": "s", "2": "s", "3": "n", "4": "l", "5": "l", "6": "xl", "7": "xl" }, SKEYS = new Set(["s", "n", "l", "xl", ...NSIZES.map(String)]);
+// over = { s: "18" } when the size menu used execCommand fontSize 7 as a stand-in for its own number
+function fontToSpan(f, over) {
+  const col = f.getAttribute("color"), hx = hexOf(col), k = TCOL[hx] || (hx === CLEARC ? (over && over.def ? "_def" : null) : hx || null), sz = f.getAttribute("size"),
+    s = over && over.s && sz === "7" ? over.s : TSIZE[sz], face = f.getAttribute("face") || "", fk = /^npf-/.test(face) ? face.slice(4) : null, fv = FKEYS.has(fk) || (fk === "_def" && over && over.def) ? fk : null;
+  // a new colour / size / font replaces older ones inside it
+  const strip = (attr, on) => { if (on) f.querySelectorAll(`span[${attr}]`).forEach(x => { x.removeAttribute(attr); if (attr === "data-c") x.removeAttribute("style");
+    if (!x.hasAttribute("data-c") && !x.hasAttribute("data-s") && !x.hasAttribute("data-f")) x.replaceWith(...x.childNodes); }); };
+  strip("data-s", !!sz); strip("data-c", col != null); strip("data-f", !!fk);
+  if (!k && !s && !fv) { f.replaceWith(...f.childNodes); return; }
+  const sp = document.createElement("span"); if (k) { sp.setAttribute("data-c", k); if (HEX.test(k)) sp.style.color = k; } if (s) sp.setAttribute("data-s", s); if (fv) sp.setAttribute("data-f", fv);
   sp.append(...f.childNodes); f.replaceWith(sp); return sp;
 }
-const WIDGETS = new Set(["code", "music", "video"]);
+const WIDGETS = new Set(["code", "music", "video", "graph", "sheet"]);
 const DROP = new Set(["SCRIPT", "STYLE", "IFRAME", "OBJECT", "EMBED", "LINK", "META", "TEMPLATE", "SVG", "MATH", "NOSCRIPT", "TITLE", "HEAD", "FORM", "INPUT", "BUTTON", "TEXTAREA", "SELECT", "VIDEO", "AUDIO", "CANVAS"]);
 function clean(node) {
   [...node.childNodes].forEach(c => {
@@ -1058,7 +1311,10 @@ function clean(node) {
     }
     if (tag === "UL" && c.getAttribute("data-ck") === "1") keep["data-ck"] = "1"; // checklist (NotePath)
     if (tag === "LI" && c.getAttribute("data-done") === "1") keep["data-done"] = "1";
-    if (tag === "SPAN") { const k = c.getAttribute("data-c"), z = c.getAttribute("data-s"); if (TKEYS.has(k)) keep["data-c"] = k; if (SKEYS.has(z)) keep["data-s"] = z; if (!keep["data-c"] && !keep["data-s"]) { c.replaceWith(...c.childNodes); return; } }
+    if (tag === "SPAN") { const k = c.getAttribute("data-c"), z = c.getAttribute("data-s"), f = c.getAttribute("data-f");
+      if (TKEYS.has(k)) keep["data-c"] = k; else if (HEX.test(k || "")) { keep["data-c"] = k; keep.style = "color:" + k; }
+      if (SKEYS.has(z)) keep["data-s"] = z; if (FKEYS.has(f)) keep["data-f"] = f;
+      if (!keep["data-c"] && !keep["data-s"] && !keep["data-f"]) { c.replaceWith(...c.childNodes); return; } }
     [...c.attributes].forEach(a => c.removeAttribute(a.name));
     Object.entries(keep).forEach(([k, v]) => c.setAttribute(k, v));
   });
@@ -1096,7 +1352,33 @@ function normalize(n) {
   return n;
 }
 const read = () => { try { const v = JSON.parse(localStorage.getItem(key()) || "[]"); return Array.isArray(v) ? v.map(normalize) : []; } catch (e) { return []; } };
-const write = all => { try { localStorage.setItem(key(), JSON.stringify(all)); } catch (e) { console.warn("Notes could not be saved", e); } changed(); };
+const write = all => { try { localStorage.setItem(key(), JSON.stringify(all)); } catch (e) { console.warn("Notes could not be saved", e); } touched(); changed(); };
+
+/* ---------- undo / redo (My notes ↶ ↷, ⌘Z / Ctrl+Z, ⇧⌘Z / Ctrl+Y) ----------
+   Every change to the notes or folders is one step: writing (each pause in typing), new / renamed / moved / starred /
+   deleted folders, new or deleted notes, widgets, order. A burst of writes within 700 ms counts as one step. Steps are
+   whole snapshots of the two stores, kept for this session (up to 100). Photos and videos stay in IndexedDB until the
+   app closes, so undoing a delete brings them back too. */
+const H = { undo: [], redo: [], base: null, open: false, t: 0, lock: false };
+const snap = () => ({ n: localStorage.getItem(key()) || "[]", f: localStorage.getItem(fkey()) || "[]" });
+const hfire = () => window.dispatchEvent(new CustomEvent("inquire:notes-history", { detail: { undo: H.undo.length, redo: H.redo.length } }));
+function touched() {
+  if (H.lock) return;
+  if (!H.base) H.base = { n: "[]", f: "[]" };
+  if (!H.open) { H.open = true; H.undo.push(H.base); if (H.undo.length > 100) H.undo.shift(); H.redo = []; }
+  clearTimeout(H.t); H.t = setTimeout(settle, 700); hfire();
+}
+function settle() { clearTimeout(H.t); if (H.open) { H.open = false; H.base = snap(); } }
+const live = new Set(); // mounted editors: their unsaved typing is saved before an undo
+function histStep(from, to) {
+  live.forEach(a => a.flush()); settle();
+  if (!from.length) return false;
+  const prev = from.pop(); to.push(snap());
+  H.lock = true; try { localStorage.setItem(key(), prev.n); localStorage.setItem(fkey(), prev.f); } catch (e) {} H.lock = false;
+  H.base = prev; changed(); hfire(); return true;
+}
+const undo = () => histStep(H.undo, H.redo), redo = () => histStep(H.redo, H.undo);
+const history = () => ({ undo: H.undo.length, redo: H.redo.length });
 function list(q) {
   const all = read().sort(byUpdated);
   if (!q) return all;
@@ -1145,7 +1427,7 @@ window.addEventListener("pagehide", () => [...trashed.keys()].forEach(purge));
 function deleteWithUndo(id, onUndo) {
   const n = trash(id); if (!n) return;
   let done = false;
-  const t = setTimeout(() => { if (!done) { done = true; purge(id); } }, 8000);
+  const t = setTimeout(() => { done = true; }, 8000); // the media stay until the app closes (pagehide → purge), so ↶ Undo can still restore the note
   toast(`Deleted “${esc(n.title)}”`, { label: "Undo", run: () => { if (done) return; done = true; clearTimeout(t); restore(id); if (onUndo) onUndo(id); } }, 8000);
 }
 function toast(html, action, ms) {
@@ -1174,10 +1456,11 @@ function appendQuote(id, text, topic, title) {
 
 /* ---------- folders ---------- */
 const readF = () => { try { const v = JSON.parse(localStorage.getItem(fkey()) || "[]"); return Array.isArray(v) ? v : []; } catch (e) { return []; } };
-const writeF = f => { try { localStorage.setItem(fkey(), JSON.stringify(f)); } catch (e) {} changed(); };
+const writeF = f => { try { localStorage.setItem(fkey(), JSON.stringify(f)); } catch (e) {} touched(); changed(); };
 // Folders nest (parent id) and keep the order the user drags them into (order); older folders without order fall back to A–Z.
 const fnorm = f => { if (f.parent === undefined) f.parent = null; return f; };
-const fcmp = (a, b) => ((a.order ?? 1e9) - (b.order ?? 1e9)) || a.name.localeCompare(b.name);
+// starred folders (fav) come first among their sibling folders, so starred top-level folders lead the folders column
+const fcmp = (a, b) => (!!b.fav - !!a.fav) || ((a.order ?? 1e9) - (b.order ?? 1e9)) || a.name.localeCompare(b.name);
 // flat list in tree order (parents before children, siblings in order), each with depth
 function folders() {
   const all = readF().map(fnorm), ids = new Set(all.map(f => f.id)), out = [], seen = new Set();
@@ -1194,6 +1477,7 @@ function addFolder(name, parent) {
   const sib = all.filter(f => f.parent === pid), order = sib.length ? Math.max(...sib.map(f => f.order ?? sib.indexOf(f))) + 1 : 0;
   const f = { id: uid(), name: String(name || "").trim().slice(0, 60) || "New folder", parent: pid, order }; writeF(all.concat(f)); return f;
 }
+function setFolderFav(id, on) { const all = readF(), f = all.find(x => x.id === id); if (!f) return; if (on) f.fav = true; else delete f.fav; writeF(all); }
 function renameFolder(id, name) { const all = readF(), f = all.find(x => x.id === id); if (!f) return; f.name = String(name || "").trim().slice(0, 60) || f.name; writeF(all); }
 // move folder id into parent (null = top level), placed before folder `before` (or last); refuses to move a folder into itself or its own subfolders
 function moveFolder(id, parent, before) {
@@ -1393,6 +1677,17 @@ function mountEditor(host, id, o = {}) {
     const r2 = document.createRange(); r2.setStartAfter(a); r2.collapse(true); const s = getSelection(); s.removeAllRanges(); s.addRange(r2);
     hydrate(ed); save(); flush(); return true;
   }
+  // a note dragged in from My notes: a link to it (its title) at the drop point, or at the end
+  function insertNoteLink(range, noteId) {
+    const t = get(noteId); if (!t) return false;
+    if (!range || !ed.contains(range.startContainer) || inWidget(range.startContainer)) { range = document.createRange(); range.selectNodeContents(ed); range.collapse(false); }
+    else { range = range.cloneRange(); range.collapse(true); const inA = (range.startContainer.nodeType === 1 ? range.startContainer : range.startContainer.parentElement).closest("a.nlink"); if (inA && ed.contains(inA)) range.setStartAfter(inA); }
+    const a = document.createElement("a"); a.className = "nlink"; a.dataset.note = noteId; a.textContent = t.title || "Untitled note";
+    const sp = document.createTextNode(" ");
+    range.insertNode(sp); range.insertNode(a);
+    const r2 = document.createRange(); r2.setStartAfter(sp); r2.collapse(true); const s = getSelection(); s.removeAllRanges(); s.addRange(r2); last = r2.cloneRange();
+    ed.classList.remove("is-empty"); hydrate(ed); save(); flush(); return true;
+  }
   ed.addEventListener("paste", async e => {
     const cd = e.clipboardData; if (!cd || inWidget(e.target)) return;
     e.preventDefault();
@@ -1430,6 +1725,31 @@ function mountEditor(host, id, o = {}) {
     setTimeout(() => { const s = getSelection(); if (!s.rangeCount) return; const n = s.getRangeAt(0).startContainer, el = n.nodeType === 1 ? n : n.parentElement;
       const li = el && el.closest("ul[data-ck] > li"); if (li && ed.contains(li) && !li.textContent.trim()) li.removeAttribute("data-done"); }, 0);
   });
+  // selecting words across ticked checklist items brings up "Uncheck all": it unticks every ticked item the selection touches
+  let ckb = null;
+  const ckItems = () => { const s = getSelection(); if (!s.rangeCount) return [];
+    const r = s.getRangeAt(0); if (r.collapsed || !ed.contains(r.commonAncestorContainer)) return [];
+    return [...ed.querySelectorAll('ul[data-ck] > li[data-done="1"]')].filter(li => r.intersectsNode(li)); };
+  const ckHide = () => { if (ckb) { ckb.remove(); ckb = null; } };
+  const ckShow = () => {
+    const items = ckItems(); if (!items.length) { ckHide(); return; }
+    if (!ckb) {
+      ckb = document.createElement("button"); ckb.type = "button"; ckb.className = "np-ck";
+      ckb.addEventListener("mousedown", e => e.preventDefault()); // keep the selection
+      ckb.addEventListener("click", () => { const its = ckItems(); its.forEach(li => li.removeAttribute("data-done")); ckHide(); if (its.length) { save(); flush(); } });
+      document.body.appendChild(ckb);
+    }
+    ckb.innerHTML = `<span class="np-ck-box" aria-hidden="true"></span>Uncheck all <span class="num">${items.length}</span>`;
+    ckb.setAttribute("aria-label", `Uncheck all ${items.length} ticked item${items.length > 1 ? "s" : ""} in the selection`);
+    const rr = getSelection().getRangeAt(0).getBoundingClientRect(), bw = ckb.offsetWidth || 150, er = ed.getBoundingClientRect();
+    if (rr.bottom < er.top || rr.top > er.bottom || rr.bottom < 0 || rr.top > innerHeight) { ckb.style.visibility = "hidden"; return; } ckb.style.visibility = "";
+    ckb.style.left = Math.max(8, Math.min(innerWidth - bw - 8, rr.left + rr.width / 2 - bw / 2)) + "px";
+    ckb.style.top = (rr.top > 60 ? rr.top - 40 : rr.bottom + 8) + "px";
+  };
+  let ckT = 0; const ckSoon = () => { clearTimeout(ckT); ckT = setTimeout(ckShow, 60); };
+  document.addEventListener("selectionchange", ckSoon);
+  const ckScroll = () => { if (ckb) ckSoon(); }; document.addEventListener("scroll", ckScroll, true); // follow the words when anything around them scrolls
+  ed.addEventListener("blur", () => setTimeout(() => { if (document.activeElement !== ed) ckHide(); }, 120));
   const follow = a => { if (a.dataset.note) { if (get(a.dataset.note) && o.openNote) { flush(); o.openNote(a.dataset.note); } } else if (a.dataset.topic && o.openTopic) { flush(); o.openTopic(a.dataset.topic); } };
   ed.addEventListener("click", e => { const a = e.target.closest("a.nlink"); if (a && ed.contains(a)) { e.preventDefault(); follow(a); } });
   ed.addEventListener("keydown", e => { const a = e.target.closest && e.target.closest("a.nlink"); if (a && e.key === "Enter") { e.preventDefault(); follow(a); } });
@@ -1449,7 +1769,7 @@ function mountEditor(host, id, o = {}) {
     if (block) block.after(w, after); else ed.append(w, after);
     const s = getSelection(), r = document.createRange(); r.setStart(after, 0); r.collapse(true); s.removeAllRanges(); s.addRange(r); last = r.cloneRange();
     hydrate(ed); save();
-    const f = type === "video" ? null : w.querySelector(type === "code" ? ".nw-ta" : ".nw-piano button"); if (f) f.focus({ preventScroll: true });
+    const f = type === "video" || type === "graph" || type === "sheet" ? null : w.querySelector(type === "code" ? ".nw-ta" : ".nw-piano button"); if (f) f.focus({ preventScroll: true });
     w.scrollIntoView({ block: "nearest" });
   }
   // a block (definition, quote) placed after the line that holds `range` (or the caret), never inside it
@@ -1463,16 +1783,61 @@ function mountEditor(host, id, o = {}) {
     const el = nodes.find(x => x.nodeType === 1); if (el) el.scrollIntoView({ block: "nearest" });
     return true;
   }
-  const api = { el: ed, id, flush, addFiles, addURL, addVideoLink, linkRange, insertText, addWidget, insertBlock,
+  // "normal" colour / font: each span[attr="_def"] takes that attribute off every span around it, splitting them so the words
+  // before and after keep theirs. Returns the nodes that were inside, to reselect them.
+  const bare = sp => !sp.hasAttribute("data-c") && !sp.hasAttribute("data-s") && !sp.hasAttribute("data-f");
+  function lift(attr) {
+    const out = [];
+    [...ed.querySelectorAll(`span[${attr}="_def"]`)].forEach(x => {
+      let a;
+      while ((a = x.parentElement && x.parentElement.closest(`span[${attr}]`)) && ed.contains(a)) {
+        const r1 = document.createRange(); r1.setStart(a, 0); r1.setEndBefore(x);
+        const r2 = document.createRange(); r2.setStartAfter(x); r2.setEnd(a, a.childNodes.length);
+        const before = r1.extractContents(), after = r2.extractContents();
+        if (before.textContent) { const c = a.cloneNode(false); c.append(before); a.before(c); }
+        if (after.textContent) { const c = a.cloneNode(false); c.append(after); a.after(c); }
+        a.removeAttribute(attr); if (attr === "data-c") a.style.color = "";
+        if (bare(a)) a.replaceWith(...a.childNodes);
+      }
+      const kids = [...x.childNodes]; x.removeAttribute(attr);
+      if (bare(x)) { x.replaceWith(...kids); out.push(...kids); } else out.push(x);
+    });
+    return out;
+  }
+  // Chromium edits inline colours itself (it may clear or copy style="color"): keep data-c in step with what is shown
+  function syncColors() {
+    ed.querySelectorAll("span").forEach(sp => {
+      const k = sp.getAttribute("data-c"), c = hexOf(sp.style.color);
+      if (k && HEX.test(k) && !c) { sp.removeAttribute("data-c"); sp.removeAttribute("style"); if (bare(sp)) sp.replaceWith(...sp.childNodes); }
+      else if (c && (!k || HEX.test(k)) && k !== c) sp.setAttribute("data-c", c);
+      else if (!c && sp.getAttribute("style") === "") sp.removeAttribute("style");
+    });
+  }
+  const api = { el: ed, id, flush, addFiles, addURL, addVideoLink, linkRange, insertNoteLink, insertText, addWidget, insertBlock,
     focus: () => { ed.focus({ preventScroll: true }); const s = getSelection(); if (last && (!s.rangeCount || !ed.contains(s.getRangeAt(0).commonAncestorContainer))) { s.removeAllRanges(); s.addRange(last); } },
     changed: () => save(),
+    // kind "color" (a #hex, or "" for the normal colour), "size" (a number, or "" for normal), "font" (a key, or "" for the note's font)
+    format: (kind, v) => {
+      api.focus(); document.execCommand("styleWithCSS", false, false);
+      let made = [];
+      const conv = over => { made = [...ed.querySelectorAll("font")].reverse().map(f => fontToSpan(f, over)).filter(Boolean).reverse(); };
+      if (kind === "color") { document.execCommand("foreColor", false, hexOf(v) || CLEARC); conv({ def: !hexOf(v) }); if (!hexOf(v)) made = lift("data-c"); }
+      else if (kind === "font") { document.execCommand("fontName", false, "npf-" + (FKEYS.has(v) ? v : "_def")); conv({ def: !FKEYS.has(v) }); if (!FKEYS.has(v)) made = lift("data-f"); }
+      else if (kind === "size") { const n = NSIZES.includes(+v) ? String(+v) : "n"; document.execCommand("fontSize", false, "7"); conv({ s: n }); }
+      api.normalizeColors();
+      // keep the same words selected so the next click (another size, a colour) still applies to them
+      const s2 = getSelection(), live = made.filter(x => x.isConnected);
+      if (live.length) try { const nr = document.createRange(); nr.setStartBefore(live[0]); nr.setEndAfter(live[live.length - 1]); s2.removeAllRanges(); s2.addRange(nr); last = nr.cloneRange(); } catch (e) {}
+      save();
+    },
     normalizeColors: () => { // font → span, keeping the selection on the same text so the next size/colour click still applies
       const sel = getSelection(), r = sel.rangeCount ? sel.getRangeAt(0) : null, at = r && [r.startContainer, r.startOffset, r.endContainer, r.endOffset];
-      const made = [...ed.querySelectorAll("font")].reverse().map(fontToSpan).filter(Boolean).reverse();
+      syncColors();
+      const made = [...ed.querySelectorAll("font")].reverse().map(f => fontToSpan(f)).filter(Boolean).reverse();
       // tidy: a size wrapped straight around another size does nothing; "normal" outside any size is not needed
       const unsize = sp => { sp.removeAttribute("data-s"); if (!sp.hasAttribute("data-c")) { const i = made.indexOf(sp); const kids = [...sp.childNodes]; sp.replaceWith(...kids); if (i >= 0) made.splice(i, 1, ...kids.filter(k => k.nodeType === 1)); } };
       [...ed.querySelectorAll("span[data-s]")].forEach(sp => { if (sp.isConnected && sp.childNodes.length === 1 && sp.firstChild.nodeType === 1 && sp.firstChild.matches("span[data-s]")) unsize(sp); });
-      [...ed.querySelectorAll('span[data-s="n"]')].forEach(sp => { if (!sp.parentElement.closest("span[data-s]")) unsize(sp); });
+      [...ed.querySelectorAll('span[data-s="n"], span[data-s="15"]')].forEach(sp => { if (!sp.parentElement.closest("span[data-s]")) unsize(sp); });
       try {
         const nr = document.createRange();
         if (at && at[0].nodeType === 3 && at[2].nodeType === 3 && ed.contains(at[0]) && ed.contains(at[2])) { nr.setStart(at[0], at[1]); nr.setEnd(at[2], at[3]); }
@@ -1481,23 +1846,25 @@ function mountEditor(host, id, o = {}) {
         sel.removeAllRanges(); sel.addRange(nr);
       } catch (e) {}
     },
-    destroy: () => { flush(); document.removeEventListener("selectionchange", remember); if (bar && bar.destroy) bar.destroy(); } };
+    destroy: () => { flush(); live.delete(api); document.removeEventListener("selectionchange", remember); document.removeEventListener("selectionchange", ckSoon); document.removeEventListener("scroll", ckScroll, true); ckHide(); if (bar && bar.destroy) bar.destroy(); } };
   if (window.InquireWidgets) { bar = InquireWidgets.toolbar(api); host.appendChild(bar); }
   host.appendChild(ed);
-  editors.set(ed, api);
+  editors.set(ed, api); live.add(api);
   return api;
 }
 const editorFor = el => { const ed = el && el.closest ? el.closest(".nb-rich") : null; return ed ? editors.get(ed) || null : null; };
 
+H.base = snap(); // the state the first undo step goes back to
 window.InquireNotes = { list, get, create, update, remove, trash, restore, purge, deleteWithUndo, toast, appendBlock, exportMedia, key, link, unlink, appendQuote,
-  folders, addFolder, renameFolder, removeFolder, moveFolder, subtree, setOrder, byOrder, sanitize, toText, mountEditor, editorFor, hydrate, pick, pickNote, imageURL, exportImages, importImages,
+  undo, redo, history, NSIZES, NFONTS, folders, addFolder, renameFolder, setFolderFav, removeFolder, moveFolder, subtree, setOrder, byOrder, sanitize, toText, mountEditor, editorFor, hydrate, pick, pickNote, imageURL, exportImages, importImages,
   readFolders: readF, writeFolders: writeF };
 })();
 
 </script>
 <script>/* web/src/notes-widgets.js */
 /* Notes toolbar and widgets (loaded after notes.js; notes.js calls InquireWidgets.toolbar() and .mount()).
-   Toolbar: Bold / Italic / Underline, text colours (span[data-c], the house palette), a panel with an Emoji tab and a
+   Toolbar: Bold / Italic / Underline, a font menu (span[data-f]), a numeric size menu (span[data-s="18"]), one spectrum colour picker
+   (span[data-c="#rrggbb"]; old notes keep the house-palette keys), a panel with an Emoji tab and a
    Symbols tab (Greek, maths, alchemical + planetary signs; alchemical glyphs come from the bundled Noto Sans Symbols subset),
    and two widgets:
    - Code box  <div class="nw" data-w="code" data-src='{"lang","title","src"}'>: editable code with line numbers and
@@ -1633,29 +2000,106 @@ function toolbar(api) {
   const mod = /Mac/.test(navigator.platform) ? "⌘" : "Ctrl+";
   bar.innerHTML = `<button type="button" data-cmd="bold" title="Bold (${mod}B)" aria-label="Bold"><b>B</b></button><button type="button" data-cmd="italic" title="Italic (${mod}I)" aria-label="Italic"><i>I</i></button><button type="button" data-cmd="underline" title="Underline (${mod}U)" aria-label="Underline"><u>U</u></button><button type="button" data-cmd="strikeThrough" title="Strikethrough" aria-label="Strikethrough"><s>S</s></button>
     <span class="nr-sep"></span><button type="button" data-blk="h3" title="Heading" aria-label="Heading">H</button><button type="button" data-blk="ul" title="Bulleted list" aria-label="Bulleted list">•≡</button><button type="button" data-blk="ol" title="Numbered list" aria-label="Numbered list">1.≡</button><button type="button" data-blk="ck" title="Checklist: click a box to tick an item off" aria-label="Checklist">☑</button>
-    <span class="nr-sep"></span><span class="nr-sizes" role="group" aria-label="Text size">${[["2", "s", "Small text"], ["3", "n", "Normal text"], ["5", "l", "Large text"], ["6", "xl", "Huge text"]].map(([v, k, n]) => `<button type="button" data-size="${v}" class="nr-sz nr-sz-${k}" title="${n}" aria-label="${n}">A</button>`).join("")}</span>
-    <span class="nr-sep"></span><span class="nr-cols" role="group" aria-label="Text colour">${COLORS.map(([k, c, n]) => `<button type="button" class="nr-col" data-col="${c}" style="--c:${c}" title="${n} text" aria-label="${n} text"></button>`).join("")}<button type="button" class="nr-col nr-colx" data-col="${CLEAR}" title="Normal text colour" aria-label="Normal text colour">⊘</button></span>
+    <span class="nr-sep"></span><button type="button" class="nr-dd nr-font" data-dd="font" title="Font" aria-haspopup="listbox" aria-label="Font"><span class="nr-ddv">Default</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-dd nr-size" data-dd="size" title="Text size" aria-haspopup="listbox" aria-label="Text size"><span class="nr-ddv num">15</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-dd nr-colb" data-dd="color" title="Text colour" aria-haspopup="dialog" aria-label="Text colour"><span class="nr-cola" aria-hidden="true">A</span><span class="nr-car" aria-hidden="true">▾</span></button>
     <span class="nr-sep"></span><button type="button" class="nr-sym" title="Emoji and symbols (Greek, maths, alchemical)" aria-haspopup="dialog">☺ Ω</button>
-    <span class="nr-sep"></span><button type="button" data-w="code" title="Add a code box">&lt;/&gt; Code</button><button type="button" data-w="music" title="Add a music chart">♪ Music</button><button type="button" class="nr-vid" title="Add a video: a file from this computer, or a YouTube, Vimeo or video link" aria-haspopup="dialog">▶ Video</button>`;
+    <span class="nr-sep"></span><button type="button" data-w="code" title="Add a code box">&lt;/&gt; Code</button><button type="button" data-w="music" title="Add a music chart">♪ Music</button><button type="button" data-w="sheet" title="Add a lead sheet: bars with chord symbols and melody">𝄞 Sheet</button><button type="button" data-w="graph" title="Add a graph: click points on a grid and get their equations">∿ Graph</button>`;
   bar.addEventListener("mousedown", e => e.preventDefault()); // keep the selection in the note
   bar.addEventListener("click", e => {
     const b = e.target.closest("button"); if (!b) return;
     if (b.dataset.cmd) { api.focus(); document.execCommand(b.dataset.cmd); sync(); api.changed(); }
     else if (b.dataset.blk) { api.focus(); block(b.dataset.blk, api); sync(); api.changed(); }
-    else if (b.dataset.col) { api.focus(); document.execCommand("styleWithCSS", false, false); document.execCommand("foreColor", false, b.dataset.col); api.normalizeColors(); api.changed(); }
-    else if (b.dataset.size) { api.focus(); document.execCommand("styleWithCSS", false, false); document.execCommand("fontSize", false, b.dataset.size); api.normalizeColors(); api.changed(); }
+    else if (b.dataset.dd) ddPanel(b, b.dataset.dd, api, sync);
     else if (b.classList.contains("nr-sym")) symbolPanel(b, api);
-    else if (b.classList.contains("nr-vid")) videoPanel(b, api);
     else if (b.dataset.w) api.addWidget(b.dataset.w);
   });
   const sync = () => { if (!api.el.contains(document.activeElement) && document.activeElement !== api.el) return;
     bar.querySelectorAll("[data-cmd]").forEach(b => { let on = false; try { on = document.queryCommandState(b.dataset.cmd); } catch (e) {} b.setAttribute("aria-pressed", String(on)); });
     const el = caretEl(api), L = el && el.closest("ul, ol"), on = { h3: !!(el && el.closest("h3")), ul: !!(L && L.tagName === "UL" && !L.hasAttribute("data-ck")), ol: !!(L && L.tagName === "OL"), ck: !!(L && L.hasAttribute("data-ck")) };
-    bar.querySelectorAll("[data-blk]").forEach(b => b.setAttribute("aria-pressed", String(on[b.dataset.blk]))); };
+    bar.querySelectorAll("[data-blk]").forEach(b => b.setAttribute("aria-pressed", String(on[b.dataset.blk])));
+    const f = fmtAt(fmtEl(api)); bar.querySelector(".nr-font .nr-ddv").textContent = f.fontName; bar.querySelector(".nr-font").style.setProperty("--ff", f.fontStack);
+    bar.querySelector(".nr-size .nr-ddv").textContent = f.size; bar.querySelector(".nr-colb").style.setProperty("--c", f.color); };
   document.addEventListener("selectionchange", sync);
-  bar.destroy = () => document.removeEventListener("selectionchange", sync);
+  bar.destroy = () => { document.removeEventListener("selectionchange", sync); closeDD(); };
   return bar;
 }
+/* ---------- font, size and colour menus (NotePath) ---------- */
+const NOTES = () => window.InquireNotes || {};
+const FSTACK = { serif: '"STIX Two Text",Georgia,serif', sans: '"IBM Plex Sans",system-ui,sans-serif', mono: '"IBM Plex Mono",ui-monospace,Menlo,monospace', cond: '"Saira Semi Condensed","Arial Narrow",sans-serif',
+  georgia: "Georgia,serif", times: '"Times New Roman",Times,serif', palatino: '"Palatino Linotype",Palatino,"Book Antiqua",serif', garamond: 'Garamond,"EB Garamond","Adobe Garamond Pro",serif',
+  arial: "Arial,Helvetica,sans-serif", helvetica: '"Helvetica Neue",Helvetica,Arial,sans-serif', verdana: "Verdana,Geneva,sans-serif", trebuchet: '"Trebuchet MS",sans-serif', tahoma: "Tahoma,Geneva,sans-serif",
+  courier: '"Courier New",Courier,monospace', comic: '"Comic Sans MS","Comic Neue",cursive', brush: '"Brush Script MT","Snell Roundhand",cursive' };
+const OLDSIZE = { s: 12, n: 15, l: 20, xl: 26 };
+// the element whose formatting the toolbar shows: the first one the selection starts in
+function fmtEl(api) { const s = getSelection(); if (!s.rangeCount) return null; const r = s.getRangeAt(0); let n = r.startContainer;
+  if (n.nodeType === 1 && n.childNodes[r.startOffset]) { n = n.childNodes[r.startOffset]; while (n.nodeType === 1 && n.firstChild && !r.collapsed) n = n.firstChild; }
+  const el = n.nodeType === 1 ? n : n.parentElement; return el && api.el.contains(el) ? el : null; }
+// what the caret sits in: font, size (number) and colour, for the toolbar labels
+function fmtAt(el) {
+  const fsp = el && el.closest("span[data-f]"), ssp = el && el.closest("span[data-s]"), fk = fsp ? fsp.dataset.f : "";
+  const nf = (NOTES().NFONTS || []).find(f => f[0] === fk);
+  const sz = ssp ? (OLDSIZE[ssp.dataset.s] || +ssp.dataset.s || 15) : 15;
+  return { font: fk, fontName: nf ? nf[1] : "Default", fontStack: FSTACK[fk] || "var(--sans)", size: sz, color: el ? getComputedStyle(el).color : "var(--text)" };
+}
+let dd = null;
+function closeDD() { if (dd) { dd.remove(); dd = null; document.removeEventListener("pointerdown", outDD, true); window.removeEventListener("keydown", keyDD, true); } }
+const outDD = e => { if (dd && !dd.contains(e.target) && !e.target.closest(".nr-dd")) closeDD(); };
+const keyDD = e => { if (e.key === "Escape" && dd) { e.preventDefault(); e.stopPropagation(); closeDD(); } };
+const RECENT_KEY = "notepath.recentcolors";
+const recent = () => { try { const a = JSON.parse(localStorage.getItem(RECENT_KEY) || "[]"); return Array.isArray(a) ? a.filter(c => /^#[0-9a-f]{6}$/.test(c)).slice(0, 10) : []; } catch (e) { return []; } };
+const addRecent = c => { try { localStorage.setItem(RECENT_KEY, JSON.stringify([c, ...recent().filter(x => x !== c)].slice(0, 10))); } catch (e) {} };
+const toHex = (r, g, b) => "#" + [r, g, b].map(x => Math.round(x).toString(16).padStart(2, "0")).join("");
+function ddPanel(btn, kind, api, sync) {
+  const was = dd && dd.dataset.kind; closeDD(); if (was === kind) return;
+  const cur = fmtAt(fmtEl(api));
+  dd = document.createElement("div"); dd.className = "np-pop win np-pop-" + kind; dd.dataset.kind = kind;
+  // the words selected when the menu opened (typing a colour code moves the focus into the menu)
+  const s0 = getSelection(), saved = s0.rangeCount && api.el.contains(s0.getRangeAt(0).commonAncestorContainer) ? s0.getRangeAt(0).cloneRange() : null;
+  const apply = (k, v) => { closeDD(); if (saved) { api.el.focus({ preventScroll: true }); const s1 = getSelection(); s1.removeAllRanges(); s1.addRange(saved); } api.format(k, v); sync(); };
+  if (kind === "font") {
+    dd.setAttribute("role", "listbox"); dd.setAttribute("aria-label", "Font");
+    const fonts = [["", "Default (IBM Plex Sans)"], ...(NOTES().NFONTS || [])];
+    dd.innerHTML = `<div class="np-pop-h">Font</div><div class="np-fonts">${fonts.map(([k, n], i) => `${i === 5 ? `<div class="np-pop-sub">On this computer</div>` : i === 1 ? `<div class="np-pop-sub">Bundled with NotePath</div>` : ""}<button type="button" role="option" data-v="${k}" aria-selected="${cur.font === k}" style="font-family:${esc(FSTACK[k] || "var(--sans)")}">${esc(n)}</button>`).join("")}</div>`;
+  } else if (kind === "size") {
+    dd.setAttribute("role", "listbox"); dd.setAttribute("aria-label", "Text size");
+    dd.innerHTML = `<div class="np-pop-h">Size <span>normal text is 15</span></div><div class="np-sizes">${(NOTES().NSIZES || []).map(n => `<button type="button" role="option" class="num" data-v="${n}" aria-selected="${cur.size === n}">${n}</button>`).join("")}</div>`;
+  } else {
+    dd.setAttribute("role", "dialog"); dd.setAttribute("aria-label", "Text colour");
+    const rc = recent();
+    dd.innerHTML = `<div class="np-pop-h">Colour <span>click or drag on the spectrum</span></div>
+      <canvas class="np-spec" width="248" height="132" aria-label="Colour spectrum"></canvas><canvas class="np-grey" width="248" height="16" aria-label="Greys"></canvas>
+      <div class="np-crow"><span class="np-cprev"></span><input class="np-hex" maxlength="7" spellcheck="false" aria-label="Colour code (hex)" placeholder="#RRGGBB"><button type="button" class="nw-b np-capply">Apply</button></div>
+      ${rc.length ? `<div class="np-pop-sub">Recent</div><div class="np-recent">${rc.map(c => `<button type="button" data-c="${c}" style="--c:${c}" title="${c.toUpperCase()}" aria-label="Recent colour ${c.toUpperCase()}"></button>`).join("")}</div>` : ""}
+      <button type="button" class="np-cnorm" data-c="">⊘ Normal colour</button>`;
+    const sp = dd.querySelector(".np-spec"), gr = dd.querySelector(".np-grey"), hex = dd.querySelector(".np-hex"), prev = dd.querySelector(".np-cprev");
+    const g = sp.getContext("2d", { willReadFrequently: true }), W = sp.width, H = sp.height;
+    const hg = g.createLinearGradient(0, 0, W, 0); for (let i = 0; i <= 12; i++) hg.addColorStop(i / 12, `hsl(${i * 30},100%,50%)`);
+    g.fillStyle = hg; g.fillRect(0, 0, W, H);
+    const vg = g.createLinearGradient(0, 0, 0, H); vg.addColorStop(0, "rgba(255,255,255,.92)"); vg.addColorStop(.5, "rgba(255,255,255,0)"); vg.addColorStop(.5, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,.88)");
+    g.fillStyle = vg; g.fillRect(0, 0, W, H);
+    const gg = gr.getContext("2d", { willReadFrequently: true }), grd = gg.createLinearGradient(0, 0, gr.width, 0); grd.addColorStop(0, "#fff"); grd.addColorStop(1, "#000"); gg.fillStyle = grd; gg.fillRect(0, 0, gr.width, gr.height);
+    const show = c => { prev.style.background = c; hex.value = c.toUpperCase(); dd.dataset.pick = c; };
+    show(/^#[0-9a-f]{6}$/i.test(rgbHex(cur.color)) ? rgbHex(cur.color) : "#f2b84b");
+    const pickAt = (cv, ctx, e) => { const r = cv.getBoundingClientRect(), x = Math.max(0, Math.min(cv.width - 1, (e.clientX - r.left) / r.width * cv.width)), y = Math.max(0, Math.min(cv.height - 1, (e.clientY - r.top) / r.height * cv.height));
+      const d = ctx.getImageData(x | 0, y | 0, 1, 1).data; return toHex(d[0], d[1], d[2]); };
+    [[sp, g], [gr, gg]].forEach(([cv, ctx]) => {
+      cv.addEventListener("pointerdown", e => { e.preventDefault(); cv.setPointerCapture(e.pointerId); show(pickAt(cv, ctx, e)); cv._drag = true; });
+      cv.addEventListener("pointermove", e => { if (cv._drag) show(pickAt(cv, ctx, e)); });
+      cv.addEventListener("pointerup", e => { if (!cv._drag) return; cv._drag = false; const c = pickAt(cv, ctx, e); addRecent(c); apply("color", c); });
+    });
+    hex.addEventListener("input", () => { const v = hex.value.trim().replace(/^([0-9a-f]{6})$/i, "#$1"); if (/^#[0-9a-f]{6}$/i.test(v)) { prev.style.background = v; dd.dataset.pick = v.toLowerCase(); } });
+    hex.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); dd.querySelector(".np-capply").click(); } });
+    dd.querySelector(".np-capply").addEventListener("click", () => { const c = dd.dataset.pick; if (c) { addRecent(c); apply("color", c); } });
+  }
+  dd.addEventListener("mousedown", e => { if (!e.target.closest("input")) e.preventDefault(); }); // keep the selection in the note
+  dd.addEventListener("click", e => { const b = e.target.closest("button[data-v], button[data-c]"); if (!b) return; apply(kind === "color" ? "color" : kind, b.dataset.v != null ? b.dataset.v : b.dataset.c); });
+  document.body.appendChild(dd);
+  const r = btn.getBoundingClientRect(), w = dd.offsetWidth, h = dd.offsetHeight;
+  dd.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.left)) + "px";
+  dd.style.top = (r.bottom + 6 + h < innerHeight ? r.bottom + 6 : Math.max(8, r.top - h - 6)) + "px";
+  const sel = dd.querySelector('[aria-selected="true"]'); if (sel) sel.scrollIntoView({ block: "nearest" });
+  document.addEventListener("pointerdown", outDD, true); window.addEventListener("keydown", keyDD, true);
+}
+const rgbHex = c => { const m = String(c || "").match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/); return m ? toHex(+m[1], +m[2], +m[3]) : String(c || ""); };
 // headings and lists (NotePath): the block the caret is in becomes a heading / list item, or back to plain text
 function caretEl(api) { const s = getSelection(); if (!s.rangeCount) return null; const n = s.getRangeAt(0).startContainer, el = n.nodeType === 1 ? n : n.parentElement; return el && api.el.contains(el) ? el : null; }
 function block(kind, api) {
@@ -1929,26 +2373,456 @@ function mount(el) {
   if (el._nw) return; el._nw = true;
   el.contentEditable = "false";
   if (el.dataset.w === "code") mountCode(el); else if (el.dataset.w === "music") mountMusic(el); else if (el.dataset.w === "video") mountVideo(el);
+  else if (el.dataset.w === "graph" && window.NPGraph) { NPGraph.mount(el); delButton(el); }
+  else if (el.dataset.w === "sheet" && window.NPSheet) NPSheet.mount(el);
 }
 function create(type, data) {
   const el = document.createElement("div"); el.className = "nw"; el.dataset.w = type;
-  el.dataset.src = JSON.stringify(type === "video" ? Object.assign({ title: "" }, data || {}) : type === "code" ? { lang: "python", title: "", src: "" } : { title: "", clef: "treble", time: "4/4", tempo: 90, seq: "" });
+  el.dataset.src = JSON.stringify(type === "sheet" ? Object.assign({}, window.NPSheet ? NPSheet.DEF : {}, data || {}) : type === "graph" ? Object.assign({}, window.NPGraph ? NPGraph.DEF : {}, data || {}) : type === "video" ? Object.assign({ title: "" }, data || {}) : type === "code" ? { lang: "python", title: "", src: "" } : { title: "", clef: "treble", time: "4/4", tempo: 90, seq: "" });
   return el;
 }
 // plain-text version for search, previews and .md export
 function text(el) {
   const d = readSrc(el, {});
   if (el.dataset.w === "code") return "\n```" + (d.lang && d.lang !== "text" ? d.lang : "") + (d.title ? " " + d.title : "") + "\n" + (d.src || "") + "\n```\n";
+  if (el.dataset.w === "graph") return window.NPGraph ? NPGraph.text(d) : "";
+  if (el.dataset.w === "sheet") return window.NPSheet ? NPSheet.text(el) : "";
   if (el.dataset.w === "video") { const l = videoLink(d); return "\n▶ " + (d.title || "Video") + (l ? " (" + l + ")" : "") + "\n"; }
   if (el.dataset.w === "music") return "\n♪ " + (d.title ? d.title + ": " : "") + (d.seq || "(empty)") + (d.time ? " [" + d.time + ", " + (d.clef || "treble") + " clef]" : "") + "\n";
   return "";
 }
-window.InquireWidgets = { toolbar, mount, create, text, colorKey, COLORS, parseSeq, chordNotes, videoFrom };
+window.InquireWidgets = { toolbar, mount, create, text, colorKey, COLORS, parseSeq, chordNotes, videoFrom, videoPanel,
+  kit: { splinePath, G_CLEF, F_CLEF, delButton, len, UNITS } }; // shared with notes-sheet.js
+})();
+
+</script>
+<script>/* web/src/notes-graph.js */
+/* Graph widget (NotePath): <div class="nw" data-w="graph" data-src='{"title","pts":[[x,y]…],"fit","snap","view"}'>.
+   Click the grid to add a point, drag a point to move it, click a point (without dragging) to remove it, or type "x, y".
+   The grid sizes itself to the points (unless zoomed with − / +; "Fit" goes back to automatic) and the side panel writes the
+   equations: one curve through every point (default), straight lines between neighbours, a best-fit line or a best-fit parabola.
+   The maths (NPGraph.analyse, fmt, solve) touches no DOM so tools/unit.js can check it. Loaded after notes-widgets.js. */
+(function () {
+"use strict";
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const FITS = [["curve", "Curve through all points"], ["lines", "Straight lines between points"], ["best", "Best-fit line"], ["quad", "Best-fit parabola"]];
+const SNAPS = [["1", "Snap to 1"], ["0.5", "Snap to ½"], ["0.1", "Snap to 0.1"], ["0", "No snap"]];
+const MAXPTS = 40, MAXEXACT = 10;
+const DEF = { title: "", pts: [], fit: "curve", snap: 1, view: null };
+
+/* ---------- maths ---------- */
+const MINUS = "−";
+// a number as people write it: whole numbers, simple fractions (denominator ≤ 12), otherwise up to 3 decimals
+function fmt(v, plain) {
+  if (!isFinite(v)) return "undefined";
+  if (Math.abs(v) < 1e-9) return "0";
+  const sg = v < 0 ? MINUS : "", a = Math.abs(v);
+  if (Math.abs(a - Math.round(a)) < 1e-9) return sg + Math.round(a);
+  if (!plain) for (let d = 2; d <= 12; d++) { const n = a * d; if (Math.abs(n - Math.round(n)) < 1e-7) { const N = Math.round(n), g = gcd(N, d); return sg + (N / g) + "/" + (d / g); } }
+  return sg + (a >= 1000 ? a.toFixed(1) : a >= 100 ? a.toFixed(2) : parseFloat(a.toFixed(3)).toString());
+}
+const gcd = (a, b) => b ? gcd(b, a % b) : a;
+const SUP = { 0: "⁰", 1: "¹", 2: "²", 3: "³", 4: "⁴", 5: "⁵", 6: "⁶", 7: "⁷", 8: "⁸", 9: "⁹" };
+const sup = n => String(n).split("").map(c => SUP[c]).join("");
+// coefficients c[0] + c[1]x + c[2]x² … → "y = 2x² − 3x + 1/2"
+function polyStr(c) {
+  let out = "";
+  for (let k = c.length - 1; k >= 0; k--) {
+    const v = Math.abs(c[k]) < 1e-9 ? 0 : c[k]; if (!v) continue;
+    const a = Math.abs(v), f = fmt(a), body = k === 0 ? f : (f === "1" ? "" : f.includes("/") ? "(" + f + ")" : f) + "x" + (k > 1 ? sup(k) : "");
+    out += out ? (v < 0 ? " " + MINUS + " " : " + ") + body : (v < 0 ? MINUS : "") + body;
+  }
+  return "y = " + (out || "0");
+}
+const evalPoly = (c, x) => c.reduceRight((acc, v) => acc * x + v, 0);
+// solve A·x = b (Gaussian elimination, partial pivoting); null when singular
+function solve(A, b) {
+  const n = b.length, M = A.map((r, i) => [...r, b[i]]);
+  for (let i = 0; i < n; i++) {
+    let p = i; for (let r = i + 1; r < n; r++) if (Math.abs(M[r][i]) > Math.abs(M[p][i])) p = r;
+    if (Math.abs(M[p][i]) < 1e-12) return null;
+    [M[i], M[p]] = [M[p], M[i]];
+    for (let r = 0; r < n; r++) if (r !== i) { const f = M[r][i] / M[i][i]; for (let c = i; c <= n; c++) M[r][c] -= f * M[i][c]; }
+  }
+  return M.map((r, i) => r[n] / r[i]);
+}
+const clean = c => c.map(v => Math.abs(v - Math.round(v)) < 1e-9 ? Math.round(v) : v);
+function exactPoly(pts) { const n = pts.length; const c = solve(pts.map(([x]) => Array.from({ length: n }, (_, k) => Math.pow(x, k))), pts.map(p => p[1])); return c && clean(c); }
+function leastSq(pts, deg) {
+  const A = [], b = [];
+  for (let i = 0; i <= deg; i++) { A.push([]); for (let j = 0; j <= deg; j++) A[i].push(pts.reduce((s, [x]) => s + Math.pow(x, i + j), 0)); b.push(pts.reduce((s, [x, y]) => s + y * Math.pow(x, i), 0)); }
+  const c = solve(A, b); if (!c) return null;
+  const my = pts.reduce((s, p) => s + p[1], 0) / pts.length, tot = pts.reduce((s, p) => s + (p[1] - my) ** 2, 0), res = pts.reduce((s, [x, y]) => s + (y - evalPoly(c, x)) ** 2, 0);
+  return { c: clean(c), r2: tot ? 1 - res / tot : 1 };
+}
+const P = (pts, i) => String.fromCharCode(65 + (i % 26)) + (i >= 26 ? Math.floor(i / 26) : "");
+const pt = p => `(${fmt(p[0])}, ${fmt(p[1])})`;
+// extra facts for a line or a parabola
+function facts(c) {
+  const out = [];
+  if (c.length === 2 || (c.length === 3 && Math.abs(c[2]) < 1e-9)) {
+    out.push(["Slope", fmt(c[1])], ["y-intercept", pt([0, c[0]])]);
+    if (Math.abs(c[1]) > 1e-9) out.push(["x-intercept", pt([-c[0] / c[1], 0])]);
+  } else if (c.length === 3) {
+    const [k, b, a] = c, vx = -b / (2 * a); out.push(["Vertex", pt([vx, evalPoly(c, vx)])], ["Opens", a > 0 ? "upward" : "downward"], ["y-intercept", pt([0, k])]);
+    const D = b * b - 4 * a * k;
+    if (D > 1e-12) out.push(["x-intercepts", pt([(-b - Math.sqrt(D)) / (2 * a), 0]) + " and " + pt([(-b + Math.sqrt(D)) / (2 * a), 0])]);
+    else if (Math.abs(D) <= 1e-12) out.push(["x-intercept", pt([vx, 0])]);
+  } else out.push(["y-intercept", pt([0, c[0]])]);
+  return out;
+}
+// → { eqs: [{label, eq}], facts: [[name, value]], note, draw: [{type:"poly", c} | {type:"seg", a, b} | {type:"vline", x}] }
+function analyse(d) {
+  const pts = (d.pts || []).filter(p => Array.isArray(p) && isFinite(p[0]) && isFinite(p[1]));
+  const r = { eqs: [], facts: [], note: "", draw: [] };
+  if (!pts.length) { r.note = "Click the grid to add a point."; return r; }
+  if (pts.length === 1) { r.eqs.push({ label: "Point A", eq: `x = ${fmt(pts[0][0])},  y = ${fmt(pts[0][1])}` }); r.note = "Add another point to get a line."; return r; }
+  const xs = pts.map(p => p[0]), sameX = new Set(xs.map(x => x.toFixed(9))).size < xs.length;
+  if (xs.every(x => Math.abs(x - xs[0]) < 1e-9)) { r.eqs.push({ label: "Vertical line", eq: `x = ${fmt(xs[0])}` }); r.facts.push(["Slope", "undefined (vertical)"]); r.draw.push({ type: "vline", x: xs[0] }); return r; }
+  let fit = d.fit || "curve";
+  if (fit === "curve" && (sameX || pts.length > MAXEXACT)) { r.note = sameX ? "Two points share the same x, so no single y = … curve passes through all of them: showing straight lines instead." : `A single curve through more than ${MAXEXACT} points gets wild: showing straight lines instead (try a best fit).`; fit = "lines"; }
+  if (fit === "quad" && pts.length < 3) fit = "best";
+  if (fit === "curve") {
+    const c = exactPoly(pts); if (!c) { r.note = "Those points can't be joined by one curve."; return r; }
+    const deg = c.reduce((m, v, k) => Math.abs(v) > 1e-9 ? k : m, 0);
+    r.eqs.push({ label: ["Constant", "Line", "Parabola", "Cubic", "Quartic", "Quintic"][deg] || `Degree ${deg} polynomial`, eq: polyStr(c.slice(0, deg + 1)) });
+    r.facts = facts(c.slice(0, Math.max(2, deg + 1))); r.draw.push({ type: "poly", c });
+  } else if (fit === "lines") {
+    const s = pts.map((p, i) => ({ p, n: P(pts, i) })).sort((a, b) => a.p[0] - b.p[0] || a.p[1] - b.p[1]);
+    for (let i = 0; i + 1 < s.length; i++) {
+      const [a, b] = [s[i], s[i + 1]], dx = b.p[0] - a.p[0];
+      if (Math.abs(dx) < 1e-9) { r.eqs.push({ label: `${a.n}${b.n}`, eq: `x = ${fmt(a.p[0])}`, dom: `${fmt(Math.min(a.p[1], b.p[1]))} ≤ y ≤ ${fmt(Math.max(a.p[1], b.p[1]))}` }); }
+      else { const m = (b.p[1] - a.p[1]) / dx, k = a.p[1] - m * a.p[0]; r.eqs.push({ label: `${a.n}${b.n}`, eq: polyStr(clean([k, m])), dom: `${fmt(a.p[0])} ≤ x ≤ ${fmt(b.p[0])}` }); }
+      r.draw.push({ type: "seg", a: a.p, b: b.p });
+    }
+    if (s.length === 2) { const m = (s[1].p[1] - s[0].p[1]) / (s[1].p[0] - s[0].p[0]); r.facts = facts([s[0].p[1] - m * s[0].p[0], m]); }
+    const len = s.slice(1).reduce((t, x, i) => t + Math.hypot(x.p[0] - s[i].p[0], x.p[1] - s[i].p[1]), 0);
+    r.facts.push(["Length", fmt(len, true)]);
+  } else {
+    const f = leastSq(pts, fit === "quad" ? 2 : 1); if (!f) { r.note = "Not enough different x values for that fit."; return r; }
+    r.eqs.push({ label: fit === "quad" ? "Best-fit parabola" : "Best-fit line", eq: polyStr(f.c) });
+    r.facts = facts(f.c); r.facts.push(["r²", f.r2.toFixed(3) + (f.r2 > .999 ? " (exact)" : "")]);
+    r.draw.push({ type: "poly", c: f.c });
+  }
+  return r;
+}
+
+/* ---------- view ---------- */
+const nice = v => { const p = Math.pow(10, Math.floor(Math.log10(v))), f = v / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p; };
+function autoView(pts) {
+  let x0 = -10, x1 = 10, y0 = -10, y1 = 10;
+  pts.forEach(([x, y]) => { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); });
+  const mx = (x1 - x0) * .08, my = (y1 - y0) * .08;
+  if (x0 < -10) x0 -= mx; if (x1 > 10) x1 += mx; if (y0 < -10) y0 -= my; if (y1 > 10) y1 += my;
+  const sx = nice((x1 - x0) / 10), sy = nice((y1 - y0) / 10);
+  return [Math.floor(x0 / sx) * sx, Math.ceil(x1 / sx) * sx, Math.floor(y0 / sy) * sy, Math.ceil(y1 / sy) * sy];
+}
+
+/* ---------- the widget ---------- */
+const VW = 480, VH = 360;
+function mount(el) {
+  const readSrc = () => { try { return Object.assign({}, DEF, JSON.parse(el.dataset.src || "{}")); } catch (e) { return Object.assign({}, DEF); } };
+  const d = readSrc(); d.pts = (Array.isArray(d.pts) ? d.pts : []).filter(p => Array.isArray(p) && isFinite(p[0]) && isFinite(p[1])).slice(0, MAXPTS);
+  el.innerHTML = `<div class="nw-h"><span class="nw-tag">∿</span><input class="nw-title" maxlength="80" placeholder="Graph" aria-label="Graph title" value="${esc(d.title)}">
+      <select class="ng-fit" aria-label="Equation">${FITS.map(([k, n]) => `<option value="${k}"${d.fit === k ? " selected" : ""}>${n}</option>`).join("")}</select>
+      <select class="ng-snap" aria-label="Snap">${SNAPS.map(([k, n]) => `<option value="${k}"${String(d.snap) === k ? " selected" : ""}>${n}</option>`).join("")}</select>
+      <button type="button" class="nw-b" data-a="out" title="Zoom out" aria-label="Zoom out">−</button><button type="button" class="nw-b" data-a="in" title="Zoom in" aria-label="Zoom in">+</button><button type="button" class="nw-b" data-a="fit" title="Size the grid to the points">Fit</button>
+      <button type="button" class="nw-b" data-a="clear" title="Remove every point">Clear</button><button type="button" class="nw-b nw-del" data-a="del" title="Remove this graph" aria-label="Remove graph">✕</button></div>
+    <div class="ng-body"><div class="ng-plot"><svg class="ng-svg" viewBox="0 0 ${VW} ${VH}" role="img" aria-label="Graph grid: click to add a point"></svg><div class="ng-hint">Click to add a point · drag a point to move it · click a point to remove it</div></div>
+      <div class="ng-side" aria-live="polite"><div class="ng-eqs"></div><div class="ng-facts"></div><div class="ng-note"></div>
+        <div class="ng-pts-h">Points</div><ol class="ng-pts"></ol>
+        <form class="ng-add"><input class="ng-in" placeholder="x, y" aria-label="Add a point: x, y" spellcheck="false"><button type="submit" class="nw-b">Add</button></form></div></div>`;
+  const svg = el.querySelector(".ng-svg"), title = el.querySelector(".nw-title"), fitS = el.querySelector(".ng-fit"), snapS = el.querySelector(".ng-snap");
+  const view = () => d.view && d.view.length === 4 && d.view.every(isFinite) && d.view[1] > d.view[0] && d.view[3] > d.view[2] ? d.view : autoView(d.pts);
+  const save = () => { el.dataset.src = JSON.stringify({ title: title.value.trim(), pts: d.pts, fit: d.fit, snap: d.snap, view: d.view }); el.dispatchEvent(new Event("input", { bubbles: true })); };
+  const snap = v => { const s = +d.snap; return s ? Math.round(v / s) * s : Math.round(v * 1000) / 1000; };
+  let V = view();
+  const sx = x => (x - V[0]) / (V[1] - V[0]) * VW, sy = y => VH - (y - V[2]) / (V[3] - V[2]) * VH;
+  function draw() {
+    V = view();
+    const stx = nice((V[1] - V[0]) / 10), sty = nice((V[3] - V[2]) / 8);
+    let g = "";
+    for (let x = Math.ceil(V[0] / stx) * stx; x <= V[1] + 1e-9; x += stx) g += `<line class="ng-grid" x1="${sx(x)}" x2="${sx(x)}" y1="0" y2="${VH}"/>`;
+    for (let y = Math.ceil(V[2] / sty) * sty; y <= V[3] + 1e-9; y += sty) g += `<line class="ng-grid" y1="${sy(y)}" y2="${sy(y)}" x1="0" x2="${VW}"/>`;
+    const ax = Math.min(VH - 4, Math.max(4, sy(0))), ay = Math.min(VW - 4, Math.max(4, sx(0)));
+    g += `<line class="ng-axis" x1="0" x2="${VW}" y1="${ax}" y2="${ax}"/><line class="ng-axis" y1="0" y2="${VH}" x1="${ay}" x2="${ay}"/>`;
+    for (let x = Math.ceil(V[0] / stx) * stx; x <= V[1] + 1e-9; x += stx) if (Math.abs(x) > 1e-9 && sx(x) > 10 && sx(x) < VW - 10) g += `<text class="ng-lab" x="${sx(x)}" y="${ax > VH - 18 ? ax - 6 : ax + 14}" text-anchor="middle">${fmt(x, true)}</text>`;
+    for (let y = Math.ceil(V[2] / sty) * sty; y <= V[3] + 1e-9; y += sty) if (Math.abs(y) > 1e-9 && sy(y) > 10 && sy(y) < VH - 6) g += `<text class="ng-lab" x="${ay > VW - 40 ? ay - 6 : ay + 6}" y="${sy(y) + 4}" text-anchor="${ay > VW - 40 ? "end" : "start"}">${fmt(y, true)}</text>`;
+    const r = analyse(d);
+    r.draw.forEach(o => {
+      if (o.type === "seg") g += `<line class="ng-curve" x1="${sx(o.a[0])}" y1="${sy(o.a[1])}" x2="${sx(o.b[0])}" y2="${sy(o.b[1])}"/>`;
+      else if (o.type === "vline") g += `<line class="ng-curve" x1="${sx(o.x)}" x2="${sx(o.x)}" y1="0" y2="${VH}"/>`;
+      else { const N = 320, lim = (V[3] - V[2]) * 20; let path = "", pen = false;
+        for (let i = 0; i <= N; i++) { const x = V[0] + (V[1] - V[0]) * i / N, y = evalPoly(o.c, x); if (!isFinite(y) || Math.abs(y - V[2]) > lim) { pen = false; continue; } path += (pen ? "L" : "M") + sx(x).toFixed(1) + " " + sy(y).toFixed(1); pen = true; }
+        g += `<path class="ng-curve" d="${path}"/>`; }
+    });
+    d.pts.forEach((p, i) => { const X = sx(p[0]), Y = sy(p[1]); g += `<g class="ng-pt" data-i="${i}"><circle cx="${X}" cy="${Y}" r="11" class="ng-hit"/><circle cx="${X}" cy="${Y}" r="5"/><text x="${X + 8}" y="${Y - 8}">${P(d.pts, i)}</text></g>`; });
+    svg.innerHTML = g;
+    el.querySelector(".ng-eqs").innerHTML = r.eqs.map(e => `<div class="ng-eq"><span class="ng-eql">${esc(e.label)}</span><span class="ng-eqv">${esc(e.eq)}</span>${e.dom ? `<span class="ng-dom">for ${esc(e.dom)}</span>` : ""}</div>`).join("");
+    el.querySelector(".ng-facts").innerHTML = r.facts.length ? `<dl>${r.facts.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>` : "";
+    el.querySelector(".ng-note").textContent = r.note;
+    el.querySelector(".ng-pts").innerHTML = d.pts.map((p, i) => `<li><b>${P(d.pts, i)}</b><span class="num">${esc(pt(p))}</span><button type="button" data-rm="${i}" title="Remove point ${P(d.pts, i)}" aria-label="Remove point ${P(d.pts, i)}">✕</button></li>`).join("");
+  }
+  const toData = e => { const r = svg.getBoundingClientRect(); return [V[0] + (e.clientX - r.left) / r.width * (V[1] - V[0]), V[3] - (e.clientY - r.top) / r.height * (V[3] - V[2])]; };
+  let drag = null;
+  svg.addEventListener("pointerdown", e => {
+    if (e.button) return; e.preventDefault(); svg.setPointerCapture(e.pointerId);
+    const g = e.target.closest(".ng-pt"); drag = { i: g ? +g.dataset.i : -1, x: e.clientX, y: e.clientY, moved: false };
+  });
+  svg.addEventListener("pointermove", e => {
+    if (!drag || drag.i < 0) return;
+    if (!drag.moved && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 4) return;
+    drag.moved = true; const [x, y] = toData(e); d.pts[drag.i] = [snap(x), snap(y)]; const keep = d.view; d.view = V; draw(); d.view = keep;
+  });
+  svg.addEventListener("pointerup", e => {
+    if (!drag) return; const k = drag; drag = null;
+    if (k.i >= 0 && !k.moved) d.pts.splice(k.i, 1);
+    else if (k.i < 0) { if (d.pts.length >= MAXPTS) return; const [x, y] = toData(e); d.pts.push([snap(x), snap(y)]); }
+    draw(); save();
+  });
+  svg.addEventListener("pointercancel", () => { drag = null; draw(); });
+  el.querySelector(".ng-pts").addEventListener("click", e => { const b = e.target.closest("[data-rm]"); if (!b) return; d.pts.splice(+b.dataset.rm, 1); draw(); save(); });
+  el.querySelector(".ng-add").addEventListener("submit", e => {
+    e.preventDefault(); const inp = el.querySelector(".ng-in"), m = inp.value.replace(/[()]/g, "").replace(/−/g, "-").match(/^\s*(-?\d*\.?\d+(?:e-?\d+)?)\s*[,; ]\s*(-?\d*\.?\d+(?:e-?\d+)?)\s*$/i);
+    if (!m || d.pts.length >= MAXPTS) { inp.classList.add("bad"); setTimeout(() => inp.classList.remove("bad"), 900); return; }
+    d.pts.push([+m[1], +m[2]]); d.view = null; inp.value = ""; draw(); save();
+  });
+  el.querySelector(".ng-in").addEventListener("input", e => e.stopPropagation());
+  title.addEventListener("input", e => { e.stopPropagation(); save(); });
+  fitS.addEventListener("change", () => { d.fit = fitS.value; draw(); save(); });
+  snapS.addEventListener("change", () => { d.snap = +snapS.value; save(); });
+  const zoom = f => { const v = view(), cx = (v[0] + v[1]) / 2, cy = (v[2] + v[3]) / 2, hx = (v[1] - v[0]) / 2 * f, hy = (v[3] - v[2]) / 2 * f; d.view = [cx - hx, cx + hx, cy - hy, cy + hy]; draw(); save(); };
+  el.querySelector('[data-a="in"]').onclick = () => zoom(.5);
+  el.querySelector('[data-a="out"]').onclick = () => zoom(2);
+  el.querySelector('[data-a="fit"]').onclick = () => { d.view = null; draw(); save(); };
+  const clr = el.querySelector('[data-a="clear"]'); let armed = 0;
+  clr.onclick = () => { if (!d.pts.length) return; if (!armed) { clr.textContent = "Clear all?"; clr.classList.add("armed"); armed = setTimeout(() => { armed = 0; clr.textContent = "Clear"; clr.classList.remove("armed"); }, 3000); return; }
+    clearTimeout(armed); armed = 0; clr.textContent = "Clear"; clr.classList.remove("armed"); d.pts = []; d.view = null; draw(); save(); };
+  draw();
+}
+function text(d) {
+  d = Object.assign({}, DEF, d); const r = analyse(d);
+  return "\n∿ " + (d.title ? d.title + ": " : "Graph: ") + (d.pts.length ? d.pts.map((p, i) => P(d.pts, i) + pt(p)).join(" ") : "(no points)") + (r.eqs.length ? "\n" + r.eqs.map(e => e.eq + (e.dom ? "  (" + e.dom + ")" : "")).join("\n") : "") + "\n";
+}
+window.NPGraph = { mount, text, analyse, fmt, polyStr, solve, DEF };
+})();
+
+</script>
+<script>/* web/src/notes-sheet.js */
+/* Lead sheet widget (NotePath): <div class="nw" data-w="sheet" data-src='{"title","composer","clef","key","time","tempo","bars","mel":[…],"chd":[…]}'>.
+   A blank chart of bars, four to a line, like a jazz lead sheet: chord symbols above the staff, melody on it. Click a bar
+   to pick it, then type its chords ("D-7 G7": spread evenly over the bar) and add melody notes with the keyboard, the
+   length buttons and Rest (a full bar moves on to the next), or type the whole chart (bars split by "|"). Key signature,
+   clef, time, tempo, ▶ Play (melody + soft chords), + / − 4 bars. Melody notation is the Music chart's ("C4/q E4 Bb4/e r/h").
+   Made by ＋ New Note → Music chart, or the toolbar's 𝄞 Sheet. Loaded after notes-widgets.js (uses InquireWidgets.kit). */
+(function () {
+"use strict";
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const MT = () => window.MusicTheory, W = () => window.InquireWidgets;
+const KEYS = [["C", "C major · A minor"], ["G", "G major · E minor"], ["D", "D major · B minor"], ["A", "A major · F♯ minor"], ["E", "E major · C♯ minor"], ["B", "B major · G♯ minor"], ["F#", "F♯ major · D♯ minor"],
+  ["F", "F major · D minor"], ["Bb", "B♭ major · G minor"], ["Eb", "E♭ major · C minor"], ["Ab", "A♭ major · F minor"], ["Db", "D♭ major · B♭ minor"], ["Gb", "G♭ major · E♭ minor"]];
+const TIMES = ["4/4", "3/4", "2/4", "6/8", "2/2", "5/4", "12/8"];
+const DEF = { title: "", composer: "", clef: "treble", key: "C", time: "4/4", tempo: 120, bars: 16, mel: [], chd: [] };
+const PER = 4, VW = 760, SP = 9, SYS_H = 116;
+const SHARPS = [3, 0, 4, 1, 5, 2, 6], FLATS = [6, 2, 5, 1, 4, 0, 3]; // letters (C=0 … B=6) in key-signature order
+const barLen = time => { const [n, b] = String(time || "4/4").split("/").map(Number); return n * (64 / b); };
+// accidentals the key gives each letter
+function keyMap(key) { let k = 0; try { k = MT().keySig(key, "major"); } catch (e) {} const m = {}; (k > 0 ? SHARPS.slice(0, k) : FLATS.slice(0, -k)).forEach(l => m[l] = k > 0 ? 1 : -1); return { m, k }; }
+// a chord symbol as people write it on charts (D-7, BbΔ7, F#ø) → one MusicTheory.chordNotes understands, for playback
+const playable = s => String(s).replace(/^([A-G](?:#|b|♯|♭)?)-(?=\d|$)/, "$1m").replace(/^([A-G](?:#|b|♯|♭)?)-/, "$1m").replace(/Δ/g, "maj").replace(/♯/g, "#").replace(/♭/g, "b");
+const pretty = s => esc(s).replace(/^([A-G])b/, "$1♭").replace(/^([A-G])#/, "$1♯").replace(/\/([A-G])b/, "/$1♭").replace(/\/([A-G])#/, "/$1♯");
+const toks = s => String(s || "").trim().match(/\[[^\]]*\](?:\/\S+)?|\S+/g) || [];
+
+function read(el) { let d; try { d = Object.assign({}, DEF, JSON.parse(el.dataset.src || "{}")); } catch (e) { d = Object.assign({}, DEF); }
+  d.bars = Math.max(4, Math.min(128, Math.round(d.bars / 4) * 4 || 16)); d.mel = Array.from({ length: d.bars }, (_, i) => String((d.mel || [])[i] || "")); d.chd = Array.from({ length: d.bars }, (_, i) => String((d.chd || [])[i] || "")); return d; }
+
+/* ---------- drawing ---------- */
+function noteSVG(parts, e, cx, Y, clef, accOf, hot) {
+  const K = W().kit, h = hot ? " ms-hot" : "";
+  if (e.r) {
+    const ry = Y(4);
+    if (e.d === "w") parts.push(`<rect x="${cx - 5}" y="${Y(6)}" width="10" height="4.5" class="ms-fill${h}"/>`);
+    else if (e.d === "h") parts.push(`<rect x="${cx - 5}" y="${Y(4) - 4.5}" width="10" height="4.5" class="ms-fill${h}"/>`);
+    else if (e.d === "q") parts.push(`<path d="M${cx - 2} ${ry - 12} l5 6 -4 5 5 6 c-5 -2 -8 2 -3 6" class="ms-ink${h}" fill="none" stroke-width="2" stroke-linejoin="round"/>`);
+    else { const n = e.d === "e" ? 1 : 2; for (let k = 0; k < n; k++) parts.push(`<circle cx="${cx - 2 - k * 2}" cy="${ry - 5 + k * 7}" r="2.2" class="ms-fill${h}"/><path d="M${cx - 1 - k * 2} ${ry - 4 + k * 7} q4 1 5 -3" class="ms-ink${h}" fill="none" stroke-width="1.5"/>`); parts.push(`<path d="M${cx + 4} ${ry - 8} l-5 ${13 + 7 * (n - 1)}" class="ms-ink${h}" stroke-width="1.5"/>`); }
+    if (e.dots) parts.push(`<circle cx="${cx + 10}" cy="${ry - 2}" r="1.6" class="ms-fill${h}"/>`);
+    return;
+  }
+  const ps = e.n.map(p => { const q = MT().parse(p); return { p, q, pos: MT().staffPos(p, clef), acc: accOf(q) }; }).sort((a, b) => a.pos - b.pos);
+  const avg = ps.reduce((s, q) => s + q.pos, 0) / ps.length, down = avg >= 4, hollow = e.d === "w" || e.d === "h";
+  let prev = null; ps.forEach(q => { q.dx = prev && q.pos - prev.pos === 1 && !prev.dx ? 10 : 0; prev = q; });
+  ps.forEach(q => {
+    MT().ledgers(q.pos).forEach(l => parts.push(`<line x1="${cx - 8 + q.dx}" x2="${cx + 8 + q.dx}" y1="${Y(l)}" y2="${Y(l)}" class="ms-line"/>`));
+    if (q.acc != null) parts.push(`<text x="${cx - 16}" y="${Y(q.pos) + 4}" class="ms-acc${h}">${q.acc === 0 ? "♮" : q.acc > 0 ? (q.acc > 1 ? "𝄪" : "♯") : (q.acc < -1 ? "♭♭" : "♭")}</text>`);
+    parts.push(`<ellipse cx="${cx + q.dx}" cy="${Y(q.pos)}" rx="5.2" ry="3.7" transform="rotate(-20 ${cx + q.dx} ${Y(q.pos)})" class="${hollow ? "ms-hollow" : "ms-fill"}${h}"/>`);
+    if (e.dots) parts.push(`<circle cx="${cx + 10 + q.dx}" cy="${Y(q.pos) - (q.pos % 2 === 0 ? SP / 2 : 0)}" r="1.6" class="ms-fill${h}"/>`);
+  });
+  if (e.d !== "w") {
+    const lo = ps[0], hi = ps[ps.length - 1], sx = down ? cx - 4.9 : cx + 4.9, y1 = down ? Y(hi.pos) : Y(lo.pos), y2 = down ? Y(lo.pos) + 3.4 * SP : Y(hi.pos) - 3.4 * SP;
+    parts.push(`<line x1="${sx}" x2="${sx}" y1="${y1}" y2="${y2}" class="ms-ink${h}" stroke-width="1.2"/>`);
+    const flags = e.d === "e" ? 1 : e.d === "s" ? 2 : 0;
+    for (let k = 0; k < flags; k++) { const fy = y2 + (down ? -k * 6 : k * 6); parts.push(`<path d="M${sx} ${fy} c1 ${down ? -5 : 5} 8 ${down ? -7 : 7} 6 ${down ? -14 : 14}" class="ms-ink${h}" fill="none" stroke-width="1.5"/>`); }
+  }
+}
+function sheetSVG(d, sel, hotBar, hotEv) {
+  const K = W().kit, clef = d.clef === "bass" ? "bass" : "treble", L = barLen(d.time), km = keyMap(d.key), lines = Math.ceil(d.bars / PER);
+  const parts = [], H = lines * SYS_H + 10;
+  for (let li = 0; li < lines; li++) {
+    const top = li * SYS_H + 44, base = top + 4 * SP, Y = pos => base - pos * SP / 2;
+    // clef, key signature, time (first line only)
+    if (clef === "bass") { const X = a => 16 + a * SP, Yc = b => Y(6) - b * SP; parts.push(`<path d="${K.splinePath(K.F_CLEF, X, Yc)}" class="ms-ink" fill="none" stroke-width="1.7"/><circle cx="${X(0.02)}" cy="${Yc(0)}" r="2.7" class="ms-fill"/><circle cx="${X(1.72)}" cy="${Yc(0.5)}" r="1.3" class="ms-fill"/><circle cx="${X(1.72)}" cy="${Yc(-0.5)}" r="1.3" class="ms-fill"/>`); }
+    else { const X = a => 22 + a * SP * 1.12, Yc = b => Y(2) - b * SP * 1.12; parts.push(`<path d="${K.splinePath(K.G_CLEF, X, Yc)}" class="ms-ink" fill="none" stroke-width="1.6"/><circle cx="${X(-0.32)}" cy="${Yc(-2.28)}" r="2.6" class="ms-fill"/>`); }
+    let hx = 44;
+    const sharpPos = clef === "bass" ? [6, 3, 7, 4, 1, 5, 2] : [8, 5, 9, 6, 3, 7, 4], flatPos = clef === "bass" ? [2, 5, 1, 4, 0, 3, -1] : [4, 7, 3, 6, 2, 5, 1];
+    for (let i = 0; i < Math.abs(km.k); i++) { parts.push(`<text x="${hx}" y="${Y(km.k > 0 ? sharpPos[i] : flatPos[i]) + 4}" class="ms-acc">${km.k > 0 ? "♯" : "♭"}</text>`); hx += 8; }
+    if (li === 0) { const [tn, tb] = String(d.time).split("/"); hx += 4; parts.push(`<text x="${hx}" y="${Y(6) + 5.5}" class="ms-time">${tn}</text><text x="${hx}" y="${Y(2) + 5.5}" class="ms-time">${tb}</text>`); hx += 20; }
+    hx += 6;
+    const bw = (VW - 8 - hx) / PER;
+    parts.push([0, 2, 4, 6, 8].map(p => `<line x1="6" x2="${VW - 4}" y1="${Y(p)}" y2="${Y(p)}" class="ms-line"/>`).join(""));
+    for (let bi = 0; bi < PER; bi++) {
+      const b = li * PER + bi, bx = hx + bi * bw;
+      if (b >= d.bars) break;
+      parts.push(`<rect class="sh-bar${b === sel ? " on" : ""}" data-bar="${b}" x="${bx}" y="${top - 30}" width="${bw}" height="${SYS_H - 20}" rx="2"/>`);
+      if (bi === 0) parts.push(`<text x="${bx + 2}" y="${Y(8) - 26}" class="sh-num">${b + 1}</text>`);
+      // chords: evenly over the bar
+      const cs = (d.chd[b] || "").trim().split(/\s+/).filter(Boolean);
+      cs.forEach((c, i) => parts.push(`<text x="${bx + 10 + i * (bw - 14) / cs.length}" y="${top - 12}" class="sh-chord">${pretty(c)}</text>`));
+      // melody: placed by time inside the bar; accidentals against the key (and earlier notes in this bar)
+      const r = W().parseSeq(d.mel[b] || "", clef), state = {};
+      let t = 0;
+      r.ev.forEach((e, i) => {
+        const cx = bx + 16 + (t / L) * (bw - 26);
+        const accOf = q => { const k = q.l + "_" + q.o, now = k in state ? state[k] : (km.m[q.l] || 0); state[k] = q.a; return q.a === now ? null : q.a; };
+        noteSVG(parts, e, cx, Y, clef, accOf, b === hotBar && i === hotEv);
+        t += K.len(e);
+      });
+      const over = t > L + 1e-9;
+      const last = b === d.bars - 1, ex = bx + bw;
+      if (last) parts.push(`<line x1="${ex - 5}" x2="${ex - 5}" y1="${Y(8)}" y2="${Y(0)}" class="ms-line"/><line x1="${ex - 1.5}" x2="${ex - 1.5}" y1="${Y(8)}" y2="${Y(0)}" class="ms-ink" stroke-width="3"/>`);
+      else parts.push(`<line x1="${ex}" x2="${ex}" y1="${Y(8)}" y2="${Y(0)}" class="ms-line${over ? " ms-over" : ""}"/>`);
+      if (over) parts.push(`<text x="${ex - 4}" y="${Y(0) + 16}" text-anchor="end" class="sh-over">too long</text>`);
+    }
+    parts.push(`<line x1="6" x2="6" y1="${Y(8)}" y2="${Y(0)}" class="ms-line"/>`);
+  }
+  return `<svg class="ms sh-svg" viewBox="0 0 ${VW} ${H}" role="img" aria-label="Lead sheet, ${d.bars} bars: click a bar to edit it">${parts.join("")}</svg>`;
+}
+
+/* ---------- playback: melody + soft chords ---------- */
+let AC = null, stopFn = null;
+function play(d, onStep, onEnd) {
+  const A = window.AudioContext || window.webkitAudioContext; if (!A) return () => {};
+  if (!AC) AC = new A(); if (AC.state === "suspended") AC.resume();
+  const K = W().kit, clef = d.clef === "bass" ? "bass" : "treble", L = barLen(d.time), q = 60 / Math.max(30, Math.min(260, d.tempo || 120)), u = q / 16;
+  let lastBar = 0; for (let b = 0; b < d.bars; b++) if ((d.mel[b] || "").trim() || (d.chd[b] || "").trim()) lastBar = b;
+  const out = AC.createGain(); out.gain.value = 0.3; const lp = AC.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 2600; lp.connect(out); out.connect(AC.destination);
+  const t0 = AC.currentTime + 0.08, timers = [];
+  const tone = (p, at, dur, amp) => { const f = MT().freq(p); [["triangle", 1, amp], ["sine", 2, amp * .2]].forEach(([type, mul, a]) => { const o = AC.createOscillator(), g = AC.createGain(); o.type = type; o.frequency.value = f * mul;
+    g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(a, at + 0.015); g.gain.exponentialRampToValueAtTime(Math.max(1e-4, a * 0.35), at + Math.min(0.4, dur * 0.6)); g.gain.setTargetAtTime(0, at + dur * 0.92, 0.04);
+    o.connect(g); g.connect(lp); o.start(at); o.stop(at + dur + 0.3); }); };
+  for (let b = 0; b <= lastBar; b++) {
+    const bs = t0 + b * L * u;
+    const cs = (d.chd[b] || "").trim().split(/\s+/).filter(Boolean);
+    cs.forEach((c, i) => { const ns = W().chordNotes(playable(c), "bass"); if (!ns) return; const at = bs + i * L / cs.length * u, dur = L / cs.length * u; ns.forEach(p => tone(p, at, dur, 0.09 / Math.sqrt(ns.length))); });
+    let t = 0; W().parseSeq(d.mel[b] || "", clef).ev.forEach((e, i) => { const at = bs + t * u, dur = K.len(e) * u; timers.push(setTimeout(() => onStep(b, i), (at - AC.currentTime) * 1000)); if (!e.r) e.n.forEach(p => tone(p, at, dur, 0.5 / Math.sqrt(e.n.length))); t += K.len(e); });
+  }
+  const end = t0 + (lastBar + 1) * L * u, endT = setTimeout(() => { onEnd(); out.disconnect(); }, (end - AC.currentTime) * 1000 + 150);
+  return () => { timers.forEach(clearTimeout); clearTimeout(endT); try { out.gain.setTargetAtTime(0, AC.currentTime, 0.03); setTimeout(() => out.disconnect(), 200); } catch (e) {} onEnd(); };
+}
+
+/* ---------- the widget ---------- */
+const PKEYS = [["C", 0], ["C#", 1], ["D", 2], ["Eb", 3], ["E", 4], ["F", 5], ["F#", 6], ["G", 7], ["Ab", 8], ["A", 9], ["Bb", 10], ["B", 11]];
+function mount(el) {
+  if (!MT() || !W() || !W().kit) { el.innerHTML = `<div class="nw-h"><span class="nw-tag">𝄞</span><span>Lead sheets need the music kit.</span></div>`; return; }
+  const d = read(el);
+  let sel = 0, dur = "q", dot = 0, oct = d.clef === "bass" ? 3 : 4, hot = [-1, -1];
+  el.innerHTML = `<div class="nw-h"><span class="nw-tag">𝄞</span><input class="nw-title" maxlength="80" placeholder="Title" aria-label="Lead sheet title" value="${esc(d.title)}"><input class="nw-title sh-comp" maxlength="60" placeholder="Composer" aria-label="Composer" value="${esc(d.composer)}">
+      <select class="sh-key" aria-label="Key signature">${KEYS.map(([k, n]) => `<option value="${k}"${d.key === k ? " selected" : ""}>${n}</option>`).join("")}</select>
+      <select class="sh-clef" aria-label="Clef"><option value="treble"${d.clef !== "bass" ? " selected" : ""}>Treble</option><option value="bass"${d.clef === "bass" ? " selected" : ""}>Bass</option></select>
+      <select class="sh-time" aria-label="Time signature">${TIMES.map(t => `<option${d.time === t ? " selected" : ""}>${t}</option>`).join("")}</select>
+      <label class="nw-tempo" title="Tempo in quarter notes per minute">♩=<input type="number" min="30" max="260" step="2" value="${d.tempo}" aria-label="Tempo"></label>
+      <button type="button" class="nw-b nw-play" data-a="play">▶ Play</button><button type="button" class="nw-b nw-del" data-a="del" title="Remove this lead sheet" aria-label="Remove lead sheet">✕</button></div>
+    <div class="sh-head"><div class="sh-t"></div><div class="sh-c"></div></div>
+    <div class="sh-staff"></div>
+    <div class="nw-mtools sh-tools">
+      <div class="sh-barrow"><button type="button" class="nw-b" data-a="prev" aria-label="Previous bar">◀</button><b class="sh-barn" aria-live="polite"></b><button type="button" class="nw-b" data-a="next" aria-label="Next bar">▶</button>
+        <label class="sh-chordl">Chords <input class="sh-chords" spellcheck="false" placeholder="D-7 G7" aria-label="Chords in this bar"></label>
+        <button type="button" class="nw-b" data-a="undo" title="Take off the last note of this bar">Undo note</button><button type="button" class="nw-b" data-a="clearbar">Clear bar</button>
+        <span class="sh-sp"></span><button type="button" class="nw-b" data-a="less" title="Remove the last line of bars (only if empty)">− 4 bars</button><button type="button" class="nw-b" data-a="more">＋ 4 bars</button></div>
+      <div class="nw-durs" role="radiogroup" aria-label="Note length">${[["w", "𝅝", "Whole"], ["h", "𝅗𝅥", "Half"], ["q", "♩", "Quarter"], ["e", "♪", "Eighth"], ["s", "𝅘𝅥𝅯", "Sixteenth"]].map(([k, g, n]) => `<button type="button" role="radio" data-dur="${k}" title="${n} note" aria-label="${n}">${g}<small>${n}</small></button>`).join("")}<button type="button" data-a="dot" aria-pressed="false" title="Dotted (½ longer)">•<small>Dot</small></button><button type="button" data-a="rest" title="Add a rest">𝄽<small>Rest</small></button></div>
+      <div class="nw-keys"><button type="button" class="nw-b" data-a="odown" aria-label="Octave down">◀</button><div class="nw-piano" role="group" aria-label="Keyboard: click a key to add the note to the bar"></div><button type="button" class="nw-b" data-a="oup" aria-label="Octave up">▶</button></div>
+      <label class="nw-nota"><span>This bar's melody <small>C4/q E4 G4 · [C4 E4]/h · r/q · dotted q.</small></span><input class="sh-mel" spellcheck="false" aria-label="Melody in this bar"></label>
+      <details class="sh-all"><summary>Type the whole chart</summary>
+        <label class="nw-nota"><span>Chords <small>bars split by | : D-7 G7 | E-7 A7 | …</small></span><textarea class="sh-allc" rows="2" spellcheck="false" aria-label="All chords"></textarea></label>
+        <label class="nw-nota"><span>Melody <small>bars split by |</small></span><textarea class="sh-allm" rows="3" spellcheck="false" aria-label="All melody"></textarea></label></details>
+      <p class="nw-msg" aria-live="polite"></p></div>`;
+  const $ = s => el.querySelector(s), staff = $(".sh-staff"), msg = $(".nw-msg"), chords = $(".sh-chords"), mel = $(".sh-mel"), allc = $(".sh-allc"), allm = $(".sh-allm");
+  const L = () => barLen(d.time);
+  const fill = b => W().parseSeq(d.mel[b] || "", d.clef).ev.reduce((s, e) => s + W().kit.len(e), 0);
+  const save = () => { el.dataset.src = JSON.stringify(d); el.dispatchEvent(new Event("input", { bubbles: true })); };
+  const trimEnd = a => { let n = a.length; while (n && !a[n - 1]) n--; return a.slice(0, n); };
+  const syncAll = () => { if (document.activeElement !== allc) allc.value = trimEnd(d.chd.map(s => s.trim())).join(" | "); if (document.activeElement !== allm) allm.value = trimEnd(d.mel.map(s => s.trim())).join(" | "); };
+  const draw = () => {
+    staff.innerHTML = sheetSVG(d, sel, hot[0], hot[1]);
+    $(".sh-t").textContent = d.title; $(".sh-c").textContent = d.composer;
+    $(".sh-barn").textContent = `Bar ${sel + 1} of ${d.bars}`;
+    if (document.activeElement !== chords) chords.value = d.chd[sel] || "";
+    if (document.activeElement !== mel) mel.value = d.mel[sel] || "";
+    const r = W().parseSeq(d.mel[sel] || "", d.clef), bad = (d.chd[sel] || "").trim().split(/\s+/).filter(c => c && !W().chordNotes(playable(c), "bass"));
+    const f = fill(sel), Ln = L();
+    msg.textContent = r.errs.length ? "Not understood: " + r.errs.join(" ") : bad.length ? `Shown as written, not played: ${bad.join(" ")}` : f > Ln + 1e-9 ? `Bar ${sel + 1} is too long for ${d.time}.` : f ? `Bar ${sel + 1}: ${Math.round(f / Ln * 100)}% full` : "Click a bar, type its chords, and add notes with the keyboard.";
+    msg.classList.toggle("bad", !!(r.errs.length || f > Ln + 1e-9));
+    syncAll();
+  };
+  const pick = b => { sel = Math.max(0, Math.min(d.bars - 1, b)); draw(); };
+  const tokDur = () => "/" + dur + ".".repeat(dot);
+  const addTok = tok => { d.mel[sel] = (d.mel[sel].trim() + " " + tok).trim(); save(); if (fill(sel) >= L() - 1e-9 && sel < d.bars - 1) sel++; draw(); };
+  const piano = () => { $(".nw-piano").innerHTML = PKEYS.map(([n]) => `<button type="button" class="${/[#b]$/.test(n) && n.length > 1 ? "bk" : "wk"}" data-k="${n}${oct}" title="${n.replace("#", "♯").replace(/^(.)b$/, "$1♭")}${oct}"><span>${n.length > 1 ? "" : n + (n === "C" ? oct : "")}</span></button>`).join("") + `<button type="button" class="wk" data-k="C${oct + 1}" title="C${oct + 1}"><span>C${oct + 1}</span></button>`; };
+  const marks = () => { el.querySelectorAll("[data-dur]").forEach(b => b.setAttribute("aria-checked", String(b.dataset.dur === dur))); $('[data-a="dot"]').setAttribute("aria-pressed", String(!!dot)); };
+  staff.addEventListener("click", e => { const r = e.target.closest("[data-bar]"); if (r) pick(+r.dataset.bar); });
+  el.addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b || !el.contains(b) || b.closest(".sh-staff")) return;
+    if (b.dataset.dur) { dur = b.dataset.dur; marks(); return; }
+    if (b.dataset.k) { const p = b.dataset.k; tone1(p); addTok(p + tokDur()); return; }
+    const a = b.dataset.a;
+    if (a === "dot") { dot = dot ? 0 : 1; marks(); }
+    else if (a === "rest") addTok("r" + tokDur());
+    else if (a === "prev" || a === "next") pick(sel + (a === "next" ? 1 : -1));
+    else if (a === "undo") { const t = toks(d.mel[sel]); t.pop(); d.mel[sel] = t.join(" "); save(); draw(); }
+    else if (a === "clearbar") { d.mel[sel] = ""; d.chd[sel] = ""; chords.value = ""; save(); draw(); }
+    else if (a === "more") { if (d.bars < 128) { d.bars += 4; d.mel.push("", "", "", ""); d.chd.push("", "", "", ""); save(); draw(); } }
+    else if (a === "less") { const tail = d.bars - 4; if (d.bars > 4 && d.mel.slice(tail).every(s => !s.trim()) && d.chd.slice(tail).every(s => !s.trim())) { d.bars = tail; d.mel.length = tail; d.chd.length = tail; sel = Math.min(sel, tail - 1); save(); draw(); } else { msg.textContent = "The last line has notes or chords: clear them first."; msg.classList.add("bad"); } }
+    else if (a === "oup" || a === "odown") { oct = Math.max(1, Math.min(6, oct + (a === "oup" ? 1 : -1))); piano(); }
+    else if (a === "play") {
+      if (stopFn) { stopFn(); return; }
+      b.textContent = "■ Stop";
+      stopFn = play(d, (bar, i) => { hot = [bar, i]; draw(); }, () => { stopFn = null; hot = [-1, -1]; draw(); b.textContent = "▶ Play"; });
+    }
+  });
+  const tone1 = p => { try { const st = play({ bars: 1, time: "4/4", tempo: 120, clef: d.clef, mel: [p + "/e"], chd: [""] }, () => {}, () => {}); } catch (e) {} };
+  const stop = e => e.stopPropagation();
+  [$(".nw-title"), $(".sh-comp"), $(".nw-tempo input"), chords, mel, allc, allm].forEach(i => i.addEventListener("input", stop));
+  $(".nw-title").addEventListener("input", () => { d.title = $(".nw-title").value.trim(); save(); $(".sh-t").textContent = d.title; });
+  $(".sh-comp").addEventListener("input", () => { d.composer = $(".sh-comp").value.trim(); save(); $(".sh-c").textContent = d.composer; });
+  $(".nw-tempo input").addEventListener("input", () => { d.tempo = +$(".nw-tempo input").value || 120; save(); });
+  chords.addEventListener("input", () => { d.chd[sel] = chords.value; save(); draw(); });
+  mel.addEventListener("input", () => { d.mel[sel] = mel.value; save(); draw(); });
+  const split = v => v.split("|").map(s => s.trim());
+  allc.addEventListener("input", () => { const a = split(allc.value); while (a.length > d.bars) { d.bars += 4; d.mel.push("", "", "", ""); d.chd.push("", "", "", ""); } d.chd = d.chd.map((_, i) => a[i] || ""); save(); draw(); });
+  allm.addEventListener("input", () => { const a = split(allm.value); while (a.length > d.bars) { d.bars += 4; d.mel.push("", "", "", ""); d.chd.push("", "", "", ""); } d.mel = d.mel.map((_, i) => a[i] || ""); save(); draw(); });
+  [[".sh-key", "key"], [".sh-clef", "clef"], [".sh-time", "time"]].forEach(([s, k]) => $(s).addEventListener("change", () => { d[k] = $(s).value; if (k === "clef") { oct = d.clef === "bass" ? 3 : 4; piano(); } save(); draw(); }));
+  W().kit.delButton(el);
+  piano(); marks(); draw();
+}
+function text(el) {
+  const d = read(el), cs = d.chd.map(s => s.trim() || "/"), last = Math.max(0, ...d.chd.map((s, i) => s.trim() || d.mel[i].trim() ? i + 1 : 0));
+  return "\n𝄞 " + (d.title || "Lead sheet") + (d.composer ? " (" + d.composer + ")" : "") + ` [${d.key}, ${d.time}]` + (last ? "\n| " + cs.slice(0, last).join(" | ") + " |" : "") + "\n";
+}
+window.NPSheet = { mount, text, DEF, read, playable, keyMap };
 })();
 
 </script>
 <script>/* web/src/app.js */
-/* NotePath app shell: the start menu, the My notes window and the desktop chrome (update banner, version line).
+/* NotePath app shell: the start menu, the My notes page and the desktop chrome (update banner, version line).
    The notes window (renderNotes) and its helpers are Inquire's (web/src/app.js in codex-desktop), minus the links to
    subjects, fields and lessons, which NotePath does not have. Notes engine: notes.js; toolbar + widgets: notes-widgets.js;
    right-click menu: textmenu.js; Settings: settings.js. */
@@ -1966,19 +2840,17 @@ const store = {
 };
 
 /* ---------- app state + routing ----------
-   Screens: "menu" (the start menu). Windows over a screen: "notes" (My notes). Routes: #menu, #notes, #favourites. */
+   Screens (pages): "menu" (the start menu) and "notes" (My notes). Routes: #menu, #notes, #favourites. */
 const S = { view: "menu" };
 const viewEl = $("#view");
 let cleanup = [];
 function clearView(){ cleanup.forEach(f => { try{ f(); }catch(e){} }); cleanup = []; viewEl.innerHTML = ""; }
 
 function go(next, push = true){
-  if (WIN_VIEWS[next.view]) { // a window, not a screen: open it over whatever is on screen (the start menu on a cold start)
-    WIN_VIEWS[next.view](next);
-    if (viewEl.childElementCount) { try { history.replaceState(history.state, "", "#" + S.view); } catch(e){} return; }
-    next = { view: "menu" }; push = false;
-  } else closeWins();
-  Object.assign(S, next);
+  closeWins();
+  // My notes already on screen: just show the folder / note asked for
+  if (next.view === "notes" && S.view === "notes" && NPAGE) { NPAGE.show(next); return; }
+  S.view = next.view === "notes" ? "notes" : "menu"; S.opts = next;
   render();
   viewIn(viewEl);
   if (push) { try { history.pushState({ view: S.view }, "", "#" + S.view); } catch(e){} }
@@ -2001,13 +2873,15 @@ function fromHash(){
 
 function render(){
   clearView(); crumbs();
-  renderMenu();
+  if (S.view === "notes") renderNotesPage(S.opts || {}); else renderMenu();
   viewEl.focus({ preventScroll: true });
 }
 function crumbs(){
   const c = $("#crumbs"); c.innerHTML = "";
-  c.appendChild(h("span", { class: "here" }, MW.notes ? "Menu" : "Main Menu"));
-  if (MW.notes) { c.appendChild(h("span", { class: "sep" }, "›")); c.appendChild(h("span", { class: "here" }, "My notes")); }
+  if (S.view === "notes") {
+    c.appendChild(h("button", { type: "button", class: "crumb", onclick: () => go({ view: "menu" }) }, "Main Menu"));
+    c.appendChild(h("span", { class: "sep" }, "›")); c.appendChild(h("span", { class: "here" }, "My notes"));
+  } else c.appendChild(h("span", { class: "here" }, "Main Menu"));
 }
 
 /* ---------- windows over the app (My notes) ----------
@@ -2044,66 +2918,73 @@ function modalWin(id, o = {}){
   window.dispatchEvent(new CustomEvent("inquire:window", { detail: { id, open: true } }));
   return m;
 }
-const WIN_VIEWS = { notes: o => openNotesWin(o) };
-// o.folder ("all" | "fav" | "none" | folder id), o.sel (note id), o.focusTitle (a new note: put the cursor in its title)
-function openNotesWin(o = {}){
+/* ---------- My notes page (#notes): a page like the start menu, not a window over it (Devon, Oct 2026) ----------
+   o.folder ("all" | "fav" | "none" | folder id), o.sel (note id). NPAGE.show(o) switches folder / note in place. */
+let NPAGE = null;
+function renderNotesPage(o = {}){
   if (o.folder) { NOTES.folder = o.folder; NOTES.q = ""; }
   if (o.sel) NOTES.sel = o.sel;
-  const fresh = !MW.notes, m = modalWin("notes", { title: "My notes", cls: "mw-notes", sub: "All notes are saved on this computer." });
-  if (!fresh) { m.cleanup.forEach(f => { try { f(); } catch(e){} }); m.cleanup = []; }
-  renderNotes(m, o.focusTitle);
-  crumbs();
-  return m;
+  const pg = h("div", { class: "npage" });
+  pg.innerHTML = `<section class="np-win win" aria-labelledby="np-t">
+    <header class="set-h mw-h"><span class="dot"></span><h2 id="np-t">My notes</h2><span class="mw-sub">All notes are saved on this computer.</span><span class="mw-hx"></span></header>
+    <div class="mw-body"></div></section>`;
+  viewEl.appendChild(pg);
+  const m = { body: $(".mw-body", pg), head: $(".mw-hx", pg), cleanup: [] };
+  renderNotes(m, o.focusBody);
+  NPAGE = { show(x){ if (x.folder) { NOTES.folder = x.folder; NOTES.q = ""; } if (x.sel) NOTES.sel = x.sel; m.redraw(x.focusBody); }, newNote: () => m.newNote() };
+  cleanup.push(() => { m.cleanup.forEach(f => { try { f(); } catch(e){} }); NPAGE = null; });
 }
-// ＋ New note (start menu, shortcut): ask for a title, then open it in My notes
-async function newNote(){
+// ＋ New Note (My notes, Alt+Shift+N): ask for a title, then open the note in My notes. o.folder files it there.
+const NOTE_KINDS = [
+  { k: "text", glyph: "✎", name: "Standard note", desc: "Text, lists, photos, video and widgets", placeholder: "Untitled note" },
+  { k: "code", glyph: "&lt;/&gt;", name: "Code note", desc: "Starts with a code box: highlighting, line numbers", placeholder: "Untitled code" },
+  { k: "sheet", glyph: "𝄞", name: "Music chart", desc: "A blank lead sheet: bars, chords, melody", placeholder: "Untitled chart" }];
+const attr = s => String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+async function newNote(o = {}){
   const NS = window.InquireNotes; if (!NS) return;
-  const t = await askText({ title: "New note", label: "Note title", placeholder: "Untitled note", ok: "Create note", max: 140 });
-  if (t == null) return;
-  const n = NS.create({ title: t || "Untitled note" });
-  go({ view: "notes", folder: "all", sel: n.id });
+  const r = await askText({ title: "New note", label: "Note title", placeholder: "Untitled note", ok: "Create note", max: 140, kinds: NOTE_KINDS });
+  if (r == null) return;
+  const title = r.text || (r.kind === "code" ? "Untitled code" : r.kind === "sheet" ? "Untitled chart" : "Untitled note");
+  const html = r.kind === "code" ? `<div class="nw" data-w="code" data-src="${attr(JSON.stringify({ lang: "python", title: r.text || "", src: "" }))}"></div><div><br></div>`
+    : r.kind === "sheet" ? `<div class="nw" data-w="sheet" data-src="${attr(JSON.stringify(Object.assign({}, window.NPSheet ? NPSheet.DEF : {}, { title: r.text || "" })))}"></div><div><br></div>` : undefined;
+  const n = NS.create({ title, html, folder: o.folder || null, fav: !!o.fav });
+  NOTES.q = "";
+  go({ view: "notes", sel: n.id, focusBody: r.kind === "code" ? "code" : r.kind === "sheet" ? "sheet" : true });
 }
 
 /* ---------- start menu ----------
-   The Notes console (My notes · ＋ New note · Favourites, then the three most recent notes) and three slots that are
-   not linked to anything yet ("Coming soon"). */
+   The Notes console: My notes and, beside it, three slots that are not linked to anything yet ("Coming soon"); under them
+   the three most recent notes. New notes are made in My notes (＋ New Note). */
 function renderMenu(){
   const s = h("div", { class: "screen" });
   s.innerHTML = `<div class="screen-in">
     <div class="hello"><p class="eyebrow">NotePath</p><h1>Main Menu</h1></div>
     <section class="npn win" aria-labelledby="npn-t">
       <header class="win-h npn-h"><span class="dot"></span><span id="npn-t">Notes</span><span class="npn-count num"></span></header>
-      <div class="slots three npn-acts">
-        <button type="button" class="slot big" data-a="open"><span class="glyph">▤</span><span><h3>My notes</h3><p>Every note, folder and photo, with search and your own order.</p></span><span class="tag num" data-n="all"></span></button>
-        <button type="button" class="slot big npn-new" data-a="new"><span class="glyph">＋</span><span><h3>New note</h3><p>Name it and start writing. Text, lists, photos, video, code and music.</p></span><span class="tag">Write</span></button>
-        <button type="button" class="slot big" data-a="fav"><span class="glyph">★</span><span><h3>Favourites</h3><p>The notes you starred, kept one click away.</p></span><span class="tag num" data-n="fav"></span></button>
+      <div class="slots npn-acts">
+        <button type="button" class="slot big" data-a="open"><span class="glyph">▤</span><span><h3>My notes</h3><p>Every note, folder and photo, with search and your own order. Start a new note there with ＋ New Note.</p></span><span class="tag num" data-n="all"></span></button>
+        ${[1, 2, 3].map(() => `<button type="button" class="slot big locked npn-soon" aria-disabled="true" tabindex="-1"><span class="glyph">◇</span><span><h3>Coming soon</h3></span></button>`).join("")}
       </div>
       <div class="npn-recent"><h2 class="npn-sub">Recent</h2><div class="mnotes-list"></div></div>
     </section>
-    <div class="slots three npn-soon" aria-label="Coming soon">
-      ${[1, 2, 3].map(() => `<button type="button" class="slot big locked" aria-disabled="true" tabindex="-1"><span class="glyph">◇</span><span><h3>Coming soon</h3></span></button>`).join("")}
-    </div>
     <div class="verline" id="verline"></div></div>`;
   viewEl.appendChild(s);
   if (window.inquireDesktop) $("#verline", s).innerHTML = `<span>NotePath <span class="num">v${esc(DESK_VERSION || "")}</span></span>`; // updates: Settings → About
   $('[data-a="open"]', s).onclick = () => go({ view: "notes", folder: "all" });
-  $('[data-a="new"]', s).onclick = () => newNote();
-  $('[data-a="fav"]', s).onclick = () => go({ view: "notes", folder: "fav" });
   const NS = window.InquireNotes, list = $(".mnotes-list", s);
   const draw = () => {
-    const all = NS ? NS.list() : [], top = all.slice(0, 3), fav = all.filter(n => n.fav).length;
+    const all = NS ? NS.list() : [], top = all.slice(0, 3);
     $(".npn-count", s).textContent = all.length + (all.length === 1 ? " note" : " notes");
     $('[data-n="all"]', s).textContent = all.length;
-    $('[data-n="fav"]', s).textContent = "★ " + fav;
     list.innerHTML = top.length ? top.map(n => `<button type="button" class="mnote" data-id="${n.id}"><span class="mnote-t">${n.fav ? '<i class="nb-star" aria-label="Favourite">★</i> ' : ""}${esc(n.title)}</span><span class="mnote-b">${esc(n.body.slice(0, 160))}</span><span class="mnote-m">${when(n.updated)}</span></button>`).join("")
-      : `<p class="mnotes-empty">No notes yet. Choose <b>New note</b> above to write your first one.</p>`;
+      : `<p class="mnotes-empty">No notes yet. Open <b>My notes</b> and choose <b>＋ New Note</b> to write your first one.</p>`;
     list.querySelectorAll(".mnote").forEach(b => b.onclick = () => go({ view: "notes", folder: "all", sel: b.dataset.id }));
   };
   draw();
   window.addEventListener("inquire:notes-changed", draw); cleanup.push(() => window.removeEventListener("inquire:notes-changed", draw));
 }
 
-/* ---------- My notes layout: fold the folders / notes columns (◀ ▶ tabs) and drag the list's right edge to resize it ---------- */
+/* ---------- My notes layout: fold the folders / notes columns (◀ ▶ tabs) and drag the line after either column to resize it ---------- */
 function notesLayout(nb){
   const fold = store.get("nbfold", { f: false, l: false }), W0 = () => store.get("nbw", 0);
   const paint = () => {
@@ -2113,36 +2994,43 @@ function notesLayout(nb){
       b.innerHTML = `<span aria-hidden="true">${shut ? "▶" : "◀"}</span>`; b.title = (shut ? "Show the " : "Hide the ") + what; b.setAttribute("aria-label", b.title); b.setAttribute("aria-expanded", String(!shut));
     });
     const w = W0(); if (w) nb.style.setProperty("--nb-lw-user", w + "px"); else nb.style.removeProperty("--nb-lw-user");
+    const fw = store.get("nbfw", 0); if (fw) nb.style.setProperty("--nb-fw-user", fw + "px"); else nb.style.removeProperty("--nb-fw-user");
     if (matchMedia("(min-width:861px)").matches) { $(".nb-folders", nb).inert = !!fold.f; $(".nb-list", nb).inert = !!fold.l; }
   };
   nb.querySelectorAll(".nb-fold").forEach(b => b.onclick = () => { fold[b.dataset.p] = !fold[b.dataset.p]; store.set("nbfold", fold); paint(); });
-  const rz = $(".nb-rz", nb), list = $(".nb-list", nb);
-  const lim = w => { const total = nb.offsetWidth, fw = $(".nb-folders", nb).offsetWidth; return Math.round(Math.max(180, Math.min(w, 620, total - fw - 340))); };
-  const setW = w => { store.set("nbw", w ? lim(w) : 0); paint(); };
-  rz.addEventListener("pointerdown", e => {
-    if (e.button !== 0) return; e.preventDefault();
-    const z = nb.getBoundingClientRect().width / nb.offsetWidth || 1, x0 = e.clientX, w0 = list.offsetWidth;
-    rz.setPointerCapture(e.pointerId); nb.classList.add("rz");
-    const move = ev => nb.style.setProperty("--nb-lw-user", lim(w0 + (ev.clientX - x0) / z) + "px");
-    const up = () => { rz.removeEventListener("pointermove", move); rz.removeEventListener("pointerup", up); rz.removeEventListener("pointercancel", up); nb.classList.remove("rz"); store.set("nbw", list.offsetWidth); };
-    rz.addEventListener("pointermove", move); rz.addEventListener("pointerup", up); rz.addEventListener("pointercancel", up);
-  });
-  rz.addEventListener("dblclick", () => setW(0));
-  rz.addEventListener("keydown", e => {
-    if (e.key === "ArrowLeft" || e.key === "ArrowRight") { e.preventDefault(); setW(list.offsetWidth + (e.key === "ArrowRight" ? 20 : -20)); }
-    else if (e.key === "Home") { e.preventDefault(); setW(0); }
-  });
+  // two resizers: .nb-rzf after the folders (store "nbfw", 140–420 px), .nb-rz after the notes list (store "nbw", 180–620 px); the editor keeps ≥ 340 px
+  const sizer = (rz, col, key, cssVar, lo, hi, other) => {
+    const lim = w => Math.round(Math.max(lo, Math.min(w, hi, nb.offsetWidth - other().offsetWidth - 340)));
+    const setW = w => { store.set(key, w ? lim(w) : 0); paint(); };
+    rz.addEventListener("pointerdown", e => {
+      if (e.button !== 0) return; e.preventDefault();
+      const z = nb.getBoundingClientRect().width / nb.offsetWidth || 1, x0 = e.clientX, w0 = col.offsetWidth;
+      rz.setPointerCapture(e.pointerId); nb.classList.add("rz");
+      const move = ev => nb.style.setProperty(cssVar, lim(w0 + (ev.clientX - x0) / z) + "px");
+      const up = () => { rz.removeEventListener("pointermove", move); rz.removeEventListener("pointerup", up); rz.removeEventListener("pointercancel", up); nb.classList.remove("rz"); store.set(key, col.offsetWidth); };
+      rz.addEventListener("pointermove", move); rz.addEventListener("pointerup", up); rz.addEventListener("pointercancel", up);
+    });
+    rz.addEventListener("dblclick", () => setW(0));
+    rz.addEventListener("keydown", e => {
+      if (e.key === "ArrowLeft" || e.key === "ArrowRight") { e.preventDefault(); setW(col.offsetWidth + (e.key === "ArrowRight" ? 20 : -20)); }
+      else if (e.key === "Home") { e.preventDefault(); setW(0); }
+    });
+  };
+  const list = $(".nb-list", nb), folders = $(".nb-folders", nb);
+  sizer($(".nb-rz", nb), list, "nbw", "--nb-lw-user", 180, 620, () => folders);
+  sizer($(".nb-rzf", nb), folders, "nbfw", "--nb-fw-user", 140, 420, () => list);
   paint();
 }
 
-/* ---------- small dialog in the Settings style (the app behind fogs): askText({title, label, placeholder, value, ok, max}) → text | null ---------- */
+/* ---------- small dialog in the Settings style (the app behind fogs): askText({title, label, placeholder, value, ok, max}) → text | null
+   With kinds: [{ k, glyph, name, desc }] it also asks which kind (cards above the field) → { text, kind } | null. ---------- */
 function askText(o = {}){
   return new Promise(done => {
     document.querySelectorAll(".ask-ov").forEach(x => x.remove());
     const last = document.activeElement;
     const ov = h("div", { class: "ask-ov" }, `<form class="ask-win win" role="dialog" aria-modal="true" aria-labelledby="ask-t">
       <header class="set-h"><span class="dot"></span><h2 id="ask-t">${esc(o.title || "Name")}</h2><button type="button" class="set-x" data-x aria-label="Cancel">✕</button></header>
-      <div class="ask-body"><label class="ask-l" for="ask-in">${esc(o.label || "Name")}</label>
+      <div class="ask-body">${o.kinds ? `<div class="ask-kinds" role="radiogroup" aria-label="Kind of note">${o.kinds.map((k, i) => `<button type="button" role="radio" class="ask-kind" data-k="${k.k}" aria-checked="${i === 0}"><span class="ask-kg" aria-hidden="true">${k.glyph}</span><b>${esc(k.name)}</b><small>${esc(k.desc)}</small></button>`).join("")}</div>` : ""}<label class="ask-l" for="ask-in">${esc(o.label || "Name")}</label>
         <input id="ask-in" class="ask-in" maxlength="${o.max || 140}" placeholder="${esc(o.placeholder || "")}" value="${esc(o.value || "")}" autocomplete="off">
         <div class="ask-btns"><button type="button" class="btn-s" data-x>Cancel</button><button type="submit" class="btn good">${esc(o.ok || "OK")}</button></div></div></form>`);
     document.body.appendChild(ov);
@@ -2153,25 +3041,29 @@ function askText(o = {}){
     document.addEventListener("keydown", key, true);
     ov.querySelectorAll("[data-x]").forEach(b => b.onclick = () => fin(null));
     ov.addEventListener("pointerdown", e => { if (e.target === ov) fin(null); });
-    $("form", ov).onsubmit = e => { e.preventDefault(); fin(inp.value.trim()); };
+    let kind = o.kinds ? o.kinds[0].k : null;
+    ov.querySelectorAll(".ask-kind").forEach(b => b.onclick = () => { kind = b.dataset.k; ov.querySelectorAll(".ask-kind").forEach(x => x.setAttribute("aria-checked", String(x === b))); const k = o.kinds.find(x => x.k === kind); if (k && k.placeholder) inp.placeholder = k.placeholder; inp.focus(); });
+    $(".ask-kinds", ov) && $(".ask-kinds", ov).addEventListener("keydown", e => { if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return; e.preventDefault(); const bs = [...ov.querySelectorAll(".ask-kind")], i = bs.findIndex(x => x.dataset.k === kind), j = (i + (e.key === "ArrowRight" ? 1 : bs.length - 1)) % bs.length; bs[j].click(); bs[j].focus(); });
+    $("form", ov).onsubmit = e => { e.preventDefault(); fin(o.kinds ? { text: inp.value.trim(), kind } : inp.value.trim()); };
     setTimeout(() => { inp.focus(); inp.select(); }, 30);
   });
 }
 
-/* ---------- My notes (window): folders column · notes list · editor ---------- */
+/* ---------- My notes (page): folders column (folders with their notes) · notes list · editor (one note, or two side by side) ---------- */
 const NOTES = { sel: null, q: "", folder: "all", sort: store.get("notesort", "mine"), favTop: store.get("notefavtop", true) };
-function renderNotes(m, focusTitle){
+function renderNotes(m, focusBody){
   const NS = window.InquireNotes;
   const s = m.body;
   s.innerHTML = `    <div class="nb"><nav class="nb-folders" aria-label="Folders"></nav>
-    <aside class="nb-list"><div class="nb-tools"><label class="search"><span aria-hidden="true">⌕</span><input type="search" placeholder="Search notes" aria-label="Search notes"></label><button type="button" class="btn-s" data-a="new">＋ New</button></div>
+    <aside class="nb-list"><div class="nb-tools"><label class="search"><span aria-hidden="true">⌕</span><input type="search" placeholder="Search notes" aria-label="Search notes"></label></div>
       <div class="nb-filter"><select class="nb-sort" aria-label="Order of notes"><option value="mine">My order</option><option value="recent">Recently edited</option></select><button type="button" class="nb-favtop" aria-pressed="false" title="Keep favourites at the top of the list">★ first</button></div><div class="nb-items" role="listbox" aria-label="Notes"></div></aside>
-    <section class="nb-ed"></section>
+    <section class="nb-ed"><div class="nb-tabs" hidden></div><div class="nb-panes"><div class="nb-pane p1"></div><div class="nb-pane p2" hidden></div></div></section>
     <button type="button" class="nb-fold" data-p="f"></button><button type="button" class="nb-fold" data-p="l"></button>
+    <div class="nb-rzf" role="separator" aria-orientation="vertical" tabindex="0" aria-label="Resize the folders column (drag, or ←/→; double-click resets)" title="Drag to resize the folders · double-click resets"></div>
     <div class="nb-rz" role="separator" aria-orientation="vertical" tabindex="0" aria-label="Resize the notes list (drag, or ←/→; double-click resets)" title="Drag to resize the notes list · double-click resets"></div></div>`;
   notesLayout($(".nb", s));
-  m.head.innerHTML = `<span class="mw-tip" tabindex="0" title="Drag notes into folders and folders into other folders, drag either up or down to put them in your own order, star the ones you use most, and paste or drop photos and videos in. The ◀ tabs hide the folders or the list; drag the line beside the list to resize it. Select words and right-click to define them or link them to another note." aria-label="Tips">?</span>`;
-  const fold = $(".nb-folders", s), items = $(".nb-items", s), ed = $(".nb-ed", s), q = $('input[type="search"]', s), sortSel = $(".nb-sort", s);
+  m.head.innerHTML = `<span class="mw-tip" tabindex="0" title="Drag notes into folders and folders into other folders, drag either up or down to put them in your own order, star the ones you use most, and paste or drop photos and videos in. ▾ on a folder folds its notes away. Drag a note into the open note to link to it, or onto ⧉ beside the title to open the two side by side. The ◀ tabs hide the folders or the list; drag the lines beside them to resize. Select words and right-click to define them or link them to another note." aria-label="Tips">?</span><span class="np-hist" role="group" aria-label="Undo and redo"><button type="button" class="np-hb" data-a="undo" title="Undo (${/Mac/.test(navigator.platform) ? "⌘" : "Ctrl+"}+Z): writing, folders, new or deleted notes, widgets…" aria-label="Undo">↶ Undo</button><button type="button" class="np-hb" data-a="redo" title="Redo (⇧${/Mac/.test(navigator.platform) ? "⌘" : "Ctrl+"}+Z)" aria-label="Redo">↷ Redo</button></span><button type="button" class="np-newb" data-a="newnote" title="Name a new note and start writing (Alt+Shift+N)">＋ New Note</button>`;
+  const fold = $(".nb-folders", s), items = $(".nb-items", s), edSec = $(".nb-ed", s), ed = $(".nb-pane.p1", s), ed2 = $(".nb-pane.p2", s), tabs = $(".nb-tabs", s), nbEl = $(".nb", s), q = $('input[type="search"]', s), sortSel = $(".nb-sort", s);
   q.value = NOTES.q;
   q.oninput = () => { NOTES.q = q.value; drawList(); };
   sortSel.value = NOTES.sort === "recent" ? "recent" : "mine";
@@ -2179,7 +3071,23 @@ function renderNotes(m, focusTitle){
   const favTop = $(".nb-favtop", s), paintFavTop = () => { favTop.setAttribute("aria-pressed", String(!!NOTES.favTop)); favTop.title = NOTES.favTop ? "Favourites are kept at the top. Click to place them in your own order instead" : "Favourites follow your order. Click to keep them at the top"; };
   favTop.onclick = () => { NOTES.favTop = !NOTES.favTop; store.set("notefavtop", NOTES.favTop); paintFavTop(); drawList(); }; paintFavTop();
   const realFolder = () => NS.folders().some(f => f.id === NOTES.folder) ? NOTES.folder : null;
-  $('[data-a="new"]', s).onclick = () => { flushEd(); const n = NS.create({ folder: realFolder(), fav: NOTES.folder === "fav" }); NOTES.sel = n.id; NOTES.q = q.value = ""; drawAll(true); };
+  const newHere = () => { flushEd(); newNote({ folder: realFolder(), fav: NOTES.folder === "fav" }); };
+  $('[data-a="newnote"]', m.head).onclick = newHere;
+  // undo / redo (notes.js keeps the steps): save what is being typed, step, redraw everything from the store
+  const hb = { undo: $('[data-a="undo"]', m.head), redo: $('[data-a="redo"]', m.head) };
+  const paintHist = () => { const st = NS.history(); hb.undo.disabled = !st.undo; hb.redo.disabled = !st.redo; };
+  const step = dir => { flushEd(); if (NS[dir]()) drawAll(); paintHist(); };
+  hb.undo.onclick = () => step("undo"); hb.redo.onclick = () => step("redo");
+  window.addEventListener("inquire:notes-history", paintHist); m.cleanup.push(() => window.removeEventListener("inquire:notes-history", paintHist));
+  const histKey = e => {
+    if (!(e.metaKey || e.ctrlKey) || e.altKey) return;
+    const k = e.key.toLowerCase(); if (k !== "z" && !(k === "y" && e.ctrlKey)) return;
+    const t = e.target; if (t && t.closest && t.closest("input, textarea, select")) return; // text fields (title, code box, notation…) keep their own undo
+    if (document.querySelector(".ask-ov, .set-ov:not([hidden])")) return;
+    e.preventDefault(); e.stopPropagation(); step(k === "y" || e.shiftKey ? "redo" : "undo");
+  };
+  document.addEventListener("keydown", histKey, true); m.cleanup.push(() => document.removeEventListener("keydown", histKey, true));
+  m.newNote = newHere;
   // a folder shows its own notes and the notes of every folder inside it
   let inSub = new Set();
   const inView = n => NOTES.folder === "all" || (NOTES.folder === "fav" ? n.fav : NOTES.folder === "none" ? !n.folder : inSub.has(n.folder));
@@ -2192,21 +3100,30 @@ function renderNotes(m, focusTitle){
     const all = NS.list(), fs = NS.folders(), shut = closed();
     if (!["all", "fav", "none"].includes(NOTES.folder) && !fs.some(f => f.id === NOTES.folder)) NOTES.folder = "all";
     inSub = ["all", "fav", "none"].includes(NOTES.folder) ? new Set() : NS.subtree(NOTES.folder);
-    const kids = new Set(fs.map(f => f.parent).filter(Boolean));
     const count = id => { const sub = NS.subtree(id); return all.filter(n => sub.has(n.folder)).length; };
-    const row = (id, ic, name, n, f) => `<div class="nb-fd${NOTES.folder === id ? " sel" : ""}${f ? " user" : ""}" data-f="${id}"${f ? ` draggable="true" style="--d:${f.depth}"` : ""}>${f && kids.has(id) ? `<button type="button" class="nb-fcar" data-car="${id}" aria-expanded="${!shut.has(id)}" aria-label="${shut.has(id) ? "Show" : "Hide"} folders in ${esc(name)}">${shut.has(id) ? "▸" : "▾"}</button>` : f ? `<span class="nb-fcar" aria-hidden="true">▹</span>` : ""}<button type="button" class="nb-fdb" data-f="${id}" aria-pressed="${NOTES.folder === id}"${f ? ` title="Drag onto another folder to put it inside; drag above or below a folder to reorder. Alt+↑/↓ also reorders."` : ""}>${f ? "" : `<span class="nb-fic">${ic}</span>`}<span class="nb-fnm">${esc(name)}</span><span class="nb-fn num">${n}</span></button>${f ? `<button type="button" class="nb-fx" data-sub="${id}" title="New folder inside" aria-label="New folder inside ${esc(name)}">＋</button><button type="button" class="nb-fx" data-ren="${id}" title="Rename folder" aria-label="Rename ${esc(name)}">✎</button><button type="button" class="nb-fx" data-del="${id}" title="Delete folder (its notes and folders move up a level)" aria-label="Delete ${esc(name)}">✕</button>` : ""}</div>`;
-    // hide folders inside a collapsed folder
-    const hidden = new Set(); fs.forEach(f => { if (f.parent && (hidden.has(f.parent) || shut.has(f.parent))) hidden.add(f.id); });
+    const row = (id, ic, name, n, f) => `<div class="nb-fd${NOTES.folder === id ? " sel" : ""}${f ? " user" : ""}" data-f="${id}"${f ? ` draggable="true" style="--d:${f.depth}"` : ""}>${f ? `<button type="button" class="nb-fcar" data-car="${id}" aria-expanded="${!shut.has(id)}" title="${shut.has(id) ? "Show" : "Hide"} what is in ${esc(name)}" aria-label="${shut.has(id) ? "Show" : "Hide"} the notes and folders in ${esc(name)}">${shut.has(id) ? "▸" : "▾"}</button>` : ""}<button type="button" class="nb-fdb" data-f="${id}" aria-pressed="${NOTES.folder === id}"${f ? ` title="Drag onto another folder to put it inside; drag above or below a folder to reorder. Alt+↑/↓ also reorders."` : ""}>${f ? "" : `<span class="nb-fic">${ic}</span>`}<span class="nb-fnm">${esc(name)}</span><span class="nb-fn num">${n}</span></button>${f ? `<button type="button" class="nb-fx nb-ffav${f.fav ? " on" : ""}" data-ffav="${id}" aria-pressed="${!!f.fav}" title="${f.fav ? "Unstar: back to its own place" : "Star: keep this folder at the top"}" aria-label="${f.fav ? "Unstar" : "Star"} ${esc(name)}">${f.fav ? "★" : "☆"}</button><button type="button" class="nb-fx" data-sub="${id}" title="New folder inside" aria-label="New folder inside ${esc(name)}">＋</button><button type="button" class="nb-fx" data-ren="${id}" title="Rename folder" aria-label="Rename ${esc(name)}">✎</button><button type="button" class="nb-fx" data-del="${id}" title="Delete folder (its notes and folders move up a level)" aria-label="Delete ${esc(name)}">✕</button>` : ""}</div>`;
+    // each folder lists its folders, then its own notes (My order); ▾ / ▸ folds both away
+    const byFolder = {}; all.slice().sort(NS.byOrder).forEach(n => { if (n.folder) (byFolder[n.folder] = byFolder[n.folder] || []).push(n); });
+    const noteRow = (n, d) => `<div class="nb-fnote${n.id === NOTES.sel ? " sel" : ""}" role="button" tabindex="0" draggable="true" data-id="${n.id}" style="--d:${d}" title="Open ${esc(n.title)} · drag it onto a folder, into the open note (a link) or onto ⧉ (side by side)"><span class="nb-fni" aria-hidden="true">${n.fav ? "★" : "▫"}</span><span class="nb-fnt">${esc(n.title)}</span></div>`;
+    const tree = parent => fs.filter(f => (f.parent || null) === parent).map(f => row(f.id, "", f.name, count(f.id), f)
+      + (shut.has(f.id) ? "" : tree(f.id) + (byFolder[f.id] || []).map(n => noteRow(n, f.depth + 1)).join(""))).join("");
     fold.innerHTML = `<div class="nb-fh">Library</div>`
       + row("all", "▤", "All notes", all.length) + row("fav", "★", "Favourites", all.filter(n => n.fav).length) + row("none", "◌", "Unfiled", all.filter(n => !n.folder).length)
-      + `<div class="nb-fh nb-ftop" data-top>Folders</div>` + fs.filter(f => !hidden.has(f.id)).map(f => row(f.id, kids.has(f.id) ? "" : "▹", f.name, count(f.id), f)).join("")
+      + `<div class="nb-fh nb-ftop" data-top>Folders</div>` + tree(null)
       + `<button type="button" class="nb-fadd" data-a="addf">＋ New folder</button>`;
+    fold.querySelectorAll(".nb-fnote").forEach(r => {
+      const open = () => { if (NOTES.sel === r.dataset.id) return; flushEd(); NOTES.sel = r.dataset.id; const n = NS.get(r.dataset.id); if (n && !inView(n)) NOTES.folder = n.folder || "all"; drawAll(); };
+      r.onclick = open; r.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } };
+      r.addEventListener("dragstart", e => noteDragStart(e, r.dataset.id, r));
+      r.addEventListener("dragend", () => noteDragEnd(r));
+    });
     // pick, open/close, rename, delete
     fold.querySelectorAll(".nb-fdb").forEach(b => b.onclick = () => { NOTES.folder = b.dataset.f; drawFolders(); drawList(); });
     fold.querySelectorAll("[data-car]").forEach(b => b.onclick = e => { e.stopPropagation(); const c = closed(), id = b.dataset.car; c.has(id) ? c.delete(id) : c.add(id); store.set("notefold", [...c]); drawFolders(); });
     fold.querySelectorAll("[data-sub]").forEach(b => b.onclick = () => { const id = b.dataset.sub, c = closed(); c.delete(id); store.set("notefold", [...c]);
       const at = h("div", { class: "nb-fd user", style: `--d:${(fs.find(f => f.id === id) || {}).depth + 1 || 1}` }); b.closest(".nb-fd").after(at);
       nameBox(at, "", v => { const f = NS.addFolder(v, id); NOTES.folder = f.id; drawAll(); }); });
+    fold.querySelectorAll("[data-ffav]").forEach(b => b.onclick = e => { e.stopPropagation(); const id = b.dataset.ffav, f = NS.folders().find(x => x.id === id); NS.setFolderFav(id, !(f && f.fav)); drawFolders(); const nb = fold.querySelector(`[data-ffav="${id}"]`); if (nb) nb.focus(); });
     fold.querySelectorAll("[data-ren]").forEach(b => b.onclick = () => nameBox(b.closest(".nb-fd"), NS.folders().find(f => f.id === b.dataset.ren).name, v => { NS.renameFolder(b.dataset.ren, v); drawAll(); }));
     fold.querySelectorAll("[data-del]").forEach(b => { let armed = 0; b.onclick = () => {
       if (!armed) { b.textContent = "Delete?"; b.classList.add("armed"); armed = setTimeout(() => { armed = 0; b.textContent = "✕"; b.classList.remove("armed"); }, 3000); return; }
@@ -2275,9 +3192,9 @@ function renderNotes(m, focusTitle){
     items.innerHTML = all.length ? all.map(n => `<div role="option" tabindex="0" class="nb-it" draggable="true" aria-selected="${n.id === NOTES.sel}" data-id="${n.id}"><span class="nb-t">${n.fav ? '<i class="nb-star" aria-label="Favourite">★</i>' : ""}${esc(n.title)}</span><span class="nb-m">${n.folder && fname[n.folder] && NOTES.folder !== n.folder ? "▸ " + esc(fname[n.folder]) + " · " : ""}${when(n.updated)}</span></div>`).join("")
       : `<p class="nb-empty">${NOTES.q ? "No notes match." : NOTES.folder === "fav" ? "No favourites yet. Star a note with ☆." : "No notes here yet."}</p>`;
     items.querySelectorAll(".nb-it").forEach(b => {
-      b.onclick = () => { if (NOTES.sel === b.dataset.id) return; flushEd(); NOTES.sel = b.dataset.id; drawList(); drawEd(); };
-      b.addEventListener("dragstart", e => { DRAG = { type: "note", id: b.dataset.id }; e.dataTransfer.setData("text/x-note", b.dataset.id); e.dataTransfer.effectAllowed = "move"; b.classList.add("dragging"); });
-      b.addEventListener("dragend", () => { DRAG = null; b.classList.remove("dragging"); clearDrop(); });
+      b.onclick = () => { if (NOTES.sel === b.dataset.id) return; flushEd(); NOTES.sel = b.dataset.id; drawFolders(); drawList(); drawEd(); };
+      b.addEventListener("dragstart", e => noteDragStart(e, b.dataset.id, b));
+      b.addEventListener("dragend", () => noteDragEnd(b));
       // keyboard: Alt+↑/↓ moves the note in My order
       b.addEventListener("keydown", e => {
         if ((e.key === "Enter" || e.key === " ") && e.target === b) { e.preventDefault(); b.click(); return; }
@@ -2310,32 +3227,32 @@ function renderNotes(m, focusTitle){
     ids.splice(at, 0, DRAG.id); DRAG = null; reorder(ids);
   });
   let saveT = null, rich = null;
-  const flushEd = () => { if (rich) rich.flush(); if (saveT) { clearTimeout(saveT); saveT = null; const ti = $(".nb-title", ed); if (ti && ed.dataset.id && NS.get(ed.dataset.id)) NS.update(ed.dataset.id, { title: ti.value.trim() || "Untitled note" }); } };
-  function drawEd(focusTitle){
+  const flushEd = () => { if (rich) rich.flush(); if (saveT) { clearTimeout(saveT); saveT = null; const ti = $(".nb-title", ed); if (ti && ed.dataset.id && NS.get(ed.dataset.id)) NS.update(ed.dataset.id, { title: ti.value.trim() || "Untitled note" }); } flush2(); };
+  const msg = t => { if (NS.toast) NS.toast(esc(t), null, 3000); };
+  function drawEd(focusBody){
     if (rich) { rich.destroy(); rich = null; }
+    if (SPLIT.id && (SPLIT.id === NOTES.sel || !NS.get(SPLIT.id))) closeSplit(true);
     const n = NOTES.sel && NS.get(NOTES.sel);
     ed.dataset.id = n ? n.id : "";
-    if (!n) { ed.innerHTML = `<div class="nb-none"><p>Select a note, or start a new one with <b>＋ New</b>.</p></div>`; return; }
-    const fs = NS.folders();
+    if (!n) { ed.innerHTML = `<div class="nb-none"><p>Select a note, or start a new one with <b>＋ New Note</b> at the top right.</p></div>`; return; }
     ed.innerHTML = `<div class="nb-bar"><button type="button" class="nb-favb${n.fav ? " on" : ""}" data-a="fav" aria-pressed="${n.fav}" title="${n.fav ? "Remove from favourites" : "Add to favourites"}">${n.fav ? "★" : "☆"}</button>
-        <label class="nb-fsel"><span>Folder</span><select data-a="folder" aria-label="Folder"><option value="">Unfiled</option>${fs.map(f => `<option value="${f.id}"${n.folder === f.id ? " selected" : ""}>${"   ".repeat(f.depth)}${esc(f.name)}</option>`).join("")}</select></label>
-        <span class="nb-saved" aria-live="polite" title="Last saved ${esc(new Date(n.updated).toLocaleString())}">Saved</span>
-        <button type="button" class="btn-s" data-a="photo" title="Add photos from this computer (or paste / drop them into the note)">＋ Photo</button><button type="button" class="btn-s" data-a="purl" title="Show a photo from a web address">Photo link</button>
+        <button type="button" class="btn-s nb-bar-r" data-a="photo" title="Add photos from this computer (or paste / drop them into the note)">＋ Photo</button><button type="button" class="btn-s" data-a="purl" title="Show a photo from a web address">Photo link</button>
+        <button type="button" class="btn-s nr-vid" data-a="video" title="Add a video: a file from this computer, or a YouTube, Vimeo or video link" aria-haspopup="dialog">▶ Video</button>
         <button type="button" class="btn-s" data-a="md">Save as .md</button><button type="button" class="btn-s set-warn" data-a="del">Delete</button></div>
       <form class="nb-urlrow" hidden><input type="url" placeholder="https://… address of a photo" aria-label="Photo address"><button type="submit" class="btn-s">Insert</button><button type="button" class="btn-s" data-a="purlx">Cancel</button><span class="nb-urlmsg"></span></form>
-      <input class="nb-title" value="${esc(n.title)}" aria-label="Title" maxlength="140">
+      <div class="nb-trow"><input class="nb-title" value="${esc(n.title)}" aria-label="Title" maxlength="140"><div class="nb-split" aria-hidden="true" title="Drop a note here to open it beside this one"><span class="nb-split-ic">⧉</span><span>Drop to open side by side</span></div></div>
       <div class="nb-host"></div><input type="file" accept="image/*" multiple hidden>`;
-    const ti = $(".nb-title", ed), sv = $(".nb-saved", ed), file = $('input[type="file"]', ed);
+    const ti = $(".nb-title", ed), file = $('input[type="file"]', ed);
     rich = NS.mountEditor($(".nb-host", ed), n.id, {
-      onEditing: () => { sv.textContent = "Editing…"; },
-      onSaved: () => { sv.textContent = "Saved"; const it = items.querySelector(`[data-id="${n.id}"] .nb-m`); if (it) drawList(); },
-      openNote: id => { NOTES.sel = id; const m = NS.get(id); if (m && !inView(m)) NOTES.folder = "all"; drawAll(); }
+      onSaved: () => { const it = items.querySelector(`[data-id="${n.id}"] .nb-m`); if (it) drawList(); },
+      openNote: id => openLinked(id),
+      onMessage: msg
     });
-    ti.oninput = () => { clearTimeout(saveT); sv.textContent = "Editing…"; saveT = setTimeout(() => { saveT = null; NS.update(n.id, { title: ti.value.trim() || "Untitled note" }); sv.textContent = "Saved"; const it = items.querySelector(`[data-id="${n.id}"] .nb-t`); if (it) it.lastChild.textContent = ti.value.trim() || "Untitled note"; }, 400); };
+    ti.oninput = () => { clearTimeout(saveT); saveT = setTimeout(() => { saveT = null; NS.update(n.id, { title: ti.value.trim() || "Untitled note" }); const it = items.querySelector(`[data-id="${n.id}"] .nb-t`); if (it) it.lastChild.textContent = ti.value.trim() || "Untitled note"; const fr = fold.querySelector(`.nb-fnote[data-id="${n.id}"] .nb-fnt`); if (fr) fr.textContent = ti.value.trim() || "Untitled note"; }, 400); };
     $('[data-a="fav"]', ed).onclick = e => { const m = NS.update(n.id, { fav: !NS.get(n.id).fav, quiet: true }); const b = e.currentTarget; b.classList.toggle("on", m.fav); b.textContent = m.fav ? "★" : "☆"; b.setAttribute("aria-pressed", String(m.fav)); b.title = m.fav ? "Remove from favourites" : "Add to favourites"; drawFolders(); drawList(); };
-    $('[data-a="folder"]', ed).onchange = e => { NS.update(n.id, { folder: e.target.value || null, quiet: true }); drawFolders(); drawList(); };
     $('[data-a="photo"]', ed).onclick = () => file.click();
-    file.onchange = async () => { const k = await rich.addFiles(file.files); sv.textContent = k ? (k === 1 ? "Added" : k + " added") : "Those files are not photos or videos"; file.value = ""; };
+    $('[data-a="video"]', ed).onclick = e => { if (window.InquireWidgets && rich) InquireWidgets.videoPanel(e.currentTarget, rich); };
+    file.onchange = async () => { const k = await rich.addFiles(file.files); if (!k) msg("Those files are not photos or videos"); file.value = ""; };
     const urlRow = $(".nb-urlrow", ed), urlIn = $("input", urlRow);
     $('[data-a="purl"]', ed).onclick = () => { urlRow.hidden = !urlRow.hidden; if (!urlRow.hidden) urlIn.focus(); };
     $('[data-a="purlx"]', ed).onclick = () => { urlRow.hidden = true; };
@@ -2343,11 +3260,79 @@ function renderNotes(m, focusTitle){
     $('[data-a="md"]', ed).onclick = () => { flushEd(); const m = NS.get(n.id); const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob(["# " + m.title + "\n\n" + m.body], { type: "text/markdown" })); a.download = (m.title.replace(/[^\w\- ]+/g, "").trim() || "note") + ".md"; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000); };
     // delete at once, with Undo in a message for 8 s (photos and videos are only removed once that time is up)
     $('[data-a="del"]', ed).onclick = () => { flushEd(); if (rich) { rich.destroy(); rich = null; } NOTES.sel = null; NS.deleteWithUndo(n.id, id => { if (s.isConnected) { NOTES.sel = id; drawAll(); } }); drawAll(); };
-    if (focusTitle) { ti.focus(); ti.select(); }
+    if (focusBody) setTimeout(() => {
+      const w = focusBody === "code" ? ed.querySelector(".nw[data-w=code] .nw-ta") : focusBody === "sheet" ? ed.querySelector(".nw[data-w=sheet] .sh-chords") : null;
+      if (w) w.focus({ preventScroll: true }); else if (rich) rich.focus();
+    }, 30);
   }
-  function drawAll(focusTitle){ drawFolders(); drawList(); drawEd(focusTitle); }
-  drawAll(focusTitle);
-  m.cleanup.push(() => { flushEd(); if (rich) { rich.destroy(); rich = null; } });
+  // a note link clicked in either pane opens in the main pane
+  function openLinked(id){ flushEd(); NOTES.sel = id; const m = NS.get(id); if (m && !inView(m)) NOTES.folder = "all"; drawAll(); }
+
+  /* ----- a second note side by side (dropped on ⧉); ▁ minimises it to a tab above the editor, ⤢ brings it back ----- */
+  const SPLIT = NOTES.split || (NOTES.split = { id: null, min: false });
+  let rich2 = null, save2 = null;
+  function flush2(){ if (rich2) rich2.flush(); if (save2) { clearTimeout(save2); save2 = null; const ti = $(".nb-title", ed2); if (ti && SPLIT.id && NS.get(SPLIT.id)) NS.update(SPLIT.id, { title: ti.value.trim() || "Untitled note" }); } }
+  function drawSplit(){
+    if (rich2) { rich2.destroy(); rich2 = null; }
+    const n = SPLIT.id && NS.get(SPLIT.id);
+    if (!n) { SPLIT.id = null; SPLIT.min = false; }
+    const show = !!n && !SPLIT.min;
+    ed2.hidden = !show; edSec.classList.toggle("split", show);
+    tabs.hidden = !(n && SPLIT.min);
+    tabs.innerHTML = n && SPLIT.min ? `<div class="nb-tab"><button type="button" class="nb-tab-t" data-a="max" title="Bring ${esc(n.title)} back beside this note">▣ <span>${esc(n.title)}</span></button><button type="button" class="nb-tab-b" data-a="max" title="Maximise: open it side by side again" aria-label="Maximise ${esc(n.title)}">⤢</button><button type="button" class="nb-tab-b" data-a="close" title="Close" aria-label="Close ${esc(n.title)}">✕</button></div>` : "";
+    tabs.querySelectorAll('[data-a="max"]').forEach(b => b.onclick = () => { SPLIT.min = false; drawSplit(); });
+    const tx = $('[data-a="close"]', tabs); if (tx) tx.onclick = () => closeSplit();
+    if (!show) { ed2.innerHTML = ""; return; }
+    ed2.innerHTML = `<div class="nb-p2h"><span class="nb-p2tag">Side by side</span><button type="button" class="btn-s" data-a="swap" title="Make this the main note">Open as main</button><button type="button" class="nb-p2b" data-a="min" title="Minimise to a tab" aria-label="Minimise to a tab">▁</button><button type="button" class="nb-p2b" data-a="close" title="Close this note" aria-label="Close the side note">✕</button></div>
+      <div class="nb-trow"><input class="nb-title" value="${esc(n.title)}" aria-label="Title of the side note" maxlength="140"></div><div class="nb-host"></div>`;
+    rich2 = NS.mountEditor($(".nb-host", ed2), n.id, { openNote: id => openLinked(id), onMessage: msg, onSaved: () => drawList() });
+    const ti = $(".nb-title", ed2);
+    ti.oninput = () => { clearTimeout(save2); save2 = setTimeout(() => { save2 = null; NS.update(n.id, { title: ti.value.trim() || "Untitled note" }); drawList(); drawFolders(); }, 400); };
+    $('[data-a="min"]', ed2).onclick = () => { flush2(); SPLIT.min = true; drawSplit(); };
+    $('[data-a="close"]', ed2).onclick = () => closeSplit();
+    $('[data-a="swap"]', ed2).onclick = () => { flushEd(); const a = NOTES.sel; NOTES.sel = n.id; SPLIT.id = a && a !== n.id ? a : null; drawAll(); };
+  }
+  function openSplit(id){ if (!id || id === NOTES.sel) return; flush2(); SPLIT.id = id; SPLIT.min = false; drawSplit(); }
+  function closeSplit(quiet){ flush2(); if (rich2) { rich2.destroy(); rich2 = null; } SPLIT.id = null; SPLIT.min = false; if (!quiet) drawSplit(); else { ed2.hidden = true; ed2.innerHTML = ""; tabs.hidden = true; tabs.innerHTML = ""; edSec.classList.remove("split"); } }
+
+  /* ----- dragging a note (from the list or a folder): into a note = a link to it; onto ⧉ = open it side by side ----- */
+  let dcaret = null;
+  const hideCaret = () => { if (dcaret) { dcaret.remove(); dcaret = null; } };
+  function noteDragStart(e, id, el){
+    DRAG = { type: "note", id }; e.dataTransfer.setData("text/x-note", id); e.dataTransfer.effectAllowed = "copyMove"; el.classList.add("dragging");
+    nbEl.classList.add("dragnote"); nbEl.classList.toggle("dragself", id === NOTES.sel); // the open note itself can only be linked from the side note
+  }
+  function noteDragEnd(el){ DRAG = null; el.classList.remove("dragging"); clearDrop(); nbEl.classList.remove("dragnote"); edSec.querySelectorAll(".nb-split.over").forEach(x => x.classList.remove("over")); hideCaret(); }
+  const dropTarget = e => {
+    if (!DRAG || DRAG.type !== "note") return null;
+    const sp = e.target.closest && e.target.closest(".p1 .nb-split"); if (sp) return DRAG.id === NOTES.sel ? null : { kind: "split", el: sp };
+    const re = e.target.closest && e.target.closest(".nb-rich"); if (!re || e.target.closest(".nw")) return null;
+    const api = NS.editorFor(re); if (!api || api.id === DRAG.id) return null;
+    return { kind: "link", api, re };
+  };
+  edSec.addEventListener("dragover", e => {
+    const t = dropTarget(e); edSec.querySelectorAll(".nb-split.over").forEach(x => { if (!t || x !== t.el) x.classList.remove("over"); });
+    if (!t) { hideCaret(); return; }
+    e.preventDefault(); e.dataTransfer.dropEffect = t.kind === "split" ? "copy" : "link";
+    if (t.kind === "split") { t.el.classList.add("over"); hideCaret(); return; }
+    const r = document.caretRangeFromPoint && document.caretRangeFromPoint(e.clientX, e.clientY), rc = r && t.re.contains(r.startContainer) ? r.getBoundingClientRect() : null;
+    if (!dcaret) { dcaret = h("div", { class: "nb-dcaret" }); document.body.appendChild(dcaret); }
+    const lh = rc && rc.height ? rc.height : 20;
+    dcaret.style.left = (rc && (rc.left || rc.top) ? rc.left : e.clientX) + "px"; dcaret.style.top = (rc && (rc.left || rc.top) ? rc.top : e.clientY - lh / 2) + "px"; dcaret.style.height = lh + "px";
+  });
+  edSec.addEventListener("dragleave", e => { if (!edSec.contains(e.relatedTarget)) { hideCaret(); edSec.querySelectorAll(".nb-split.over").forEach(x => x.classList.remove("over")); } });
+  edSec.addEventListener("drop", e => {
+    const t = dropTarget(e); hideCaret(); if (!t) return; e.preventDefault(); e.stopPropagation();
+    const id = DRAG.id; nbEl.classList.remove("dragnote");
+    if (t.kind === "split") { openSplit(id); return; }
+    const r = document.caretRangeFromPoint ? document.caretRangeFromPoint(e.clientX, e.clientY) : null;
+    t.api.insertNoteLink(r, id);
+  });
+
+  function drawAll(focusBody){ drawFolders(); drawList(); drawEd(focusBody); drawSplit(); }
+  m.redraw = drawAll;
+  drawAll(focusBody); paintHist();
+  m.cleanup.push(() => { flushEd(); if (rich) { rich.destroy(); rich = null; } if (rich2) { rich2.destroy(); rich2 = null; } hideCaret(); });
 }
 
 /* ---------- desktop shell (only inside the NotePath app) ---------- */
@@ -2378,24 +3363,24 @@ if (window.inquireDesktop) {
 
 /* ---------- hooks for settings.js and textmenu.js ---------- */
 window.InquireApp = {
-  context(){ return { view: MW.notes ? "notes" : S.view }; },
+  context(){ return { view: S.view }; },
   openNotes: id => go({ view: "notes", folder: "all", sel: id || null }),
   newNote,
-  modal: modalWin, closeWin: id => { if (id) { if (MW[id]) MW[id].close(); } else closeWins(); }, openWin: id => WIN_VIEWS[id] && WIN_VIEWS[id]({}), winOpen: id => (id ? !!MW[id] : Object.keys(MW).length > 0),
+  modal: modalWin, closeWin: id => { if (id) { if (MW[id]) MW[id].close(); } else closeWins(); }, openWin: () => {}, winOpen: id => (id ? !!MW[id] : Object.keys(MW).length > 0),
   go: v => go(v), askText,
   // keyboard shortcuts (Settings → Shortcuts)
   shortcut(name){
     if (name === "menu") return go({ view: "menu" });
-    if (name === "notes") return MW.notes ? MW.notes.close() : openNotesWin({});
-    if (name === "newnote") return newNote();
+    if (name === "notes") return go({ view: S.view === "notes" ? "menu" : "notes" });
+    if (name === "newnote") return S.view === "notes" && NPAGE && NPAGE.newNote ? NPAGE.newNote() : newNote();
     if (name === "favs") return go({ view: "notes", folder: "fav" });
-    if (name === "back") { if (Object.keys(MW).length) return closeWins(); }
+    if (name === "back") { if (Object.keys(MW).length) return closeWins(); if (S.view !== "menu") return go({ view: "menu" }); }
   }
 };
 
 /* ---------- boot ---------- */
 $("#brand").onclick = () => go({ view: "menu" });
-// NotePath opens on the start menu; #notes / #favourites open My notes over it.
+// NotePath opens on the start menu; #notes / #favourites open the My notes page.
 const initial = fromHash();
 render();
 try { history.replaceState({ view: "menu" }, "", "#menu"); } catch(e){}
@@ -2409,7 +3394,9 @@ if (initial && initial.view === "notes") go(initial, false);
       page/definition; inflected forms follow "plural of …" to the headword), else a Wikipedia summary (names, phrases),
       else dictionaryapi.dev; the desktop app fetches through main.js "dict:lookup" (host allowlist). "＋ Save to note"
       puts the definition right after the selected line.  3. Link to a note: the selected words become a link to another
-      note (or a new one); links use --note-link (Settings → Appearance).
+      note (or a new one); links use --note-link (Settings → Appearance).  4. Translate: a box right under the menu
+      offers Spanish, German or French; the translation (MyMemory, free, no key; desktop fetches through main.js) shows
+      there with Copy, Replace (the selected words) and ＋ Insert below.
    No selection → the normal menu. Loaded after notes.js and app.js. */
 (function () {
 "use strict";
@@ -2453,7 +3440,8 @@ function open(x, y, c) {
   menu.innerHTML = `
     <button type="button" role="menuitem" data-a="copy"><span class="tm-ic">⧉</span><span>Copy</span><kbd>${/Mac/.test(navigator.platform) ? "⌘" : "Ctrl+"}C</kbd></button>
     <button type="button" role="menuitem" data-a="dict"${words > 5 ? " disabled" : ""}><span class="tm-ic">W</span><span>Define “${esc(short)}” · Dictionary<small>${words > 5 ? "Select a word or short phrase" : "Wiktionary and Wikipedia, online"}</small></span></button>
-    <button type="button" role="menuitem" data-a="link"><span class="tm-ic">↗</span><span>Link to a note…<small>These words open the note you pick</small></span></button>`;
+    <button type="button" role="menuitem" data-a="link"><span class="tm-ic">↗</span><span>Link to a note…<small>These words open the note you pick</small></span></button>
+    <button type="button" role="menuitem" data-a="tr"${c.text.length > TR_MAX ? " disabled" : ""} aria-haspopup="true"><span class="tm-ic">文</span><span>Translate…<small>${c.text.length > TR_MAX ? `Select up to ${TR_MAX} characters` : "Spanish, German or French"}</small></span><kbd>▾</kbd></button>`;
   document.body.appendChild(menu);
   const W = menu.offsetWidth, H = menu.offsetHeight;
   const place = () => { const W2 = menu.offsetWidth, H2 = menu.offsetHeight; menu.style.left = Math.max(6, Math.min(innerWidth - W2 - 6, x)) + "px"; menu.style.top = Math.max(6, Math.min(innerHeight - H2 - 6, y)) + "px"; };
@@ -2461,10 +3449,14 @@ function open(x, y, c) {
   menu.style.top = Math.max(6, Math.min(innerHeight - H - 6, y)) + "px";
   menu.addEventListener("mousedown", e => e.preventDefault()); // keep the selection while clicking
   menu.addEventListener("click", e => {
-    const b = e.target.closest("button[data-a]"); if (!b || b.disabled) return;
+    const b = e.target.closest("button[data-a], button[data-lang]"); if (!b || b.disabled) return;
     const a = b.dataset.a;
     if (a === "save") { saveDef(x, y, c); return; }
     if (a === "dict") { showDict(c.text, place); return; }
+    if (a === "tr") { trBox(place); return; }
+    if (b.dataset.lang) { translate(c.text, b.dataset.lang, place); return; }
+    if (a === "tr-copy") { const t = menu._tr; close(); if (t) { copyText(t.text); } return; }
+    if (a === "tr-rep" || a === "tr-ins") { const t = menu._tr; close(); if (t) useTranslation(t, c, a === "tr-rep"); return; }
     close();
     if (a === "copy") copy(c.text);
     else if (a === "link") linkFlow(x, y, c);
@@ -2473,6 +3465,49 @@ function open(x, y, c) {
   window.addEventListener("blur", close); window.addEventListener("resize", close); document.addEventListener("scroll", onScroll, true);
   menu.querySelector("button").focus({ preventScroll: true });
 }
+/* ---------- translate: a language box right under the menu ---------- */
+const TR_MAX = 480, LANGS = [["es", "Spanish", "Español"], ["de", "German", "Deutsch"], ["fr", "French", "Français"]], trCache = {};
+const TR_URL = "https://api.mymemory.translated.net/get";
+function trBox(place, html) {
+  let b = menu.querySelector(".tm-tr");
+  if (!b) { b = document.createElement("div"); b.className = "tm-tr"; b.setAttribute("role", "group"); b.setAttribute("aria-label", "Translate into"); menu.appendChild(b); }
+  if (!b.querySelector(".tm-langs")) b.innerHTML = `<div class="tm-trh">Translate into</div><div class="tm-langs">${LANGS.map(([k, n, own]) => `<button type="button" class="tm-lang" data-lang="${k}" title="${own}"><b>${n}</b><small>${own}</small></button>`).join("")}</div><div class="tm-trout" aria-live="polite"></div>`;
+  if (html != null) b.querySelector(".tm-trout").innerHTML = html;
+  menu.querySelector('[data-a="tr"]').setAttribute("aria-expanded", "true");
+  place(); if (html == null) b.querySelector(".tm-lang").focus({ preventScroll: true });
+  return b;
+}
+async function translate(text, lang, place) {
+  const L = LANGS.find(x => x[0] === lang); if (!L) return;
+  const q = text.replace(/\s+/g, " ").trim().slice(0, TR_MAX), ck = lang + "|" + q;
+  menu.querySelectorAll(".tm-lang").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+  menu._tr = null;
+  trBox(place, `<p class="tm-dn tm-busy">Translating into ${L[1]}…</p>`);
+  let r = trCache[ck];
+  if (!r) {
+    const res = await getJSON(TR_URL + "?q=" + encodeURIComponent(q) + "&langpair=" + encodeURIComponent("en|" + lang));
+    const d = res.body && res.body.responseData, out = d && plain(String(d.translatedText || ""));
+    const st = res.body && +res.body.responseStatus;
+    r = res.status === 200 && out && (!st || st === 200) ? { ok: true, text: out } : { ok: false, error: !res.status ? "Could not reach the translation service. Check your internet connection." : st === 429 || /LIMIT/i.test(String(res.body && res.body.responseDetails)) ? "Today's free translations are used up. Try again tomorrow." : "That could not be translated." };
+    if (r.ok) trCache[ck] = r;
+  }
+  if (!menu) return;
+  if (!r.ok) { trBox(place, `<p class="tm-dn">${esc(r.error)}</p>`); return; }
+  menu._tr = { text: r.text, lang: L[1] };
+  trBox(place, `<p class="tm-trtext" lang="${lang}">${esc(r.text)}</p><div class="tm-dacts"><button type="button" class="tm-dgo" data-a="tr-copy">Copy</button><button type="button" class="tm-dgo" data-a="tr-rep">Replace</button><button type="button" class="tm-dgo" data-a="tr-ins">＋ Insert below</button></div><p class="tm-dfoot">${L[1]} · free, from MyMemory (machine translation).</p>`);
+}
+function copyText(t) {
+  const ta = document.createElement("textarea"); ta.value = t; ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.appendChild(ta); ta.select();
+  let ok = false; try { ok = document.execCommand("copy"); } catch (e) {} ta.remove();
+  if (!ok && navigator.clipboard) navigator.clipboard.writeText(t).then(() => {}, () => {});
+  toast("Copied the translation");
+}
+function useTranslation(t, c, replace) {
+  const N = NS(), api = N && N.editorFor(c.zone); if (!api) return;
+  if (replace) { c.zone.focus({ preventScroll: true }); const s = getSelection(); s.removeAllRanges(); s.addRange(c.range); document.execCommand("insertText", false, t.text); api.changed(); toast(`Replaced with the ${t.lang} translation`); }
+  else if (api.insertBlock(`<div><i>${esc(t.text)}</i></div>`, c.range)) toast(`Added the ${t.lang} translation below`);
+}
+
 /* ---------- definitions inside the menu ---------- */
 // "＋ Save to note": in a note, the definition goes in right after the selected line; on a lesson, into a note you pick
 const SAVE_BTN = `<button type="button" class="tm-dgo tm-save" data-a="save">＋ Save to note</button>`;
@@ -2813,7 +3848,7 @@ document.addEventListener("keydown", e => {
   if (ov.hidden) {
     if (e.key === "Escape" && !e.defaultPrevented) {
       // Esc closes the smallest thing first: a popup (it handles Esc itself), then My notes
-      if (document.querySelector(".tm-menu, .nk-pick, .nr-panel, .ask-ov, .nv-pop")) return;
+      if (document.querySelector(".tm-menu, .nk-pick, .nr-panel, .ask-ov, .nv-pop, .np-pop")) return;
       if (document.querySelector(".mw-ov:not(.out)") && window.InquireApp) { e.preventDefault(); e.stopPropagation(); InquireApp.closeWin(); return; }
     }
     if (!act || document.querySelector(".ask-ov")) return;

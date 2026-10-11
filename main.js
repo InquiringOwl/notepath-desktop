@@ -102,7 +102,7 @@ app.whenReady().then(() => {
   ipcMain.handle('update:state', () => updateState);
   // Right-click → dictionary: textmenu.js decides what to ask (Wiktionary, then Wikipedia, then dictionaryapi.dev); this only
   // fetches, here in the main process (no CORS, no CSP), and only from those hosts. No keys or setup needed.
-  const DICT_HOSTS = ['en.wiktionary.org', 'en.wikipedia.org', 'api.dictionaryapi.dev'];
+  const DICT_HOSTS = ['en.wiktionary.org', 'en.wikipedia.org', 'api.dictionaryapi.dev', 'api.mymemory.translated.net']; // + Translate (textmenu.js)
   ipcMain.handle('dict:lookup', async (_e, q) => {
     let u; try { u = new URL(String(q && q.url || '')); } catch (err) { return { status: 0 }; }
     if (u.protocol !== 'https:' || !DICT_HOSTS.includes(u.hostname)) return { status: 0 };

@@ -35,18 +35,17 @@ const { desktop, R } = require('./build-web.js');
     process.stdout.write(`Smoke test, ${label} width `);
     await p.goto(URL0 + '#menu'); await p.waitForTimeout(400);
     await step('start menu', async () => {
-      if (await p.$$eval('.npn-acts .slot', e => e.length) !== 3) throw new Error('the Notes buttons are missing');
-      if (await p.$$eval('.npn-soon .slot', e => e.filter(x => /Coming soon/.test(x.textContent)).length) !== 3) throw new Error('three Coming soon buttons expected');
+      if (!(await p.$('.npn-acts .slot[data-a=open]'))) throw new Error('the My notes button is missing');
+      if (await p.$$eval('.slot.npn-soon', e => e.filter(x => /Coming soon/.test(x.textContent)).length) !== 3) throw new Error('three Coming soon buttons expected');
     });
-    await step('My notes', async () => { await p.click('[data-a=open]'); await p.waitForSelector('.mw-ov[data-mw=notes] .nb'); await p.waitForTimeout(300); });
-    await step('new note in My notes', async () => { await p.click('.nb-tools [data-a=new]'); await p.waitForSelector('.nb-rich'); await p.keyboard.type('Smoke'); await p.click('.nb-rich'); await p.keyboard.type('Hello'); await p.waitForTimeout(500); });
-    await step('close My notes', async () => { await p.keyboard.press('Escape'); await p.waitForTimeout(400); if (await p.$('.mw-ov:not(.out)')) throw new Error('My notes did not close'); });
-    await step('Favourites', async () => { await p.click('[data-a=fav]'); await p.waitForSelector('.nb-fd.sel[data-f=fav]'); await p.keyboard.press('Escape'); await p.waitForTimeout(400); });
-    await step('New note dialog', async () => { await p.click('[data-a=new]'); await p.waitForSelector('.ask-ov'); await p.keyboard.press('Escape'); await p.waitForTimeout(300); });
+    await step('My notes', async () => { await p.click('[data-a=open]'); await p.waitForSelector('.npage .nb'); await p.waitForTimeout(300); });
+    await step('New note dialog + new note', async () => { await p.click('.np-newb'); await p.waitForSelector('.ask-in:focus'); await p.keyboard.type('Smoke'); await p.keyboard.press('Enter'); await p.waitForSelector('.nb-rich'); await p.click('.nb-rich'); await p.keyboard.type('Hello'); await p.waitForTimeout(500); });
+    await step('back to the menu', async () => { await p.click('#brand'); await p.waitForTimeout(400); if (await p.$('.npage')) throw new Error('My notes did not close'); });
+    await step('Favourites', async () => { await p.goto(URL0 + '#favourites'); await p.waitForSelector('.nb-fd.sel[data-f=fav]'); await p.click('#brand'); await p.waitForTimeout(300); });
     for (const t of ['look', 'display', 'keys', 'usage', 'data', 'about'])
       await step('Settings · ' + t, async () => { await p.evaluate(t => InquireSettings.open(t), t); await p.waitForTimeout(120); });
     await step('close Settings', async () => { await p.evaluate(() => InquireSettings.close()); });
-    await step('route #notes', async () => { await p.goto(URL0 + '#notes'); await p.waitForSelector('.mw-ov[data-mw=notes] .nb'); });
+    await step('route #notes', async () => { await p.goto(URL0 + '#notes'); await p.waitForSelector('.npage .nb'); });
     await step('route #favourites', async () => { await p.goto(URL0 + '#favourites'); await p.waitForSelector('.nb-fd.sel[data-f=fav]'); });
     console.log(' done');
     await p.close();

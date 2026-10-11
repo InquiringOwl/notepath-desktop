@@ -1,5 +1,6 @@
 /* Notes toolbar and widgets (loaded after notes.js; notes.js calls InquireWidgets.toolbar() and .mount()).
-   Toolbar: Bold / Italic / Underline, text colours (span[data-c], the house palette), a panel with an Emoji tab and a
+   Toolbar: Bold / Italic / Underline, a font menu (span[data-f]), a numeric size menu (span[data-s="18"]), one spectrum colour picker
+   (span[data-c="#rrggbb"]; old notes keep the house-palette keys), a panel with an Emoji tab and a
    Symbols tab (Greek, maths, alchemical + planetary signs; alchemical glyphs come from the bundled Noto Sans Symbols subset),
    and two widgets:
    - Code box  <div class="nw" data-w="code" data-src='{"lang","title","src"}'>: editable code with line numbers and
@@ -135,29 +136,106 @@ function toolbar(api) {
   const mod = /Mac/.test(navigator.platform) ? "⌘" : "Ctrl+";
   bar.innerHTML = `<button type="button" data-cmd="bold" title="Bold (${mod}B)" aria-label="Bold"><b>B</b></button><button type="button" data-cmd="italic" title="Italic (${mod}I)" aria-label="Italic"><i>I</i></button><button type="button" data-cmd="underline" title="Underline (${mod}U)" aria-label="Underline"><u>U</u></button><button type="button" data-cmd="strikeThrough" title="Strikethrough" aria-label="Strikethrough"><s>S</s></button>
     <span class="nr-sep"></span><button type="button" data-blk="h3" title="Heading" aria-label="Heading">H</button><button type="button" data-blk="ul" title="Bulleted list" aria-label="Bulleted list">•≡</button><button type="button" data-blk="ol" title="Numbered list" aria-label="Numbered list">1.≡</button><button type="button" data-blk="ck" title="Checklist: click a box to tick an item off" aria-label="Checklist">☑</button>
-    <span class="nr-sep"></span><span class="nr-sizes" role="group" aria-label="Text size">${[["2", "s", "Small text"], ["3", "n", "Normal text"], ["5", "l", "Large text"], ["6", "xl", "Huge text"]].map(([v, k, n]) => `<button type="button" data-size="${v}" class="nr-sz nr-sz-${k}" title="${n}" aria-label="${n}">A</button>`).join("")}</span>
-    <span class="nr-sep"></span><span class="nr-cols" role="group" aria-label="Text colour">${COLORS.map(([k, c, n]) => `<button type="button" class="nr-col" data-col="${c}" style="--c:${c}" title="${n} text" aria-label="${n} text"></button>`).join("")}<button type="button" class="nr-col nr-colx" data-col="${CLEAR}" title="Normal text colour" aria-label="Normal text colour">⊘</button></span>
+    <span class="nr-sep"></span><button type="button" class="nr-dd nr-font" data-dd="font" title="Font" aria-haspopup="listbox" aria-label="Font"><span class="nr-ddv">Default</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-dd nr-size" data-dd="size" title="Text size" aria-haspopup="listbox" aria-label="Text size"><span class="nr-ddv num">15</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-dd nr-colb" data-dd="color" title="Text colour" aria-haspopup="dialog" aria-label="Text colour"><span class="nr-cola" aria-hidden="true">A</span><span class="nr-car" aria-hidden="true">▾</span></button>
     <span class="nr-sep"></span><button type="button" class="nr-sym" title="Emoji and symbols (Greek, maths, alchemical)" aria-haspopup="dialog">☺ Ω</button>
-    <span class="nr-sep"></span><button type="button" data-w="code" title="Add a code box">&lt;/&gt; Code</button><button type="button" data-w="music" title="Add a music chart">♪ Music</button><button type="button" class="nr-vid" title="Add a video: a file from this computer, or a YouTube, Vimeo or video link" aria-haspopup="dialog">▶ Video</button>`;
+    <span class="nr-sep"></span><button type="button" data-w="code" title="Add a code box">&lt;/&gt; Code</button><button type="button" data-w="music" title="Add a music chart">♪ Music</button><button type="button" data-w="sheet" title="Add a lead sheet: bars with chord symbols and melody">𝄞 Sheet</button><button type="button" data-w="graph" title="Add a graph: click points on a grid and get their equations">∿ Graph</button>`;
   bar.addEventListener("mousedown", e => e.preventDefault()); // keep the selection in the note
   bar.addEventListener("click", e => {
     const b = e.target.closest("button"); if (!b) return;
     if (b.dataset.cmd) { api.focus(); document.execCommand(b.dataset.cmd); sync(); api.changed(); }
     else if (b.dataset.blk) { api.focus(); block(b.dataset.blk, api); sync(); api.changed(); }
-    else if (b.dataset.col) { api.focus(); document.execCommand("styleWithCSS", false, false); document.execCommand("foreColor", false, b.dataset.col); api.normalizeColors(); api.changed(); }
-    else if (b.dataset.size) { api.focus(); document.execCommand("styleWithCSS", false, false); document.execCommand("fontSize", false, b.dataset.size); api.normalizeColors(); api.changed(); }
+    else if (b.dataset.dd) ddPanel(b, b.dataset.dd, api, sync);
     else if (b.classList.contains("nr-sym")) symbolPanel(b, api);
-    else if (b.classList.contains("nr-vid")) videoPanel(b, api);
     else if (b.dataset.w) api.addWidget(b.dataset.w);
   });
   const sync = () => { if (!api.el.contains(document.activeElement) && document.activeElement !== api.el) return;
     bar.querySelectorAll("[data-cmd]").forEach(b => { let on = false; try { on = document.queryCommandState(b.dataset.cmd); } catch (e) {} b.setAttribute("aria-pressed", String(on)); });
     const el = caretEl(api), L = el && el.closest("ul, ol"), on = { h3: !!(el && el.closest("h3")), ul: !!(L && L.tagName === "UL" && !L.hasAttribute("data-ck")), ol: !!(L && L.tagName === "OL"), ck: !!(L && L.hasAttribute("data-ck")) };
-    bar.querySelectorAll("[data-blk]").forEach(b => b.setAttribute("aria-pressed", String(on[b.dataset.blk]))); };
+    bar.querySelectorAll("[data-blk]").forEach(b => b.setAttribute("aria-pressed", String(on[b.dataset.blk])));
+    const f = fmtAt(fmtEl(api)); bar.querySelector(".nr-font .nr-ddv").textContent = f.fontName; bar.querySelector(".nr-font").style.setProperty("--ff", f.fontStack);
+    bar.querySelector(".nr-size .nr-ddv").textContent = f.size; bar.querySelector(".nr-colb").style.setProperty("--c", f.color); };
   document.addEventListener("selectionchange", sync);
-  bar.destroy = () => document.removeEventListener("selectionchange", sync);
+  bar.destroy = () => { document.removeEventListener("selectionchange", sync); closeDD(); };
   return bar;
 }
+/* ---------- font, size and colour menus (NotePath) ---------- */
+const NOTES = () => window.InquireNotes || {};
+const FSTACK = { serif: '"STIX Two Text",Georgia,serif', sans: '"IBM Plex Sans",system-ui,sans-serif', mono: '"IBM Plex Mono",ui-monospace,Menlo,monospace', cond: '"Saira Semi Condensed","Arial Narrow",sans-serif',
+  georgia: "Georgia,serif", times: '"Times New Roman",Times,serif', palatino: '"Palatino Linotype",Palatino,"Book Antiqua",serif', garamond: 'Garamond,"EB Garamond","Adobe Garamond Pro",serif',
+  arial: "Arial,Helvetica,sans-serif", helvetica: '"Helvetica Neue",Helvetica,Arial,sans-serif', verdana: "Verdana,Geneva,sans-serif", trebuchet: '"Trebuchet MS",sans-serif', tahoma: "Tahoma,Geneva,sans-serif",
+  courier: '"Courier New",Courier,monospace', comic: '"Comic Sans MS","Comic Neue",cursive', brush: '"Brush Script MT","Snell Roundhand",cursive' };
+const OLDSIZE = { s: 12, n: 15, l: 20, xl: 26 };
+// the element whose formatting the toolbar shows: the first one the selection starts in
+function fmtEl(api) { const s = getSelection(); if (!s.rangeCount) return null; const r = s.getRangeAt(0); let n = r.startContainer;
+  if (n.nodeType === 1 && n.childNodes[r.startOffset]) { n = n.childNodes[r.startOffset]; while (n.nodeType === 1 && n.firstChild && !r.collapsed) n = n.firstChild; }
+  const el = n.nodeType === 1 ? n : n.parentElement; return el && api.el.contains(el) ? el : null; }
+// what the caret sits in: font, size (number) and colour, for the toolbar labels
+function fmtAt(el) {
+  const fsp = el && el.closest("span[data-f]"), ssp = el && el.closest("span[data-s]"), fk = fsp ? fsp.dataset.f : "";
+  const nf = (NOTES().NFONTS || []).find(f => f[0] === fk);
+  const sz = ssp ? (OLDSIZE[ssp.dataset.s] || +ssp.dataset.s || 15) : 15;
+  return { font: fk, fontName: nf ? nf[1] : "Default", fontStack: FSTACK[fk] || "var(--sans)", size: sz, color: el ? getComputedStyle(el).color : "var(--text)" };
+}
+let dd = null;
+function closeDD() { if (dd) { dd.remove(); dd = null; document.removeEventListener("pointerdown", outDD, true); window.removeEventListener("keydown", keyDD, true); } }
+const outDD = e => { if (dd && !dd.contains(e.target) && !e.target.closest(".nr-dd")) closeDD(); };
+const keyDD = e => { if (e.key === "Escape" && dd) { e.preventDefault(); e.stopPropagation(); closeDD(); } };
+const RECENT_KEY = "notepath.recentcolors";
+const recent = () => { try { const a = JSON.parse(localStorage.getItem(RECENT_KEY) || "[]"); return Array.isArray(a) ? a.filter(c => /^#[0-9a-f]{6}$/.test(c)).slice(0, 10) : []; } catch (e) { return []; } };
+const addRecent = c => { try { localStorage.setItem(RECENT_KEY, JSON.stringify([c, ...recent().filter(x => x !== c)].slice(0, 10))); } catch (e) {} };
+const toHex = (r, g, b) => "#" + [r, g, b].map(x => Math.round(x).toString(16).padStart(2, "0")).join("");
+function ddPanel(btn, kind, api, sync) {
+  const was = dd && dd.dataset.kind; closeDD(); if (was === kind) return;
+  const cur = fmtAt(fmtEl(api));
+  dd = document.createElement("div"); dd.className = "np-pop win np-pop-" + kind; dd.dataset.kind = kind;
+  // the words selected when the menu opened (typing a colour code moves the focus into the menu)
+  const s0 = getSelection(), saved = s0.rangeCount && api.el.contains(s0.getRangeAt(0).commonAncestorContainer) ? s0.getRangeAt(0).cloneRange() : null;
+  const apply = (k, v) => { closeDD(); if (saved) { api.el.focus({ preventScroll: true }); const s1 = getSelection(); s1.removeAllRanges(); s1.addRange(saved); } api.format(k, v); sync(); };
+  if (kind === "font") {
+    dd.setAttribute("role", "listbox"); dd.setAttribute("aria-label", "Font");
+    const fonts = [["", "Default (IBM Plex Sans)"], ...(NOTES().NFONTS || [])];
+    dd.innerHTML = `<div class="np-pop-h">Font</div><div class="np-fonts">${fonts.map(([k, n], i) => `${i === 5 ? `<div class="np-pop-sub">On this computer</div>` : i === 1 ? `<div class="np-pop-sub">Bundled with NotePath</div>` : ""}<button type="button" role="option" data-v="${k}" aria-selected="${cur.font === k}" style="font-family:${esc(FSTACK[k] || "var(--sans)")}">${esc(n)}</button>`).join("")}</div>`;
+  } else if (kind === "size") {
+    dd.setAttribute("role", "listbox"); dd.setAttribute("aria-label", "Text size");
+    dd.innerHTML = `<div class="np-pop-h">Size <span>normal text is 15</span></div><div class="np-sizes">${(NOTES().NSIZES || []).map(n => `<button type="button" role="option" class="num" data-v="${n}" aria-selected="${cur.size === n}">${n}</button>`).join("")}</div>`;
+  } else {
+    dd.setAttribute("role", "dialog"); dd.setAttribute("aria-label", "Text colour");
+    const rc = recent();
+    dd.innerHTML = `<div class="np-pop-h">Colour <span>click or drag on the spectrum</span></div>
+      <canvas class="np-spec" width="248" height="132" aria-label="Colour spectrum"></canvas><canvas class="np-grey" width="248" height="16" aria-label="Greys"></canvas>
+      <div class="np-crow"><span class="np-cprev"></span><input class="np-hex" maxlength="7" spellcheck="false" aria-label="Colour code (hex)" placeholder="#RRGGBB"><button type="button" class="nw-b np-capply">Apply</button></div>
+      ${rc.length ? `<div class="np-pop-sub">Recent</div><div class="np-recent">${rc.map(c => `<button type="button" data-c="${c}" style="--c:${c}" title="${c.toUpperCase()}" aria-label="Recent colour ${c.toUpperCase()}"></button>`).join("")}</div>` : ""}
+      <button type="button" class="np-cnorm" data-c="">⊘ Normal colour</button>`;
+    const sp = dd.querySelector(".np-spec"), gr = dd.querySelector(".np-grey"), hex = dd.querySelector(".np-hex"), prev = dd.querySelector(".np-cprev");
+    const g = sp.getContext("2d", { willReadFrequently: true }), W = sp.width, H = sp.height;
+    const hg = g.createLinearGradient(0, 0, W, 0); for (let i = 0; i <= 12; i++) hg.addColorStop(i / 12, `hsl(${i * 30},100%,50%)`);
+    g.fillStyle = hg; g.fillRect(0, 0, W, H);
+    const vg = g.createLinearGradient(0, 0, 0, H); vg.addColorStop(0, "rgba(255,255,255,.92)"); vg.addColorStop(.5, "rgba(255,255,255,0)"); vg.addColorStop(.5, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,.88)");
+    g.fillStyle = vg; g.fillRect(0, 0, W, H);
+    const gg = gr.getContext("2d", { willReadFrequently: true }), grd = gg.createLinearGradient(0, 0, gr.width, 0); grd.addColorStop(0, "#fff"); grd.addColorStop(1, "#000"); gg.fillStyle = grd; gg.fillRect(0, 0, gr.width, gr.height);
+    const show = c => { prev.style.background = c; hex.value = c.toUpperCase(); dd.dataset.pick = c; };
+    show(/^#[0-9a-f]{6}$/i.test(rgbHex(cur.color)) ? rgbHex(cur.color) : "#f2b84b");
+    const pickAt = (cv, ctx, e) => { const r = cv.getBoundingClientRect(), x = Math.max(0, Math.min(cv.width - 1, (e.clientX - r.left) / r.width * cv.width)), y = Math.max(0, Math.min(cv.height - 1, (e.clientY - r.top) / r.height * cv.height));
+      const d = ctx.getImageData(x | 0, y | 0, 1, 1).data; return toHex(d[0], d[1], d[2]); };
+    [[sp, g], [gr, gg]].forEach(([cv, ctx]) => {
+      cv.addEventListener("pointerdown", e => { e.preventDefault(); cv.setPointerCapture(e.pointerId); show(pickAt(cv, ctx, e)); cv._drag = true; });
+      cv.addEventListener("pointermove", e => { if (cv._drag) show(pickAt(cv, ctx, e)); });
+      cv.addEventListener("pointerup", e => { if (!cv._drag) return; cv._drag = false; const c = pickAt(cv, ctx, e); addRecent(c); apply("color", c); });
+    });
+    hex.addEventListener("input", () => { const v = hex.value.trim().replace(/^([0-9a-f]{6})$/i, "#$1"); if (/^#[0-9a-f]{6}$/i.test(v)) { prev.style.background = v; dd.dataset.pick = v.toLowerCase(); } });
+    hex.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); dd.querySelector(".np-capply").click(); } });
+    dd.querySelector(".np-capply").addEventListener("click", () => { const c = dd.dataset.pick; if (c) { addRecent(c); apply("color", c); } });
+  }
+  dd.addEventListener("mousedown", e => { if (!e.target.closest("input")) e.preventDefault(); }); // keep the selection in the note
+  dd.addEventListener("click", e => { const b = e.target.closest("button[data-v], button[data-c]"); if (!b) return; apply(kind === "color" ? "color" : kind, b.dataset.v != null ? b.dataset.v : b.dataset.c); });
+  document.body.appendChild(dd);
+  const r = btn.getBoundingClientRect(), w = dd.offsetWidth, h = dd.offsetHeight;
+  dd.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.left)) + "px";
+  dd.style.top = (r.bottom + 6 + h < innerHeight ? r.bottom + 6 : Math.max(8, r.top - h - 6)) + "px";
+  const sel = dd.querySelector('[aria-selected="true"]'); if (sel) sel.scrollIntoView({ block: "nearest" });
+  document.addEventListener("pointerdown", outDD, true); window.addEventListener("keydown", keyDD, true);
+}
+const rgbHex = c => { const m = String(c || "").match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/); return m ? toHex(+m[1], +m[2], +m[3]) : String(c || ""); };
 // headings and lists (NotePath): the block the caret is in becomes a heading / list item, or back to plain text
 function caretEl(api) { const s = getSelection(); if (!s.rangeCount) return null; const n = s.getRangeAt(0).startContainer, el = n.nodeType === 1 ? n : n.parentElement; return el && api.el.contains(el) ? el : null; }
 function block(kind, api) {
@@ -431,19 +509,24 @@ function mount(el) {
   if (el._nw) return; el._nw = true;
   el.contentEditable = "false";
   if (el.dataset.w === "code") mountCode(el); else if (el.dataset.w === "music") mountMusic(el); else if (el.dataset.w === "video") mountVideo(el);
+  else if (el.dataset.w === "graph" && window.NPGraph) { NPGraph.mount(el); delButton(el); }
+  else if (el.dataset.w === "sheet" && window.NPSheet) NPSheet.mount(el);
 }
 function create(type, data) {
   const el = document.createElement("div"); el.className = "nw"; el.dataset.w = type;
-  el.dataset.src = JSON.stringify(type === "video" ? Object.assign({ title: "" }, data || {}) : type === "code" ? { lang: "python", title: "", src: "" } : { title: "", clef: "treble", time: "4/4", tempo: 90, seq: "" });
+  el.dataset.src = JSON.stringify(type === "sheet" ? Object.assign({}, window.NPSheet ? NPSheet.DEF : {}, data || {}) : type === "graph" ? Object.assign({}, window.NPGraph ? NPGraph.DEF : {}, data || {}) : type === "video" ? Object.assign({ title: "" }, data || {}) : type === "code" ? { lang: "python", title: "", src: "" } : { title: "", clef: "treble", time: "4/4", tempo: 90, seq: "" });
   return el;
 }
 // plain-text version for search, previews and .md export
 function text(el) {
   const d = readSrc(el, {});
   if (el.dataset.w === "code") return "\n```" + (d.lang && d.lang !== "text" ? d.lang : "") + (d.title ? " " + d.title : "") + "\n" + (d.src || "") + "\n```\n";
+  if (el.dataset.w === "graph") return window.NPGraph ? NPGraph.text(d) : "";
+  if (el.dataset.w === "sheet") return window.NPSheet ? NPSheet.text(el) : "";
   if (el.dataset.w === "video") { const l = videoLink(d); return "\n▶ " + (d.title || "Video") + (l ? " (" + l + ")" : "") + "\n"; }
   if (el.dataset.w === "music") return "\n♪ " + (d.title ? d.title + ": " : "") + (d.seq || "(empty)") + (d.time ? " [" + d.time + ", " + (d.clef || "treble") + " clef]" : "") + "\n";
   return "";
 }
-window.InquireWidgets = { toolbar, mount, create, text, colorKey, COLORS, parseSeq, chordNotes, videoFrom };
+window.InquireWidgets = { toolbar, mount, create, text, colorKey, COLORS, parseSeq, chordNotes, videoFrom, videoPanel,
+  kit: { splinePath, G_CLEF, F_CLEF, delButton, len, UNITS } }; // shared with notes-sheet.js
 })();

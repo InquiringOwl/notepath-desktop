@@ -4,17 +4,17 @@
 .npn-count{margin-left:auto;font:500 12px/1 var(--mono);letter-spacing:.06em;color:var(--faint);text-transform:none}
 .npn-acts{padding:16px}
 .npn-acts .slot .tag{color:var(--frame)}
-.npn-acts .slot[data-a="fav"] .tag{color:var(--amber)}
 /* New note: the one action lit in the theme colour, like Inquire's "＋ New note" and "All subjects" buttons */
-.npn-new{border-color:color-mix(in srgb,var(--frame) 55%,var(--line-2));background:linear-gradient(180deg,color-mix(in srgb,var(--frame) 14%,var(--slot-1)),var(--slot-2))}
-.npn-new .glyph{color:var(--ink);background:radial-gradient(circle at 35% 30%,color-mix(in srgb,var(--frame) 95%,#fff),var(--frame) 70%);border-color:var(--frame);box-shadow:0 0 18px color-mix(in srgb,var(--frame) 45%,transparent)}
-.npn-new:hover{box-shadow:0 0 22px color-mix(in srgb,var(--frame) 30%,transparent)}
 .npn-recent{border-top:1px solid var(--line);padding:14px 16px 16px}
 .npn-sub{margin:0 0 10px;font:600 11px/1 var(--ui);letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
 .mnote-t .nb-star{color:var(--amber);font-style:normal}
 /* Coming soon: three slots not linked to anything yet */
-.npn-soon .slot.big{min-height:112px}
-.npn-soon .slot h3{color:var(--muted)}
+/* My notes and the three Coming soon slots share one row (Devon, Oct 2026) */
+.npn-acts{grid-template-columns:minmax(0,1.7fr) repeat(3,minmax(0,1fr))}
+.npn-acts .slot.npn-soon{min-height:112px}
+.slot.npn-soon h3{color:var(--muted)}
+@media (max-width:1000px){ .npn-acts{grid-template-columns:repeat(3,minmax(0,1fr))} .npn-acts .slot[data-a="open"]{grid-column:1 / -1} }
+@media (max-width:600px){ .npn-acts{grid-template-columns:minmax(0,1fr)} }
 .slot.locked:focus-visible{outline:none}
 @media (max-width:860px){ .npn-acts{padding:12px} .npn-recent{padding:12px} }
 @media (max-width:760px){ .crumbs{display:none} }
@@ -30,9 +30,230 @@
 .nr-tools>button[data-blk]{font:600 12.5px/1 var(--sans)}
 /* top bar: Settings on the right (Inquire's progress meter used to push it there) */
 .topbar .gear{margin-left:auto}
-.npn-acts .slot[data-a="fav"] .glyph{color:var(--amber)}
-@media (max-width:860px){ .npn-acts .slot.big,.npn-soon .slot.big{min-height:0;padding:14px} .npn-acts .slot .glyph,.npn-soon .slot .glyph{width:46px;height:46px;font-size:22px} }
+@media (max-width:860px){ .npn-acts .slot.big,.npn-acts .slot.npn-soon{min-height:0;padding:14px} .npn-acts .slot .glyph{width:46px;height:46px;font-size:22px} }
 /* the toolbar carries five more buttons than Inquire's: a little tighter so it stays on one row on most windows */
 .nr-tools>button,.nr-tools .nr-sym{min-width:26px;padding:0 5px}
 .nr-tools .nr-sep{margin:0 3px}
 .nr-cols{gap:2px}
+
+/* notes: numeric text sizes (span[data-s="18"], relative to the note's normal 15) and fonts (span[data-f]); toolbar menus in notes-widgets.js */
+.nb-rich span[data-s="8"]{font-size:calc(var(--nb-base) * 8 / 15)} .nb-rich span[data-s="9"]{font-size:calc(var(--nb-base) * 9 / 15)} .nb-rich span[data-s="10"]{font-size:calc(var(--nb-base) * 10 / 15)} .nb-rich span[data-s="11"]{font-size:calc(var(--nb-base) * 11 / 15)} .nb-rich span[data-s="12"]{font-size:calc(var(--nb-base) * 12 / 15)}
+.nb-rich span[data-s="13"]{font-size:calc(var(--nb-base) * 13 / 15)} .nb-rich span[data-s="14"]{font-size:calc(var(--nb-base) * 14 / 15)} .nb-rich span[data-s="15"]{font-size:calc(var(--nb-base) * 15 / 15)} .nb-rich span[data-s="16"]{font-size:calc(var(--nb-base) * 16 / 15)} .nb-rich span[data-s="18"]{font-size:calc(var(--nb-base) * 18 / 15)}
+.nb-rich span[data-s="20"]{font-size:calc(var(--nb-base) * 20 / 15)} .nb-rich span[data-s="22"]{font-size:calc(var(--nb-base) * 22 / 15)} .nb-rich span[data-s="24"]{font-size:calc(var(--nb-base) * 24 / 15);line-height:1.35} .nb-rich span[data-s="28"]{font-size:calc(var(--nb-base) * 28 / 15);line-height:1.35} .nb-rich span[data-s="32"]{font-size:calc(var(--nb-base) * 32 / 15);line-height:1.35}
+.nb-rich span[data-s="36"]{font-size:calc(var(--nb-base) * 36 / 15);line-height:1.35} .nb-rich span[data-s="40"]{font-size:calc(var(--nb-base) * 40 / 15);line-height:1.35} .nb-rich span[data-s="48"]{font-size:calc(var(--nb-base) * 48 / 15);line-height:1.35} .nb-rich span[data-s="60"]{font-size:calc(var(--nb-base) * 60 / 15);line-height:1.35} .nb-rich span[data-s="72"]{font-size:calc(var(--nb-base) * 72 / 15);line-height:1.35}
+
+.nb-rich span[data-f="serif"]{font-family:"STIX Two Text","Noto Sans Symbols",Georgia,serif}
+.nb-rich span[data-f="sans"]{font-family:"IBM Plex Sans","Noto Sans Symbols",system-ui,sans-serif}
+.nb-rich span[data-f="mono"]{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace}
+.nb-rich span[data-f="cond"]{font-family:"Saira Semi Condensed","Arial Narrow",sans-serif}
+.nb-rich span[data-f="georgia"]{font-family:Georgia,serif}
+.nb-rich span[data-f="times"]{font-family:"Times New Roman",Times,serif}
+.nb-rich span[data-f="palatino"]{font-family:"Palatino Linotype",Palatino,"Book Antiqua",serif}
+.nb-rich span[data-f="garamond"]{font-family:Garamond,"EB Garamond","Adobe Garamond Pro",serif}
+.nb-rich span[data-f="arial"]{font-family:Arial,Helvetica,sans-serif}
+.nb-rich span[data-f="helvetica"]{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif}
+.nb-rich span[data-f="verdana"]{font-family:Verdana,Geneva,sans-serif}
+.nb-rich span[data-f="trebuchet"]{font-family:"Trebuchet MS",sans-serif}
+.nb-rich span[data-f="tahoma"]{font-family:Tahoma,Geneva,sans-serif}
+.nb-rich span[data-f="courier"]{font-family:"Courier New",Courier,monospace}
+.nb-rich span[data-f="comic"]{font-family:"Comic Sans MS","Comic Neue",cursive}
+.nb-rich span[data-f="brush"]{font-family:"Brush Script MT","Snell Roundhand",cursive}
+.nr-tools .nr-dd{all:unset;box-sizing:border-box;cursor:pointer;height:28px;display:inline-flex;align-items:center;gap:5px;padding:0 6px;border:1px solid var(--line-2);border-radius:2px;color:var(--text);background:rgba(0,0,0,.18);font:500 12.5px/1 var(--sans)}
+.nr-tools .nr-dd+.nr-dd{margin-left:3px}
+.nr-tools .nr-dd:hover{border-color:var(--frame)}
+.nr-tools .nr-dd:focus-visible{outline:2px solid var(--frame)}
+.nr-car{font-size:9px;color:var(--faint)}
+.nr-font{width:118px}.nr-font .nr-ddv{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:var(--ff,var(--sans))}
+.nr-size{min-width:46px}.nr-size .nr-ddv{flex:1;text-align:center;font:500 12.5px/1 var(--mono)}
+.nr-colb .nr-cola{font:700 14px/1 var(--math);padding-bottom:2px;border-bottom:3px solid var(--c,var(--text));min-width:12px;text-align:center}
+.np-pop.win{position:fixed;z-index:2100;padding:8px;box-shadow:0 18px 60px rgba(0,0,0,.6),0 0 30px var(--glow);animation:vt-in .16s ease}
+.np-pop-h{font:600 10.5px/1 var(--ui);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);padding:2px 4px 8px;display:flex;gap:10px;align-items:baseline}
+.np-pop-h span{font:400 11.5px/1 var(--sans);letter-spacing:0;text-transform:none;color:var(--faint)}
+.np-pop-sub{font:600 9.5px/1 var(--ui);letter-spacing:.18em;text-transform:uppercase;color:var(--faint);padding:8px 6px 4px}
+.np-fonts{display:flex;flex-direction:column;width:230px;max-height:min(360px,60vh);overflow:auto}
+.np-fonts button,.np-sizes button{all:unset;box-sizing:border-box;cursor:pointer;border-radius:2px;color:var(--text)}
+.np-fonts button{padding:7px 8px;font-size:15px;line-height:1.2}
+.np-sizes{display:grid;grid-template-columns:repeat(5,40px);gap:3px}
+.np-sizes button{height:32px;display:grid;place-items:center;font:500 13px/1 var(--mono);border:1px solid var(--line)}
+.np-fonts button:hover,.np-sizes button:hover,.np-fonts button:focus-visible,.np-sizes button:focus-visible{background:color-mix(in srgb,var(--frame) 18%,transparent);outline:none}
+.np-fonts button[aria-selected="true"],.np-sizes button[aria-selected="true"]{box-shadow:inset 2px 0 0 var(--frame);background:color-mix(in srgb,var(--frame) 12%,transparent);border-color:var(--frame)}
+.np-pop-color{width:266px}
+.np-spec,.np-grey{display:block;width:248px;border-radius:2px;cursor:crosshair;touch-action:none;margin:0 auto}
+.np-spec{height:132px;box-shadow:0 0 0 1px var(--line-2)}
+.np-grey{height:16px;margin-top:6px;box-shadow:0 0 0 1px var(--line-2)}
+.np-crow{display:flex;align-items:center;gap:6px;margin:8px 1px 2px}
+.np-cprev{width:28px;height:28px;border-radius:2px;box-shadow:0 0 0 1px var(--line-2);flex:none}
+.np-hex{flex:1;min-width:0;background:var(--ink);color:var(--text);border:1px solid var(--line-2);border-radius:2px;padding:6px 7px;font:500 12.5px/1 var(--mono);text-transform:uppercase}
+.np-hex:focus{outline:none;border-color:var(--frame)}
+.np-recent{display:flex;flex-wrap:wrap;gap:4px;padding:0 4px}
+.np-recent button{all:unset;cursor:pointer;width:18px;height:18px;border-radius:50%;background:var(--c);box-shadow:0 0 0 1px rgba(255,255,255,.25)}
+.np-recent button:hover,.np-recent button:focus-visible{box-shadow:0 0 0 1px var(--text),0 0 8px var(--c);outline:none}
+.np-cnorm{all:unset;cursor:pointer;display:block;margin-top:8px;padding:6px 6px;border-radius:2px;color:var(--muted);font:500 12.5px/1 var(--sans)}
+.np-cnorm:hover,.np-cnorm:focus-visible{color:var(--text);background:rgba(255,255,255,.05);outline:none}
+
+/* checklists: "Uncheck all" appears over a selection that covers ticked items (notes.js) */
+.np-ck{position:fixed;z-index:2050;display:inline-flex;align-items:center;gap:7px;padding:7px 11px;cursor:pointer;border:1px solid var(--frame);border-radius:3px;
+  background:linear-gradient(180deg,var(--win-1),var(--win-2));color:var(--text);font:600 10.5px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;box-shadow:0 10px 30px rgba(0,0,0,.5),0 0 16px var(--glow);animation:vt-in .16s ease}
+.np-ck:hover{background:color-mix(in srgb,var(--frame) 18%,var(--win-1))}
+.np-ck:focus-visible{outline:2px solid var(--frame);outline-offset:2px}
+.np-ck .num{font:500 11px/1 var(--mono);color:var(--muted);letter-spacing:0}
+.np-ck-box{width:12px;height:12px;border:1.5px solid color-mix(in srgb,var(--frame) 70%,var(--line-2));border-radius:2px;box-sizing:border-box}
+
+/* graph widget (notes-graph.js) */
+.nb-rich .nw[data-w="graph"]{border-left-color:var(--green);container-type:inline-size}
+.nw[data-w="graph"] .nw-tag{color:var(--green);font-size:15px}
+.ng-body{display:grid;grid-template-columns:minmax(0,1fr) 240px;min-height:0}
+.ng-plot{padding:8px;border-right:1px solid var(--line);min-width:0}
+.ng-svg{display:block;width:100%;height:auto;max-height:440px;background:rgba(0,0,0,.18);border:1px solid var(--line);border-radius:2px;cursor:crosshair;touch-action:none;user-select:none}
+.ng-grid{stroke:var(--line);stroke-width:1}
+.ng-axis{stroke:var(--muted);stroke-width:1.4}
+.ng-lab{fill:var(--faint);font:400 11px var(--mono)}
+.ng-curve{stroke:var(--cyan);stroke-width:2.2;fill:none;stroke-linejoin:round;stroke-linecap:round;filter:drop-shadow(0 0 3px color-mix(in srgb,var(--cyan) 50%,transparent))}
+.ng-pt{cursor:grab}
+.ng-pt circle{fill:var(--amber);stroke:var(--ink);stroke-width:1.5}
+.ng-pt .ng-hit{fill:transparent;stroke:none}
+.ng-pt:hover circle:not(.ng-hit){r:7}
+.ng-pt text{fill:var(--amber);font:600 12px var(--sans);paint-order:stroke;stroke:var(--ink);stroke-width:3px}
+.ng-hint{margin-top:6px;font:400 11.5px/1.3 var(--sans);color:var(--faint)}
+.ng-side{padding:10px 12px;display:flex;flex-direction:column;gap:8px;min-width:0;user-select:text}
+.ng-eq{display:flex;flex-direction:column;gap:3px;padding:7px 9px;border:1px solid var(--line-2);border-left:2px solid var(--cyan);border-radius:2px;background:rgba(0,0,0,.16)}
+.ng-eql{font:600 9.5px/1 var(--ui);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.ng-eqv{font:400 17px/1.3 var(--math);color:var(--text);overflow-wrap:anywhere}
+.ng-dom{font:400 11.5px/1.2 var(--sans);color:var(--faint)}
+.ng-facts dl{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;margin:0;font:400 12.5px/1.35 var(--sans)}
+.ng-facts dt{color:var(--muted)} .ng-facts dd{margin:0;color:var(--text);font-family:var(--math)}
+.ng-note{font:400 12px/1.4 var(--sans);color:var(--faint)} .ng-note:empty{display:none}
+.ng-pts-h{font:600 9.5px/1 var(--ui);letter-spacing:.18em;text-transform:uppercase;color:var(--faint);margin-top:4px}
+.ng-pts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px;max-height:150px;overflow:auto}
+.ng-pts li{display:flex;align-items:center;gap:8px;font:400 13px/1.3 var(--math);color:var(--text)}
+.ng-pts b{color:var(--amber);font:600 12px/1 var(--sans);width:16px}
+.ng-pts li span{flex:1}
+.ng-pts button{all:unset;cursor:pointer;color:var(--faint);padding:2px 5px;font-size:11px}
+.ng-pts button:hover{color:var(--red)}
+.ng-add{display:flex;gap:5px}
+.ng-in{flex:1;min-width:0;background:var(--ink);color:var(--text);border:1px solid var(--line-2);border-radius:2px;padding:5px 7px;font:400 12.5px/1.2 var(--mono);user-select:text}
+.ng-in:focus{outline:none;border-color:var(--frame)} .ng-in.bad{border-color:var(--red)}
+.nw[data-w="graph"] .nw-b.armed{color:var(--red);border-color:var(--red)}
+@container (max-width:640px){ .ng-body{grid-template-columns:minmax(0,1fr)} .ng-plot{border-right:0;border-bottom:1px solid var(--line)} }
+
+/* ---------- My notes as a page (#notes, renderNotesPage in app.js): no fog, no window over the menu ---------- */
+.npage{height:100%;box-sizing:border-box;padding:14px 16px 16px;display:flex;flex-direction:column;overflow:hidden}
+.np-win{flex:1;min-height:0;width:min(1440px,100%);margin:0 auto;display:flex;flex-direction:column}
+.np-win .mw-body>.nb{flex:1;min-height:0;height:auto}
+.np-newb{all:unset;box-sizing:border-box;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:2px;
+  font:700 12px/1 var(--ui);letter-spacing:.16em;text-transform:uppercase;color:var(--ink);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--frame) 82%,#fff),var(--frame));border:1px solid color-mix(in srgb,var(--frame) 70%,#fff);
+  box-shadow:0 0 18px color-mix(in srgb,var(--frame) 45%,transparent),inset 0 1px 0 rgba(255,255,255,.35);transition:box-shadow .15s,filter .15s}
+.np-newb:hover{filter:brightness(1.08);box-shadow:0 0 26px color-mix(in srgb,var(--frame) 65%,transparent),inset 0 1px 0 rgba(255,255,255,.4)}
+.np-newb:focus-visible{outline:2px solid var(--text);outline-offset:2px}
+@media (max-width:860px){ .npage{overflow:auto;padding:8px} .np-win{flex:none} .np-win .mw-body>.nb{flex:none} }
+/* the note bar: ☆ on the left, the buttons on the right (no folder picker or "Saved": Devon, Oct 2026) */
+.nb-bar .nb-bar-r{margin-left:auto}
+
+/* folders column: every folder folds (▾/▸) and lists its notes under its folders */
+.nb{--nb-fw:var(--nb-fw-user,200px)}
+@media (max-width:1100px){ .nb{--nb-fw:var(--nb-fw-user,170px)} }
+.nb-fnote{display:flex;align-items:center;gap:7px;padding:5px 8px 5px calc(10px + var(--d,1) * 14px);border-radius:2px;cursor:pointer;position:relative;
+  font:400 12.5px/1.25 var(--sans);color:var(--muted);-webkit-user-drag:element}
+.nb-fnote:hover{color:var(--text);background:rgba(255,255,255,.04)}
+.nb-fnote.sel{color:var(--text);background:linear-gradient(90deg,color-mix(in srgb,var(--frame) 12%,transparent),transparent)}
+.nb-fnote.sel::before{content:"";position:absolute;left:calc(var(--d,1) * 14px);top:5px;bottom:5px;width:2px;background:var(--frame)}
+.nb-fnote:focus-visible{outline:2px solid var(--frame);outline-offset:-2px}
+.nb-fnote.dragging{opacity:.45}
+.nb-fni{flex:none;width:12px;text-align:center;color:var(--faint);font-size:11px}
+.nb-fnote .nb-fni:not(:empty){color:var(--faint)}
+.nb-fnt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nb-fd.user .nb-fcar{color:var(--frame)}
+.nb-rzf{position:absolute;z-index:5;top:0;bottom:0;left:var(--nb-fw);width:10px;transform:translateX(-50%);cursor:col-resize;touch-action:none;transition:left .32s cubic-bezier(.2,.7,.2,1)}
+.nb-rzf::after{content:"";position:absolute;left:4px;top:0;bottom:0;width:2px;background:transparent;transition:background .15s,box-shadow .15s}
+.nb-rzf:hover::after,.nb.rz .nb-rzf::after,.nb-rzf:focus-visible::after{background:var(--frame);box-shadow:0 0 8px var(--frame)}
+.nb-rzf:focus-visible{outline:none}
+.nb.ffold .nb-rzf,.nb.rz .nb-rzf{transition:none}
+.nb.ffold .nb-rzf{display:none}
+@media (max-width:860px){ .nb-rzf{display:none} .nb-fnote{flex:0 0 auto;padding-left:8px} .nb-fnote.sel::before{left:0} }
+
+/* editor: one note, or two side by side (.split); a minimised side note is a tab above (.nb-tabs) */
+.nb-ed{display:flex;flex-direction:column;min-height:0;min-width:0}
+.nb-panes{flex:1;min-height:0;display:flex}
+.nb-pane{flex:1 1 0;min-width:0;min-height:0;display:flex;flex-direction:column}
+.nb-pane[hidden]{display:none}
+.nb-pane.p2{border-left:1px solid var(--line);background:rgba(0,0,0,.08)}
+.nb-p2h{display:flex;align-items:center;gap:6px;padding:8px 10px 8px 14px;border-bottom:1px solid var(--line)}
+.nb-p2tag{margin-right:auto;font:600 10.5px/1 var(--ui);letter-spacing:.18em;text-transform:uppercase;color:var(--frame)}
+.nb-p2b{all:unset;cursor:pointer;width:28px;height:28px;display:grid;place-items:center;border:1px solid transparent;border-radius:2px;color:var(--muted);font-size:13px}
+.nb-p2b:hover{color:var(--text);border-color:var(--line-2)}
+.nb-p2b:focus-visible{outline:2px solid var(--frame)}
+.nb-tabs{display:flex;gap:6px;padding:6px 10px 0;border-bottom:1px solid var(--line);background:rgba(0,0,0,.12)}
+.nb-tabs[hidden]{display:none}
+.nb-tab{display:flex;align-items:center;max-width:300px;border:1px solid var(--line-2);border-bottom:0;border-radius:3px 3px 0 0;background:linear-gradient(180deg,color-mix(in srgb,var(--frame) 12%,var(--panel-2)),var(--panel-2));box-shadow:inset 0 2px 0 var(--frame)}
+.nb-tab-t{all:unset;cursor:pointer;min-width:0;display:flex;gap:6px;align-items:center;padding:7px 10px;font:500 13px/1.2 var(--sans);color:var(--text)}
+.nb-tab-t span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nb-tab-b{all:unset;cursor:pointer;padding:6px 8px;color:var(--muted);font-size:12px}
+.nb-tab-t:focus-visible,.nb-tab-b:focus-visible{outline:2px solid var(--frame);outline-offset:-2px}
+.nb-tab-b:hover{color:var(--text)}
+.nb-trow{display:flex;align-items:center;gap:10px;padding-right:12px}
+.nb-trow .nb-title{flex:1;min-width:0}
+/* ⧉ drop spot: only while a note is being dragged */
+.nb-split{display:none;align-items:center;gap:8px;padding:8px 12px;border:1px dashed var(--frame);border-radius:3px;color:var(--frame);font:600 10.5px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;white-space:nowrap;
+  background:color-mix(in srgb,var(--frame) 10%,transparent);box-shadow:0 0 14px color-mix(in srgb,var(--frame) 30%,transparent);animation:np-pulse 1.4s ease-in-out infinite}
+.nb-split-ic{font-size:16px;letter-spacing:0}
+.nb.dragnote .p1 .nb-split{display:flex}
+.nb.dragnote.dragself .p1 .nb-split{display:none}
+.nb-split.over{background:color-mix(in srgb,var(--frame) 28%,transparent);color:var(--text);border-style:solid;box-shadow:0 0 24px color-mix(in srgb,var(--frame) 60%,transparent)}
+@keyframes np-pulse{50%{box-shadow:0 0 4px color-mix(in srgb,var(--frame) 20%,transparent)}}
+.nb.dragnote .nb-rich{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--frame) 35%,transparent)}
+.nb-dcaret{position:fixed;z-index:2200;width:2px;background:var(--frame);box-shadow:0 0 8px var(--frame);pointer-events:none}
+@media (max-width:860px){ .nb-panes{flex-direction:column} .nb-pane{flex:none;min-height:360px} .nb-pane.p2{border-left:0;border-top:1px solid var(--line)} .nb-split span:not(.nb-split-ic){display:none} }
+@media (prefers-reduced-motion:reduce){ .nb-split{animation:none} }
+
+/* starred folders: ★ stays lit and the folder sits at the top of its level */
+.nb-fx.nb-ffav.on{opacity:1;color:var(--amber)}
+.nb-fx.nb-ffav:hover{color:var(--amber)}
+
+/* ↶ Undo / ↷ Redo in the My notes header */
+.np-hist{display:inline-flex;gap:4px}
+.np-hb{all:unset;box-sizing:border-box;cursor:pointer;padding:8px 11px;border:1px solid var(--line-2);border-radius:2px;color:var(--muted);font:600 11px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;background:rgba(0,0,0,.18)}
+.np-hb:hover:not(:disabled){color:var(--text);border-color:var(--frame)}
+.np-hb:focus-visible{outline:2px solid var(--frame)}
+.np-hb:disabled{opacity:.4;cursor:default}
+@media (max-width:860px){ .np-hb{padding:8px 8px} }
+
+/* lead sheet widget (notes-sheet.js) */
+.nb-rich .nw[data-w="sheet"]{border-left-color:var(--magenta)}
+.nw[data-w="sheet"] .nw-tag{color:var(--magenta);font-size:17px}
+.nw .sh-comp{flex:0 1 150px;min-width:80px;text-transform:none;letter-spacing:0;font:400 12.5px/1.2 var(--sans)}
+.nw-h select.sh-key,.nw-h select.sh-clef,.nw-h select.sh-time{background:var(--ink);color:var(--text);border:1px solid var(--line-2);border-radius:2px;padding:3px 5px;font:400 12px/1.2 var(--sans)}
+.sh-head{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;padding:12px 16px 0;min-height:10px}
+.sh-t{grid-column:2;font:400 24px/1.2 var(--math);color:var(--text);text-align:center}
+.sh-c{grid-column:3;justify-self:end;font:italic 400 13px/1.2 var(--math);color:var(--muted)}
+.sh-staff{padding:2px 8px 6px;overflow-x:auto}
+.sh-svg{width:100%;min-width:560px;height:auto}
+.sh-svg .sh-bar{fill:transparent;cursor:pointer;stroke:none}
+.sh-svg .sh-bar:hover{fill:color-mix(in srgb,var(--frame) 6%,transparent)}
+.sh-svg .sh-bar.on{fill:color-mix(in srgb,var(--frame) 13%,transparent);stroke:color-mix(in srgb,var(--frame) 60%,transparent);stroke-width:1}
+.sh-svg .sh-chord{font:600 16px/1 var(--math);fill:var(--text);pointer-events:none}
+.sh-svg .sh-num{font:400 10px/1 var(--mono);fill:var(--faint);pointer-events:none}
+.sh-svg .sh-over{font:600 9px/1 var(--ui);letter-spacing:.1em;fill:var(--red);text-transform:uppercase}
+.sh-svg text,.sh-svg line,.sh-svg path,.sh-svg ellipse,.sh-svg circle{pointer-events:none}
+.sh-barrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.sh-barn{font:600 11px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--frame);min-width:96px;text-align:center}
+.sh-chordl{display:inline-flex;align-items:center;gap:6px;font:600 10.5px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.sh-chords,.sh-mel{background:var(--ink);color:var(--text);border:1px solid var(--line-2);border-radius:2px;padding:5px 8px;font:500 14px/1.2 var(--math);user-select:text}
+.sh-chords{width:150px}.sh-mel{width:100%;box-sizing:border-box;font:400 12.5px/1.3 var(--mono)}
+.sh-chords:focus,.sh-mel:focus{outline:none;border-color:var(--frame)}
+.sh-sp{flex:1}
+.sh-all summary{cursor:pointer;font:600 10.5px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);padding:4px 0}
+.sh-all[open] summary{color:var(--text)}
+
+/* right-click → Translate: the language box under the menu (textmenu.js) */
+.tm-tr{margin-top:5px;padding:8px;border:1px solid color-mix(in srgb,var(--frame) 45%,var(--line-2));border-radius:3px;background:rgba(0,0,0,.22);display:grid;gap:8px;animation:vt-in .16s ease}
+.tm-trh{font:600 10px/1 var(--ui);letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+.tm-langs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.tm-menu .tm-lang{display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:8px 9px;border:1px solid var(--line-2);border-radius:2px;grid-template-columns:none}
+.tm-menu .tm-lang b{font:600 12.5px/1.1 var(--sans)}
+.tm-menu .tm-lang small{font-size:10.5px}
+.tm-menu .tm-lang[aria-pressed="true"]{border-color:var(--frame);background:color-mix(in srgb,var(--frame) 16%,transparent)}
+.tm-trout:empty{display:none}
+.tm-trtext{margin:0;font:400 14px/1.5 var(--sans);color:var(--text);max-height:180px;overflow:auto;user-select:text}
+.tm-tr .tm-dacts{display:flex;flex-wrap:wrap;gap:14px}
+.tm-tr .tm-dfoot{margin:0;font-size:11px;color:var(--faint)}

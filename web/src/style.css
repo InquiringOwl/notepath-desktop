@@ -130,6 +130,10 @@ pre.code .out{color:var(--pink)}
 /* ---------- desktop app chrome ---------- */
 .desktop .topbar{-webkit-app-region:drag}
 .desktop .topbar button,.desktop .topbar input{-webkit-app-region:no-drag}
+/* windows over the app sit on top of the top bar's drag strip; Electron still treats the strip as "drag" through them, so a
+   window's ✕ (and anything else up there) only clicked at its edges. Overlays opt out, and the strip stops dragging while one is open. */
+.desktop .mw-ov,.desktop .set-ov,.desktop .ask-ov,.desktop .nr-panel,.desktop .tm-menu,.desktop .np-pop,.desktop .np-ck{-webkit-app-region:no-drag}
+.desktop body.mw-open .topbar,.desktop body.set-open .topbar,.desktop body.ask-open .topbar{-webkit-app-region:no-drag}
 .os-darwin .topbar{padding-left:84px}
 .verline{display:flex;align-items:center;gap:12px;font:500 12px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
 .upd{position:fixed;right:16px;top:calc(56px + env(safe-area-inset-top,0px));z-index:50;display:flex;flex-wrap:wrap;align-items:center;gap:10px;max-width:min(560px,calc(100% - 32px));

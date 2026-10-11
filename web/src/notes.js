@@ -15,7 +15,7 @@ window.InquireKeys = {
    Notes live in localStorage "notepath.notes.<username>" (lower-case), or "notepath.notes._local" with nobody signed in.
    Each note: { id, title, html (sanitised rich text), body (plain text made from html: search, previews, .md),
      created, updated, fav, folder (folder id | null), links: ["s:<subject>", "f:<field>", "t:<topic>"], src: { topic, title } | null }.
-   Older notes (body only) get html on read. Folders: "notepath.notefolders.<username>" = [{ id, name, parent, order }] (nested; drag to move/reorder). Notes may carry `order` (My order).
+   Older notes (body only) get html on read. Folders: "notepath.notefolders.<username>" = [{ id, name, parent, order, fav? }] (nested; drag to move/reorder). Notes may carry `order` (My order).
    Photos: IndexedDB "notepath-notes" / "images" (Blob by id); a note holds <img data-img="id">, a linked photo <img src="https://…">.
    Links inside a note: <a class="nlink" data-note="id"> (another note) or data-topic="id" (a lesson); colour = --note-link (Settings).
    Every change fires "inquire:notes-changed" so open views redraw. */
@@ -31,17 +31,33 @@ const changed = () => window.dispatchEvent(new CustomEvent("inquire:notes-change
 /* ---------- rich text: sanitise, plain text ---------- */
 const KEEP = new Set(["B", "STRONG", "I", "EM", "U", "S", "STRIKE", "BR", "DIV", "P", "UL", "OL", "LI", "H3", "BLOCKQUOTE", "A", "IMG", "SPAN"]);
 const TCOL = { "#f2b84b": "amber", "#5cc8e0": "cyan", "#f07ca0": "pink", "#b49bff": "violet", "#7bd88f": "green", "#d97ae6": "magenta", "#b5d65a": "lime", "#e5675b": "red", "#8b97ae": "muted" };
-const TKEYS = new Set(Object.values(TCOL));
+const TKEYS = new Set(Object.values(TCOL)), HEX = /^#[0-9a-f]{6}$/;
+// any colour from the spectrum picker is kept as span[data-c="#rrggbb"] with a matching inline colour (the sanitiser writes the style itself)
+const hexOf = v => { v = String(v || "").trim().toLowerCase(); if (/^#[0-9a-f]{3}$/.test(v)) v = "#" + v[1] + v[1] + v[2] + v[2] + v[3] + v[3];
+  const m = v.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/); if (m) v = "#" + [m[1], m[2], m[3]].map(x => (+x).toString(16).padStart(2, "0")).join(""); return HEX.test(v) ? v : ""; };
+const CLEARC = "#010203"; // stand-in colour for "normal colour": becomes span[data-c="_def"] for a moment, then lift() takes the colour off
+// numeric text sizes (toolbar size menu): span[data-s="18"]; the note's normal text is 15. Old notes keep s / n / l / xl.
+const NSIZES = [8, 9, 10, 11, 12, 13, 14, 15, 16, 18, 20, 22, 24, 28, 32, 36, 40, 48, 60, 72];
+// fonts (toolbar font menu): span[data-f="key"]; the first four are bundled with the app, the rest fall back to a close system font
+const NFONTS = [["serif", "STIX Two Text"], ["sans", "IBM Plex Sans"], ["mono", "IBM Plex Mono"], ["cond", "Saira Semi Condensed"], ["georgia", "Georgia"], ["times", "Times New Roman"],
+  ["palatino", "Palatino"], ["garamond", "Garamond"], ["arial", "Arial"], ["helvetica", "Helvetica"], ["verdana", "Verdana"], ["trebuchet", "Trebuchet MS"], ["tahoma", "Tahoma"],
+  ["courier", "Courier New"], ["comic", "Comic Sans MS"], ["brush", "Brush Script MT"]];
+const FKEYS = new Set(NFONTS.map(f => f[0]));
 // text sizes from the toolbar (execCommand fontSize 2/3/5/6 → span[data-s=s|n|l|xl]); sizes are relative to the note's base size (--nb-base), so they never compound
-const TSIZE = { "1": "s", "2": "s", "3": "n", "4": "l", "5": "l", "6": "xl", "7": "xl" }, SKEYS = new Set(["s", "n", "l", "xl"]);
-function fontToSpan(f) {
-  const k = TCOL[String(f.getAttribute("color") || "").toLowerCase()], sz = f.getAttribute("size"), s = TSIZE[sz];
-  if (sz) f.querySelectorAll("span[data-s]").forEach(x => { x.removeAttribute("data-s"); if (!x.hasAttribute("data-c")) x.replaceWith(...x.childNodes); }); // a new size replaces older sizes inside it
-  if (!k && !s) { f.replaceWith(...f.childNodes); return; }
-  const sp = document.createElement("span"); if (k) sp.setAttribute("data-c", k); if (s) sp.setAttribute("data-s", s);
+const TSIZE = { "1": "s", "2": "s", "3": "n", "4": "l", "5": "l", "6": "xl", "7": "xl" }, SKEYS = new Set(["s", "n", "l", "xl", ...NSIZES.map(String)]);
+// over = { s: "18" } when the size menu used execCommand fontSize 7 as a stand-in for its own number
+function fontToSpan(f, over) {
+  const col = f.getAttribute("color"), hx = hexOf(col), k = TCOL[hx] || (hx === CLEARC ? (over && over.def ? "_def" : null) : hx || null), sz = f.getAttribute("size"),
+    s = over && over.s && sz === "7" ? over.s : TSIZE[sz], face = f.getAttribute("face") || "", fk = /^npf-/.test(face) ? face.slice(4) : null, fv = FKEYS.has(fk) || (fk === "_def" && over && over.def) ? fk : null;
+  // a new colour / size / font replaces older ones inside it
+  const strip = (attr, on) => { if (on) f.querySelectorAll(`span[${attr}]`).forEach(x => { x.removeAttribute(attr); if (attr === "data-c") x.removeAttribute("style");
+    if (!x.hasAttribute("data-c") && !x.hasAttribute("data-s") && !x.hasAttribute("data-f")) x.replaceWith(...x.childNodes); }); };
+  strip("data-s", !!sz); strip("data-c", col != null); strip("data-f", !!fk);
+  if (!k && !s && !fv) { f.replaceWith(...f.childNodes); return; }
+  const sp = document.createElement("span"); if (k) { sp.setAttribute("data-c", k); if (HEX.test(k)) sp.style.color = k; } if (s) sp.setAttribute("data-s", s); if (fv) sp.setAttribute("data-f", fv);
   sp.append(...f.childNodes); f.replaceWith(sp); return sp;
 }
-const WIDGETS = new Set(["code", "music", "video"]);
+const WIDGETS = new Set(["code", "music", "video", "graph", "sheet"]);
 const DROP = new Set(["SCRIPT", "STYLE", "IFRAME", "OBJECT", "EMBED", "LINK", "META", "TEMPLATE", "SVG", "MATH", "NOSCRIPT", "TITLE", "HEAD", "FORM", "INPUT", "BUTTON", "TEXTAREA", "SELECT", "VIDEO", "AUDIO", "CANVAS"]);
 function clean(node) {
   [...node.childNodes].forEach(c => {
@@ -72,7 +88,10 @@ function clean(node) {
     }
     if (tag === "UL" && c.getAttribute("data-ck") === "1") keep["data-ck"] = "1"; // checklist (NotePath)
     if (tag === "LI" && c.getAttribute("data-done") === "1") keep["data-done"] = "1";
-    if (tag === "SPAN") { const k = c.getAttribute("data-c"), z = c.getAttribute("data-s"); if (TKEYS.has(k)) keep["data-c"] = k; if (SKEYS.has(z)) keep["data-s"] = z; if (!keep["data-c"] && !keep["data-s"]) { c.replaceWith(...c.childNodes); return; } }
+    if (tag === "SPAN") { const k = c.getAttribute("data-c"), z = c.getAttribute("data-s"), f = c.getAttribute("data-f");
+      if (TKEYS.has(k)) keep["data-c"] = k; else if (HEX.test(k || "")) { keep["data-c"] = k; keep.style = "color:" + k; }
+      if (SKEYS.has(z)) keep["data-s"] = z; if (FKEYS.has(f)) keep["data-f"] = f;
+      if (!keep["data-c"] && !keep["data-s"] && !keep["data-f"]) { c.replaceWith(...c.childNodes); return; } }
     [...c.attributes].forEach(a => c.removeAttribute(a.name));
     Object.entries(keep).forEach(([k, v]) => c.setAttribute(k, v));
   });
@@ -110,7 +129,33 @@ function normalize(n) {
   return n;
 }
 const read = () => { try { const v = JSON.parse(localStorage.getItem(key()) || "[]"); return Array.isArray(v) ? v.map(normalize) : []; } catch (e) { return []; } };
-const write = all => { try { localStorage.setItem(key(), JSON.stringify(all)); } catch (e) { console.warn("Notes could not be saved", e); } changed(); };
+const write = all => { try { localStorage.setItem(key(), JSON.stringify(all)); } catch (e) { console.warn("Notes could not be saved", e); } touched(); changed(); };
+
+/* ---------- undo / redo (My notes ↶ ↷, ⌘Z / Ctrl+Z, ⇧⌘Z / Ctrl+Y) ----------
+   Every change to the notes or folders is one step: writing (each pause in typing), new / renamed / moved / starred /
+   deleted folders, new or deleted notes, widgets, order. A burst of writes within 700 ms counts as one step. Steps are
+   whole snapshots of the two stores, kept for this session (up to 100). Photos and videos stay in IndexedDB until the
+   app closes, so undoing a delete brings them back too. */
+const H = { undo: [], redo: [], base: null, open: false, t: 0, lock: false };
+const snap = () => ({ n: localStorage.getItem(key()) || "[]", f: localStorage.getItem(fkey()) || "[]" });
+const hfire = () => window.dispatchEvent(new CustomEvent("inquire:notes-history", { detail: { undo: H.undo.length, redo: H.redo.length } }));
+function touched() {
+  if (H.lock) return;
+  if (!H.base) H.base = { n: "[]", f: "[]" };
+  if (!H.open) { H.open = true; H.undo.push(H.base); if (H.undo.length > 100) H.undo.shift(); H.redo = []; }
+  clearTimeout(H.t); H.t = setTimeout(settle, 700); hfire();
+}
+function settle() { clearTimeout(H.t); if (H.open) { H.open = false; H.base = snap(); } }
+const live = new Set(); // mounted editors: their unsaved typing is saved before an undo
+function histStep(from, to) {
+  live.forEach(a => a.flush()); settle();
+  if (!from.length) return false;
+  const prev = from.pop(); to.push(snap());
+  H.lock = true; try { localStorage.setItem(key(), prev.n); localStorage.setItem(fkey(), prev.f); } catch (e) {} H.lock = false;
+  H.base = prev; changed(); hfire(); return true;
+}
+const undo = () => histStep(H.undo, H.redo), redo = () => histStep(H.redo, H.undo);
+const history = () => ({ undo: H.undo.length, redo: H.redo.length });
 function list(q) {
   const all = read().sort(byUpdated);
   if (!q) return all;
@@ -159,7 +204,7 @@ window.addEventListener("pagehide", () => [...trashed.keys()].forEach(purge));
 function deleteWithUndo(id, onUndo) {
   const n = trash(id); if (!n) return;
   let done = false;
-  const t = setTimeout(() => { if (!done) { done = true; purge(id); } }, 8000);
+  const t = setTimeout(() => { done = true; }, 8000); // the media stay until the app closes (pagehide → purge), so ↶ Undo can still restore the note
   toast(`Deleted “${esc(n.title)}”`, { label: "Undo", run: () => { if (done) return; done = true; clearTimeout(t); restore(id); if (onUndo) onUndo(id); } }, 8000);
 }
 function toast(html, action, ms) {
@@ -188,10 +233,11 @@ function appendQuote(id, text, topic, title) {
 
 /* ---------- folders ---------- */
 const readF = () => { try { const v = JSON.parse(localStorage.getItem(fkey()) || "[]"); return Array.isArray(v) ? v : []; } catch (e) { return []; } };
-const writeF = f => { try { localStorage.setItem(fkey(), JSON.stringify(f)); } catch (e) {} changed(); };
+const writeF = f => { try { localStorage.setItem(fkey(), JSON.stringify(f)); } catch (e) {} touched(); changed(); };
 // Folders nest (parent id) and keep the order the user drags them into (order); older folders without order fall back to A–Z.
 const fnorm = f => { if (f.parent === undefined) f.parent = null; return f; };
-const fcmp = (a, b) => ((a.order ?? 1e9) - (b.order ?? 1e9)) || a.name.localeCompare(b.name);
+// starred folders (fav) come first among their sibling folders, so starred top-level folders lead the folders column
+const fcmp = (a, b) => (!!b.fav - !!a.fav) || ((a.order ?? 1e9) - (b.order ?? 1e9)) || a.name.localeCompare(b.name);
 // flat list in tree order (parents before children, siblings in order), each with depth
 function folders() {
   const all = readF().map(fnorm), ids = new Set(all.map(f => f.id)), out = [], seen = new Set();
@@ -208,6 +254,7 @@ function addFolder(name, parent) {
   const sib = all.filter(f => f.parent === pid), order = sib.length ? Math.max(...sib.map(f => f.order ?? sib.indexOf(f))) + 1 : 0;
   const f = { id: uid(), name: String(name || "").trim().slice(0, 60) || "New folder", parent: pid, order }; writeF(all.concat(f)); return f;
 }
+function setFolderFav(id, on) { const all = readF(), f = all.find(x => x.id === id); if (!f) return; if (on) f.fav = true; else delete f.fav; writeF(all); }
 function renameFolder(id, name) { const all = readF(), f = all.find(x => x.id === id); if (!f) return; f.name = String(name || "").trim().slice(0, 60) || f.name; writeF(all); }
 // move folder id into parent (null = top level), placed before folder `before` (or last); refuses to move a folder into itself or its own subfolders
 function moveFolder(id, parent, before) {
@@ -407,6 +454,17 @@ function mountEditor(host, id, o = {}) {
     const r2 = document.createRange(); r2.setStartAfter(a); r2.collapse(true); const s = getSelection(); s.removeAllRanges(); s.addRange(r2);
     hydrate(ed); save(); flush(); return true;
   }
+  // a note dragged in from My notes: a link to it (its title) at the drop point, or at the end
+  function insertNoteLink(range, noteId) {
+    const t = get(noteId); if (!t) return false;
+    if (!range || !ed.contains(range.startContainer) || inWidget(range.startContainer)) { range = document.createRange(); range.selectNodeContents(ed); range.collapse(false); }
+    else { range = range.cloneRange(); range.collapse(true); const inA = (range.startContainer.nodeType === 1 ? range.startContainer : range.startContainer.parentElement).closest("a.nlink"); if (inA && ed.contains(inA)) range.setStartAfter(inA); }
+    const a = document.createElement("a"); a.className = "nlink"; a.dataset.note = noteId; a.textContent = t.title || "Untitled note";
+    const sp = document.createTextNode(" ");
+    range.insertNode(sp); range.insertNode(a);
+    const r2 = document.createRange(); r2.setStartAfter(sp); r2.collapse(true); const s = getSelection(); s.removeAllRanges(); s.addRange(r2); last = r2.cloneRange();
+    ed.classList.remove("is-empty"); hydrate(ed); save(); flush(); return true;
+  }
   ed.addEventListener("paste", async e => {
     const cd = e.clipboardData; if (!cd || inWidget(e.target)) return;
     e.preventDefault();
@@ -444,6 +502,31 @@ function mountEditor(host, id, o = {}) {
     setTimeout(() => { const s = getSelection(); if (!s.rangeCount) return; const n = s.getRangeAt(0).startContainer, el = n.nodeType === 1 ? n : n.parentElement;
       const li = el && el.closest("ul[data-ck] > li"); if (li && ed.contains(li) && !li.textContent.trim()) li.removeAttribute("data-done"); }, 0);
   });
+  // selecting words across ticked checklist items brings up "Uncheck all": it unticks every ticked item the selection touches
+  let ckb = null;
+  const ckItems = () => { const s = getSelection(); if (!s.rangeCount) return [];
+    const r = s.getRangeAt(0); if (r.collapsed || !ed.contains(r.commonAncestorContainer)) return [];
+    return [...ed.querySelectorAll('ul[data-ck] > li[data-done="1"]')].filter(li => r.intersectsNode(li)); };
+  const ckHide = () => { if (ckb) { ckb.remove(); ckb = null; } };
+  const ckShow = () => {
+    const items = ckItems(); if (!items.length) { ckHide(); return; }
+    if (!ckb) {
+      ckb = document.createElement("button"); ckb.type = "button"; ckb.className = "np-ck";
+      ckb.addEventListener("mousedown", e => e.preventDefault()); // keep the selection
+      ckb.addEventListener("click", () => { const its = ckItems(); its.forEach(li => li.removeAttribute("data-done")); ckHide(); if (its.length) { save(); flush(); } });
+      document.body.appendChild(ckb);
+    }
+    ckb.innerHTML = `<span class="np-ck-box" aria-hidden="true"></span>Uncheck all <span class="num">${items.length}</span>`;
+    ckb.setAttribute("aria-label", `Uncheck all ${items.length} ticked item${items.length > 1 ? "s" : ""} in the selection`);
+    const rr = getSelection().getRangeAt(0).getBoundingClientRect(), bw = ckb.offsetWidth || 150, er = ed.getBoundingClientRect();
+    if (rr.bottom < er.top || rr.top > er.bottom || rr.bottom < 0 || rr.top > innerHeight) { ckb.style.visibility = "hidden"; return; } ckb.style.visibility = "";
+    ckb.style.left = Math.max(8, Math.min(innerWidth - bw - 8, rr.left + rr.width / 2 - bw / 2)) + "px";
+    ckb.style.top = (rr.top > 60 ? rr.top - 40 : rr.bottom + 8) + "px";
+  };
+  let ckT = 0; const ckSoon = () => { clearTimeout(ckT); ckT = setTimeout(ckShow, 60); };
+  document.addEventListener("selectionchange", ckSoon);
+  const ckScroll = () => { if (ckb) ckSoon(); }; document.addEventListener("scroll", ckScroll, true); // follow the words when anything around them scrolls
+  ed.addEventListener("blur", () => setTimeout(() => { if (document.activeElement !== ed) ckHide(); }, 120));
   const follow = a => { if (a.dataset.note) { if (get(a.dataset.note) && o.openNote) { flush(); o.openNote(a.dataset.note); } } else if (a.dataset.topic && o.openTopic) { flush(); o.openTopic(a.dataset.topic); } };
   ed.addEventListener("click", e => { const a = e.target.closest("a.nlink"); if (a && ed.contains(a)) { e.preventDefault(); follow(a); } });
   ed.addEventListener("keydown", e => { const a = e.target.closest && e.target.closest("a.nlink"); if (a && e.key === "Enter") { e.preventDefault(); follow(a); } });
@@ -463,7 +546,7 @@ function mountEditor(host, id, o = {}) {
     if (block) block.after(w, after); else ed.append(w, after);
     const s = getSelection(), r = document.createRange(); r.setStart(after, 0); r.collapse(true); s.removeAllRanges(); s.addRange(r); last = r.cloneRange();
     hydrate(ed); save();
-    const f = type === "video" ? null : w.querySelector(type === "code" ? ".nw-ta" : ".nw-piano button"); if (f) f.focus({ preventScroll: true });
+    const f = type === "video" || type === "graph" || type === "sheet" ? null : w.querySelector(type === "code" ? ".nw-ta" : ".nw-piano button"); if (f) f.focus({ preventScroll: true });
     w.scrollIntoView({ block: "nearest" });
   }
   // a block (definition, quote) placed after the line that holds `range` (or the caret), never inside it
@@ -477,16 +560,61 @@ function mountEditor(host, id, o = {}) {
     const el = nodes.find(x => x.nodeType === 1); if (el) el.scrollIntoView({ block: "nearest" });
     return true;
   }
-  const api = { el: ed, id, flush, addFiles, addURL, addVideoLink, linkRange, insertText, addWidget, insertBlock,
+  // "normal" colour / font: each span[attr="_def"] takes that attribute off every span around it, splitting them so the words
+  // before and after keep theirs. Returns the nodes that were inside, to reselect them.
+  const bare = sp => !sp.hasAttribute("data-c") && !sp.hasAttribute("data-s") && !sp.hasAttribute("data-f");
+  function lift(attr) {
+    const out = [];
+    [...ed.querySelectorAll(`span[${attr}="_def"]`)].forEach(x => {
+      let a;
+      while ((a = x.parentElement && x.parentElement.closest(`span[${attr}]`)) && ed.contains(a)) {
+        const r1 = document.createRange(); r1.setStart(a, 0); r1.setEndBefore(x);
+        const r2 = document.createRange(); r2.setStartAfter(x); r2.setEnd(a, a.childNodes.length);
+        const before = r1.extractContents(), after = r2.extractContents();
+        if (before.textContent) { const c = a.cloneNode(false); c.append(before); a.before(c); }
+        if (after.textContent) { const c = a.cloneNode(false); c.append(after); a.after(c); }
+        a.removeAttribute(attr); if (attr === "data-c") a.style.color = "";
+        if (bare(a)) a.replaceWith(...a.childNodes);
+      }
+      const kids = [...x.childNodes]; x.removeAttribute(attr);
+      if (bare(x)) { x.replaceWith(...kids); out.push(...kids); } else out.push(x);
+    });
+    return out;
+  }
+  // Chromium edits inline colours itself (it may clear or copy style="color"): keep data-c in step with what is shown
+  function syncColors() {
+    ed.querySelectorAll("span").forEach(sp => {
+      const k = sp.getAttribute("data-c"), c = hexOf(sp.style.color);
+      if (k && HEX.test(k) && !c) { sp.removeAttribute("data-c"); sp.removeAttribute("style"); if (bare(sp)) sp.replaceWith(...sp.childNodes); }
+      else if (c && (!k || HEX.test(k)) && k !== c) sp.setAttribute("data-c", c);
+      else if (!c && sp.getAttribute("style") === "") sp.removeAttribute("style");
+    });
+  }
+  const api = { el: ed, id, flush, addFiles, addURL, addVideoLink, linkRange, insertNoteLink, insertText, addWidget, insertBlock,
     focus: () => { ed.focus({ preventScroll: true }); const s = getSelection(); if (last && (!s.rangeCount || !ed.contains(s.getRangeAt(0).commonAncestorContainer))) { s.removeAllRanges(); s.addRange(last); } },
     changed: () => save(),
+    // kind "color" (a #hex, or "" for the normal colour), "size" (a number, or "" for normal), "font" (a key, or "" for the note's font)
+    format: (kind, v) => {
+      api.focus(); document.execCommand("styleWithCSS", false, false);
+      let made = [];
+      const conv = over => { made = [...ed.querySelectorAll("font")].reverse().map(f => fontToSpan(f, over)).filter(Boolean).reverse(); };
+      if (kind === "color") { document.execCommand("foreColor", false, hexOf(v) || CLEARC); conv({ def: !hexOf(v) }); if (!hexOf(v)) made = lift("data-c"); }
+      else if (kind === "font") { document.execCommand("fontName", false, "npf-" + (FKEYS.has(v) ? v : "_def")); conv({ def: !FKEYS.has(v) }); if (!FKEYS.has(v)) made = lift("data-f"); }
+      else if (kind === "size") { const n = NSIZES.includes(+v) ? String(+v) : "n"; document.execCommand("fontSize", false, "7"); conv({ s: n }); }
+      api.normalizeColors();
+      // keep the same words selected so the next click (another size, a colour) still applies to them
+      const s2 = getSelection(), live = made.filter(x => x.isConnected);
+      if (live.length) try { const nr = document.createRange(); nr.setStartBefore(live[0]); nr.setEndAfter(live[live.length - 1]); s2.removeAllRanges(); s2.addRange(nr); last = nr.cloneRange(); } catch (e) {}
+      save();
+    },
     normalizeColors: () => { // font → span, keeping the selection on the same text so the next size/colour click still applies
       const sel = getSelection(), r = sel.rangeCount ? sel.getRangeAt(0) : null, at = r && [r.startContainer, r.startOffset, r.endContainer, r.endOffset];
-      const made = [...ed.querySelectorAll("font")].reverse().map(fontToSpan).filter(Boolean).reverse();
+      syncColors();
+      const made = [...ed.querySelectorAll("font")].reverse().map(f => fontToSpan(f)).filter(Boolean).reverse();
       // tidy: a size wrapped straight around another size does nothing; "normal" outside any size is not needed
       const unsize = sp => { sp.removeAttribute("data-s"); if (!sp.hasAttribute("data-c")) { const i = made.indexOf(sp); const kids = [...sp.childNodes]; sp.replaceWith(...kids); if (i >= 0) made.splice(i, 1, ...kids.filter(k => k.nodeType === 1)); } };
       [...ed.querySelectorAll("span[data-s]")].forEach(sp => { if (sp.isConnected && sp.childNodes.length === 1 && sp.firstChild.nodeType === 1 && sp.firstChild.matches("span[data-s]")) unsize(sp); });
-      [...ed.querySelectorAll('span[data-s="n"]')].forEach(sp => { if (!sp.parentElement.closest("span[data-s]")) unsize(sp); });
+      [...ed.querySelectorAll('span[data-s="n"], span[data-s="15"]')].forEach(sp => { if (!sp.parentElement.closest("span[data-s]")) unsize(sp); });
       try {
         const nr = document.createRange();
         if (at && at[0].nodeType === 3 && at[2].nodeType === 3 && ed.contains(at[0]) && ed.contains(at[2])) { nr.setStart(at[0], at[1]); nr.setEnd(at[2], at[3]); }
@@ -495,15 +623,16 @@ function mountEditor(host, id, o = {}) {
         sel.removeAllRanges(); sel.addRange(nr);
       } catch (e) {}
     },
-    destroy: () => { flush(); document.removeEventListener("selectionchange", remember); if (bar && bar.destroy) bar.destroy(); } };
+    destroy: () => { flush(); live.delete(api); document.removeEventListener("selectionchange", remember); document.removeEventListener("selectionchange", ckSoon); document.removeEventListener("scroll", ckScroll, true); ckHide(); if (bar && bar.destroy) bar.destroy(); } };
   if (window.InquireWidgets) { bar = InquireWidgets.toolbar(api); host.appendChild(bar); }
   host.appendChild(ed);
-  editors.set(ed, api);
+  editors.set(ed, api); live.add(api);
   return api;
 }
 const editorFor = el => { const ed = el && el.closest ? el.closest(".nb-rich") : null; return ed ? editors.get(ed) || null : null; };
 
+H.base = snap(); // the state the first undo step goes back to
 window.InquireNotes = { list, get, create, update, remove, trash, restore, purge, deleteWithUndo, toast, appendBlock, exportMedia, key, link, unlink, appendQuote,
-  folders, addFolder, renameFolder, removeFolder, moveFolder, subtree, setOrder, byOrder, sanitize, toText, mountEditor, editorFor, hydrate, pick, pickNote, imageURL, exportImages, importImages,
+  undo, redo, history, NSIZES, NFONTS, folders, addFolder, renameFolder, setFolderFav, removeFolder, moveFolder, subtree, setOrder, byOrder, sanitize, toText, mountEditor, editorFor, hydrate, pick, pickNote, imageURL, exportImages, importImages,
   readFolders: readF, writeFolders: writeF };
 })();

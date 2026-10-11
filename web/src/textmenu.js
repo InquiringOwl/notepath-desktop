@@ -3,7 +3,9 @@
       page/definition; inflected forms follow "plural of …" to the headword), else a Wikipedia summary (names, phrases),
       else dictionaryapi.dev; the desktop app fetches through main.js "dict:lookup" (host allowlist). "＋ Save to note"
       puts the definition right after the selected line.  3. Link to a note: the selected words become a link to another
-      note (or a new one); links use --note-link (Settings → Appearance).
+      note (or a new one); links use --note-link (Settings → Appearance).  4. Translate: a box right under the menu
+      offers Spanish, German or French; the translation (MyMemory, free, no key; desktop fetches through main.js) shows
+      there with Copy, Replace (the selected words) and ＋ Insert below.
    No selection → the normal menu. Loaded after notes.js and app.js. */
 (function () {
 "use strict";
@@ -47,7 +49,8 @@ function open(x, y, c) {
   menu.innerHTML = `
     <button type="button" role="menuitem" data-a="copy"><span class="tm-ic">⧉</span><span>Copy</span><kbd>${/Mac/.test(navigator.platform) ? "⌘" : "Ctrl+"}C</kbd></button>
     <button type="button" role="menuitem" data-a="dict"${words > 5 ? " disabled" : ""}><span class="tm-ic">W</span><span>Define “${esc(short)}” · Dictionary<small>${words > 5 ? "Select a word or short phrase" : "Wiktionary and Wikipedia, online"}</small></span></button>
-    <button type="button" role="menuitem" data-a="link"><span class="tm-ic">↗</span><span>Link to a note…<small>These words open the note you pick</small></span></button>`;
+    <button type="button" role="menuitem" data-a="link"><span class="tm-ic">↗</span><span>Link to a note…<small>These words open the note you pick</small></span></button>
+    <button type="button" role="menuitem" data-a="tr"${c.text.length > TR_MAX ? " disabled" : ""} aria-haspopup="true"><span class="tm-ic">文</span><span>Translate…<small>${c.text.length > TR_MAX ? `Select up to ${TR_MAX} characters` : "Spanish, German or French"}</small></span><kbd>▾</kbd></button>`;
   document.body.appendChild(menu);
   const W = menu.offsetWidth, H = menu.offsetHeight;
   const place = () => { const W2 = menu.offsetWidth, H2 = menu.offsetHeight; menu.style.left = Math.max(6, Math.min(innerWidth - W2 - 6, x)) + "px"; menu.style.top = Math.max(6, Math.min(innerHeight - H2 - 6, y)) + "px"; };
@@ -55,10 +58,14 @@ function open(x, y, c) {
   menu.style.top = Math.max(6, Math.min(innerHeight - H - 6, y)) + "px";
   menu.addEventListener("mousedown", e => e.preventDefault()); // keep the selection while clicking
   menu.addEventListener("click", e => {
-    const b = e.target.closest("button[data-a]"); if (!b || b.disabled) return;
+    const b = e.target.closest("button[data-a], button[data-lang]"); if (!b || b.disabled) return;
     const a = b.dataset.a;
     if (a === "save") { saveDef(x, y, c); return; }
     if (a === "dict") { showDict(c.text, place); return; }
+    if (a === "tr") { trBox(place); return; }
+    if (b.dataset.lang) { translate(c.text, b.dataset.lang, place); return; }
+    if (a === "tr-copy") { const t = menu._tr; close(); if (t) { copyText(t.text); } return; }
+    if (a === "tr-rep" || a === "tr-ins") { const t = menu._tr; close(); if (t) useTranslation(t, c, a === "tr-rep"); return; }
     close();
     if (a === "copy") copy(c.text);
     else if (a === "link") linkFlow(x, y, c);
@@ -67,6 +74,49 @@ function open(x, y, c) {
   window.addEventListener("blur", close); window.addEventListener("resize", close); document.addEventListener("scroll", onScroll, true);
   menu.querySelector("button").focus({ preventScroll: true });
 }
+/* ---------- translate: a language box right under the menu ---------- */
+const TR_MAX = 480, LANGS = [["es", "Spanish", "Español"], ["de", "German", "Deutsch"], ["fr", "French", "Français"]], trCache = {};
+const TR_URL = "https://api.mymemory.translated.net/get";
+function trBox(place, html) {
+  let b = menu.querySelector(".tm-tr");
+  if (!b) { b = document.createElement("div"); b.className = "tm-tr"; b.setAttribute("role", "group"); b.setAttribute("aria-label", "Translate into"); menu.appendChild(b); }
+  if (!b.querySelector(".tm-langs")) b.innerHTML = `<div class="tm-trh">Translate into</div><div class="tm-langs">${LANGS.map(([k, n, own]) => `<button type="button" class="tm-lang" data-lang="${k}" title="${own}"><b>${n}</b><small>${own}</small></button>`).join("")}</div><div class="tm-trout" aria-live="polite"></div>`;
+  if (html != null) b.querySelector(".tm-trout").innerHTML = html;
+  menu.querySelector('[data-a="tr"]').setAttribute("aria-expanded", "true");
+  place(); if (html == null) b.querySelector(".tm-lang").focus({ preventScroll: true });
+  return b;
+}
+async function translate(text, lang, place) {
+  const L = LANGS.find(x => x[0] === lang); if (!L) return;
+  const q = text.replace(/\s+/g, " ").trim().slice(0, TR_MAX), ck = lang + "|" + q;
+  menu.querySelectorAll(".tm-lang").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+  menu._tr = null;
+  trBox(place, `<p class="tm-dn tm-busy">Translating into ${L[1]}…</p>`);
+  let r = trCache[ck];
+  if (!r) {
+    const res = await getJSON(TR_URL + "?q=" + encodeURIComponent(q) + "&langpair=" + encodeURIComponent("en|" + lang));
+    const d = res.body && res.body.responseData, out = d && plain(String(d.translatedText || ""));
+    const st = res.body && +res.body.responseStatus;
+    r = res.status === 200 && out && (!st || st === 200) ? { ok: true, text: out } : { ok: false, error: !res.status ? "Could not reach the translation service. Check your internet connection." : st === 429 || /LIMIT/i.test(String(res.body && res.body.responseDetails)) ? "Today's free translations are used up. Try again tomorrow." : "That could not be translated." };
+    if (r.ok) trCache[ck] = r;
+  }
+  if (!menu) return;
+  if (!r.ok) { trBox(place, `<p class="tm-dn">${esc(r.error)}</p>`); return; }
+  menu._tr = { text: r.text, lang: L[1] };
+  trBox(place, `<p class="tm-trtext" lang="${lang}">${esc(r.text)}</p><div class="tm-dacts"><button type="button" class="tm-dgo" data-a="tr-copy">Copy</button><button type="button" class="tm-dgo" data-a="tr-rep">Replace</button><button type="button" class="tm-dgo" data-a="tr-ins">＋ Insert below</button></div><p class="tm-dfoot">${L[1]} · free, from MyMemory (machine translation).</p>`);
+}
+function copyText(t) {
+  const ta = document.createElement("textarea"); ta.value = t; ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.appendChild(ta); ta.select();
+  let ok = false; try { ok = document.execCommand("copy"); } catch (e) {} ta.remove();
+  if (!ok && navigator.clipboard) navigator.clipboard.writeText(t).then(() => {}, () => {});
+  toast("Copied the translation");
+}
+function useTranslation(t, c, replace) {
+  const N = NS(), api = N && N.editorFor(c.zone); if (!api) return;
+  if (replace) { c.zone.focus({ preventScroll: true }); const s = getSelection(); s.removeAllRanges(); s.addRange(c.range); document.execCommand("insertText", false, t.text); api.changed(); toast(`Replaced with the ${t.lang} translation`); }
+  else if (api.insertBlock(`<div><i>${esc(t.text)}</i></div>`, c.range)) toast(`Added the ${t.lang} translation below`);
+}
+
 /* ---------- definitions inside the menu ---------- */
 // "＋ Save to note": in a note, the definition goes in right after the selected line; on a lesson, into a note you pick
 const SAVE_BTN = `<button type="button" class="tm-dgo tm-save" data-a="save">＋ Save to note</button>`;
