@@ -76,8 +76,8 @@ function clean(node) {
     if (!KEEP.has(tag)) { c.replaceWith(...c.childNodes); return; }
     const keep = {};
     if (tag === "A") {
-      const n = c.getAttribute("data-note"), t = c.getAttribute("data-topic");
-      if (n && /^[a-z0-9]+$/i.test(n)) keep["data-note"] = n; else if (t && /^[a-z0-9-]+$/i.test(t)) keep["data-topic"] = t;
+      const n = c.getAttribute("data-note"), t = c.getAttribute("data-topic"), fo = c.getAttribute("data-folder");
+      if (n && /^[a-z0-9]+$/i.test(n)) keep["data-note"] = n; else if (fo && /^[a-z0-9]+$/i.test(fo)) keep["data-folder"] = fo; else if (t && /^[a-z0-9-]+$/i.test(t)) keep["data-topic"] = t;
       else { c.replaceWith(...c.childNodes); return; }
       keep.class = "nlink"; keep.contenteditable = "false";
     }
@@ -356,9 +356,9 @@ function hydrate(root) {
   root.querySelectorAll("img[data-img]").forEach(im => { if (im.src) return; imageURL(im.dataset.img).then(u => { if (u) im.src = u; else { im.alt = "Photo missing"; im.classList.add("missing"); } }); });
   root.querySelectorAll("a.nlink").forEach(a => {
     a.contentEditable = "false"; a.tabIndex = 0; a.setAttribute("role", "link");
-    const n = a.dataset.note && get(a.dataset.note);
-    a.title = a.dataset.note ? (n ? "Open note: " + n.title : "Linked note was deleted") : "Open lesson";
-    a.classList.toggle("gone", !!a.dataset.note && !n);
+    const n = a.dataset.note && get(a.dataset.note), f = a.dataset.folder && readF().find(x => x.id === a.dataset.folder);
+    a.title = a.dataset.note ? (n ? "Open note: " + n.title : "Linked note was deleted") : a.dataset.folder ? (f ? "Open folder: " + f.name : "Linked folder was deleted") : "Open lesson";
+    a.classList.toggle("gone", (!!a.dataset.note && !n) || (!!a.dataset.folder && !f));
   });
 }
 
@@ -467,14 +467,30 @@ function mountEditor(host, id, o = {}) {
     const r2 = document.createRange(); r2.setStartAfter(a); r2.collapse(true); const s = getSelection(); s.removeAllRanges(); s.addRange(r2);
     hydrate(ed); save(); flush(); return true;
   }
+  // a link dropped inside a word goes after that word, not into the middle of it
+  const wordEnd = r => { const n = r.startContainer; if (n.nodeType !== 3) return r; let i = r.startOffset; const t = n.data;
+    if (i > 0 && i < t.length && /\w/.test(t[i - 1]) && /\w/.test(t[i])) { while (i < t.length && /\w/.test(t[i])) i++; const r2 = document.createRange(); r2.setStart(n, i); r2.collapse(true); return r2; } return r; };
   // a note dragged in from My notes: a link to it (its title) at the drop point, or at the end
   function insertNoteLink(range, noteId) {
     const t = get(noteId); if (!t) return false;
     if (!range || !ed.contains(range.startContainer) || inWidget(range.startContainer)) { range = document.createRange(); range.selectNodeContents(ed); range.collapse(false); }
-    else { range = range.cloneRange(); range.collapse(true); const inA = (range.startContainer.nodeType === 1 ? range.startContainer : range.startContainer.parentElement).closest("a.nlink"); if (inA && ed.contains(inA)) range.setStartAfter(inA); }
+    else { range = wordEnd(range.cloneRange()); range.collapse(true); const inA = (range.startContainer.nodeType === 1 ? range.startContainer : range.startContainer.parentElement).closest("a.nlink"); if (inA && ed.contains(inA)) range.setStartAfter(inA); }
     const a = document.createElement("a"); a.className = "nlink"; a.dataset.note = noteId; a.textContent = t.title || "Untitled note";
-    const sp = document.createTextNode(" ");
-    range.insertNode(sp); range.insertNode(a);
+    const lead = range.startContainer.nodeType === 3 && range.startOffset > 0 && !/\s/.test(range.startContainer.data[range.startOffset - 1]); // a space before the link when it follows a word
+    const nx = range.startContainer.nodeType === 3 ? range.startContainer.data[range.startOffset] : null; // and one after it, unless a space is already there
+    const sp = document.createTextNode(nx && /\s/.test(nx) ? "" : " "); range.insertNode(sp); range.insertNode(a); if (lead) range.insertNode(document.createTextNode(" "));
+    const r2 = document.createRange(); r2.setStartAfter(sp); r2.collapse(true); const s = getSelection(); s.removeAllRanges(); s.addRange(r2); last = r2.cloneRange();
+    ed.classList.remove("is-empty"); hydrate(ed); save(); flush(); return true;
+  }
+  // a folder dragged in from the folders column: a link to it (its name) at the drop point; it opens that folder
+  function insertFolderLink(range, folderId) {
+    const f = readF().find(x => x.id === folderId); if (!f) return false;
+    if (!range || !ed.contains(range.startContainer) || inWidget(range.startContainer)) { range = document.createRange(); range.selectNodeContents(ed); range.collapse(false); }
+    else { range = wordEnd(range.cloneRange()); range.collapse(true); const inA = (range.startContainer.nodeType === 1 ? range.startContainer : range.startContainer.parentElement).closest("a.nlink"); if (inA && ed.contains(inA)) range.setStartAfter(inA); }
+    const a = document.createElement("a"); a.className = "nlink"; a.dataset.folder = folderId; a.textContent = f.name || "Folder";
+    const lead = range.startContainer.nodeType === 3 && range.startOffset > 0 && !/\s/.test(range.startContainer.data[range.startOffset - 1]); // a space before the link when it follows a word
+    const nx = range.startContainer.nodeType === 3 ? range.startContainer.data[range.startOffset] : null; // and one after it, unless a space is already there
+    const sp = document.createTextNode(nx && /\s/.test(nx) ? "" : " "); range.insertNode(sp); range.insertNode(a); if (lead) range.insertNode(document.createTextNode(" "));
     const r2 = document.createRange(); r2.setStartAfter(sp); r2.collapse(true); const s = getSelection(); s.removeAllRanges(); s.addRange(r2); last = r2.cloneRange();
     ed.classList.remove("is-empty"); hydrate(ed); save(); flush(); return true;
   }
@@ -605,7 +621,7 @@ function mountEditor(host, id, o = {}) {
       e.preventDefault(); if (!outdentItem(li)) unlistItem(li);
     }
   });
-  const follow = a => { if (a.dataset.note) { if (get(a.dataset.note) && o.openNote) { flush(); o.openNote(a.dataset.note); } } else if (a.dataset.topic && o.openTopic) { flush(); o.openTopic(a.dataset.topic); } };
+  const follow = a => { if (a.dataset.folder) { if (o.openFolder && readF().some(x => x.id === a.dataset.folder)) { flush(); o.openFolder(a.dataset.folder); } return; } if (a.dataset.note) { if (get(a.dataset.note) && o.openNote) { flush(); o.openNote(a.dataset.note); } } else if (a.dataset.topic && o.openTopic) { flush(); o.openTopic(a.dataset.topic); } };
   ed.addEventListener("click", e => { const a = e.target.closest("a.nlink"); if (a && ed.contains(a)) { e.preventDefault(); follow(a); } });
   ed.addEventListener("keydown", e => { const a = e.target.closest && e.target.closest("a.nlink"); if (a && e.key === "Enter") { e.preventDefault(); follow(a); } });
   function insertText(t) {
@@ -795,7 +811,7 @@ function mountEditor(host, id, o = {}) {
       else if (!c && sp.getAttribute("style") === "") sp.removeAttribute("style");
     });
   }
-  const api = { el: ed, id, flush, indentItem, outdentItem, annotations: annList, addAnnotation, setAnnotation, removeAnnotation, showAnnotations, focusAnnotation, relayoutAnnotations: () => annLayout(),
+  const api = { el: ed, id, flush, insertFolderLink, openFolder: fid => { if (!o.openFolder) return false; flush(); o.openFolder(fid); return true; }, indentItem, outdentItem, annotations: annList, addAnnotation, setAnnotation, removeAnnotation, showAnnotations, focusAnnotation, relayoutAnnotations: () => annLayout(),
     openSide: noteId => { if (!o.openSide || !get(noteId)) return false; flush(); o.openSide(noteId); return true; },
     openNote: noteId => { if (!o.openNote || !get(noteId)) return false; flush(); o.openNote(noteId); return true; },
     addFiles, addURL, addVideoLink, linkRange, insertNoteLink, insertWidgetAt, insertText, addWidget, insertBlock,

@@ -743,6 +743,27 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await q.click('.p2 [data-a=close]'); await wait(150);
     await q.mouse.click(lb.x, lb.y, { button: 'right' }); await wait(150); await q.click('.tm-menu [data-a=unlink]'); await wait(200);
     ok(!/nlink/.test(await qh()) && /Linked one/.test(await qh()), 'Remove link keeps the words', await qh());
+    // real mouse drags (Chromium's own drag and drop, as in the app): the list, the folders side bar, a folder
+    await q.evaluate(() => { const ed = document.querySelector('.p1 .nb-rich'); ed.innerHTML = '<div>Start here</div>'; ed.dispatchEvent(new Event('input')); }); await wait(500);
+    await q.locator(`.nb-it[data-id="${ids.b}"]`).dragTo(q.locator('.p1 .nb-rich'), { targetPosition: { x: 40, y: 12 } }); await wait(400);
+    ok(new RegExp(`<div>Start <a class="nlink" data-note="${ids.b}"[^>]*>Linked one</a> here</div>`).test(await qh()), 'a real drag from the notes list drops a link (after the word, with spaces)', await qh());
+    await q.evaluate(() => { const ed = document.querySelector('.p1 .nb-rich'); ed.innerHTML = '<div>Start here</div>'; ed.dispatchEvent(new Event('input')); }); await wait(500);
+    await q.locator(`.nb-folders .nb-fnote[data-id="${ids.b}"]`).dragTo(q.locator('.p1 .nb-rich'), { targetPosition: { x: 120, y: 12 } }); await wait(400);
+    ok(new RegExp(`data-note="${ids.b}"[^>]*>Linked one</a>`).test(await qh()), 'a real drag from the folders side bar drops a link', await qh());
+    await q.locator(`.nb-fd.user[data-f="${ids.f}"]`).dragTo(q.locator('.p1 .nb-rich'), { targetPosition: { x: 20, y: 12 } }); await wait(400);
+    ok(new RegExp(`<a class="nlink" data-folder="${ids.f}"[^>]*>Lists</a>`).test(await qh()) && await q.evaluate(id => /data-folder/.test(InquireNotes.get(id).html), ids.a), 'a folder dragged into the note becomes a link with its name (saved)', await qh());
+    ok(await q.evaluate(f => InquireNotes.folders().find(x => x.id === f).parent == null, ids.f), 'dragging a folder into a note leaves the folder where it was');
+    await q.click('.nb-fd[data-f=all] .nb-fdb'); await wait(200); await q.locator('.nb-it', { hasText: 'Target' }).click(); await wait(300);
+    await q.click(`.p1 a.nlink[data-folder="${ids.f}"]`); await wait(300);
+    ok(await q.$eval('.nb-fd.sel', e => e.dataset.f) === ids.f, 'clicking a folder link opens that folder');
+    await q.locator('.nb-it', { hasText: 'Target' }).click(); await wait(300);
+    const fb = await q.$eval(`.p1 a.nlink[data-folder="${ids.f}"]`, e => { const r = e.getBoundingClientRect(); return [r.x + 8, r.y + r.height / 2]; });
+    await q.mouse.click(fb[0], fb[1], { button: 'right' }); await wait(150);
+    ok(JSON.stringify(await q.$$eval('.tm-menu > button', e => e.map(x => x.dataset.a))) === '["open","unlink"]', 'right-click a folder link: Open folder, Remove link');
+    await q.keyboard.press('Escape'); await wait(80);
+    await q.click('.p1 .nb-holob'); await wait(200);
+    ok(/Folders in this note\s*1/.test(await q.$eval('.np-holo', e => e.textContent)) && !!(await q.$(`.np-holo [data-fid="${ids.f}"]`)), 'the Links panel lists the folders linked in the note');
+    await q.click('.np-holo-x'); await wait(80);
     await q.click(`.p1 .nb-rich`); await q.keyboard.press('Control+z').catch(() => {});
     // (v0.5.1) ▦ Widgets tab; the info box (last edited / created to the second); ◈ Tags · Links · Source panel
     ok(!(await q.$('.p1 .nr-tools > button[data-w]')) && !!(await q.$('.p1 .nr-tools [data-dd=widgets]')), 'the widget buttons are gathered under one ▦ Widgets tab');

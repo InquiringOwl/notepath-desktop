@@ -228,7 +228,9 @@ async function linkFlow(x, y, c) {
 // right-click a note link: Open · Open in a new note tab (side by side with this note) · Remove link (keeps the words)
 function linkMenu(x, y, a, zone) {
   close();
-  const N = NS(), api = N && N.editorFor(zone), id = a.dataset.note, t = id && N && N.get(id);
+  const N = NS(), api = N && N.editorFor(zone);
+  if (a.dataset.folder) return folderMenu(x, y, a, api);
+  const id = a.dataset.note, t = id && N && N.get(id);
   if (!api || !t) return false;
   menu = document.createElement("div");
   menu.className = "tm-menu win"; menu.setAttribute("role", "menu"); menu.setAttribute("aria-label", "Note link");
@@ -252,10 +254,28 @@ function linkMenu(x, y, a, zone) {
   setTimeout(() => { const f = menu && menu.querySelector("button"); if (f) f.focus({ preventScroll: true }); }, 0);
   return true;
 }
+// right-click a folder link: Open folder · Remove link
+function folderMenu(x, y, a, api) {
+  const N = NS(), f = N && N.folders().find(z => z.id === a.dataset.folder); if (!api || !f) return false;
+  menu = document.createElement("div"); menu.className = "tm-menu win"; menu.setAttribute("role", "menu"); menu.setAttribute("aria-label", "Folder link");
+  menu.innerHTML = `<button type="button" role="menuitem" data-a="open"><span class="tm-ic">▤</span><span>Open folder “${esc(f.name.length > 30 ? f.name.slice(0, 28).trim() + "…" : f.name)}”<small>Its notes in the list</small></span></button>
+    <button type="button" role="menuitem" data-a="unlink"><span class="tm-ic">⌫</span><span>Remove link<small>Keeps the words</small></span></button>`;
+  document.body.appendChild(menu);
+  const W = menu.offsetWidth, H = menu.offsetHeight;
+  menu.style.left = Math.max(6, Math.min(innerWidth - W - 6, x)) + "px"; menu.style.top = Math.max(6, Math.min(innerHeight - H - 6, y)) + "px";
+  menu.addEventListener("mousedown", e => e.preventDefault());
+  menu.addEventListener("click", e => { const b = e.target.closest("button[data-a]"); if (!b) return; const k = b.dataset.a; close();
+    if (k === "open") api.openFolder(f.id);
+    else if (a.isConnected) { a.replaceWith(document.createTextNode(a.textContent)); api.el.normalize(); api.changed(); api.flush(); } });
+  document.addEventListener("pointerdown", out, true); document.addEventListener("keydown", key, true);
+  window.addEventListener("blur", close); window.addEventListener("resize", close); document.addEventListener("scroll", onScroll, true);
+  setTimeout(() => { const b = menu && menu.querySelector("button"); if (b) b.focus({ preventScroll: true }); }, 0);
+  return true;
+}
 document.addEventListener("contextmenu", e => {
   const zone = e.target.closest && e.target.closest(".nb-rich");
   if (!zone || e.target.closest("input, textarea, select, canvas")) return;
-  const lk = e.target.closest("a.nlink[data-note]");
+  const lk = e.target.closest("a.nlink[data-note], a.nlink[data-folder]");
   if (lk && zone.contains(lk)) { if (linkMenu(e.clientX || 0, e.clientY || 0, lk, zone)) e.preventDefault(); return; }
   const sel = getSelection(), text = sel ? sel.toString().trim() : "";
   if (!text || !sel.rangeCount) return;

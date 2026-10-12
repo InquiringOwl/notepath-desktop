@@ -427,8 +427,8 @@ function renderNotes(m, focusBody, space = "notes"){
       drawFolders(); const nb = fold.querySelector(`.nb-fdb[data-f="${id}"]`); if (nb) nb.focus();
     }));
     fold.querySelectorAll(".nb-fd.user").forEach(d => {
-      d.addEventListener("dragstart", e => { DRAG = { type: "folder", id: d.dataset.f }; e.dataTransfer.setData("text/x-folder", d.dataset.f); e.dataTransfer.effectAllowed = "move"; d.classList.add("dragging"); });
-      d.addEventListener("dragend", () => { DRAG = null; d.classList.remove("dragging"); clearDrop(); });
+      d.addEventListener("dragstart", e => { DRAG = { type: "folder", id: d.dataset.f }; e.dataTransfer.setData("text/x-folder", d.dataset.f); e.dataTransfer.effectAllowed = "copyMove"; nbEl.classList.add("dragfolder"); d.classList.add("dragging"); });
+      d.addEventListener("dragend", () => { DRAG = null; d.classList.remove("dragging"); clearDrop(); nbEl.classList.remove("dragfolder"); hideCaret(); });
     });
     $('[data-a="addf"]', fold).onclick = e => nameBox(e.target, "", v => { const f = NS.addFolder(v); NOTES.folder = f.id; drawAll(); });
   }
@@ -606,7 +606,7 @@ function renderNotes(m, focusBody, space = "notes"){
     rich = NS.mountEditor($(".nb-host", ed), n.id, {
       onSaved: () => { const it = items.querySelector(`[data-id="${n.id}"]`); if (it) drawList(); },
       openNote: id => openLinked(id),
-      openSide: id => openFromLink(id),
+      openSide: id => openFromLink(id), openFolder: fid => openFolderLink(fid),
       annotations: indShown(), onAnnotation: aid => { IND.open = true; IND.edit = aid; indOpen(n.id); },
       onMessage: msg
     });
@@ -744,6 +744,7 @@ function renderNotes(m, focusBody, space = "notes"){
   function holoDraw(id){
     if (!holoEl) return; const n = NS.get(id); if (!n) { holoClose(); return; }
     const all = NS.list(), folderName = x => { const f = x.folder && NS.folders().find(y => y.id === x.folder); return f ? f.name : "Unfiled"; };
+    const fl = (() => { const o2 = []; String(n.html || "").replace(/data-folder="([a-z0-9]+)"/gi, (x, f) => { if (!o2.includes(f)) o2.push(f); return x; }); return o2.map(f => NS.folders().find(y => y.id === f) || null); })();
     const out = linksOf(n.html).filter(x => x !== id), back = all.filter(x => x.id !== id && linksOf(x.html).includes(id));
     const view = viewOf("holoview"), side = x => `<button type="button" class="np-hl-s" data-side="${x.id}" title="Open ${esc(x.title)} in a new note tab (side by side)" aria-label="Open ${esc(x.title)} side by side">⧉</button>`;
     const row = (x, gone) => gone ? `<li class="np-hl gone"><span class="np-hl-t">A deleted note</span><span class="np-hl-f">its link stays in the text</span></li>`
@@ -753,7 +754,9 @@ function renderNotes(m, focusBody, space = "notes"){
     const head = view === "details" ? `<div class="np-hl-head" aria-hidden="true"><span>Name</span><span>Modified</span><span>Created</span><span>Kind</span><span></span></div>` : "";
     const lst = arr => `<ul class="np-hl-list" data-view="${view}">${head}${arr.join("")}</ul>`;
     $(".np-holo-b", holoEl).innerHTML = `<section><h4>In this note <span class="num">${out.length}</span></h4>${out.length ? lst(out.map(k => row(NS.get(k), !NS.get(k)))) : `<p class="np-hl-none">No links yet. Drag a note in from the side bar, or select words and right-click → Link to a note.</p>`}</section>
-      <section><h4>Linking here <span class="num">${back.length}</span></h4>${back.length ? lst(back.map(x => row(x))) : `<p class="np-hl-none">No other note links to this one yet.</p>`}</section>`;
+      <section><h4>Linking here <span class="num">${back.length}</span></h4>${back.length ? lst(back.map(x => row(x))) : `<p class="np-hl-none">No other note links to this one yet.</p>`}</section>`
+      + (fl.length ? `<section><h4>Folders in this note <span class="num">${fl.length}</span></h4><ul class="np-hl-list">${fl.map(f => f ? `<li class="np-hl"><button type="button" class="np-hl-o" data-fid="${f.id}" title="Open the folder ${esc(f.name)}"><span class="np-hl-t">▤ ${esc(f.name)}</span><span class="np-hl-f">${all.filter(x => NS.subtree(f.id).has(x.folder)).length} notes</span></button></li>` : `<li class="np-hl gone"><span class="np-hl-t">A deleted folder</span></li>`).join("")}</ul></section>` : "");
+    holoEl.querySelectorAll("[data-fid]").forEach(b2 => b2.onclick = () => openFolderLink(b2.dataset.fid));
     holoEl.querySelectorAll(".np-hl-o").forEach(b2 => b2.onclick = () => openLinked(b2.dataset.id));
     holoEl.querySelectorAll(".np-hl-s").forEach(b2 => b2.onclick = () => openFromLink(b2.dataset.side));
   }
@@ -761,6 +764,8 @@ function renderNotes(m, focusBody, space = "notes"){
   const onHoloRz = () => { holoFit(); indFit(); }; window.addEventListener("resize", onHoloRz);
   m.cleanup.push(() => { window.removeEventListener("inquire:notes-changed", onHolo); window.removeEventListener("resize", onHoloRz); if (holoKey) window.removeEventListener("keydown", holoKey, true); if (indKey) window.removeEventListener("keydown", indKey, true); });
 
+  // a folder link: show that folder (its notes in the list); the open note stays
+  function openFolderLink(fid){ if (!NS.folders().some(f => f.id === fid)) return; flushEd(); NOTES.folder = fid; NOTES.q = ""; q.value = ""; drawAll(); }
   // a note link clicked in either pane opens in the main pane
   function openLinked(id){ flushEd(); NOTES.sel = id; const m = NS.get(id); if (m && !inView(m)) NOTES.folder = "all"; drawAll(); }
 
@@ -790,7 +795,7 @@ function renderNotes(m, focusBody, space = "notes"){
     }
     ed2.innerHTML = `<div class="nb-p2h"><span class="nb-p2tag">Side by side</span><button type="button" class="btn-s" data-a="swap" title="Make this the main note">Open as main</button><button type="button" class="nb-p2b" data-a="min" title="Minimise to a tab" aria-label="Minimise to a tab">▁</button><button type="button" class="nb-p2b" data-a="close" title="Close this note" aria-label="Close the side note">✕</button></div>
       <div class="nb-trow"><input class="nb-title" value="${esc(n.title)}" aria-label="Title of the side note" maxlength="140"></div><div class="nb-host"></div>`;
-    rich2 = NS.mountEditor($(".nb-host", ed2), n.id, { openNote: id => openLinked(id), openSide: id => openFromLink(id), onMessage: msg, onSaved: () => drawList(), annotations: store.get("indshow", true) !== false });
+    rich2 = NS.mountEditor($(".nb-host", ed2), n.id, { openNote: id => openLinked(id), openSide: id => openFromLink(id), openFolder: fid => openFolderLink(fid), onMessage: msg, onSaved: () => drawList(), annotations: store.get("indshow", true) !== false });
     const ti = $(".nb-title", ed2);
     ti.oninput = () => { clearTimeout(save2); save2 = setTimeout(() => { save2 = null; NS.update(n.id, { title: ti.value.trim() || "Untitled note" }); drawList(); drawFolders(); }, 400); };
     $('[data-a="min"]', ed2).onclick = () => { flush2(); SPLIT.min = true; drawSplit(); };
@@ -820,6 +825,10 @@ function renderNotes(m, focusBody, space = "notes"){
       const re = e.target.closest && e.target.closest(".nb-rich"); if (!re || e.target.closest(".nw")) return null;
       const api = NS.editorFor(re); return api ? { kind: "code", api, re } : null;
     }
+    if (DRAG && DRAG.type === "folder" && !CODE) { // a folder: a link to it in the note
+      const re = e.target.closest && e.target.closest(".nb-rich"); if (!re || e.target.closest(".nw")) return null;
+      const api = NS.editorFor(re); return api ? { kind: "flink", api, re } : null;
+    }
     if (!DRAG || DRAG.type !== "note") return null;
     const sp = e.target.closest && e.target.closest(".p1 .nb-split"); if (sp) return DRAG.id === NOTES.sel ? null : { kind: "split", el: sp };
     const re = e.target.closest && e.target.closest(".nb-rich"); if (!re || e.target.closest(".nw")) return null;
@@ -829,7 +838,7 @@ function renderNotes(m, focusBody, space = "notes"){
   edSec.addEventListener("dragover", e => {
     const t = dropTarget(e); edSec.querySelectorAll(".nb-split.over").forEach(x => { if (!t || x !== t.el) x.classList.remove("over"); });
     if (!t) { hideCaret(); return; }
-    e.preventDefault(); e.dataTransfer.dropEffect = t.kind === "split" || t.kind === "code" ? "copy" : "link";
+    e.preventDefault(); e.dataTransfer.dropEffect = "copy"; // must be one of the drag's effectAllowed ("copyMove" / "copy") or a real drop never happens
     if (t.kind === "split") { t.el.classList.add("over"); hideCaret(); return; }
     const r = document.caretRangeFromPoint && document.caretRangeFromPoint(e.clientX, e.clientY), rc = r && t.re.contains(r.startContainer) ? r.getBoundingClientRect() : null;
     if (!dcaret) { dcaret = h("div", { class: "nb-dcaret" }); document.body.appendChild(dcaret); }
@@ -843,6 +852,7 @@ function renderNotes(m, focusBody, space = "notes"){
     if (t.kind === "split") { openSplit(id); return; }
     const r = document.caretRangeFromPoint ? document.caretRangeFromPoint(e.clientX, e.clientY) : null;
     if (t.kind === "code") { const c = ALLNS.get(id); if (c && c.code) { t.api.insertWidgetAt(r, "code", codeBox(c)); msg(`Added a copy of “${c.title}”. The original stays in Code.`); } return; }
+    if (t.kind === "flink") { t.api.insertFolderLink(r, id); return; }
     t.api.insertNoteLink(r, id);
   });
 
