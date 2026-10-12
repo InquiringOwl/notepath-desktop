@@ -662,6 +662,101 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     ok(/Nothing to import/.test(await x.$eval('.io-log', e => e.textContent)), 'a file that is not notes is left out');
     await x.close();
   }
+  /* ---------- (Oct 12) the hint goes with list buttons; bullets again indent; only delete takes a list off; note links:
+     drag from the folders side bar, right-click → Open in a new note tab; ‹ Back on My notes, My Tasks and Note Office ---------- */
+  {
+    const q = await page();
+    await q.goto(URL0 + '#menu'); await wait(500);
+    const ids = await q.evaluate(() => { const f = InquireNotes.addFolder('Lists'); const a = InquireNotes.create({ title: 'Target', html: '', folder: f.id }), b = InquireNotes.create({ title: 'Linked one', html: '<div>other</div>', folder: f.id }); return { a: a.id, b: b.id, f: f.id }; });
+    await q.click('[data-a=open]'); await wait(400);
+    await q.evaluate(id => InquireApp.go({ view: 'notes', space: 'notes', folder: 'all', sel: id }), ids.a).catch(() => {}); await wait(300);
+    if ((await q.$eval('.p1 .nb-title', e => e.value).catch(() => '')) !== 'Target') { await q.locator('.nb-it', { hasText: 'Target' }).click(); await wait(200); }
+    const qh = () => q.$eval('.p1 .nb-rich', e => e.innerHTML);
+    const hint = () => q.$eval('.p1 .nb-rich', e => e.classList.contains('is-empty'));
+    ok(await hint(), 'a blank note shows the Write… hint');
+    for (const k of ['h3', 'ul', 'ol', 'ck']) {
+      await q.evaluate(() => { const ed = document.querySelector('.p1 .nb-rich'); ed.innerHTML = ''; ed.dispatchEvent(new Event('input')); }); await wait(50);
+      await q.click('.p1 .nb-rich'); await q.click(`.p1 [data-blk=${k}]`); await wait(80);
+      ok(!(await hint()), `the Write… hint goes away when ${k === 'h3' ? 'H' : k === 'ul' ? 'bullets' : k === 'ol' ? 'numbers' : 'the checklist'} is pressed`, await qh());
+    }
+    await q.evaluate(() => { const ed = document.querySelector('.p1 .nb-rich'); ed.innerHTML = ''; ed.dispatchEvent(new Event('input')); }); await wait(50);
+    await q.click('.p1 .nb-rich'); await q.click('.p1 [data-blk=ul]'); await q.keyboard.type('one'); await q.keyboard.press('Enter'); await q.keyboard.type('two');
+    await q.click('.p1 [data-blk=ul]'); await wait(80);
+    ok(/<ul><li>one<ul><li>two<\/li><\/ul><\/li><\/ul>/.test(await qh()), 'pressing bullets again indents the item under the one above', await qh());
+    await q.click('.p1 [data-blk=ul]'); await wait(80);
+    ok(/<ul><li>one<ul><li>two<\/li><\/ul><\/li><\/ul>/.test(await qh()) && /two/.test(await qh()), 'bullets again never take the bullet off', await qh());
+    await q.keyboard.type('!'); ok(/<li>two!<\/li>/.test(await qh()), 'the caret stays in the indented item', await qh());
+    await q.keyboard.press('Shift+Tab'); await wait(50);
+    ok(/<ul><li>one<\/li><li>two!<\/li><\/ul>/.test(await qh()), 'Shift+Tab moves it back out', await qh());
+    await q.keyboard.press('Tab'); await wait(50);
+    ok(/<ul><li>one<ul><li>two!<\/li><\/ul><\/li><\/ul>/.test(await qh()), 'Tab indents it', await qh());
+    await q.keyboard.press('Home'); await q.keyboard.press('Backspace'); await wait(50);
+    ok(/<ul><li>one<\/li><li>two!<\/li><\/ul>/.test(await qh()), 'delete at the start of a sub-item moves it out one level', await qh());
+    await q.keyboard.press('Backspace'); await wait(50);
+    ok(/<ul><li>one<\/li><\/ul><div>two!<\/div>/.test(await qh()), 'delete at the start of an item takes the bullet off (the words stay)', await qh());
+    await q.evaluate(() => { const ed = document.querySelector('.p1 .nb-rich'); ed.innerHTML = ''; ed.dispatchEvent(new Event('input')); }); await wait(50);
+    await q.click('.p1 .nb-rich'); await q.click('.p1 [data-blk=ol]'); await q.keyboard.type('first'); await q.click('.p1 [data-blk=ol]'); await wait(50);
+    ok(/<ol><li>first<\/li><\/ol>/.test(await qh()), 'numbers again keep the number', await qh());
+    await q.keyboard.press('Enter'); await q.click('.p1 [data-blk=ck]'); await q.keyboard.type('box'); await q.click('.p1 [data-blk=ck]'); await wait(50);
+    ok(/<ul data-ck="1"><li>box<\/li><\/ul>/.test(await qh()), 'the checklist button again keeps the box', await qh());
+    await q.keyboard.press('Home'); await q.keyboard.press('Backspace'); await wait(50);
+    ok(/<div>box<\/div>/.test(await qh()) && !/data-ck/.test(await qh()), 'delete at the start takes the checkbox off', await qh());
+    await q.keyboard.press('ArrowUp'); await q.keyboard.press('Home'); await q.keyboard.press('Backspace'); await wait(50);
+    ok(/<div>first<\/div>/.test(await qh()) && !/<ol>/.test(await qh()), 'delete at the start takes the number off', await qh());
+    // (Oct 12, second set) checklist again indents; H sits between U and S; a font/size/colour with nothing selected; folder icons
+    await q.evaluate(() => { const ed = document.querySelector('.p1 .nb-rich'); ed.innerHTML = ''; ed.dispatchEvent(new Event('input')); }); await wait(50);
+    await q.click('.p1 .nb-rich'); await q.click('.p1 [data-blk=ck]'); await q.keyboard.type('milk'); await q.keyboard.press('Enter'); await q.keyboard.type('eggs');
+    await q.click('.p1 [data-blk=ck]'); await wait(80);
+    ok(/<ul data-ck="1"><li>milk<ul data-ck="1"><li>eggs<\/li><\/ul><\/li><\/ul>/.test(await qh()), 'pressing the checklist again indents the box under the one above', await qh());
+    await q.keyboard.press('Home'); await q.keyboard.press('Backspace'); await wait(50);
+    ok(/<ul data-ck="1"><li>milk<\/li><li>eggs<\/li><\/ul>/.test(await qh()), 'delete at the start of an indented box moves it out one level', await qh());
+    ok(JSON.stringify(await q.$$eval('.p1 .nr-tools button', b => b.slice(0, 5).map(x => x.dataset.cmd || x.dataset.blk))) === '["bold","italic","underline","h3","strikeThrough"]', 'H sits right of underline and left of strikethrough');
+    await q.evaluate(() => { const ed = document.querySelector('.p1 .nb-rich'); ed.innerHTML = '<div>abc</div>'; ed.dispatchEvent(new Event('input')); }); await wait(50);
+    await q.click('.p1 .nb-rich'); await q.keyboard.press('Control+End'); await q.keyboard.press('Enter');
+    const qdd = async (kind, v) => { await q.click(`.p1 .nr-dd[data-dd=${kind}]`); await wait(80); await q.click(`.np-pop-${kind} [data-v="${v}"]`); await wait(80); };
+    await qdd('size', 24); await qdd('font', 'mono');
+    await q.click('.p1 .nr-dd[data-dd=color]'); await wait(80); await q.fill('.np-hex', '#33AA77'); await q.click('.np-capply'); await wait(80);
+    ok(await q.$eval('.p1 .nr-size .nr-ddv', e => e.textContent) === '24' && await q.$eval('.p1 .nr-font .nr-ddv', e => e.textContent) === 'IBM Plex Mono', 'on an empty line the size and font menus show what was picked');
+    await q.keyboard.type('hey'); await wait(50);
+    ok(/<span[^>]*data-s="24"[^>]*>hey<\/span>/.test(await qh()) && /data-f="mono"[^>]*>hey</.test(await qh()) && /data-c="#33aa77"[^>]*>hey</.test(await qh()) && !/​/.test(await qh()), 'a font, size and colour picked on an empty line style what is typed next', await qh());
+    await qdd('size', 15); await q.keyboard.type(' you'); await wait(50);
+    ok(/>hey<\/span><span[^>]*> you<\/span>/.test(await qh()) && !/data-s="24"[^>]*> you/.test(await qh()) && /data-f="mono"[^>]*> you/.test(await qh()), 'a new size with nothing selected keeps the font and colour', await qh());
+    const fic = () => q.$eval(`.nb-fd[data-f="${ids.f}"] .nb-fold-ic`, e => e.classList.contains('open')).catch(() => null);
+    ok(await fic() === true, 'an unfolded folder shows an open folder icon');
+    await q.click(`.nb-fcar[data-car="${ids.f}"]`); await wait(150);
+    ok(await fic() === false, 'a folded folder shows a closed folder icon');
+    await q.click(`.nb-fcar[data-car="${ids.f}"]`); await wait(150);
+    // a note dragged from the folders side bar becomes a link titled with the note's name
+    await q.evaluate(() => { const ed = document.querySelector('.p1 .nb-rich'); ed.innerHTML = '<div>start</div>'; ed.dispatchEvent(new Event('input')); }); await wait(500);
+    const fsel = `.nb-folders .nb-fnote[data-id="${ids.b}"]`;
+    ok(!!(await q.$(fsel)), 'the folders side bar lists the note', await q.$$eval('.nb-fnote', e => e.map(x => x.textContent)));
+    await q.evaluate(([f]) => { const src = document.querySelector(f), dst = document.querySelector('.p1 .nb-rich'), dt = new DataTransfer();
+      src.dispatchEvent(new DragEvent('dragstart', { bubbles: true, dataTransfer: dt }));
+      const r = dst.getBoundingClientRect(), x = r.left + 60, y = r.top + 12, t = document.elementFromPoint(x, y) || dst;
+      t.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true, dataTransfer: dt, clientX: x, clientY: y }));
+      t.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt, clientX: x, clientY: y }));
+      src.dispatchEvent(new DragEvent('dragend', { bubbles: true, dataTransfer: dt })); }, [fsel]); await wait(300);
+    ok(new RegExp(`<a class="nlink" data-note="${ids.b}"[^>]*>Linked one</a>`).test(await qh()), 'a note dragged from the folders side bar becomes a link with its title', await qh());
+    const lb = await q.$eval(`.p1 .nb-rich a.nlink[data-note="${ids.b}"]`, e => { const r = e.getBoundingClientRect(); return { x: r.x + 6, y: r.y + r.height / 2 }; });
+    await q.mouse.click(lb.x, lb.y, { button: 'right' }); await wait(150);
+    ok(JSON.stringify(await q.$$eval('.tm-menu > button', e => e.map(x => x.dataset.a))) === '["open","side","unlink"]', 'right-click a note link: Open, Open in a new note tab, Remove link');
+    await q.click('.tm-menu [data-a=side]'); await wait(300);
+    ok(await q.$eval('.p2', e => !e.hidden) && await q.$eval('.p2 .nb-title', e => e.value) === 'Linked one' && await q.$eval('.p1 .nb-title', e => e.value) === 'Target', 'Open in a new note tab opens it side by side with this note');
+    await q.click('.p2 [data-a=close]'); await wait(150);
+    await q.mouse.click(lb.x, lb.y, { button: 'right' }); await wait(150); await q.click('.tm-menu [data-a=unlink]'); await wait(200);
+    ok(!/nlink/.test(await qh()) && /Linked one/.test(await qh()), 'Remove link keeps the words', await qh());
+    await q.click(`.p1 .nb-rich`); await q.keyboard.press('Control+z').catch(() => {});
+    // ‹ Back on My notes, My Tasks, Note Office (which has no ✕)
+    await q.click('.npage .np-back'); await wait(300);
+    ok(await q.evaluate(() => !document.querySelector('.npage') && /Main Menu/.test(document.querySelector('#crumbs').textContent)), '‹ Back on My notes goes to the Main Menu');
+    await q.click('[data-a=tasks]'); await wait(400); await q.click('.tpage .np-back'); await wait(300);
+    ok(await q.evaluate(() => !document.querySelector('.tpage') && !!document.querySelector('[data-a=office]')), '‹ Back on My Tasks goes to the Main Menu');
+    await q.click('[data-a=office]'); await wait(700);
+    ok(!(await q.$('.mw-ov[data-mw=office] .set-x')) && !!(await q.$('.mw-ov[data-mw=office] .np-back')), 'Note Office has ‹ Back and no ✕');
+    await q.click('.mw-ov[data-mw=office] .np-back'); await wait(400);
+    ok(!(await q.$('.mw-ov[data-mw=office]:not(.out)')) && await q.evaluate(() => !NoteOffice.current), '‹ Back closes Note Office to the Main Menu');
+    await q.close();
+  }
   ok(!errs.length, 'no page errors', errs);
   await b.close(); srv.close();
   console.log(pass.map(x => '  ✓ ' + x).join('\n'));

@@ -134,8 +134,8 @@ function toolbar(api) {
   const bar = document.createElement("div");
   bar.className = "nr-tools"; bar.setAttribute("role", "toolbar"); bar.setAttribute("aria-label", "Formatting");
   const mod = /Mac/.test(navigator.platform) ? "⌘" : "Ctrl+";
-  bar.innerHTML = `<button type="button" data-cmd="bold" title="Bold (${mod}B)" aria-label="Bold"><b>B</b></button><button type="button" data-cmd="italic" title="Italic (${mod}I)" aria-label="Italic"><i>I</i></button><button type="button" data-cmd="underline" title="Underline (${mod}U)" aria-label="Underline"><u>U</u></button><button type="button" data-cmd="strikeThrough" title="Strikethrough" aria-label="Strikethrough"><s>S</s></button>
-    <span class="nr-sep"></span><button type="button" data-blk="h3" title="Heading" aria-label="Heading">H</button><button type="button" data-blk="ul" title="Bulleted list" aria-label="Bulleted list">•≡</button><button type="button" data-blk="ol" title="Numbered list" aria-label="Numbered list">1.≡</button><button type="button" data-blk="ck" title="Checklist: click a box to tick an item off" aria-label="Checklist">☑</button>
+  bar.innerHTML = `<button type="button" data-cmd="bold" title="Bold (${mod}B)" aria-label="Bold"><b>B</b></button><button type="button" data-cmd="italic" title="Italic (${mod}I)" aria-label="Italic"><i>I</i></button><button type="button" data-cmd="underline" title="Underline (${mod}U)" aria-label="Underline"><u>U</u></button><button type="button" data-blk="h3" title="Heading" aria-label="Heading">H</button><button type="button" data-cmd="strikeThrough" title="Strikethrough" aria-label="Strikethrough"><s>S</s></button>
+    <span class="nr-sep"></span><button type="button" data-blk="ul" title="Bulleted list · press again to indent (Tab indents, Shift+Tab moves back, delete at the start takes the bullet off)" aria-label="Bulleted list">•≡</button><button type="button" data-blk="ol" title="Numbered list · delete at the start of a line takes the number off" aria-label="Numbered list">1.≡</button><button type="button" data-blk="ck" title="Checklist: click a box to tick an item off · press again to indent · delete at the start of a line takes the box off" aria-label="Checklist">☑</button>
     <span class="nr-sep"></span><button type="button" class="nr-dd nr-font" data-dd="font" title="Font" aria-haspopup="listbox" aria-label="Font"><span class="nr-ddv">Default</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-dd nr-size" data-dd="size" title="Text size" aria-haspopup="listbox" aria-label="Text size"><span class="nr-ddv num">15</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-dd nr-colb" data-dd="color" title="Text colour" aria-haspopup="dialog" aria-label="Text colour"><span class="nr-cola" aria-hidden="true">A</span><span class="nr-car" aria-hidden="true">▾</span></button>
     <span class="nr-sep"></span><button type="button" class="nr-sym" title="Emoji and symbols (Greek, maths, alchemical)" aria-haspopup="dialog">☺ Ω</button>
     <span class="nr-sep"></span><button type="button" data-w="code" title="Add a code box">&lt;/&gt; Code</button><button type="button" data-w="music" title="Add a music chart">♪ Music</button><button type="button" data-w="sheet" title="Add a lead sheet: bars with chord symbols and melody">𝄞 Sheet</button><button type="button" data-w="graph" title="Add a graph: click points on a grid and get their equations">∿ Graph</button>`;
@@ -238,16 +238,26 @@ function ddPanel(btn, kind, api, sync) {
 const rgbHex = c => { const m = String(c || "").match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/); return m ? toHex(+m[1], +m[2], +m[3]) : String(c || ""); };
 // headings and lists (NotePath): the block the caret is in becomes a heading / list item, or back to plain text
 function caretEl(api) { const s = getSelection(); if (!s.rangeCount) return null; const n = s.getRangeAt(0).startContainer, el = n.nodeType === 1 ? n : n.parentElement; return el && api.el.contains(el) ? el : null; }
+// Pressing a list button again never takes the list off (Devon, Oct 2026): only delete (Backspace) at the start of an item
+// does that. The bullet or checklist button again indents the item under the one above (api.indentItem); numbers again do nothing.
 function block(kind, api) {
   const el = caretEl(api), list = el && el.closest("ul, ol"), inList = list && api.el.contains(list) ? list : null;
   if (kind === "h3") { document.execCommand("formatBlock", false, el && el.closest("h3") ? "div" : "h3"); return; }
-  if (kind === "ol") { document.execCommand("insertOrderedList"); return; }
-  if (kind === "ul") { if (inList && inList.hasAttribute("data-ck")) { inList.removeAttribute("data-ck"); return; } document.execCommand("insertUnorderedList"); return; }
-  // checklist: a bulleted list marked data-ck="1"; pressing it again inside a checklist turns the lines back into text
-  if (inList && inList.tagName === "UL" && inList.hasAttribute("data-ck")) { document.execCommand("insertUnorderedList"); return; }
+  if (kind === "ol") { if (inList && inList.tagName === "OL") return; document.execCommand("insertOrderedList"); return; }
+  if (kind === "ul") {
+    if (inList && inList.hasAttribute("data-ck")) { inList.removeAttribute("data-ck"); return; } // checklist → bullets
+    if (inList && inList.tagName === "UL") { if (api.indentItem) api.indentItem(); return; } // bullets again → indent
+    document.execCommand("insertUnorderedList"); return;
+  }
+  // checklist: a bulleted list marked data-ck="1"
+  if (inList && inList.tagName === "UL" && inList.hasAttribute("data-ck")) { if (api.indentItem) api.indentItem(); return; } // checklist again → indent
   if (inList && inList.tagName === "UL") { inList.setAttribute("data-ck", "1"); return; }
   document.execCommand("insertUnorderedList");
-  const now = caretEl(api), ul = now && now.closest("ul"); if (ul && api.el.contains(ul)) ul.setAttribute("data-ck", "1");
+  // the new list (in an empty note the caret may sit on the editor itself, next to the list)
+  const now = caretEl(api); let ul = now && now.closest("ul");
+  if (!ul && now) { const r = getSelection().getRangeAt(0), c = r.startContainer.nodeType === 1 ? r.startContainer.childNodes[r.startOffset] || r.startContainer.childNodes[r.startOffset - 1] : null;
+    ul = c && c.nodeType === 1 ? (c.tagName === "UL" ? c : c.closest("ul") || c.querySelector("ul")) : null; }
+  if (ul && api.el.contains(ul)) ul.setAttribute("data-ck", "1");
 }
 function colorKey(hex) {
   const h = String(hex || "").toLowerCase();

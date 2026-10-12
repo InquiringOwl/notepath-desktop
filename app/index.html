@@ -1290,6 +1290,22 @@ body.office-on #app{visibility:hidden}
 .io-works b{color:var(--text);font-weight:600}
 .io-works .io-soon{color:var(--faint);list-style:"◇ "}
 @media (max-width:860px){ .io{grid-template-columns:minmax(0,1fr)} .io-col+.io-col{border-left:0;border-top:1px solid var(--line)} .io-scope,.io-fmts{grid-template-columns:minmax(0,1fr)} }
+/* ‹ Back to the Main Menu: first thing in the header of My notes, My Tasks and Note Office (Devon, Oct 2026) */
+.np-back{all:unset;box-sizing:border-box;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:7px 12px 7px 9px;margin-right:2px;border:1px solid var(--line-2);border-radius:2px;color:var(--muted);font:600 11px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;background:rgba(0,0,0,.18);-webkit-app-region:no-drag}
+.np-back span{font-size:16px;line-height:0;letter-spacing:0;color:var(--frame);transform:translateY(-1px)}
+.np-back:hover{color:var(--text);border-color:var(--frame)}
+.np-back:focus-visible{outline:2px solid var(--frame);outline-offset:1px}
+/* folder icons in the folders side bar: closed while folded, open while its notes show */
+.nb-fold-ic{display:inline-grid;place-items:center;flex:none;margin-right:6px;color:color-mix(in srgb,var(--frame) 75%,var(--muted))}
+.nb-fold-ic svg{display:block;overflow:visible}
+.nb-fold-ic path{fill:none;stroke:currentColor;stroke-width:1.3;stroke-linejoin:round;stroke-linecap:round}
+.nb-fold-ic path.f{fill:color-mix(in srgb,currentColor 18%,transparent)}
+.nb-fd.sel .nb-fold-ic,.nb-fdb:hover .nb-fold-ic{color:var(--frame)}
+/* the folder buttons (☆ ＋ ✎ ✕) take no room until the row is hovered or focused, so folder names have space next to their icons */
+.nb-fd .nb-fx:not(.on):not(.armed){width:0;padding-left:0;padding-right:0;overflow:hidden}
+.nb-fd:hover .nb-fx,.nb-fd:focus-within .nb-fx{width:auto!important;padding-left:5px!important;padding-right:5px!important}
+/* an unticked item under a ticked one is not crossed out (a line-through does not reach into an inline-block) */
+.nb-rich ul[data-ck]>li[data-done]>ul,.nb-rich ul[data-ck]>li[data-done]>ol{display:inline-block;width:100%;box-sizing:border-box;vertical-align:top;color:var(--text)}
 
 </style>
 </head><body>
@@ -1932,7 +1948,8 @@ function mountEditor(host, id, o = {}) {
   ed.dataset.placeholder = "Write… Paste or drop photos and videos here. Select words and right-click to link them to another note.";
   ed.innerHTML = sanitize(n.html); hydrate(ed);
   let bar = null;
-  const empty = () => ed.classList.toggle("is-empty", !ed.textContent.trim() && !ed.querySelector("img"));
+  // the hint shows only while the note is truly blank: a heading, bullet, number, checkbox, photo or widget hides it too
+  const empty = () => ed.classList.toggle("is-empty", !ed.textContent.trim() && !ed.querySelector("img, ul, ol, li, h1, h2, h3, h4, blockquote, pre, hr, .nw, a.nlink"));
   empty();
   let t = null, last = null;
   const flush = () => { if (!t) return; clearTimeout(t); t = null; update(id, { html: ed.innerHTML }); if (o.onSaved) o.onSaved(); };
@@ -2063,6 +2080,62 @@ function mountEditor(host, id, o = {}) {
   document.addEventListener("selectionchange", ckSoon);
   const ckScroll = () => { if (ckb) ckSoon(); }; document.addEventListener("scroll", ckScroll, true); // follow the words when anything around them scrolls
   ed.addEventListener("blur", () => setTimeout(() => { if (document.activeElement !== ed) ckHide(); }, 120));
+  /* ----- lists (NotePath): the bullet button again (or Tab) indents an item under the one above; Shift+Tab moves it back
+     out; delete (Backspace) at the start of an item is the only way to take a bullet, number or checkbox off: a nested
+     item first moves out one level, a top-level item becomes a plain line ----- */
+  const caretAt = () => { const s = getSelection(); return s.rangeCount ? s.getRangeAt(0) : null; };
+  const keepCaret = (fn) => { const r = caretAt(), at = r && [r.startContainer, r.startOffset, r.endContainer, r.endOffset]; fn();
+    if (at && ed.contains(at[0]) && ed.contains(at[2])) try { const nr = document.createRange(); nr.setStart(at[0], at[1]); nr.setEnd(at[2], at[3]); const s = getSelection(); s.removeAllRanges(); s.addRange(nr); last = nr.cloneRange(); } catch (e) {} };
+  const itemAt = () => { const r = caretAt(); if (!r || !ed.contains(r.startContainer) || inWidget(r.startContainer)) return null;
+    const el = r.startContainer.nodeType === 1 ? r.startContainer : r.startContainer.parentElement, li = el && el.closest("li"); return li && ed.contains(li) ? li : null; };
+  const subList = (L) => { const n = document.createElement(L.tagName); if (L.hasAttribute("data-ck")) n.setAttribute("data-ck", "1"); return n; };
+  function indentItem(li) {
+    li = li || itemAt(); if (!li) return false;
+    const L = li.parentElement, prev = li.previousElementSibling;
+    if (!prev || prev.tagName !== "LI") { if (o.onMessage) o.onMessage("Add an item above this one to indent it under"); return false; }
+    keepCaret(() => {
+      let sub = prev.lastElementChild && /^(UL|OL)$/.test(prev.lastElementChild.tagName) ? prev.lastElementChild : null;
+      if (!sub) { sub = subList(L); prev.appendChild(sub); }
+      sub.appendChild(li);
+      // the item's own sub-items come along at the same depth below it
+    });
+    save(); return true;
+  }
+  function outdentItem(li) {
+    li = li || itemAt(); if (!li) return false;
+    const L = li.parentElement, host = L && L.parentElement && L.parentElement.closest("li");
+    if (!host || !ed.contains(host)) return false;
+    keepCaret(() => {
+      const after = []; let x = li.nextElementSibling; while (x) { after.push(x); x = x.nextElementSibling; }
+      if (after.length) { let sub = li.lastElementChild && /^(UL|OL)$/.test(li.lastElementChild.tagName) ? li.lastElementChild : null; if (!sub) { sub = subList(L); li.appendChild(sub); } after.forEach(y => sub.appendChild(y)); }
+      host.after(li); if (!L.children.length) L.remove();
+    });
+    save(); return true;
+  }
+  // a top-level item becomes a plain line where it stood (the list splits around it; its sub-items stay a list below it)
+  function unlistItem(li) {
+    const L = li.parentElement; if (!L || !/^(UL|OL)$/.test(L.tagName)) return false;
+    const line = document.createElement("div"), subs = [];
+    [...li.childNodes].forEach(c => { if (c.nodeType === 1 && /^(UL|OL)$/.test(c.tagName)) subs.push(c); else line.appendChild(c); });
+    if (!line.childNodes.length) line.appendChild(document.createElement("br"));
+    const tail = subList(L); let x = li.nextElementSibling; while (x) { const nx = x.nextElementSibling; tail.appendChild(x); x = nx; }
+    li.remove(); L.after(line); let at = line; subs.forEach(sl => { at.after(sl); at = sl; }); if (tail.children.length) at.after(tail);
+    if (!L.children.length) L.remove();
+    const r = document.createRange(); r.setStart(line, 0); r.collapse(true); const s = getSelection(); s.removeAllRanges(); s.addRange(r); last = r.cloneRange();
+    save(); return true;
+  }
+  const atItemStart = (li, r) => { if (!r.collapsed) return false; const t = document.createRange(); t.setStart(li, 0);
+    try { t.setEnd(r.startContainer, r.startOffset); } catch (e) { return false; }
+    return !t.toString().length && !t.cloneContents().querySelector("img, .nw, a.nlink"); };
+  ed.addEventListener("keydown", e => {
+    if (e.isComposing || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === "Tab") { const li = itemAt(); if (!li) return; e.preventDefault(); if (e.shiftKey) outdentItem(li); else indentItem(li); return; }
+    if (e.key === "Enter" && !e.shiftKey) { const li = itemAt(); if (li && !li.textContent.trim() && !li.querySelector("img, ul, ol") && outdentItem(li)) e.preventDefault(); return; } // an empty sub-item: back out one level
+    if (e.key === "Backspace") {
+      const r = caretAt(), li = itemAt(); if (!li || !r || !atItemStart(li, r)) return;
+      e.preventDefault(); if (!outdentItem(li)) unlistItem(li);
+    }
+  });
   const follow = a => { if (a.dataset.note) { if (get(a.dataset.note) && o.openNote) { flush(); o.openNote(a.dataset.note); } } else if (a.dataset.topic && o.openTopic) { flush(); o.openTopic(a.dataset.topic); } };
   ed.addEventListener("click", e => { const a = e.target.closest("a.nlink"); if (a && ed.contains(a)) { e.preventDefault(); follow(a); } });
   ed.addEventListener("keydown", e => { const a = e.target.closest && e.target.closest("a.nlink"); if (a && e.key === "Enter") { e.preventDefault(); follow(a); } });
@@ -2117,6 +2190,40 @@ function mountEditor(host, id, o = {}) {
     });
     return out;
   }
+  /* ----- a font, size or colour picked with nothing selected (an empty line, or between words): what is typed next
+     gets it. A span holding a zero-width space waits at the caret; picking more styles there adds to the same span, and
+     the stand-in space goes once real text is in it (Devon, Oct 2026) ----- */
+  const ZW = "​";
+  function caretStyle(r, kind, v) {
+    const at = r.startContainer.nodeType === 1 ? r.startContainer : r.startContainer.parentElement;
+    let sp = at && at.closest("span"); if (sp && (!ed.contains(sp) || sp.textContent.replace(/​/g, "") !== "")) sp = null;
+    const attr = kind === "color" ? "data-c" : kind === "size" ? "data-s" : "data-f";
+    if (!sp) {
+      sp = document.createElement("span"); sp.appendChild(document.createTextNode(ZW));
+      // at the very end of a styled span, the new one goes after it so "normal" really is normal
+      let host = at && at.closest(`span[${attr}]`);
+      const atEnd = host && ed.contains(host) && (() => { const t = document.createRange(); t.selectNodeContents(host); t.setStart(r.startContainer, r.startOffset); return !t.toString().replace(/​/g, "").length; })();
+      if (atEnd) { // keep the other two styles the caret had inside that span
+        ["data-c", "data-s", "data-f"].filter(a => a !== attr).forEach(a => { const o = at.closest(`span[${a}]`); if (o && (o === host || host.contains(o))) { sp.setAttribute(a, o.getAttribute(a)); if (a === "data-c" && HEX.test(o.getAttribute(a))) sp.style.color = o.getAttribute(a); } });
+        host.after(sp);
+      } else { const rr = r.cloneRange(); rr.insertNode(sp); }
+    }
+    const inside = a => { const o = sp.parentElement && sp.parentElement.closest(`span[${a}]`); return !!(o && ed.contains(o)); };
+    if (kind === "color") { const hx = hexOf(v); if (hx) { sp.setAttribute("data-c", hx); sp.style.color = hx; } else if (inside("data-c")) { sp.setAttribute("data-c", "_def"); sp.style.color = getComputedStyle(ed).color; } else { sp.removeAttribute("data-c"); sp.style.color = ""; } }
+    else if (kind === "size") { const n = NSIZES.includes(+v) && +v !== 15 ? String(+v) : ""; if (n) sp.setAttribute("data-s", n); else if (inside("data-s")) sp.setAttribute("data-s", "15"); else sp.removeAttribute("data-s"); }
+    else { if (FKEYS.has(v)) sp.setAttribute("data-f", v); else if (inside("data-f")) sp.setAttribute("data-f", "_def"); else sp.removeAttribute("data-f"); }
+    if (!sp.getAttribute("style")) sp.removeAttribute("style");
+    const t = sp.firstChild && sp.firstChild.nodeType === 3 ? sp.firstChild : sp.insertBefore(document.createTextNode(ZW), sp.firstChild);
+    const nr = document.createRange(); nr.setStart(t, t.data.length); nr.collapse(true); const s = getSelection(); s.removeAllRanges(); s.addRange(nr); last = nr.cloneRange();
+  }
+  // the stand-in space goes as soon as real text is next to it (the caret stays where it was)
+  ed.addEventListener("input", () => {
+    const s = getSelection(), r = s.rangeCount ? s.getRangeAt(0) : null;
+    const tw = document.createTreeWalker(ed, NodeFilter.SHOW_TEXT); const hit = []; let n;
+    while ((n = tw.nextNode())) if (n.data.includes(ZW) && n.data !== ZW) hit.push(n);
+    hit.forEach(tn => { let off = r && r.startContainer === tn ? r.startOffset : -1; if (off >= 0) off -= (tn.data.slice(0, off).match(/​/g) || []).length;
+      tn.data = tn.data.replace(/​/g, ""); if (off >= 0) { const nr = document.createRange(); nr.setStart(tn, Math.min(off, tn.data.length)); nr.collapse(true); s.removeAllRanges(); s.addRange(nr); } });
+  }, true);
   // Chromium edits inline colours itself (it may clear or copy style="color"): keep data-c in step with what is shown
   function syncColors() {
     ed.querySelectorAll("span").forEach(sp => {
@@ -2126,12 +2233,17 @@ function mountEditor(host, id, o = {}) {
       else if (!c && sp.getAttribute("style") === "") sp.removeAttribute("style");
     });
   }
-  const api = { el: ed, id, flush, addFiles, addURL, addVideoLink, linkRange, insertNoteLink, insertWidgetAt, insertText, addWidget, insertBlock,
+  const api = { el: ed, id, flush, indentItem, outdentItem,
+    openSide: noteId => { if (!o.openSide || !get(noteId)) return false; flush(); o.openSide(noteId); return true; },
+    openNote: noteId => { if (!o.openNote || !get(noteId)) return false; flush(); o.openNote(noteId); return true; },
+    addFiles, addURL, addVideoLink, linkRange, insertNoteLink, insertWidgetAt, insertText, addWidget, insertBlock,
     focus: () => { ed.focus({ preventScroll: true }); const s = getSelection(); if (last && (!s.rangeCount || !ed.contains(s.getRangeAt(0).commonAncestorContainer))) { s.removeAllRanges(); s.addRange(last); } },
     changed: () => save(),
     // kind "color" (a #hex, or "" for the normal colour), "size" (a number, or "" for normal), "font" (a key, or "" for the note's font)
     format: (kind, v) => {
       api.focus(); document.execCommand("styleWithCSS", false, false);
+      { const s0 = getSelection(), r0 = s0.rangeCount ? s0.getRangeAt(0) : null; // nothing selected: what is typed next gets it
+        if (r0 && r0.collapsed && ed.contains(r0.startContainer) && !inWidget(r0.startContainer)) { caretStyle(r0, kind, v); save(); return; } }
       let made = [];
       const conv = over => { made = [...ed.querySelectorAll("font")].reverse().map(f => fontToSpan(f, over)).filter(Boolean).reverse(); };
       if (kind === "color") { document.execCommand("foreColor", false, hexOf(v) || CLEARC); conv({ def: !hexOf(v) }); if (!hexOf(v)) made = lift("data-c"); }
@@ -2320,8 +2432,8 @@ function toolbar(api) {
   const bar = document.createElement("div");
   bar.className = "nr-tools"; bar.setAttribute("role", "toolbar"); bar.setAttribute("aria-label", "Formatting");
   const mod = /Mac/.test(navigator.platform) ? "⌘" : "Ctrl+";
-  bar.innerHTML = `<button type="button" data-cmd="bold" title="Bold (${mod}B)" aria-label="Bold"><b>B</b></button><button type="button" data-cmd="italic" title="Italic (${mod}I)" aria-label="Italic"><i>I</i></button><button type="button" data-cmd="underline" title="Underline (${mod}U)" aria-label="Underline"><u>U</u></button><button type="button" data-cmd="strikeThrough" title="Strikethrough" aria-label="Strikethrough"><s>S</s></button>
-    <span class="nr-sep"></span><button type="button" data-blk="h3" title="Heading" aria-label="Heading">H</button><button type="button" data-blk="ul" title="Bulleted list" aria-label="Bulleted list">•≡</button><button type="button" data-blk="ol" title="Numbered list" aria-label="Numbered list">1.≡</button><button type="button" data-blk="ck" title="Checklist: click a box to tick an item off" aria-label="Checklist">☑</button>
+  bar.innerHTML = `<button type="button" data-cmd="bold" title="Bold (${mod}B)" aria-label="Bold"><b>B</b></button><button type="button" data-cmd="italic" title="Italic (${mod}I)" aria-label="Italic"><i>I</i></button><button type="button" data-cmd="underline" title="Underline (${mod}U)" aria-label="Underline"><u>U</u></button><button type="button" data-blk="h3" title="Heading" aria-label="Heading">H</button><button type="button" data-cmd="strikeThrough" title="Strikethrough" aria-label="Strikethrough"><s>S</s></button>
+    <span class="nr-sep"></span><button type="button" data-blk="ul" title="Bulleted list · press again to indent (Tab indents, Shift+Tab moves back, delete at the start takes the bullet off)" aria-label="Bulleted list">•≡</button><button type="button" data-blk="ol" title="Numbered list · delete at the start of a line takes the number off" aria-label="Numbered list">1.≡</button><button type="button" data-blk="ck" title="Checklist: click a box to tick an item off · press again to indent · delete at the start of a line takes the box off" aria-label="Checklist">☑</button>
     <span class="nr-sep"></span><button type="button" class="nr-dd nr-font" data-dd="font" title="Font" aria-haspopup="listbox" aria-label="Font"><span class="nr-ddv">Default</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-dd nr-size" data-dd="size" title="Text size" aria-haspopup="listbox" aria-label="Text size"><span class="nr-ddv num">15</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-dd nr-colb" data-dd="color" title="Text colour" aria-haspopup="dialog" aria-label="Text colour"><span class="nr-cola" aria-hidden="true">A</span><span class="nr-car" aria-hidden="true">▾</span></button>
     <span class="nr-sep"></span><button type="button" class="nr-sym" title="Emoji and symbols (Greek, maths, alchemical)" aria-haspopup="dialog">☺ Ω</button>
     <span class="nr-sep"></span><button type="button" data-w="code" title="Add a code box">&lt;/&gt; Code</button><button type="button" data-w="music" title="Add a music chart">♪ Music</button><button type="button" data-w="sheet" title="Add a lead sheet: bars with chord symbols and melody">𝄞 Sheet</button><button type="button" data-w="graph" title="Add a graph: click points on a grid and get their equations">∿ Graph</button>`;
@@ -2424,16 +2536,26 @@ function ddPanel(btn, kind, api, sync) {
 const rgbHex = c => { const m = String(c || "").match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/); return m ? toHex(+m[1], +m[2], +m[3]) : String(c || ""); };
 // headings and lists (NotePath): the block the caret is in becomes a heading / list item, or back to plain text
 function caretEl(api) { const s = getSelection(); if (!s.rangeCount) return null; const n = s.getRangeAt(0).startContainer, el = n.nodeType === 1 ? n : n.parentElement; return el && api.el.contains(el) ? el : null; }
+// Pressing a list button again never takes the list off (Devon, Oct 2026): only delete (Backspace) at the start of an item
+// does that. The bullet or checklist button again indents the item under the one above (api.indentItem); numbers again do nothing.
 function block(kind, api) {
   const el = caretEl(api), list = el && el.closest("ul, ol"), inList = list && api.el.contains(list) ? list : null;
   if (kind === "h3") { document.execCommand("formatBlock", false, el && el.closest("h3") ? "div" : "h3"); return; }
-  if (kind === "ol") { document.execCommand("insertOrderedList"); return; }
-  if (kind === "ul") { if (inList && inList.hasAttribute("data-ck")) { inList.removeAttribute("data-ck"); return; } document.execCommand("insertUnorderedList"); return; }
-  // checklist: a bulleted list marked data-ck="1"; pressing it again inside a checklist turns the lines back into text
-  if (inList && inList.tagName === "UL" && inList.hasAttribute("data-ck")) { document.execCommand("insertUnorderedList"); return; }
+  if (kind === "ol") { if (inList && inList.tagName === "OL") return; document.execCommand("insertOrderedList"); return; }
+  if (kind === "ul") {
+    if (inList && inList.hasAttribute("data-ck")) { inList.removeAttribute("data-ck"); return; } // checklist → bullets
+    if (inList && inList.tagName === "UL") { if (api.indentItem) api.indentItem(); return; } // bullets again → indent
+    document.execCommand("insertUnorderedList"); return;
+  }
+  // checklist: a bulleted list marked data-ck="1"
+  if (inList && inList.tagName === "UL" && inList.hasAttribute("data-ck")) { if (api.indentItem) api.indentItem(); return; } // checklist again → indent
   if (inList && inList.tagName === "UL") { inList.setAttribute("data-ck", "1"); return; }
   document.execCommand("insertUnorderedList");
-  const now = caretEl(api), ul = now && now.closest("ul"); if (ul && api.el.contains(ul)) ul.setAttribute("data-ck", "1");
+  // the new list (in an empty note the caret may sit on the editor itself, next to the list)
+  const now = caretEl(api); let ul = now && now.closest("ul");
+  if (!ul && now) { const r = getSelection().getRangeAt(0), c = r.startContainer.nodeType === 1 ? r.startContainer.childNodes[r.startOffset] || r.startContainer.childNodes[r.startOffset - 1] : null;
+    ul = c && c.nodeType === 1 ? (c.tagName === "UL" ? c : c.closest("ul") || c.querySelector("ul")) : null; }
+  if (ul && api.el.contains(ul)) ul.setAttribute("data-ck", "1");
 }
 function colorKey(hex) {
   const h = String(hex || "").toLowerCase();
@@ -4625,7 +4747,7 @@ function modalWin(id, o = {}){
   const last = document.activeElement;
   const ov = h("div", { class: "mw-ov", "data-mw": id });
   ov.innerHTML = `<div class="mw-win win ${o.cls || ""}" role="dialog" aria-modal="true" aria-labelledby="mw-t-${id}">
-    <header class="set-h mw-h"><span class="dot"></span><h2 id="mw-t-${id}">${esc(o.title || "")}</h2>${o.sub ? `<span class="mw-sub">${o.sub}</span>` : ""}<span class="mw-hx"></span><button type="button" class="set-x" aria-label="Close ${esc(o.title || "window")}">✕</button></header>
+    <header class="set-h mw-h">${o.back ? `<button type="button" class="np-back" data-a="back" title="Back to the Main Menu" aria-label="Back to the Main Menu"><span aria-hidden="true">‹</span> Back</button>` : ""}<span class="dot"></span><h2 id="mw-t-${id}">${esc(o.title || "")}</h2>${o.sub ? `<span class="mw-sub">${o.sub}</span>` : ""}<span class="mw-hx"></span>${o.back ? "" : `<button type="button" class="set-x" aria-label="Close ${esc(o.title || "window")}">✕</button>`}</header>
     <div class="mw-body"></div></div>`;
   document.body.appendChild(ov);
   const m = { id, ov, win: $(".mw-win", ov), body: $(".mw-body", ov), head: $(".mw-hx", ov), cleanup: [], closed: false,
@@ -4639,7 +4761,8 @@ function modalWin(id, o = {}){
       window.dispatchEvent(new CustomEvent("inquire:window", { detail: { id, open: false } }));
     } };
   MW[id] = m;
-  $(".set-x", ov).onclick = () => m.close();
+  if (o.back) $(".np-back", ov).onclick = () => { m.close(); if (S.view !== "menu") go({ view: "menu" }); }; // ‹ Back: to the Main Menu (Note Office has no ✕)
+  else $(".set-x", ov).onclick = () => m.close();
   ov.addEventListener("pointerdown", e => { if (e.target === ov) m.close(); });
   requestAnimationFrame(() => { if (!m.closed) document.body.classList.add("mw-open"); });
   setTimeout(() => { if (!m.closed && !m.win.contains(document.activeElement)) m.win.focus({ preventScroll: true }); }, 40);
@@ -4662,10 +4785,11 @@ function renderNotesPage(o = {}){
   if (o.sel) ST.sel = o.sel;
   const pg = h("div", { class: "npage" });
   pg.innerHTML = `<div class="np-wrap"><section class="np-win win" aria-labelledby="np-t">
-    <header class="set-h mw-h"><span class="dot"></span><h2 id="np-t">My notes</h2><span class="mw-sub"></span><span class="mw-hx"></span></header>
+    <header class="set-h mw-h"><button type="button" class="np-back" data-a="back" title="Back to the Main Menu" aria-label="Back to the Main Menu"><span aria-hidden="true">‹</span> Back</button><span class="dot"></span><h2 id="np-t">My notes</h2><span class="mw-sub"></span><span class="mw-hx"></span></header>
     <div class="mw-body" role="tabpanel"></div></section>
     <nav class="np-thumbs" role="tablist" aria-label="My notes sections" aria-orientation="vertical">${TABS.map(t => `<button type="button" role="tab" class="np-thumb" data-sp="${t.sp}"${t.soon ? ` aria-disabled="true" title="${t.name}: coming soon"` : ` title="${t.name}"`}><span class="np-thg" aria-hidden="true">${t.glyph}</span><span class="np-tht">${t.name}</span>${t.soon ? `<small class="np-ths">Soon</small>` : ""}</button>`).join("")}</nav></div>`;
   viewEl.appendChild(pg);
+  $(".np-back", pg).onclick = () => go({ view: "menu" });
   const m = { body: $(".mw-body", pg), head: $(".mw-hx", pg), cleanup: [] };
   const thumbs = [...pg.querySelectorAll(".np-thumb")];
   const paint = () => {
@@ -4698,9 +4822,10 @@ let TPAGE = null;
 function renderTasksPage(o = {}){
   const pg = h("div", { class: "npage tpage" });
   pg.innerHTML = `<section class="np-win win nt-win" aria-labelledby="nt-t">
-    <header class="set-h mw-h"><span class="dot"></span><h2 id="nt-t">My Tasks</h2><span class="mw-sub">Saved on this computer. Reminders show as notifications while NotePath is running.</span><span class="mw-hx"></span></header>
+    <header class="set-h mw-h"><button type="button" class="np-back" data-a="back" title="Back to the Main Menu" aria-label="Back to the Main Menu"><span aria-hidden="true">‹</span> Back</button><span class="dot"></span><h2 id="nt-t">My Tasks</h2><span class="mw-sub">Saved on this computer. Reminders show as notifications while NotePath is running.</span><span class="mw-hx"></span></header>
     <div class="mw-body"></div></section>`;
   viewEl.appendChild(pg);
+  $(".np-back", pg).onclick = () => go({ view: "menu" });
   const m = { body: $(".mw-body", pg), head: $(".mw-hx", pg), cleanup: [] };
   if (window.NPTasks) NPTasks.render(m, o);
   TPAGE = { show: x => m.show && m.show(x), newNote: () => m.newNote && m.newNote() };
@@ -4895,12 +5020,16 @@ function renderNotes(m, focusBody, space = "notes"){
   let DRAG = null;
   const clearDrop = () => s.querySelectorAll(".drop,.drop-before,.drop-after").forEach(el => el.classList.remove("drop", "drop-before", "drop-after"));
   const closed = () => new Set(store.get("notefold", []));
+  // a closed folder while folded (▸), an open one while its notes show (▾) (Devon, Oct 2026)
+  const folderIcon = open => `<span class="nb-fic nb-fold-ic${open ? " open" : ""}" aria-hidden="true"><svg viewBox="0 0 16 16" width="15" height="15">${open
+    ? '<path d="M1.5 13.5V3.5h4.2l1.5 1.6h5.8v2" class="b"/><path d="M1.5 13.5l2.3-6.4h10.7l-2.3 6.4z" class="f"/>'
+    : '<path d="M1.5 3.5h4.2l1.5 1.6h7.3v8.4h-13z" class="f"/><path d="M1.5 6.6h13" class="b"/>'}</svg></span>`;
   function drawFolders(){
     const all = NS.list(), fs = NS.folders(), shut = closed();
     if (!["all", "fav", "none"].includes(NOTES.folder) && !fs.some(f => f.id === NOTES.folder)) NOTES.folder = "all";
     inSub = ["all", "fav", "none"].includes(NOTES.folder) ? new Set() : NS.subtree(NOTES.folder);
     const count = id => { const sub = NS.subtree(id); return all.filter(n => sub.has(n.folder)).length; };
-    const row = (id, ic, name, n, f) => `<div class="nb-fd${NOTES.folder === id ? " sel" : ""}${f ? " user" : ""}" data-f="${id}"${f ? ` draggable="true" style="--d:${f.depth}"` : ""}>${f ? `<button type="button" class="nb-fcar" data-car="${id}" aria-expanded="${!shut.has(id)}" title="${shut.has(id) ? "Show" : "Hide"} what is in ${esc(name)}" aria-label="${shut.has(id) ? "Show" : "Hide"} the notes and folders in ${esc(name)}">${shut.has(id) ? "▸" : "▾"}</button>` : ""}<button type="button" class="nb-fdb" data-f="${id}" aria-pressed="${NOTES.folder === id}"${f ? ` title="Drag onto another folder to put it inside; drag above or below a folder to reorder. Alt+↑/↓ also reorders."` : ""}>${f ? "" : `<span class="nb-fic">${ic}</span>`}<span class="nb-fnm">${esc(name)}</span><span class="nb-fn num">${n}</span></button>${f ? `<button type="button" class="nb-fx nb-ffav${f.fav ? " on" : ""}" data-ffav="${id}" aria-pressed="${!!f.fav}" title="${f.fav ? "Unstar: back to its own place" : "Star: keep this folder at the top"}" aria-label="${f.fav ? "Unstar" : "Star"} ${esc(name)}">${f.fav ? "★" : "☆"}</button><button type="button" class="nb-fx" data-sub="${id}" title="New folder inside" aria-label="New folder inside ${esc(name)}">＋</button><button type="button" class="nb-fx" data-ren="${id}" title="Rename folder" aria-label="Rename ${esc(name)}">✎</button><button type="button" class="nb-fx" data-del="${id}" title="Delete folder (its notes and folders move up a level)" aria-label="Delete ${esc(name)}">✕</button>` : ""}</div>`;
+    const row = (id, ic, name, n, f) => `<div class="nb-fd${NOTES.folder === id ? " sel" : ""}${f ? " user" : ""}" data-f="${id}"${f ? ` draggable="true" style="--d:${f.depth}"` : ""}>${f ? `<button type="button" class="nb-fcar" data-car="${id}" aria-expanded="${!shut.has(id)}" title="${shut.has(id) ? "Show" : "Hide"} what is in ${esc(name)}" aria-label="${shut.has(id) ? "Show" : "Hide"} the notes and folders in ${esc(name)}">${shut.has(id) ? "▸" : "▾"}</button>` : ""}<button type="button" class="nb-fdb" data-f="${id}" aria-pressed="${NOTES.folder === id}"${f ? ` title="Drag onto another folder to put it inside; drag above or below a folder to reorder. Alt+↑/↓ also reorders."` : ""}>${f ? folderIcon(!shut.has(id)) : `<span class="nb-fic">${ic}</span>`}<span class="nb-fnm">${esc(name)}</span><span class="nb-fn num">${n}</span></button>${f ? `<button type="button" class="nb-fx nb-ffav${f.fav ? " on" : ""}" data-ffav="${id}" aria-pressed="${!!f.fav}" title="${f.fav ? "Unstar: back to its own place" : "Star: keep this folder at the top"}" aria-label="${f.fav ? "Unstar" : "Star"} ${esc(name)}">${f.fav ? "★" : "☆"}</button><button type="button" class="nb-fx" data-sub="${id}" title="New folder inside" aria-label="New folder inside ${esc(name)}">＋</button><button type="button" class="nb-fx" data-ren="${id}" title="Rename folder" aria-label="Rename ${esc(name)}">✎</button><button type="button" class="nb-fx" data-del="${id}" title="Delete folder (its notes and folders move up a level)" aria-label="Delete ${esc(name)}">✕</button>` : ""}</div>`;
     // each folder lists its folders, then its own notes (My order); ▾ / ▸ folds both away
     const byFolder = {}; all.slice().sort(NS.byOrder).forEach(n => { if (n.folder) (byFolder[n.folder] = byFolder[n.folder] || []).push(n); });
     const noteRow = (n, d) => `<div class="nb-fnote${n.id === NOTES.sel ? " sel" : ""}" role="button" tabindex="0" draggable="true" data-id="${n.id}" style="--d:${d}" title="Open ${esc(n.title)} · drag it onto a folder, into the open note (a link) or onto ⧉ (side by side)"><span class="nb-fni" aria-hidden="true">${n.fav ? "★" : "▫"}</span><span class="nb-fnt">${esc(n.title)}</span></div>`;
@@ -5090,6 +5219,7 @@ function renderNotes(m, focusBody, space = "notes"){
     rich = NS.mountEditor($(".nb-host", ed), n.id, {
       onSaved: () => { const it = items.querySelector(`[data-id="${n.id}"] .nb-m`); if (it) drawList(); },
       openNote: id => openLinked(id),
+      openSide: id => openFromLink(id),
       onMessage: msg
     });
     ti.oninput = () => { clearTimeout(saveT); saveT = setTimeout(() => { saveT = null; NS.update(n.id, { title: ti.value.trim() || "Untitled note" }); const it = items.querySelector(`[data-id="${n.id}"] .nb-t`); if (it) it.lastChild.textContent = ti.value.trim() || "Untitled note"; const fr = fold.querySelector(`.nb-fnote[data-id="${n.id}"] .nb-fnt`); if (fr) fr.textContent = ti.value.trim() || "Untitled note"; }, 400); };
@@ -5138,12 +5268,19 @@ function renderNotes(m, focusBody, space = "notes"){
     }
     ed2.innerHTML = `<div class="nb-p2h"><span class="nb-p2tag">Side by side</span><button type="button" class="btn-s" data-a="swap" title="Make this the main note">Open as main</button><button type="button" class="nb-p2b" data-a="min" title="Minimise to a tab" aria-label="Minimise to a tab">▁</button><button type="button" class="nb-p2b" data-a="close" title="Close this note" aria-label="Close the side note">✕</button></div>
       <div class="nb-trow"><input class="nb-title" value="${esc(n.title)}" aria-label="Title of the side note" maxlength="140"></div><div class="nb-host"></div>`;
-    rich2 = NS.mountEditor($(".nb-host", ed2), n.id, { openNote: id => openLinked(id), onMessage: msg, onSaved: () => drawList() });
+    rich2 = NS.mountEditor($(".nb-host", ed2), n.id, { openNote: id => openLinked(id), openSide: id => openFromLink(id), onMessage: msg, onSaved: () => drawList() });
     const ti = $(".nb-title", ed2);
     ti.oninput = () => { clearTimeout(save2); save2 = setTimeout(() => { save2 = null; NS.update(n.id, { title: ti.value.trim() || "Untitled note" }); drawList(); drawFolders(); }, 400); };
     $('[data-a="min"]', ed2).onclick = () => { flush2(); SPLIT.min = true; drawSplit(); };
     $('[data-a="close"]', ed2).onclick = () => closeSplit();
     $('[data-a="swap"]', ed2).onclick = () => { flushEd(); const a = NOTES.sel; NOTES.sel = n.id; SPLIT.id = a && a !== n.id ? a : null; drawAll(); };
+  }
+  // right-click a note link → "Open in a new note tab": the note opens in the side-by-side box (textmenu.js)
+  function openFromLink(id){
+    if (!NS.get(id)) return;
+    if (id === NOTES.sel) { msg("That note is already open."); return; }
+    if (id === SPLIT.id) { if (SPLIT.min) { SPLIT.min = false; drawSplit(); } return; }
+    flushEd(); openSplit(id); drawList();
   }
   function openSplit(id){ if (!id || id === NOTES.sel) return; flush2(); SPLIT.id = id; SPLIT.min = false; drawSplit(); }
   function closeSplit(quiet){ flush2(); if (rich2) { rich2.destroy(); rich2 = null; } SPLIT.id = null; SPLIT.min = false; if (!quiet) drawSplit(); else { ed2.hidden = true; ed2.innerHTML = ""; tabs.hidden = true; tabs.innerHTML = ""; edSec.classList.remove("split"); } }
@@ -5891,7 +6028,7 @@ function mount(host, o = {}) {
 let cur = null;
 function open() {
   const A = window.InquireApp; if (!A || !A.modal) return;
-  const m = A.modal("office", { title: "Note Office", cls: "mw-office", sub: `<span class="no-status">Very busy doing nothing.</span>` });
+  const m = A.modal("office", { title: "Note Office", cls: "mw-office", back: true, sub: `<span class="no-status">Very busy doing nothing.</span>` });
   if (cur) return m;
   m.head.innerHTML = `<span class="no-counts num" aria-live="polite"></span><button type="button" class="np-hb no-pause" aria-pressed="false" title="Pause or play the office">❚❚ Pause</button>`;
   const counts = m.head.querySelector(".no-counts"), status = m.win.querySelector(".no-status"), pause = m.head.querySelector(".no-pause");
@@ -6141,9 +6278,38 @@ async function linkFlow(x, y, c) {
   const sel = getSelection(); sel.removeAllRanges(); sel.addRange(c.range);
   if (api.linkRange(c.range, id)) toast(`Linked to “${esc(N.get(id).title)}”`);
 }
+// right-click a note link: Open · Open in a new note tab (side by side with this note) · Remove link (keeps the words)
+function linkMenu(x, y, a, zone) {
+  close();
+  const N = NS(), api = N && N.editorFor(zone), id = a.dataset.note, t = id && N && N.get(id);
+  if (!api || !t) return false;
+  menu = document.createElement("div");
+  menu.className = "tm-menu win"; menu.setAttribute("role", "menu"); menu.setAttribute("aria-label", "Note link");
+  menu.innerHTML = `
+    <button type="button" role="menuitem" data-a="open"><span class="tm-ic">↗</span><span>Open “${esc(t.title.length > 30 ? t.title.slice(0, 28).trim() + "…" : t.title)}”<small>In place of this note</small></span></button>
+    <button type="button" role="menuitem" data-a="side"><span class="tm-ic">⧉</span><span>Open in a new note tab<small>Side by side with this note</small></span></button>
+    <button type="button" role="menuitem" data-a="unlink"><span class="tm-ic">⌫</span><span>Remove link<small>Keeps the words</small></span></button>`;
+  document.body.appendChild(menu);
+  const W = menu.offsetWidth, H = menu.offsetHeight;
+  menu.style.left = Math.max(6, Math.min(innerWidth - W - 6, x)) + "px"; menu.style.top = Math.max(6, Math.min(innerHeight - H - 6, y)) + "px";
+  menu.addEventListener("mousedown", e => e.preventDefault());
+  menu.addEventListener("click", e => {
+    const b = e.target.closest("button[data-a]"); if (!b) return;
+    const k = b.dataset.a; close();
+    if (k === "open") api.openNote(id);
+    else if (k === "side") api.openSide(id);
+    else if (k === "unlink" && a.isConnected) { a.replaceWith(document.createTextNode(a.textContent)); api.el.normalize(); api.changed(); api.flush(); }
+  });
+  document.addEventListener("pointerdown", out, true); document.addEventListener("keydown", key, true);
+  window.addEventListener("blur", close); window.addEventListener("resize", close); document.addEventListener("scroll", onScroll, true);
+  setTimeout(() => { const f = menu && menu.querySelector("button"); if (f) f.focus({ preventScroll: true }); }, 0);
+  return true;
+}
 document.addEventListener("contextmenu", e => {
   const zone = e.target.closest && e.target.closest(".nb-rich");
   if (!zone || e.target.closest("input, textarea, select, canvas")) return;
+  const lk = e.target.closest("a.nlink[data-note]");
+  if (lk && zone.contains(lk)) { if (linkMenu(e.clientX || 0, e.clientY || 0, lk, zone)) e.preventDefault(); return; }
   const sel = getSelection(), text = sel ? sel.toString().trim() : "";
   if (!text || !sel.rangeCount) return;
   const range = sel.getRangeAt(0);

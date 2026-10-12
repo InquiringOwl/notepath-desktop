@@ -640,7 +640,7 @@ function mount(host, o = {}) {
 let cur = null;
 function open() {
   const A = window.InquireApp; if (!A || !A.modal) return;
-  const m = A.modal("office", { title: "Note Office", cls: "mw-office", sub: `<span class="no-status">Very busy doing nothing.</span>` });
+  const m = A.modal("office", { title: "Note Office", cls: "mw-office", back: true, sub: `<span class="no-status">Very busy doing nothing.</span>` });
   if (cur) return m;
   m.head.innerHTML = `<span class="no-counts num" aria-live="polite"></span><button type="button" class="np-hb no-pause" aria-pressed="false" title="Pause or play the office">❚❚ Pause</button>`;
   const counts = m.head.querySelector(".no-counts"), status = m.win.querySelector(".no-status"), pause = m.head.querySelector(".no-pause");

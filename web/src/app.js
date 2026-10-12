@@ -81,7 +81,7 @@ function modalWin(id, o = {}){
   const last = document.activeElement;
   const ov = h("div", { class: "mw-ov", "data-mw": id });
   ov.innerHTML = `<div class="mw-win win ${o.cls || ""}" role="dialog" aria-modal="true" aria-labelledby="mw-t-${id}">
-    <header class="set-h mw-h"><span class="dot"></span><h2 id="mw-t-${id}">${esc(o.title || "")}</h2>${o.sub ? `<span class="mw-sub">${o.sub}</span>` : ""}<span class="mw-hx"></span><button type="button" class="set-x" aria-label="Close ${esc(o.title || "window")}">✕</button></header>
+    <header class="set-h mw-h">${o.back ? `<button type="button" class="np-back" data-a="back" title="Back to the Main Menu" aria-label="Back to the Main Menu"><span aria-hidden="true">‹</span> Back</button>` : ""}<span class="dot"></span><h2 id="mw-t-${id}">${esc(o.title || "")}</h2>${o.sub ? `<span class="mw-sub">${o.sub}</span>` : ""}<span class="mw-hx"></span>${o.back ? "" : `<button type="button" class="set-x" aria-label="Close ${esc(o.title || "window")}">✕</button>`}</header>
     <div class="mw-body"></div></div>`;
   document.body.appendChild(ov);
   const m = { id, ov, win: $(".mw-win", ov), body: $(".mw-body", ov), head: $(".mw-hx", ov), cleanup: [], closed: false,
@@ -95,7 +95,8 @@ function modalWin(id, o = {}){
       window.dispatchEvent(new CustomEvent("inquire:window", { detail: { id, open: false } }));
     } };
   MW[id] = m;
-  $(".set-x", ov).onclick = () => m.close();
+  if (o.back) $(".np-back", ov).onclick = () => { m.close(); if (S.view !== "menu") go({ view: "menu" }); }; // ‹ Back: to the Main Menu (Note Office has no ✕)
+  else $(".set-x", ov).onclick = () => m.close();
   ov.addEventListener("pointerdown", e => { if (e.target === ov) m.close(); });
   requestAnimationFrame(() => { if (!m.closed) document.body.classList.add("mw-open"); });
   setTimeout(() => { if (!m.closed && !m.win.contains(document.activeElement)) m.win.focus({ preventScroll: true }); }, 40);
@@ -118,10 +119,11 @@ function renderNotesPage(o = {}){
   if (o.sel) ST.sel = o.sel;
   const pg = h("div", { class: "npage" });
   pg.innerHTML = `<div class="np-wrap"><section class="np-win win" aria-labelledby="np-t">
-    <header class="set-h mw-h"><span class="dot"></span><h2 id="np-t">My notes</h2><span class="mw-sub"></span><span class="mw-hx"></span></header>
+    <header class="set-h mw-h"><button type="button" class="np-back" data-a="back" title="Back to the Main Menu" aria-label="Back to the Main Menu"><span aria-hidden="true">‹</span> Back</button><span class="dot"></span><h2 id="np-t">My notes</h2><span class="mw-sub"></span><span class="mw-hx"></span></header>
     <div class="mw-body" role="tabpanel"></div></section>
     <nav class="np-thumbs" role="tablist" aria-label="My notes sections" aria-orientation="vertical">${TABS.map(t => `<button type="button" role="tab" class="np-thumb" data-sp="${t.sp}"${t.soon ? ` aria-disabled="true" title="${t.name}: coming soon"` : ` title="${t.name}"`}><span class="np-thg" aria-hidden="true">${t.glyph}</span><span class="np-tht">${t.name}</span>${t.soon ? `<small class="np-ths">Soon</small>` : ""}</button>`).join("")}</nav></div>`;
   viewEl.appendChild(pg);
+  $(".np-back", pg).onclick = () => go({ view: "menu" });
   const m = { body: $(".mw-body", pg), head: $(".mw-hx", pg), cleanup: [] };
   const thumbs = [...pg.querySelectorAll(".np-thumb")];
   const paint = () => {
@@ -154,9 +156,10 @@ let TPAGE = null;
 function renderTasksPage(o = {}){
   const pg = h("div", { class: "npage tpage" });
   pg.innerHTML = `<section class="np-win win nt-win" aria-labelledby="nt-t">
-    <header class="set-h mw-h"><span class="dot"></span><h2 id="nt-t">My Tasks</h2><span class="mw-sub">Saved on this computer. Reminders show as notifications while NotePath is running.</span><span class="mw-hx"></span></header>
+    <header class="set-h mw-h"><button type="button" class="np-back" data-a="back" title="Back to the Main Menu" aria-label="Back to the Main Menu"><span aria-hidden="true">‹</span> Back</button><span class="dot"></span><h2 id="nt-t">My Tasks</h2><span class="mw-sub">Saved on this computer. Reminders show as notifications while NotePath is running.</span><span class="mw-hx"></span></header>
     <div class="mw-body"></div></section>`;
   viewEl.appendChild(pg);
+  $(".np-back", pg).onclick = () => go({ view: "menu" });
   const m = { body: $(".mw-body", pg), head: $(".mw-hx", pg), cleanup: [] };
   if (window.NPTasks) NPTasks.render(m, o);
   TPAGE = { show: x => m.show && m.show(x), newNote: () => m.newNote && m.newNote() };
@@ -351,12 +354,16 @@ function renderNotes(m, focusBody, space = "notes"){
   let DRAG = null;
   const clearDrop = () => s.querySelectorAll(".drop,.drop-before,.drop-after").forEach(el => el.classList.remove("drop", "drop-before", "drop-after"));
   const closed = () => new Set(store.get("notefold", []));
+  // a closed folder while folded (▸), an open one while its notes show (▾) (Devon, Oct 2026)
+  const folderIcon = open => `<span class="nb-fic nb-fold-ic${open ? " open" : ""}" aria-hidden="true"><svg viewBox="0 0 16 16" width="15" height="15">${open
+    ? '<path d="M1.5 13.5V3.5h4.2l1.5 1.6h5.8v2" class="b"/><path d="M1.5 13.5l2.3-6.4h10.7l-2.3 6.4z" class="f"/>'
+    : '<path d="M1.5 3.5h4.2l1.5 1.6h7.3v8.4h-13z" class="f"/><path d="M1.5 6.6h13" class="b"/>'}</svg></span>`;
   function drawFolders(){
     const all = NS.list(), fs = NS.folders(), shut = closed();
     if (!["all", "fav", "none"].includes(NOTES.folder) && !fs.some(f => f.id === NOTES.folder)) NOTES.folder = "all";
     inSub = ["all", "fav", "none"].includes(NOTES.folder) ? new Set() : NS.subtree(NOTES.folder);
     const count = id => { const sub = NS.subtree(id); return all.filter(n => sub.has(n.folder)).length; };
-    const row = (id, ic, name, n, f) => `<div class="nb-fd${NOTES.folder === id ? " sel" : ""}${f ? " user" : ""}" data-f="${id}"${f ? ` draggable="true" style="--d:${f.depth}"` : ""}>${f ? `<button type="button" class="nb-fcar" data-car="${id}" aria-expanded="${!shut.has(id)}" title="${shut.has(id) ? "Show" : "Hide"} what is in ${esc(name)}" aria-label="${shut.has(id) ? "Show" : "Hide"} the notes and folders in ${esc(name)}">${shut.has(id) ? "▸" : "▾"}</button>` : ""}<button type="button" class="nb-fdb" data-f="${id}" aria-pressed="${NOTES.folder === id}"${f ? ` title="Drag onto another folder to put it inside; drag above or below a folder to reorder. Alt+↑/↓ also reorders."` : ""}>${f ? "" : `<span class="nb-fic">${ic}</span>`}<span class="nb-fnm">${esc(name)}</span><span class="nb-fn num">${n}</span></button>${f ? `<button type="button" class="nb-fx nb-ffav${f.fav ? " on" : ""}" data-ffav="${id}" aria-pressed="${!!f.fav}" title="${f.fav ? "Unstar: back to its own place" : "Star: keep this folder at the top"}" aria-label="${f.fav ? "Unstar" : "Star"} ${esc(name)}">${f.fav ? "★" : "☆"}</button><button type="button" class="nb-fx" data-sub="${id}" title="New folder inside" aria-label="New folder inside ${esc(name)}">＋</button><button type="button" class="nb-fx" data-ren="${id}" title="Rename folder" aria-label="Rename ${esc(name)}">✎</button><button type="button" class="nb-fx" data-del="${id}" title="Delete folder (its notes and folders move up a level)" aria-label="Delete ${esc(name)}">✕</button>` : ""}</div>`;
+    const row = (id, ic, name, n, f) => `<div class="nb-fd${NOTES.folder === id ? " sel" : ""}${f ? " user" : ""}" data-f="${id}"${f ? ` draggable="true" style="--d:${f.depth}"` : ""}>${f ? `<button type="button" class="nb-fcar" data-car="${id}" aria-expanded="${!shut.has(id)}" title="${shut.has(id) ? "Show" : "Hide"} what is in ${esc(name)}" aria-label="${shut.has(id) ? "Show" : "Hide"} the notes and folders in ${esc(name)}">${shut.has(id) ? "▸" : "▾"}</button>` : ""}<button type="button" class="nb-fdb" data-f="${id}" aria-pressed="${NOTES.folder === id}"${f ? ` title="Drag onto another folder to put it inside; drag above or below a folder to reorder. Alt+↑/↓ also reorders."` : ""}>${f ? folderIcon(!shut.has(id)) : `<span class="nb-fic">${ic}</span>`}<span class="nb-fnm">${esc(name)}</span><span class="nb-fn num">${n}</span></button>${f ? `<button type="button" class="nb-fx nb-ffav${f.fav ? " on" : ""}" data-ffav="${id}" aria-pressed="${!!f.fav}" title="${f.fav ? "Unstar: back to its own place" : "Star: keep this folder at the top"}" aria-label="${f.fav ? "Unstar" : "Star"} ${esc(name)}">${f.fav ? "★" : "☆"}</button><button type="button" class="nb-fx" data-sub="${id}" title="New folder inside" aria-label="New folder inside ${esc(name)}">＋</button><button type="button" class="nb-fx" data-ren="${id}" title="Rename folder" aria-label="Rename ${esc(name)}">✎</button><button type="button" class="nb-fx" data-del="${id}" title="Delete folder (its notes and folders move up a level)" aria-label="Delete ${esc(name)}">✕</button>` : ""}</div>`;
     // each folder lists its folders, then its own notes (My order); ▾ / ▸ folds both away
     const byFolder = {}; all.slice().sort(NS.byOrder).forEach(n => { if (n.folder) (byFolder[n.folder] = byFolder[n.folder] || []).push(n); });
     const noteRow = (n, d) => `<div class="nb-fnote${n.id === NOTES.sel ? " sel" : ""}" role="button" tabindex="0" draggable="true" data-id="${n.id}" style="--d:${d}" title="Open ${esc(n.title)} · drag it onto a folder, into the open note (a link) or onto ⧉ (side by side)"><span class="nb-fni" aria-hidden="true">${n.fav ? "★" : "▫"}</span><span class="nb-fnt">${esc(n.title)}</span></div>`;
@@ -546,6 +553,7 @@ function renderNotes(m, focusBody, space = "notes"){
     rich = NS.mountEditor($(".nb-host", ed), n.id, {
       onSaved: () => { const it = items.querySelector(`[data-id="${n.id}"] .nb-m`); if (it) drawList(); },
       openNote: id => openLinked(id),
+      openSide: id => openFromLink(id),
       onMessage: msg
     });
     ti.oninput = () => { clearTimeout(saveT); saveT = setTimeout(() => { saveT = null; NS.update(n.id, { title: ti.value.trim() || "Untitled note" }); const it = items.querySelector(`[data-id="${n.id}"] .nb-t`); if (it) it.lastChild.textContent = ti.value.trim() || "Untitled note"; const fr = fold.querySelector(`.nb-fnote[data-id="${n.id}"] .nb-fnt`); if (fr) fr.textContent = ti.value.trim() || "Untitled note"; }, 400); };
@@ -594,12 +602,19 @@ function renderNotes(m, focusBody, space = "notes"){
     }
     ed2.innerHTML = `<div class="nb-p2h"><span class="nb-p2tag">Side by side</span><button type="button" class="btn-s" data-a="swap" title="Make this the main note">Open as main</button><button type="button" class="nb-p2b" data-a="min" title="Minimise to a tab" aria-label="Minimise to a tab">▁</button><button type="button" class="nb-p2b" data-a="close" title="Close this note" aria-label="Close the side note">✕</button></div>
       <div class="nb-trow"><input class="nb-title" value="${esc(n.title)}" aria-label="Title of the side note" maxlength="140"></div><div class="nb-host"></div>`;
-    rich2 = NS.mountEditor($(".nb-host", ed2), n.id, { openNote: id => openLinked(id), onMessage: msg, onSaved: () => drawList() });
+    rich2 = NS.mountEditor($(".nb-host", ed2), n.id, { openNote: id => openLinked(id), openSide: id => openFromLink(id), onMessage: msg, onSaved: () => drawList() });
     const ti = $(".nb-title", ed2);
     ti.oninput = () => { clearTimeout(save2); save2 = setTimeout(() => { save2 = null; NS.update(n.id, { title: ti.value.trim() || "Untitled note" }); drawList(); drawFolders(); }, 400); };
     $('[data-a="min"]', ed2).onclick = () => { flush2(); SPLIT.min = true; drawSplit(); };
     $('[data-a="close"]', ed2).onclick = () => closeSplit();
     $('[data-a="swap"]', ed2).onclick = () => { flushEd(); const a = NOTES.sel; NOTES.sel = n.id; SPLIT.id = a && a !== n.id ? a : null; drawAll(); };
+  }
+  // right-click a note link → "Open in a new note tab": the note opens in the side-by-side box (textmenu.js)
+  function openFromLink(id){
+    if (!NS.get(id)) return;
+    if (id === NOTES.sel) { msg("That note is already open."); return; }
+    if (id === SPLIT.id) { if (SPLIT.min) { SPLIT.min = false; drawSplit(); } return; }
+    flushEd(); openSplit(id); drawList();
   }
   function openSplit(id){ if (!id || id === NOTES.sel) return; flush2(); SPLIT.id = id; SPLIT.min = false; drawSplit(); }
   function closeSplit(quiet){ flush2(); if (rich2) { rich2.destroy(); rich2 = null; } SPLIT.id = null; SPLIT.min = false; if (!quiet) drawSplit(); else { ed2.hidden = true; ed2.innerHTML = ""; tabs.hidden = true; tabs.innerHTML = ""; edSec.classList.remove("split"); } }

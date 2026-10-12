@@ -416,7 +416,8 @@ function mountEditor(host, id, o = {}) {
   ed.dataset.placeholder = "Write… Paste or drop photos and videos here. Select words and right-click to link them to another note.";
   ed.innerHTML = sanitize(n.html); hydrate(ed);
   let bar = null;
-  const empty = () => ed.classList.toggle("is-empty", !ed.textContent.trim() && !ed.querySelector("img"));
+  // the hint shows only while the note is truly blank: a heading, bullet, number, checkbox, photo or widget hides it too
+  const empty = () => ed.classList.toggle("is-empty", !ed.textContent.trim() && !ed.querySelector("img, ul, ol, li, h1, h2, h3, h4, blockquote, pre, hr, .nw, a.nlink"));
   empty();
   let t = null, last = null;
   const flush = () => { if (!t) return; clearTimeout(t); t = null; update(id, { html: ed.innerHTML }); if (o.onSaved) o.onSaved(); };
@@ -547,6 +548,62 @@ function mountEditor(host, id, o = {}) {
   document.addEventListener("selectionchange", ckSoon);
   const ckScroll = () => { if (ckb) ckSoon(); }; document.addEventListener("scroll", ckScroll, true); // follow the words when anything around them scrolls
   ed.addEventListener("blur", () => setTimeout(() => { if (document.activeElement !== ed) ckHide(); }, 120));
+  /* ----- lists (NotePath): the bullet button again (or Tab) indents an item under the one above; Shift+Tab moves it back
+     out; delete (Backspace) at the start of an item is the only way to take a bullet, number or checkbox off: a nested
+     item first moves out one level, a top-level item becomes a plain line ----- */
+  const caretAt = () => { const s = getSelection(); return s.rangeCount ? s.getRangeAt(0) : null; };
+  const keepCaret = (fn) => { const r = caretAt(), at = r && [r.startContainer, r.startOffset, r.endContainer, r.endOffset]; fn();
+    if (at && ed.contains(at[0]) && ed.contains(at[2])) try { const nr = document.createRange(); nr.setStart(at[0], at[1]); nr.setEnd(at[2], at[3]); const s = getSelection(); s.removeAllRanges(); s.addRange(nr); last = nr.cloneRange(); } catch (e) {} };
+  const itemAt = () => { const r = caretAt(); if (!r || !ed.contains(r.startContainer) || inWidget(r.startContainer)) return null;
+    const el = r.startContainer.nodeType === 1 ? r.startContainer : r.startContainer.parentElement, li = el && el.closest("li"); return li && ed.contains(li) ? li : null; };
+  const subList = (L) => { const n = document.createElement(L.tagName); if (L.hasAttribute("data-ck")) n.setAttribute("data-ck", "1"); return n; };
+  function indentItem(li) {
+    li = li || itemAt(); if (!li) return false;
+    const L = li.parentElement, prev = li.previousElementSibling;
+    if (!prev || prev.tagName !== "LI") { if (o.onMessage) o.onMessage("Add an item above this one to indent it under"); return false; }
+    keepCaret(() => {
+      let sub = prev.lastElementChild && /^(UL|OL)$/.test(prev.lastElementChild.tagName) ? prev.lastElementChild : null;
+      if (!sub) { sub = subList(L); prev.appendChild(sub); }
+      sub.appendChild(li);
+      // the item's own sub-items come along at the same depth below it
+    });
+    save(); return true;
+  }
+  function outdentItem(li) {
+    li = li || itemAt(); if (!li) return false;
+    const L = li.parentElement, host = L && L.parentElement && L.parentElement.closest("li");
+    if (!host || !ed.contains(host)) return false;
+    keepCaret(() => {
+      const after = []; let x = li.nextElementSibling; while (x) { after.push(x); x = x.nextElementSibling; }
+      if (after.length) { let sub = li.lastElementChild && /^(UL|OL)$/.test(li.lastElementChild.tagName) ? li.lastElementChild : null; if (!sub) { sub = subList(L); li.appendChild(sub); } after.forEach(y => sub.appendChild(y)); }
+      host.after(li); if (!L.children.length) L.remove();
+    });
+    save(); return true;
+  }
+  // a top-level item becomes a plain line where it stood (the list splits around it; its sub-items stay a list below it)
+  function unlistItem(li) {
+    const L = li.parentElement; if (!L || !/^(UL|OL)$/.test(L.tagName)) return false;
+    const line = document.createElement("div"), subs = [];
+    [...li.childNodes].forEach(c => { if (c.nodeType === 1 && /^(UL|OL)$/.test(c.tagName)) subs.push(c); else line.appendChild(c); });
+    if (!line.childNodes.length) line.appendChild(document.createElement("br"));
+    const tail = subList(L); let x = li.nextElementSibling; while (x) { const nx = x.nextElementSibling; tail.appendChild(x); x = nx; }
+    li.remove(); L.after(line); let at = line; subs.forEach(sl => { at.after(sl); at = sl; }); if (tail.children.length) at.after(tail);
+    if (!L.children.length) L.remove();
+    const r = document.createRange(); r.setStart(line, 0); r.collapse(true); const s = getSelection(); s.removeAllRanges(); s.addRange(r); last = r.cloneRange();
+    save(); return true;
+  }
+  const atItemStart = (li, r) => { if (!r.collapsed) return false; const t = document.createRange(); t.setStart(li, 0);
+    try { t.setEnd(r.startContainer, r.startOffset); } catch (e) { return false; }
+    return !t.toString().length && !t.cloneContents().querySelector("img, .nw, a.nlink"); };
+  ed.addEventListener("keydown", e => {
+    if (e.isComposing || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.key === "Tab") { const li = itemAt(); if (!li) return; e.preventDefault(); if (e.shiftKey) outdentItem(li); else indentItem(li); return; }
+    if (e.key === "Enter" && !e.shiftKey) { const li = itemAt(); if (li && !li.textContent.trim() && !li.querySelector("img, ul, ol") && outdentItem(li)) e.preventDefault(); return; } // an empty sub-item: back out one level
+    if (e.key === "Backspace") {
+      const r = caretAt(), li = itemAt(); if (!li || !r || !atItemStart(li, r)) return;
+      e.preventDefault(); if (!outdentItem(li)) unlistItem(li);
+    }
+  });
   const follow = a => { if (a.dataset.note) { if (get(a.dataset.note) && o.openNote) { flush(); o.openNote(a.dataset.note); } } else if (a.dataset.topic && o.openTopic) { flush(); o.openTopic(a.dataset.topic); } };
   ed.addEventListener("click", e => { const a = e.target.closest("a.nlink"); if (a && ed.contains(a)) { e.preventDefault(); follow(a); } });
   ed.addEventListener("keydown", e => { const a = e.target.closest && e.target.closest("a.nlink"); if (a && e.key === "Enter") { e.preventDefault(); follow(a); } });
@@ -601,6 +658,40 @@ function mountEditor(host, id, o = {}) {
     });
     return out;
   }
+  /* ----- a font, size or colour picked with nothing selected (an empty line, or between words): what is typed next
+     gets it. A span holding a zero-width space waits at the caret; picking more styles there adds to the same span, and
+     the stand-in space goes once real text is in it (Devon, Oct 2026) ----- */
+  const ZW = "​";
+  function caretStyle(r, kind, v) {
+    const at = r.startContainer.nodeType === 1 ? r.startContainer : r.startContainer.parentElement;
+    let sp = at && at.closest("span"); if (sp && (!ed.contains(sp) || sp.textContent.replace(/​/g, "") !== "")) sp = null;
+    const attr = kind === "color" ? "data-c" : kind === "size" ? "data-s" : "data-f";
+    if (!sp) {
+      sp = document.createElement("span"); sp.appendChild(document.createTextNode(ZW));
+      // at the very end of a styled span, the new one goes after it so "normal" really is normal
+      let host = at && at.closest(`span[${attr}]`);
+      const atEnd = host && ed.contains(host) && (() => { const t = document.createRange(); t.selectNodeContents(host); t.setStart(r.startContainer, r.startOffset); return !t.toString().replace(/​/g, "").length; })();
+      if (atEnd) { // keep the other two styles the caret had inside that span
+        ["data-c", "data-s", "data-f"].filter(a => a !== attr).forEach(a => { const o = at.closest(`span[${a}]`); if (o && (o === host || host.contains(o))) { sp.setAttribute(a, o.getAttribute(a)); if (a === "data-c" && HEX.test(o.getAttribute(a))) sp.style.color = o.getAttribute(a); } });
+        host.after(sp);
+      } else { const rr = r.cloneRange(); rr.insertNode(sp); }
+    }
+    const inside = a => { const o = sp.parentElement && sp.parentElement.closest(`span[${a}]`); return !!(o && ed.contains(o)); };
+    if (kind === "color") { const hx = hexOf(v); if (hx) { sp.setAttribute("data-c", hx); sp.style.color = hx; } else if (inside("data-c")) { sp.setAttribute("data-c", "_def"); sp.style.color = getComputedStyle(ed).color; } else { sp.removeAttribute("data-c"); sp.style.color = ""; } }
+    else if (kind === "size") { const n = NSIZES.includes(+v) && +v !== 15 ? String(+v) : ""; if (n) sp.setAttribute("data-s", n); else if (inside("data-s")) sp.setAttribute("data-s", "15"); else sp.removeAttribute("data-s"); }
+    else { if (FKEYS.has(v)) sp.setAttribute("data-f", v); else if (inside("data-f")) sp.setAttribute("data-f", "_def"); else sp.removeAttribute("data-f"); }
+    if (!sp.getAttribute("style")) sp.removeAttribute("style");
+    const t = sp.firstChild && sp.firstChild.nodeType === 3 ? sp.firstChild : sp.insertBefore(document.createTextNode(ZW), sp.firstChild);
+    const nr = document.createRange(); nr.setStart(t, t.data.length); nr.collapse(true); const s = getSelection(); s.removeAllRanges(); s.addRange(nr); last = nr.cloneRange();
+  }
+  // the stand-in space goes as soon as real text is next to it (the caret stays where it was)
+  ed.addEventListener("input", () => {
+    const s = getSelection(), r = s.rangeCount ? s.getRangeAt(0) : null;
+    const tw = document.createTreeWalker(ed, NodeFilter.SHOW_TEXT); const hit = []; let n;
+    while ((n = tw.nextNode())) if (n.data.includes(ZW) && n.data !== ZW) hit.push(n);
+    hit.forEach(tn => { let off = r && r.startContainer === tn ? r.startOffset : -1; if (off >= 0) off -= (tn.data.slice(0, off).match(/​/g) || []).length;
+      tn.data = tn.data.replace(/​/g, ""); if (off >= 0) { const nr = document.createRange(); nr.setStart(tn, Math.min(off, tn.data.length)); nr.collapse(true); s.removeAllRanges(); s.addRange(nr); } });
+  }, true);
   // Chromium edits inline colours itself (it may clear or copy style="color"): keep data-c in step with what is shown
   function syncColors() {
     ed.querySelectorAll("span").forEach(sp => {
@@ -610,12 +701,17 @@ function mountEditor(host, id, o = {}) {
       else if (!c && sp.getAttribute("style") === "") sp.removeAttribute("style");
     });
   }
-  const api = { el: ed, id, flush, addFiles, addURL, addVideoLink, linkRange, insertNoteLink, insertWidgetAt, insertText, addWidget, insertBlock,
+  const api = { el: ed, id, flush, indentItem, outdentItem,
+    openSide: noteId => { if (!o.openSide || !get(noteId)) return false; flush(); o.openSide(noteId); return true; },
+    openNote: noteId => { if (!o.openNote || !get(noteId)) return false; flush(); o.openNote(noteId); return true; },
+    addFiles, addURL, addVideoLink, linkRange, insertNoteLink, insertWidgetAt, insertText, addWidget, insertBlock,
     focus: () => { ed.focus({ preventScroll: true }); const s = getSelection(); if (last && (!s.rangeCount || !ed.contains(s.getRangeAt(0).commonAncestorContainer))) { s.removeAllRanges(); s.addRange(last); } },
     changed: () => save(),
     // kind "color" (a #hex, or "" for the normal colour), "size" (a number, or "" for normal), "font" (a key, or "" for the note's font)
     format: (kind, v) => {
       api.focus(); document.execCommand("styleWithCSS", false, false);
+      { const s0 = getSelection(), r0 = s0.rangeCount ? s0.getRangeAt(0) : null; // nothing selected: what is typed next gets it
+        if (r0 && r0.collapsed && ed.contains(r0.startContainer) && !inWidget(r0.startContainer)) { caretStyle(r0, kind, v); save(); return; } }
       let made = [];
       const conv = over => { made = [...ed.querySelectorAll("font")].reverse().map(f => fontToSpan(f, over)).filter(Boolean).reverse(); };
       if (kind === "color") { document.execCommand("foreColor", false, hexOf(v) || CLEARC); conv({ def: !hexOf(v) }); if (!hexOf(v)) made = lift("data-c"); }
