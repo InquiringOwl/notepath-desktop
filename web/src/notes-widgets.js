@@ -134,9 +134,10 @@ function toolbar(api) {
   const bar = document.createElement("div");
   bar.className = "nr-tools"; bar.setAttribute("role", "toolbar"); bar.setAttribute("aria-label", "Formatting");
   const mod = /Mac/.test(navigator.platform) ? "⌘" : "Ctrl+";
-  bar.innerHTML = `<button type="button" data-cmd="bold" title="Bold (${mod}B)" aria-label="Bold"><b>B</b></button><button type="button" data-cmd="italic" title="Italic (${mod}I)" aria-label="Italic"><i>I</i></button><button type="button" data-cmd="underline" title="Underline (${mod}U)" aria-label="Underline"><u>U</u></button><button type="button" data-blk="h3" title="Heading" aria-label="Heading">H</button><button type="button" data-cmd="strikeThrough" title="Strikethrough" aria-label="Strikethrough"><s>S</s></button>
+  bar.innerHTML = `<button type="button" data-cmd="bold" title="Bold (${mod}B)" aria-label="Bold"><b>B</b></button><button type="button" data-cmd="italic" title="Italic (${mod}I)" aria-label="Italic"><i>I</i></button><button type="button" data-cmd="underline" title="Underline (${mod}U)" aria-label="Underline"><u>U</u></button><button type="button" class="nr-dd nr-head" data-dd="heads" title="Titles and headings: Title, Subtitle, Heading 1, 2, 3" aria-haspopup="menu" aria-label="Titles and headings" aria-pressed="false"><span class="nr-ddv">H</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" data-cmd="strikeThrough" title="Strikethrough" aria-label="Strikethrough"><s>S</s></button>
     <span class="nr-sep"></span><button type="button" data-blk="ul" title="Bulleted list · press again to indent (Tab indents, Shift+Tab moves back, delete at the start takes the bullet off)" aria-label="Bulleted list">•≡</button><button type="button" data-blk="ol" title="Numbered list · delete at the start of a line takes the number off" aria-label="Numbered list">1.≡</button><button type="button" data-blk="ck" title="Checklist: click a box to tick an item off · press again to indent · delete at the start of a line takes the box off" aria-label="Checklist">☑</button>
-    <span class="nr-sep"></span><button type="button" class="nr-dd nr-font" data-dd="font" title="Font" aria-haspopup="listbox" aria-label="Font"><span class="nr-ddv">Default</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-dd nr-size" data-dd="size" title="Text size" aria-haspopup="listbox" aria-label="Text size"><span class="nr-ddv num">15</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-dd nr-colb" data-dd="color" title="Text colour" aria-haspopup="dialog" aria-label="Text colour"><span class="nr-cola" aria-hidden="true">A</span><span class="nr-car" aria-hidden="true">▾</span></button>
+    <span class="nr-sep"></span><button type="button" class="nr-dd nr-font" data-dd="font" title="Font" aria-haspopup="listbox" aria-label="Font"><span class="nr-ddv">Default</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-dd nr-size" data-dd="size" title="Text size" aria-haspopup="listbox" aria-label="Text size"><span class="nr-ddv num">15</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-dd nr-colb" data-dd="color" title="Text colour" aria-haspopup="dialog" aria-label="Text colour"><span class="nr-cola" aria-hidden="true">A</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-dd nr-hlb" data-dd="hilite" title="Highlight colour" aria-haspopup="dialog" aria-label="Highlight colour"><span class="nr-hla" aria-hidden="true">ab</span><span class="nr-car" aria-hidden="true">▾</span></button>
+    <span class="nr-sep"></span><button type="button" class="nr-dd nr-alb" data-dd="align" title="Align &amp; indent: nothing selected = the whole note, words selected = only those" aria-haspopup="menu" aria-label="Align and indent"><span class="nr-ali" aria-hidden="true">${ALIGN_IC.left}</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-dd nr-spb" data-dd="spacing" title="Line &amp; paragraph spacing" aria-haspopup="menu" aria-label="Line and paragraph spacing"><span class="nr-ali" aria-hidden="true">${SPACE_IC}</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-clr" data-a="clear" title="Clear formatting: nothing selected = the whole note, words selected = only those" aria-label="Clear formatting">${CLEAR_IC}</button>
     <span class="nr-sep"></span><button type="button" class="nr-sym" title="Emoji and symbols (Greek, maths, alchemical)" aria-haspopup="dialog">☺ Ω</button>
     <span class="nr-sep"></span><button type="button" class="nr-dd nr-wid" data-dd="widgets" title="Widgets: code box, music chart, lead sheet, graph" aria-haspopup="menu" aria-label="Widgets"><span class="nr-widg" aria-hidden="true">▦</span><span class="nr-ddv">Widgets</span><span class="nr-car" aria-hidden="true">▾</span></button>`;
   bar.addEventListener("mousedown", e => e.preventDefault()); // keep the selection in the note
@@ -144,6 +145,7 @@ function toolbar(api) {
     const b = e.target.closest("button"); if (!b) return;
     if (b.dataset.cmd) { api.focus(); document.execCommand(b.dataset.cmd); sync(); api.changed(); }
     else if (b.dataset.blk) { api.focus(); block(b.dataset.blk, api); sync(); api.changed(); }
+    else if (b.dataset.a === "clear") { closeDD(); if (api.clearFormat) { const all = api.clearFormat(); sync(); if (window.InquireNotes && InquireNotes.toast) InquireNotes.toast(all ? "Formatting cleared from the whole note." : "Formatting cleared from the selected words.", null, 2500); } }
     else if (b.dataset.dd) ddPanel(b, b.dataset.dd, api, sync);
     else if (b.classList.contains("nr-sym")) symbolPanel(b, api);
     else if (b.dataset.w) api.addWidget(b.dataset.w);
@@ -152,8 +154,11 @@ function toolbar(api) {
     bar.querySelectorAll("[data-cmd]").forEach(b => { let on = false; try { on = document.queryCommandState(b.dataset.cmd); } catch (e) {} b.setAttribute("aria-pressed", String(on)); });
     const el = caretEl(api), L = el && el.closest("ul, ol"), on = { h3: !!(el && el.closest("h3")), ul: !!(L && L.tagName === "UL" && !L.hasAttribute("data-ck")), ol: !!(L && L.tagName === "OL"), ck: !!(L && L.hasAttribute("data-ck")) };
     bar.querySelectorAll("[data-blk]").forEach(b => b.setAttribute("aria-pressed", String(on[b.dataset.blk])));
+    const hs = headAt(el), hb = bar.querySelector(".nr-head"); hb.setAttribute("aria-pressed", String(!!hs)); hb.querySelector(".nr-ddv").textContent = hs ? hs[3] : "H"; hb.title = hs ? hs[1] + ": choose another style, or Normal text" : "Titles and headings: Title, Subtitle, Heading 1, 2, 3";
     const f = fmtAt(fmtEl(api)); bar.querySelector(".nr-font .nr-ddv").textContent = f.fontName; bar.querySelector(".nr-font").style.setProperty("--ff", f.fontStack);
-    bar.querySelector(".nr-size .nr-ddv").textContent = f.size; bar.querySelector(".nr-colb").style.setProperty("--c", f.color); };
+    bar.querySelector(".nr-size .nr-ddv").textContent = f.size; bar.querySelector(".nr-colb").style.setProperty("--c", f.color);
+    const hb2 = bar.querySelector(".nr-hlb"); if (f.hl) hb2.style.setProperty("--h", f.hl); else hb2.style.removeProperty("--h"); hb2.classList.toggle("on", !!f.hl);
+    if (api.layoutAt) { const L = api.layoutAt(); bar.querySelector(".nr-alb .nr-ali").innerHTML = ALIGN_IC[L.al || "left"]; bar.querySelector(".nr-alb").classList.toggle("on", !!(L.al || L.in)); bar.querySelector(".nr-spb").classList.toggle("on", !!(L.lh || L.ps)); } };
   document.addEventListener("selectionchange", sync);
   bar.destroy = () => { document.removeEventListener("selectionchange", sync); closeDD(); };
   return bar;
@@ -174,16 +179,41 @@ function fmtAt(el) {
   const fsp = el && el.closest("span[data-f]"), ssp = el && el.closest("span[data-s]"), fk = fsp ? fsp.dataset.f : "";
   const nf = (NOTES().NFONTS || []).find(f => f[0] === fk);
   const sz = ssp ? (OLDSIZE[ssp.dataset.s] || +ssp.dataset.s || 15) : 15;
-  return { font: fk, fontName: nf ? nf[1] : "Default", fontStack: FSTACK[fk] || "var(--sans)", size: sz, color: el ? getComputedStyle(el).color : "var(--text)" };
+  const hsp = el && el.closest("span[data-h]"), hl = hsp && /^#[0-9a-f]{6}$/i.test(hsp.dataset.h) ? hsp.dataset.h : "";
+  return { font: fk, fontName: nf ? nf[1] : "Default", fontStack: FSTACK[fk] || "var(--sans)", size: sz, color: el ? getComputedStyle(el).color : "var(--text)", hl };
 }
 let dd = null;
 function closeDD() { if (dd) { dd.remove(); dd = null; document.removeEventListener("pointerdown", outDD, true); window.removeEventListener("keydown", keyDD, true); } }
 const outDD = e => { if (dd && !dd.contains(e.target) && !e.target.closest(".nr-dd")) closeDD(); };
 const keyDD = e => { if (e.key === "Escape" && dd) { e.preventDefault(); e.stopPropagation(); closeDD(); } };
-const RECENT_KEY = "notepath.recentcolors";
-const recent = () => { try { const a = JSON.parse(localStorage.getItem(RECENT_KEY) || "[]"); return Array.isArray(a) ? a.filter(c => /^#[0-9a-f]{6}$/.test(c)).slice(0, 10) : []; } catch (e) { return []; } };
-const addRecent = c => { try { localStorage.setItem(RECENT_KEY, JSON.stringify([c, ...recent().filter(x => x !== c)].slice(0, 10))); } catch (e) {} };
+// recent colours: text in notepath.recentcolors, highlights in notepath.recenthl (v0.5.4)
+const RECENT_KEY = { color: "notepath.recentcolors", hilite: "notepath.recenthl" };
+const recent = (k = "color") => { try { const a = JSON.parse(localStorage.getItem(RECENT_KEY[k]) || "[]"); return Array.isArray(a) ? a.filter(c => /^#[0-9a-f]{6}$/.test(c)).slice(0, 10) : []; } catch (e) { return []; } };
+const addRecent = (c, k = "color") => { try { localStorage.setItem(RECENT_KEY[k], JSON.stringify([c, ...recent(k).filter(x => x !== c)].slice(0, 10))); } catch (e) {} };
+/* colour presets (v0.5.4, Devon): your own swatches under the spectrum, one set for text and one for highlights, kept in
+   notepath.colorpresets; ＋ saves the colour shown beside the code, Edit (or a right-click) takes one away */
+const PRESET_KEY = "notepath.colorpresets", PRESET_MAX = 18;
+const PRESET_DEF = { color: ["#f2b84b", "#5cc8e0", "#f07ca0", "#b49bff", "#7bd88f", "#e5675b"], hilite: ["#ffe066", "#8ce99a", "#66d9e8", "#faa2c1", "#ffc078", "#b197fc"] };
+const presets = k => { try { const o = JSON.parse(localStorage.getItem(PRESET_KEY) || "null"); const a = o && Array.isArray(o[k]) ? o[k] : PRESET_DEF[k]; return a.filter(c => /^#[0-9a-f]{6}$/.test(c)).slice(0, PRESET_MAX); } catch (e) { return PRESET_DEF[k].slice(); } };
+const setPresets = (k, a) => { try { const o = JSON.parse(localStorage.getItem(PRESET_KEY) || "null") || {}; ["color", "hilite"].forEach(x => { if (!Array.isArray(o[x])) o[x] = PRESET_DEF[x].slice(); }); o[k] = a.slice(0, PRESET_MAX); localStorage.setItem(PRESET_KEY, JSON.stringify(o)); } catch (e) {} };
+/* align & indent, line & paragraph spacing (v0.5.4): icons and choices for the two tabs; the work is api.blockStyle in notes.js */
+const AL_PATH = { left: "M2 3h12M2 6.5h8M2 10h12M2 13.5h7", center: "M2 3h12M4 6.5h8M2 10h12M4.5 13.5h7", right: "M2 3h12M6 6.5h8M2 10h12M7 13.5h7", "": "M2 3h12M2 6.5h12M2 10h12M2 13.5h12" };
+const svgI = d => `<svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">${d}</svg>`;
+const ALIGN_IC = Object.fromEntries(Object.entries(AL_PATH).map(([k, d]) => [k, svgI(`<path d="${d}"/>`)]));
+const CLEAR_IC = svgI('<path d="M3 3.5h8M7 3.5l-2.2 9.5"/><path d="M9.5 9.5l4 4M13.5 9.5l-4 4"/>');
+const SPACE_IC = svgI('<path d="M7 3.5h7M7 8h7M7 12.5h7M3 2.5v11M1.5 4l1.5-1.5L4.5 4M1.5 12l1.5 1.5 1.5-1.5"/>');
+const IND_IC = { "+": svgI('<path d="M7 3h7M7 6.5h7M7 10h7M2 13.5h12M2 4.5l2.5 2-2.5 2"/>'), "-": svgI('<path d="M7 3h7M7 6.5h7M7 10h7M2 13.5h12M4.5 4.5l-2.5 2 2.5 2"/>'), "0": svgI('<path d="M2 3h12M2 6.5h12M2 10h12M2 13.5h12"/>') };
+const ALIGNS = [["", "None", "As the note normally is"], ["left", "Left", "Lines start at the left"], ["center", "Middle", "Lines are centred"], ["right", "Right", "Lines end at the right"]];
+const INDENTS = [["-", "Less", "Move back out one step"], ["+", "More", "Move in one step"], ["0", "No indent", "Back to the left edge"]];
+const LINE_SP = [["", "Normal"], ["1", "1.0"], ["1.15", "1.15"], ["1.5", "1.5"], ["2", "2.0"], ["2.5", "2.5"], ["3", "3.0"]];
+const PARA_SP = [["", "Normal"], ["0", "None"], ["6", "Small"], ["12", "Medium"], ["24", "Large"]];
 const toHex = (r, g, b) => "#" + [r, g, b].map(x => Math.round(x).toString(16).padStart(2, "0")).join("");
+/* ---------- titles and headings (v0.5.4, Devon): the H tab. [tag, name, what it is for, short label on the H button] ----------
+   Title h1 · Subtitle h6 · Heading 1 h2 · Heading 2 h3 (the H heading before 0.5.4) · Heading 3 h4; Normal text = a plain line */
+const HEADS = [["h1", "Title", "The biggest line, for the top of the note", "T"], ["h6", "Subtitle", "Under a title: lighter, in italics", "Sub"],
+  ["h2", "Heading 1", "Starts a section", "H1"], ["h3", "Heading 2", "A part of a section", "H2"], ["h4", "Heading 3", "A smaller heading", "H3"]];
+const HTAGS = HEADS.map(x => x[0].toUpperCase()).join(",");
+function headAt(el) { const h = el && el.closest(HTAGS); return h ? HEADS.find(x => x[0] === h.tagName.toLowerCase()) : null; }
 const WIDGET_MENU = [["code", "&lt;/&gt;", "Code box", "Code with highlighting and line numbers"], ["music", "♪", "Music chart", "A staff, a keyboard, chords and playback"],
   ["sheet", "𝄞", "Lead sheet", "Bars with chord symbols and melody"], ["graph", "∿", "Graph", "Click points on a grid and get their equations"]];
 function ddPanel(btn, kind, api, sync) {
@@ -193,7 +223,22 @@ function ddPanel(btn, kind, api, sync) {
   // the words selected when the menu opened (typing a colour code moves the focus into the menu)
   const s0 = getSelection(), saved = s0.rangeCount && api.el.contains(s0.getRangeAt(0).commonAncestorContainer) ? s0.getRangeAt(0).cloneRange() : null;
   const apply = (k, v) => { closeDD(); if (saved) { api.el.focus({ preventScroll: true }); const s1 = getSelection(); s1.removeAllRanges(); s1.addRange(saved); } api.format(k, v); sync(); };
-  if (kind === "widgets") { // one tab for every widget (Devon, Oct 2026): keeps the toolbar clean
+  if (kind === "align" || kind === "spacing") {
+    const L = api.layoutAt ? api.layoutAt() : { whole: true }, scope = L.whole ? "nothing selected: the whole note" : "only the selected words";
+    const run = (prop, v) => { closeDD(); if (saved) { api.el.focus({ preventScroll: true }); const s1 = getSelection(); s1.removeAllRanges(); s1.addRange(saved); } else api.focus(); api.blockStyle(prop, v); sync(); };
+    dd.setAttribute("role", "menu"); dd.setAttribute("aria-label", kind === "align" ? "Align and indent" : "Line and paragraph spacing");
+    const chips = (prop, list, cur, ic) => `<div class="np-lay" role="group">${list.map(([v, n, d]) => `<button type="button" role="menuitemradio" data-p="${prop}" data-v2="${v}" aria-checked="${prop !== "in" && String(cur || "") === v}"${d ? ` title="${esc(d)}"` : ""}>${ic ? `<span class="np-layi" aria-hidden="true">${ic[v]}</span>` : ""}<span>${esc(n)}</span></button>`).join("")}</div>`;
+    dd.innerHTML = kind === "align"
+      ? `<div class="np-pop-h">Align &amp; indent <span>${scope}</span></div><div class="np-pop-sub">Align</div>${chips("al", ALIGNS, L.al, ALIGN_IC)}<div class="np-pop-sub">Indent${L.in ? ` <b class="num">${L.in}</b>` : ""}</div>${chips("in", INDENTS, "", IND_IC)}`
+      : `<div class="np-pop-h">Line &amp; paragraph spacing <span>${scope.replace("words", "lines")}</span></div><div class="np-pop-sub">Line spacing</div>${chips("lh", LINE_SP, L.lh)}<div class="np-pop-sub">Space after each paragraph</div>${chips("ps", PARA_SP, L.ps)}`;
+    dd.addEventListener("click", e => { const b = e.target.closest("button[data-p]"); if (b) run(b.dataset.p, b.dataset.v2); });
+  } else if (kind === "heads") { // titles and headings: the line the caret is on (or every line selected) takes the style
+    const curH = headAt(caretEl(api)), ck = curH ? curH[0] : "div";
+    dd.setAttribute("role", "menu"); dd.setAttribute("aria-label", "Titles and headings");
+    dd.innerHTML = `<div class="np-pop-h">Titles &amp; headings <span>for the line you are on</span></div><div class="np-heads">${[["div", "Normal text", "A plain line", ""], ...HEADS].map(([t, n, d]) => `<button type="button" role="menuitemradio" data-h="${t}" aria-checked="${t === ck}" title="${esc(d)}"><span class="np-hs np-hs-${t}">${esc(n)}</span><small>${esc(d)}</small></button>`).join("")}</div>`;
+    dd.addEventListener("click", e => { const b = e.target.closest("button[data-h]"); if (!b) return; closeDD(); if (saved) { api.el.focus({ preventScroll: true }); const s1 = getSelection(); s1.removeAllRanges(); s1.addRange(saved); } else api.focus();
+      block(b.dataset.h === "div" ? "p" : b.dataset.h, api); sync(); api.changed(); });
+  } else if (kind === "widgets") { // one tab for every widget (Devon, Oct 2026): keeps the toolbar clean
     dd.setAttribute("role", "menu"); dd.setAttribute("aria-label", "Widgets");
     dd.innerHTML = `<div class="np-pop-h">Widgets <span>added after the line you are on</span></div><div class="np-wids">${WIDGET_MENU.map(([w, g, n, d]) => `<button type="button" role="menuitem" data-w="${w}"><span class="np-wg" aria-hidden="true">${g}</span><span><b>${n}</b><small>${d}</small></span></button>`).join("")}</div>`;
     dd.addEventListener("click", e => { const b = e.target.closest("button[data-w]"); if (!b) return; closeDD(); if (saved) { api.el.focus({ preventScroll: true }); const s1 = getSelection(); s1.removeAllRanges(); s1.addRange(saved); } api.addWidget(b.dataset.w); });
@@ -204,14 +249,29 @@ function ddPanel(btn, kind, api, sync) {
   } else if (kind === "size") {
     dd.setAttribute("role", "listbox"); dd.setAttribute("aria-label", "Text size");
     dd.innerHTML = `<div class="np-pop-h">Size <span>normal text is 15</span></div><div class="np-sizes">${(NOTES().NSIZES || []).map(n => `<button type="button" role="option" class="num" data-v="${n}" aria-selected="${cur.size === n}">${n}</button>`).join("")}</div>`;
-  } else {
-    dd.setAttribute("role", "dialog"); dd.setAttribute("aria-label", "Text colour");
-    const rc = recent();
-    dd.innerHTML = `<div class="np-pop-h">Colour <span>click or drag on the spectrum</span></div>
-      <canvas class="np-spec" width="248" height="132" aria-label="Colour spectrum"></canvas><canvas class="np-grey" width="248" height="16" aria-label="Greys"></canvas>
+  } else { // text colour and highlight colour (v0.5.4): the same panel; presets under the spectrum
+    const HL = kind === "hilite", what = HL ? "Highlight" : "Colour";
+    dd.setAttribute("role", "dialog"); dd.setAttribute("aria-label", HL ? "Highlight colour" : "Text colour");
+    const rc = recent(kind);
+    dd.innerHTML = `<div class="np-pop-h">${what} <span>click or drag on the spectrum</span></div>
+      <canvas class="np-spec" width="248" height="132" aria-label="${what} spectrum"></canvas><canvas class="np-grey" width="248" height="16" aria-label="Greys"></canvas>
+      <div class="np-pop-sub np-psub">Presets <button type="button" class="np-pedit" aria-pressed="false" title="Take presets away">Edit</button></div><div class="np-presets" role="group" aria-label="${what} presets"></div>
       <div class="np-crow"><span class="np-cprev"></span><input class="np-hex" maxlength="7" spellcheck="false" aria-label="Colour code (hex)" placeholder="#RRGGBB"><button type="button" class="nw-b np-capply">Apply</button></div>
-      ${rc.length ? `<div class="np-pop-sub">Recent</div><div class="np-recent">${rc.map(c => `<button type="button" data-c="${c}" style="--c:${c}" title="${c.toUpperCase()}" aria-label="Recent colour ${c.toUpperCase()}"></button>`).join("")}</div>` : ""}
-      <button type="button" class="np-cnorm" data-c="">⊘ Normal colour</button>`;
+      ${rc.length ? `<div class="np-pop-sub">Recent</div><div class="np-recent">${rc.map(c => `<button type="button" data-c="${c}" style="--c:${c}" title="${c.toUpperCase()}" aria-label="Recent ${HL ? "highlight" : "colour"} ${c.toUpperCase()}"></button>`).join("")}</div>` : ""}
+      <button type="button" class="np-cnorm" data-c="">${HL ? "⊘ No highlight" : "⊘ Normal colour"}</button>`;
+    const pbox = dd.querySelector(".np-presets"), pedit = dd.querySelector(".np-pedit");
+    const drawP = () => { const ps = presets(kind), ed = pedit.getAttribute("aria-pressed") === "true"; pbox.classList.toggle("editing", ed);
+      pbox.innerHTML = ps.map(c => `<button type="button" class="np-pre" data-pc="${c}" style="--c:${c}" title="${ed ? "Take away " : ""}${c.toUpperCase()}${ed ? "" : " · right-click to take it away"}" aria-label="${ed ? "Take away preset" : "Preset"} ${c.toUpperCase()}">${ed ? "✕" : ""}</button>`).join("")
+        + (ed ? "" : `<button type="button" class="np-padd" title="${ps.length >= PRESET_MAX ? "Presets are full: take one away first" : "Save the colour shown below as a preset"}" aria-label="Save the colour as a preset"${ps.length >= PRESET_MAX ? " disabled" : ""}>＋</button>`)
+        + (!ps.length && !ed ? `<span class="np-pnone">Pick a colour, then ＋ keeps it here</span>` : ""); };
+    pedit.addEventListener("click", () => { pedit.setAttribute("aria-pressed", String(pedit.getAttribute("aria-pressed") !== "true")); pedit.textContent = pedit.getAttribute("aria-pressed") === "true" ? "Done" : "Edit"; drawP(); });
+    pbox.addEventListener("click", e => {
+      const add = e.target.closest(".np-padd"); if (add) { const c = dd.dataset.pick; if (c && /^#[0-9a-f]{6}$/.test(c)) { setPresets(kind, [...presets(kind).filter(x => x !== c), c]); drawP(); } return; }
+      const b = e.target.closest(".np-pre"); if (!b) return;
+      if (pbox.classList.contains("editing")) { setPresets(kind, presets(kind).filter(x => x !== b.dataset.pc)); drawP(); return; }
+      addRecent(b.dataset.pc, kind); apply(kind, b.dataset.pc); });
+    pbox.addEventListener("contextmenu", e => { const b = e.target.closest(".np-pre"); if (!b) return; e.preventDefault(); e.stopPropagation(); setPresets(kind, presets(kind).filter(x => x !== b.dataset.pc)); drawP(); });
+    drawP();
     const sp = dd.querySelector(".np-spec"), gr = dd.querySelector(".np-grey"), hex = dd.querySelector(".np-hex"), prev = dd.querySelector(".np-cprev");
     const g = sp.getContext("2d", { willReadFrequently: true }), W = sp.width, H = sp.height;
     const hg = g.createLinearGradient(0, 0, W, 0); for (let i = 0; i <= 12; i++) hg.addColorStop(i / 12, `hsl(${i * 30},100%,50%)`);
@@ -220,20 +280,20 @@ function ddPanel(btn, kind, api, sync) {
     g.fillStyle = vg; g.fillRect(0, 0, W, H);
     const gg = gr.getContext("2d", { willReadFrequently: true }), grd = gg.createLinearGradient(0, 0, gr.width, 0); grd.addColorStop(0, "#fff"); grd.addColorStop(1, "#000"); gg.fillStyle = grd; gg.fillRect(0, 0, gr.width, gr.height);
     const show = c => { prev.style.background = c; hex.value = c.toUpperCase(); dd.dataset.pick = c; };
-    show(/^#[0-9a-f]{6}$/i.test(rgbHex(cur.color)) ? rgbHex(cur.color) : "#f2b84b");
+    show(HL ? (cur.hl || rc[0] || "#ffe066") : /^#[0-9a-f]{6}$/i.test(rgbHex(cur.color)) ? rgbHex(cur.color) : "#f2b84b");
     const pickAt = (cv, ctx, e) => { const r = cv.getBoundingClientRect(), x = Math.max(0, Math.min(cv.width - 1, (e.clientX - r.left) / r.width * cv.width)), y = Math.max(0, Math.min(cv.height - 1, (e.clientY - r.top) / r.height * cv.height));
       const d = ctx.getImageData(x | 0, y | 0, 1, 1).data; return toHex(d[0], d[1], d[2]); };
     [[sp, g], [gr, gg]].forEach(([cv, ctx]) => {
       cv.addEventListener("pointerdown", e => { e.preventDefault(); cv.setPointerCapture(e.pointerId); show(pickAt(cv, ctx, e)); cv._drag = true; });
       cv.addEventListener("pointermove", e => { if (cv._drag) show(pickAt(cv, ctx, e)); });
-      cv.addEventListener("pointerup", e => { if (!cv._drag) return; cv._drag = false; const c = pickAt(cv, ctx, e); addRecent(c); apply("color", c); });
+      cv.addEventListener("pointerup", e => { if (!cv._drag) return; cv._drag = false; const c = pickAt(cv, ctx, e); addRecent(c, kind); apply(kind, c); });
     });
     hex.addEventListener("input", () => { const v = hex.value.trim().replace(/^([0-9a-f]{6})$/i, "#$1"); if (/^#[0-9a-f]{6}$/i.test(v)) { prev.style.background = v; dd.dataset.pick = v.toLowerCase(); } });
     hex.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); dd.querySelector(".np-capply").click(); } });
-    dd.querySelector(".np-capply").addEventListener("click", () => { const c = dd.dataset.pick; if (c) { addRecent(c); apply("color", c); } });
+    dd.querySelector(".np-capply").addEventListener("click", () => { const c = dd.dataset.pick; if (c) { addRecent(c, kind); apply(kind, c); } });
   }
   dd.addEventListener("mousedown", e => { if (!e.target.closest("input")) e.preventDefault(); }); // keep the selection in the note
-  dd.addEventListener("click", e => { const b = e.target.closest("button[data-v], button[data-c]"); if (!b) return; apply(kind === "color" ? "color" : kind, b.dataset.v != null ? b.dataset.v : b.dataset.c); });
+  dd.addEventListener("click", e => { const b = e.target.closest("button[data-v], button[data-c]"); if (!b) return; apply(kind, b.dataset.v != null ? b.dataset.v : b.dataset.c); });
   document.body.appendChild(dd);
   const r = btn.getBoundingClientRect(), w = dd.offsetWidth, h = dd.offsetHeight;
   dd.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.left)) + "px";
@@ -248,7 +308,9 @@ function caretEl(api) { const s = getSelection(); if (!s.rangeCount) return null
 // does that. The bullet or checklist button again indents the item under the one above (api.indentItem); numbers again do nothing.
 function block(kind, api) {
   const el = caretEl(api), list = el && el.closest("ul, ol"), inList = list && api.el.contains(list) ? list : null;
-  if (kind === "h3") { document.execCommand("formatBlock", false, el && el.closest("h3") ? "div" : "h3"); return; }
+  if (kind === "p") { if (headAt(el)) document.execCommand("formatBlock", false, "div"); return; } // Normal text
+  if (/^h[12346]$/.test(kind)) { // a title or heading; the same one again makes it a normal line (the old H did that too)
+    document.execCommand("formatBlock", false, el && el.closest(kind) ? "div" : kind); return; }
   if (kind === "ol") { if (inList && inList.tagName === "OL") return; document.execCommand("insertOrderedList"); return; }
   if (kind === "ul") {
     if (inList && inList.hasAttribute("data-ck")) { inList.removeAttribute("data-ck"); return; } // checklist → bullets
@@ -298,7 +360,7 @@ function hlLine(line, lang) {
   }
   return out;
 }
-// an indented note's text: [words](https://…) and bare https:// addresses become links (notes.js uses the same rules)
+// a paranote's text: [words](https://…) and bare https:// addresses become links (notes.js uses the same rules)
 function annHTML(t) {
   const out = [], rest = String(t || ""), re = /\[([^\]\n]{1,200})\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s<>"']+[^\s<>"'.,;:!?)\]])/g; let m, at = 0;
   while ((m = re.exec(rest))) { out.push(esc(rest.slice(at, m.index))); const url = m[2] || m[3], label = m[1] || m[3];
@@ -316,7 +378,7 @@ function mountCode(el) {
   let anns = Array.isArray(d.anns) ? d.anns.filter(a => a && /^[a-z0-9]{4,24}$/i.test(a.id) && a.end > a.start).map(a => ({ id: a.id, start: +a.start, end: +a.end, text: String(a.text || "").slice(0, 4000) })) : [];
   const draw = () => { const ls = ta.value.split("\n"); hl.innerHTML = ls.map(l => hlLine(l, lang.value) || " ").join("\n") + "\n"; gut.innerHTML = ls.map((_, i) => `<span>${i + 1}</span>`).join(""); ta.rows = Math.max(3, Math.min(24, ls.length + 1)); annView(); };
   const save = () => writeSrc(el, Object.assign({ lang: lang.value, title: title.value.trim(), src: ta.value }, anns.length ? { anns } : {}));
-  /* indented notes on code (Devon, Oct 12 2026): { id, start, end, text } over the source; they follow edits (shifted, or
+  /* paranotes on code (Devon, Oct 12 2026): { id, start, end, text } over the source; they follow edits (shifted, or
      dropped when their code is deleted). While shown and the box is not being typed in, a view replaces the editor: each
      line with its number, the noted code marked, and the note under its line with a right-angled line from the middle of
      the code. Click the code to type again; the notes come back when you leave the box. */
@@ -341,7 +403,7 @@ function mountCode(el) {
         html += hlLine(l.slice(at, a0), lang.value) + `<span class="nann-cw" data-cann="${x.id}">${hlLine(l.slice(a0, b0), lang.value)}</span>`; at = b0; });
       html += hlLine(l.slice(at), lang.value);
       return `<div class="nw-al" data-line="${i}"><span class="nw-an">${i + 1}</span><span class="nw-ac">${html || " "}</span></div>`
-        + here.map(x => `<div class="nann-cblk" data-cann="${x.id}"><div class="nann-card nann-ccard" data-cann="${x.id}" title="Click to edit this indented note">${x.text ? annHTML(x.text) : '<i class="nann-empty">Empty indented note</i>'}</div></div>`).join("");
+        + here.map(x => `<div class="nann-cblk" data-cann="${x.id}"><div class="nann-card nann-ccard" data-cann="${x.id}" title="Click to edit this paranote">${x.text ? annHTML(x.text) : '<i class="nann-empty">Empty paranote</i>'}</div></div>`).join("");
     }).join("");
     requestAnimationFrame(() => view.querySelectorAll(".nann-cblk").forEach(blk => { // the line from the middle of the noted code
       const w = view.querySelector(`.nann-cw[data-cann="${blk.dataset.cann}"]`); if (!w) return;
@@ -365,7 +427,7 @@ function mountCode(el) {
       if (document.activeElement !== ta && !el.contains(document.activeElement)) return { error: "Select the code first." };
       if (b <= a || !v.slice(a, b).trim()) return { error: "Select the code first." };
       if (v.slice(a, b).includes("\n")) return { error: "Select code on one line." };
-      if (anns.some(x => a < x.end && b > x.start)) return { error: "That code already has an indented note." };
+      if (anns.some(x => a < x.end && b > x.start)) return { error: "That code already has a paranote." };
       const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7); anns.push({ id, start: a, end: b, text: String(text || "") }); save(); return { id }; },
     set(id, text) { const x = anns.find(y => y.id === id); if (!x) return false; x.text = String(text || "").slice(0, 4000); save(); annView(); return true; },
     remove(id) { const n = anns.length; anns = anns.filter(y => y.id !== id); if (anns.length === n) return false; save(); annView(); return true; },

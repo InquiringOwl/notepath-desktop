@@ -237,6 +237,7 @@ function linkMenu(x, y, a, zone) {
   menu.innerHTML = `
     <button type="button" role="menuitem" data-a="open"><span class="tm-ic">↗</span><span>Open “${esc(t.title.length > 30 ? t.title.slice(0, 28).trim() + "…" : t.title)}”<small>In place of this note</small></span></button>
     <button type="button" role="menuitem" data-a="side"><span class="tm-ic">⧉</span><span>Open in a new note tab<small>Side by side with this note</small></span></button>
+    ${api.peek ? `<button type="button" role="menuitem" data-a="peek"><span class="tm-ic">👁</span><span>Peek<small>See it in a small box</small></span></button>` : ""}
     <button type="button" role="menuitem" data-a="unlink"><span class="tm-ic">⌫</span><span>Remove link<small>Keeps the words</small></span></button>`;
   document.body.appendChild(menu);
   const W = menu.offsetWidth, H = menu.offsetHeight;
@@ -246,6 +247,7 @@ function linkMenu(x, y, a, zone) {
     const b = e.target.closest("button[data-a]"); if (!b) return;
     const k = b.dataset.a; close();
     if (k === "open") api.openNote(id);
+    else if (k === "peek") api.peek(id);
     else if (k === "side") api.openSide(id);
     else if (k === "unlink" && a.isConnected) { a.replaceWith(document.createTextNode(a.textContent)); api.el.normalize(); api.changed(); api.flush(); }
   });

@@ -644,7 +644,7 @@ function open() {
   if (cur) return m;
   m.head.innerHTML = `<span class="no-counts num" aria-live="polite"></span><button type="button" class="np-hb no-pause" aria-pressed="false" title="Pause or play the office">❚❚ Pause</button>`;
   const counts = m.head.querySelector(".no-counts"), status = m.win.querySelector(".no-status"), pause = m.head.querySelector(".no-pause");
-  const goNotes = x => { m.close(); A.go(Object.assign({ view: "notes", space: "notes" }, x)); };
+  const goNotes = x => { A.go(Object.assign({ view: "notes", space: "notes" }, x)); };
   cur = mount(m.body, {
     onStatus: t => { status.textContent = t; },
     onCounts: c => { counts.textContent = `${c.notes.toLocaleString()} ${c.notes === 1 ? "note" : "notes"} · ${c.folders.toLocaleString()} ${c.folders === 1 ? "folder" : "folders"} · ${c.unfiled.toLocaleString()} unfiled`; },

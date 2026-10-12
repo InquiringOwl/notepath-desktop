@@ -1299,18 +1299,19 @@ body.office-on #app{visibility:hidden}
 .np-wids small{display:block;font:400 11.5px/1.3 var(--sans);color:var(--muted);margin-top:2px}
 .np-wg{flex:none;width:30px;height:30px;display:grid;place-items:center;border:1px solid var(--line-2);border-radius:2px;font:600 13px/1 var(--mono);color:var(--frame)}
 /* the box at the top of the folders column: last edited / created (to the second) of the selected note and the folder being viewed */
-.nb-info{margin:10px 10px 4px;padding:9px 10px 8px;border:1px solid var(--line);border-radius:2px;background:linear-gradient(180deg,color-mix(in srgb,var(--frame) 7%,transparent),transparent);display:flex;flex-direction:column;gap:8px}
-.nb-ib{min-width:0}
-.nb-ib+.nb-ib{border-top:1px solid var(--line);padding-top:8px}
-.nb-ik{display:block;font:600 9.5px/1 var(--ui);letter-spacing:.2em;text-transform:uppercase;color:var(--frame);margin-bottom:4px}
-.nb-iname{display:block;font:600 12.5px/1.25 var(--sans);color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:4px}
-.nb-info dl{margin:0;display:grid;grid-template-columns:minmax(0,1fr);gap:1px;font-size:11px;line-height:1.35}
-.nb-info dt:not(:first-child){margin-top:4px}
-.nb-info dt{color:var(--faint);font:600 9px/1.2 var(--ui);letter-spacing:.14em;text-transform:uppercase}
-.nb-info dd{margin:0;color:var(--muted);min-width:0;overflow-wrap:anywhere}
-.nb-info dd.num{font:500 10.5px/1.35 var(--mono);letter-spacing:0}
-.nb-inone{color:var(--faint);font-size:11px;margin:0}
-@media (max-width:860px){ .nb-info{flex-direction:row;flex-wrap:wrap;margin:6px 8px} .nb-ib{flex:1 1 160px} .nb-ib+.nb-ib{border-top:0;padding-top:0;border-left:1px solid var(--line);padding-left:10px} }
+/* the info line under the page title (v0.5.4): note · last edited · created │ folder · last change · created, on one line */
+.nb-info{display:flex;align-items:center;gap:0;min-width:0;padding:6px 14px 7px;border-bottom:1px solid var(--line);background:linear-gradient(90deg,color-mix(in srgb,var(--frame) 8%,transparent),transparent 70%);font:400 11.5px/1.3 var(--sans);color:var(--muted);white-space:nowrap;overflow:hidden}
+.nb-info:empty{display:none}
+.nb-ib{display:inline-flex;align-items:baseline;gap:10px;min-width:0}
+.nb-ib:first-child{flex:0 1 auto}
+.nb-ib+.nb-ib{border-left:1px solid var(--line-2);margin-left:14px;padding-left:14px}
+.nb-ik{font:600 9.5px/1 var(--ui);letter-spacing:.2em;text-transform:uppercase;color:var(--frame)}
+.nb-iname{font:600 12px/1.3 var(--sans);color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:3em;max-width:22ch}
+.nb-iv{flex:none}
+.nb-ilab{color:var(--faint);font:600 9px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase}
+.nb-info time{font:500 11px/1.3 var(--mono);color:var(--muted);letter-spacing:0}
+.nb-inone{color:var(--faint);font-size:11px}
+@media (max-width:860px){ .nb-info{flex-wrap:wrap;white-space:normal;row-gap:4px;padding:6px 10px} .nb-ib{flex-wrap:wrap;row-gap:2px;column-gap:8px} .nb-ib+.nb-ib{border-left:0;margin-left:0;padding-left:0;flex-basis:100%} }
 /* ◈ Tags · Links · Source: a button floating at the bottom right of the note and the holographic panel it opens.
    Light on graphics: no backdrop blur, one gradient, faint scan lines; the open motion is off under Reduce motion. */
 .nb-pane.p1{position:relative}
@@ -1402,8 +1403,8 @@ body.office-on #app{visibility:hidden}
 .nb-tbadge{height:30px!important;min-width:40px!important;font-size:12px!important;margin:0!important}
 .nb-tstar{position:absolute;right:-8px;top:-4px;font-size:12px}
 .nb-items[data-view="details"]{overflow:auto}
-.nb-items[data-view="details"]>*{min-width:470px}
-.nb-dhead,.nb-it.nb-row{display:grid;grid-template-columns:minmax(120px,1.5fr) minmax(108px,1fr) minmax(108px,1fr) minmax(76px,.8fr);gap:8px;align-items:center}
+.nb-items[data-view="details"]>*{min-width:var(--dmin,470px)}
+.nb-dhead,.nb-it.nb-row{display:grid;grid-template-columns:var(--dcols,minmax(120px,1.5fr) minmax(108px,1fr) minmax(108px,1fr) minmax(76px,.8fr));gap:8px;align-items:center}
 .nb-dhead{position:sticky;top:0;z-index:1;padding:7px 14px;background:var(--panel-2);border-bottom:1px solid var(--line-2);font:600 9.5px/1 var(--ui);letter-spacing:.16em;text-transform:uppercase;color:var(--faint)}
 .nb-it.nb-row{flex-direction:row;padding:7px 14px}
 .nb-it.nb-row .nb-t{font-size:13px}
@@ -1475,6 +1476,154 @@ body.office-on #app{visibility:hidden}
 /* a link to a folder (a folder dragged into a note): a small folder before its name */
 a.nlink[data-folder]::before{content:"";display:inline-block;width:.95em;height:.8em;margin-right:4px;vertical-align:-1px;border:1.3px solid currentColor;border-radius:1px 2px 2px 2px;background:color-mix(in srgb,currentColor 18%,transparent);clip-path:polygon(0 0,40% 0,52% 18%,100% 18%,100% 100%,0 100%)}
 .nb.dragfolder .nb-rich{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--frame) 35%,transparent)}
+/* ---------- titles and headings (v0.5.4): the H tab in the note toolbar and the five styles in the note ---------- */
+.nr-tools .nr-dd.nr-head{border-color:transparent;background:none;padding:0 5px;gap:3px;min-width:30px;justify-content:center;font:600 13px/1 var(--sans);color:var(--muted)}
+.nr-tools .nr-dd.nr-head:hover{color:var(--text);border-color:var(--line-2)}
+.nr-tools .nr-dd.nr-head[aria-pressed="true"]{color:var(--frame);border-color:color-mix(in srgb,var(--frame) 40%,transparent)}
+.np-pop-heads{width:300px}
+.np-heads{display:flex;flex-direction:column;padding:4px}
+.np-heads button{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:2px;padding:8px 10px 8px 12px;border-radius:2px;position:relative}
+.np-heads button:hover,.np-heads button:focus-visible{background:color-mix(in srgb,var(--frame) 14%,transparent)}
+.np-heads button[aria-checked="true"]::before{content:"";position:absolute;left:3px;top:8px;bottom:8px;width:2px;background:var(--frame)}
+.np-heads small{font:400 11px/1.3 var(--sans);color:var(--muted)}
+.np-hs{color:var(--text);white-space:nowrap}
+.np-hs-div{font:400 14px/1.3 var(--sans)}
+.np-hs-h1{font:600 24px/1.15 var(--math)}
+.np-hs-h6{font:italic 400 16px/1.25 var(--math);color:var(--muted)}
+.np-hs-h2{font:600 19px/1.2 var(--math)}
+.np-hs-h3{font:600 13px/1.3 var(--ui);letter-spacing:.12em;text-transform:uppercase}
+.np-hs-h4{font:600 15px/1.3 var(--sans)}
+.nb-rich h1{font:600 30px/1.2 var(--math);color:var(--text);margin:14px 0 6px;letter-spacing:0}
+.nb-rich h6{font:italic 400 18px/1.35 var(--math);color:var(--muted);margin:-2px 0 12px;letter-spacing:0;text-transform:none}
+.nb-rich h2{font:600 22px/1.25 var(--math);color:var(--text);margin:14px 0 4px;letter-spacing:0}
+.nb-rich h4{font:600 16px/1.35 var(--sans);color:var(--text);margin:10px 0 2px;letter-spacing:0}
+.nb-rich>h1:first-child,.nb-rich>h2:first-child{margin-top:4px}
+/* ---------- highlight, colour presets, align & indent, line & paragraph spacing (v0.5.4) ---------- */
+.nr-hlb .nr-hla{font:700 12.5px/1 var(--sans);padding:2px 3px;border-radius:2px;background:var(--h,transparent);box-shadow:inset 0 -3px 0 var(--h,color-mix(in srgb,var(--text) 35%,transparent));min-width:14px;text-align:center}
+.nr-hlb.on .nr-hla{color:#14161c}
+.nr-tools .nr-dd.nr-alb,.nr-tools .nr-dd.nr-spb{padding:0 5px;gap:3px;color:var(--muted)}
+.nr-tools .nr-dd.nr-alb.on,.nr-tools .nr-dd.nr-spb.on{color:var(--frame)}
+.nr-ali{display:inline-grid;place-items:center}
+.np-pop-color,.np-pop-hilite{width:272px}
+.np-psub{display:flex;align-items:center;justify-content:space-between}
+.np-pedit{all:unset;cursor:pointer;font:600 9.5px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);padding:3px 6px;border:1px solid var(--line-2);border-radius:2px}
+.np-pedit:hover,.np-pedit:focus-visible,.np-pedit[aria-pressed="true"]{color:var(--text);border-color:var(--frame)}
+.np-presets{display:flex;flex-wrap:wrap;gap:5px;padding:2px 4px 4px;align-items:center}
+.np-pre{all:unset;box-sizing:border-box;cursor:pointer;width:22px;height:22px;border-radius:3px;background:var(--c);box-shadow:0 0 0 1px rgba(255,255,255,.25);display:grid;place-items:center;font:700 11px/1 var(--sans);color:#14161c}
+.np-pre:hover,.np-pre:focus-visible{box-shadow:0 0 0 1px var(--text),0 0 8px var(--c);outline:none}
+.np-presets.editing .np-pre{box-shadow:0 0 0 1px var(--red,#E5675B);opacity:.9}
+.np-padd{all:unset;box-sizing:border-box;cursor:pointer;width:22px;height:22px;border-radius:3px;border:1px dashed var(--line-2);display:grid;place-items:center;color:var(--muted);font:600 13px/1 var(--sans)}
+.np-padd:hover,.np-padd:focus-visible{color:var(--text);border-color:var(--frame);outline:none}
+.np-padd[disabled]{opacity:.4;cursor:default}
+.np-pnone{font:400 11px/1.3 var(--sans);color:var(--faint)}
+.np-pop-align{width:350px}.np-pop-spacing{width:372px}
+.np-lay{display:flex;flex-wrap:wrap;gap:4px;padding:0 4px 4px}
+.np-lay button{all:unset;box-sizing:border-box;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border:1px solid var(--line-2);border-radius:2px;color:var(--muted);font:500 12.5px/1 var(--sans)}
+.np-lay button:hover,.np-lay button:focus-visible{color:var(--text);border-color:var(--frame);outline:none}
+.np-lay button[aria-checked="true"]{color:var(--text);border-color:var(--frame);background:color-mix(in srgb,var(--frame) 16%,transparent)}
+.np-layi{display:inline-grid;place-items:center}
+.np-pop-sub b{color:var(--frame);font-weight:600;letter-spacing:0}
+/* in the note: highlights keep the words readable; layout attributes on lines */
+.nb-rich span[data-h]{border-radius:2px;padding:0 1px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.nb-rich span[data-hl="l"]{color:#14161c}
+.nb-rich span[data-hl="d"]{color:#f4f6fa}
+.nb-rich [data-al="left"]{text-align:left}
+.nb-rich [data-al="center"]{text-align:center}
+.nb-rich [data-al="right"]{text-align:right}
+.nb-rich ul[data-al="center"],.nb-rich ol[data-al="center"],.nb-rich ul[data-al="right"],.nb-rich ol[data-al="right"],.nb-rich li[data-al="center"],.nb-rich li[data-al="right"]{list-style-position:inside}
+.nb-rich [data-in="1"]{margin-left:2em}.nb-rich [data-in="2"]{margin-left:4em}.nb-rich [data-in="3"]{margin-left:6em}.nb-rich [data-in="4"]{margin-left:8em}
+.nb-rich [data-in="5"]{margin-left:10em}.nb-rich [data-in="6"]{margin-left:12em}.nb-rich [data-in="7"]{margin-left:14em}.nb-rich [data-in="8"]{margin-left:16em}
+.nb-rich [data-lh="1"]{line-height:1}.nb-rich [data-lh="1.15"]{line-height:1.15}.nb-rich [data-lh="1.5"]{line-height:1.5}
+.nb-rich [data-lh="2"]{line-height:2}.nb-rich [data-lh="2.5"]{line-height:2.5}.nb-rich [data-lh="3"]{line-height:3}
+.nb-rich [data-ps="0"],.nb-rich [data-ps="0"]>li{margin-bottom:0}
+.nb-rich [data-ps="6"],.nb-rich [data-ps="6"]>li{margin-bottom:6px}
+.nb-rich [data-ps="12"],.nb-rich [data-ps="12"]>li{margin-bottom:12px}
+.nb-rich [data-ps="24"],.nb-rich [data-ps="24"]>li{margin-bottom:24px}
+/* ---------- Search above the folders (v0.5.4): never folded away with the columns ---------- */
+.nb-sbar{flex:none;display:flex;align-items:center;padding:8px 10px;border-bottom:1px solid var(--line);background:rgba(0,0,0,.12)}
+.nb-sbar .nb-search{width:var(--sbw,220px);max-width:100%;box-sizing:border-box}
+@media (max-width:860px){ .nb-sbar .nb-search{width:100%} }
+/* ---------- ⇪ Share (v0.5.4) ---------- */
+.np-share-pop{width:360px;max-width:calc(100vw - 16px)}
+.np-shs{display:flex;flex-direction:column;padding:2px 4px}
+.np-shs button{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:flex-start;gap:11px;padding:8px 10px;border-radius:2px}
+.np-shs button:hover,.np-shs button:focus-visible,.np-shf button:hover,.np-shf button:focus-visible{background:color-mix(in srgb,var(--frame) 14%,transparent);outline:none}
+.np-shs button[disabled],.np-shf button[disabled]{opacity:.4;cursor:default;background:none}
+.np-shs b,.np-shf b{display:block;font:600 13px/1.2 var(--sans);color:var(--text)}
+.np-shs small{display:block;font:400 11.5px/1.35 var(--sans);color:var(--muted);margin-top:2px}
+.np-shi{flex:none;width:28px;height:28px;display:grid;place-items:center;border:1px solid var(--line-2);border-radius:2px;color:var(--frame);font:600 13px/1 var(--sans)}
+.np-shnote{display:block;text-transform:none;letter-spacing:0;font:400 11px/1.3 var(--sans);color:var(--faint);margin-top:3px}
+.np-shf{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:2px 8px 6px}
+.np-shf button{all:unset;box-sizing:border-box;cursor:pointer;text-align:center;padding:8px 4px;border:1px solid var(--line-2);border-radius:2px}
+.np-shf small{display:block;font:500 10.5px/1.2 var(--mono);color:var(--muted);margin-top:3px}
+.np-shio{border-top:1px solid var(--line);margin-top:2px;padding-top:4px}
+.nr-tools .nr-clr{color:var(--muted)}
+.nr-tools .nr-clr:hover{color:var(--text)}
+
+/* ---------- Details columns you can resize, the Compact list, cover photos (v0.5.4) ---------- */
+.nb-dhead>span{position:relative;min-width:0;overflow:visible;white-space:nowrap}
+.nb-dhead>span:not(:last-child){overflow:hidden;text-overflow:ellipsis}
+.nb-dcrz{position:absolute;top:-7px;bottom:-7px;right:-6px;width:9px;cursor:col-resize;z-index:2;touch-action:none}
+.nb-dcrz::after{content:"";position:absolute;left:4px;top:6px;bottom:6px;width:1px;background:var(--line-2)}
+.nb-dcrz:hover::after,.nb-dcrz.on::after{background:var(--frame);box-shadow:0 0 6px var(--frame)}
+.nb-dhead>span:not(:last-child){overflow:visible}
+.nb-it.nb-crow{grid-template-columns:minmax(0,1fr) auto;padding:5px 14px;gap:10px}
+.nb-it.nb-crow .nb-t{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nb-it.nb-hascov{flex-direction:row;align-items:center;gap:10px}
+.nb-lcov{flex:none;width:38px;height:38px;border-radius:3px;object-fit:cover;background:var(--panel-2);box-shadow:0 0 0 1px var(--line-2)}
+.nb-ltx{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
+.nb-items[data-view="icons"] .nb-tic{height:56px}
+.nb-tic.has-cov{width:56px;display:grid;place-items:center;position:relative}
+.nb-tcov{width:56px;height:56px;border-radius:4px;object-fit:cover;box-shadow:0 0 0 1px var(--line-2)}
+.nb-cov.missing{visibility:hidden}
+.nb-cov-w{flex:none;position:relative;margin:12px 0 0 18px;display:inline-flex}
+.nb-cov-w+.nb-title{padding-left:0}
+.nc-pane .nb-trow .nb-cov-w{margin:6px 0 0 0}
+.nb-covb{all:unset;box-sizing:border-box;cursor:pointer;width:34px;height:34px;border-radius:3px;display:grid;place-items:center;color:var(--muted);border:1px dashed var(--line-2);overflow:hidden}
+.nb-covb:hover,.nb-covb:focus-visible,.nb-cov-w.over .nb-covb{color:var(--frame);border-color:var(--frame);outline:none}
+.nb-covb.set{border:0;box-shadow:0 0 0 1px var(--line-2)}
+.nb-covb img{width:100%;height:100%;object-fit:cover;display:block}
+.nb-covx{all:unset;cursor:pointer;position:absolute;top:-6px;right:-6px;width:16px;height:16px;border-radius:50%;display:none;place-items:center;font:700 9px/1 var(--sans);color:var(--text);background:var(--panel-2);box-shadow:0 0 0 1px var(--line-2)}
+.nb-cov-w:hover .nb-covx,.nb-covx:focus-visible{display:grid}
+.ask-cov{display:flex;align-items:center;gap:8px;margin:2px 0 10px}
+.ask-covb{all:unset;box-sizing:border-box;cursor:pointer;display:inline-flex;align-items:center;gap:7px;padding:5px 10px 5px 6px;border:1px dashed var(--line-2);border-radius:2px;color:var(--muted);font:500 12px/1 var(--sans)}
+.ask-covb:hover,.ask-covb:focus-visible{color:var(--text);border-color:var(--frame);outline:none}
+.ask-covb.set{border-style:solid}
+.ask-covb img{width:26px;height:26px;object-fit:cover;border-radius:2px}
+.ask-covn{font:400 11.5px/1.2 var(--sans);color:var(--faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px}
+.ask-covx{all:unset;cursor:pointer;color:var(--muted);font-size:11px;padding:2px 5px}
+.ask-covx:hover{color:var(--text)}
+/* ---------- ◈ Links: which links to show; 👁 Peek box (v0.5.4; after Inquire's floating Notes box) ---------- */
+.np-holo-ck{display:flex;flex-wrap:wrap;gap:4px 14px;padding:6px 12px 2px;font:500 12px/1.2 var(--sans);color:var(--muted)}
+.np-holo-ck label{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.np-holo-ck input{accent-color:var(--frame);margin:0}
+.np-hl-pk{font-size:12px}
+.np-peek.win{position:fixed;z-index:1600;width:min(360px,calc(100vw - 32px));height:min(440px,calc(100dvh - 90px));display:flex;flex-direction:column;
+  opacity:0;transform:translateY(14px) scale(.98);transition:opacity .22s ease,transform .26s cubic-bezier(.2,.7,.2,1),right .38s cubic-bezier(.2,.7,.2,1);
+  background:linear-gradient(115deg,rgba(255,255,255,.07),transparent 32%,transparent 70%,color-mix(in srgb,var(--frame) 7%,transparent)),
+    linear-gradient(160deg,color-mix(in srgb,var(--win-1) 90%,transparent),color-mix(in srgb,var(--win-2) 94%,transparent));
+  border:1px solid color-mix(in srgb,var(--frame) 30%,var(--line-2));
+  box-shadow:0 18px 60px rgba(0,0,0,.55),0 0 28px var(--glow),inset 0 1px 0 rgba(255,255,255,.09);-webkit-app-region:no-drag}
+.np-peek.is-open{opacity:1;transform:none}
+.np-peek.dragging{transition:none;user-select:none;box-shadow:0 26px 80px rgba(0,0,0,.6),0 0 34px var(--glow)}
+.np-peek-h{display:flex;align-items:center;gap:10px;padding:6px 6px 6px 12px;border-bottom:1px solid var(--line);cursor:grab;touch-action:none;user-select:none;background:linear-gradient(180deg,color-mix(in srgb,var(--frame) 9%,rgba(255,255,255,.04)),transparent)}
+.np-peek.dragging .np-peek-h{cursor:grabbing}
+.np-peek-tt{display:flex;align-items:center;gap:9px;font:600 12px/1 var(--ui);letter-spacing:.26em;text-transform:uppercase;color:var(--text);padding:3px 0}
+.np-peek-gem{width:8px;height:8px;background:var(--frame);transform:rotate(45deg);box-shadow:0 0 8px var(--frame)}
+.np-peek-grip{color:var(--faint);font-size:14px;line-height:1}
+.np-peek-hr{margin-left:auto;display:flex;align-items:center;gap:2px}
+.np-peek-x{background:none;border:1px solid transparent;color:var(--muted);width:30px;height:30px;cursor:pointer;border-radius:2px;font-size:14px}
+.np-peek-x:hover,.np-peek-x:focus-visible{color:var(--text);border-color:var(--line-2);outline:none}
+.np-peek.docked .np-peek-home{display:none}
+.np-peek-in{flex:1;min-height:0;display:flex;flex-direction:column;padding:10px 14px 0}
+.np-peek-t{margin:0;font:400 20px/1.2 var(--math);color:var(--text)}
+.np-peek-m{margin:3px 0 8px;font:500 10.5px/1.2 var(--mono);color:var(--faint)}
+.np-peek-b.nb-rich{flex:1;min-height:0;overflow:auto;padding:4px 2px 12px;font-size:14px;outline:none;border-top:1px solid var(--line)}
+.np-peek-b img{max-width:100%;height:auto}
+.np-peek-w{margin:6px 0;padding:8px 10px;border:1px dashed var(--line-2);border-radius:2px;color:var(--muted);font:500 12px/1.3 var(--sans)}
+.np-peek-code{margin:0;white-space:pre-wrap;font:400 12.5px/1.5 var(--mono);color:var(--text)}
+.np-peek-f{display:flex;gap:6px;justify-content:flex-end;padding:8px 12px;border-top:1px solid var(--line)}
+@media (max-width:760px){ .np-peek.win{left:16px!important;right:16px!important;top:auto!important;bottom:16px;width:auto} .np-peek-h{cursor:default} .np-peek-grip{display:none} }
 
 </style>
 </head><body>
@@ -1730,12 +1879,18 @@ const byUpdated = (a, b) => b.updated - a.updated;
 const changed = () => window.dispatchEvent(new CustomEvent("inquire:notes-changed"));
 
 /* ---------- rich text: sanitise, plain text ---------- */
-const KEEP = new Set(["B", "STRONG", "I", "EM", "U", "S", "STRIKE", "BR", "DIV", "P", "UL", "OL", "LI", "H3", "BLOCKQUOTE", "A", "IMG", "SPAN"]);
+const KEEP = new Set(["B", "STRONG", "I", "EM", "U", "S", "STRIKE", "BR", "DIV", "P", "UL", "OL", "LI", "H1", "H2", "H3", "H4", "H6", "BLOCKQUOTE", "A", "IMG", "SPAN"]); // H1 Title · H6 Subtitle · H2 / H3 / H4 Heading 1 / 2 / 3 (v0.5.4)
 const TCOL = { "#f2b84b": "amber", "#5cc8e0": "cyan", "#f07ca0": "pink", "#b49bff": "violet", "#7bd88f": "green", "#d97ae6": "magenta", "#b5d65a": "lime", "#e5675b": "red", "#8b97ae": "muted" };
 const TKEYS = new Set(Object.values(TCOL)), HEX = /^#[0-9a-f]{6}$/;
 // any colour from the spectrum picker is kept as span[data-c="#rrggbb"] with a matching inline colour (the sanitiser writes the style itself)
 const hexOf = v => { v = String(v || "").trim().toLowerCase(); if (/^#[0-9a-f]{3}$/.test(v)) v = "#" + v[1] + v[1] + v[2] + v[2] + v[3] + v[3];
   const m = v.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/); if (m) v = "#" + [m[1], m[2], m[3]].map(x => (+x).toString(16).padStart(2, "0")).join(""); return HEX.test(v) ? v : ""; };
+const CLEARH = "#010204"; // stand-in highlight for "no highlight" (v0.5.4): becomes span[data-h="_def"], then lift() takes it off
+// a highlight keeps the words readable: a light one makes the text dark, a dark one makes it light (data-hl, set from the colour)
+const hlTone = hx => { const n = parseInt(hx.slice(1), 16), L = (0.2126 * (n >> 16 & 255) + 0.7152 * (n >> 8 & 255) + 0.0722 * (n & 255)) / 255; return L > 0.55 ? "l" : L < 0.3 ? "d" : ""; };
+// paragraph layout (v0.5.4): align, indent, line spacing, space after, as attributes on blocks (see api.blockStyle)
+const BLAYOUT = { "data-al": new Set(["left", "center", "right"]), "data-in": new Set(["1", "2", "3", "4", "5", "6", "7", "8"]), "data-lh": new Set(["1", "1.15", "1.5", "2", "2.5", "3"]), "data-ps": new Set(["0", "6", "12", "24"]) };
+const BLTAGS = new Set(["DIV", "P", "H1", "H2", "H3", "H4", "H6", "BLOCKQUOTE", "UL", "OL", "LI"]);
 const CLEARC = "#010203"; // stand-in colour for "normal colour": becomes span[data-c="_def"] for a moment, then lift() takes the colour off
 // numeric text sizes (toolbar size menu): span[data-s="18"]; the note's normal text is 15. Old notes keep s / n / l / xl.
 const NSIZES = [8, 9, 10, 11, 12, 13, 14, 15, 16, 18, 20, 22, 24, 28, 32, 36, 40, 48, 60, 72];
@@ -1787,19 +1942,21 @@ function clean(node) {
       if (id && /^[a-z0-9]+$/i.test(id)) keep["data-img"] = id; else if (/^https:\/\/[^\s"'<>]+$/i.test(src)) keep.src = src; else { c.remove(); return; }
       keep.alt = (c.getAttribute("alt") || "").slice(0, 200); keep.class = "nimg";
     }
+    if (BLTAGS.has(tag)) for (const a in BLAYOUT) { const v = c.getAttribute(a); if (v != null && BLAYOUT[a].has(v)) keep[a] = v; } // align, indent, spacing (v0.5.4)
     if (tag === "UL" && c.getAttribute("data-ck") === "1") keep["data-ck"] = "1"; // checklist (NotePath)
     if (tag === "LI" && c.getAttribute("data-done") === "1") keep["data-done"] = "1";
     if (tag === "SPAN") { const k = c.getAttribute("data-c"), z = c.getAttribute("data-s"), f = c.getAttribute("data-f");
       if (TKEYS.has(k)) keep["data-c"] = k; else if (HEX.test(k || "")) { keep["data-c"] = k; keep.style = "color:" + k; }
+      const hl = c.getAttribute("data-h"); if (HEX.test(hl || "")) { keep["data-h"] = hl; keep.style = (keep.style ? keep.style + ";" : "") + "background-color:" + hl; const tn = hlTone(hl); if (tn) keep["data-hl"] = tn; } // highlight (v0.5.4)
       if (SKEYS.has(z)) keep["data-s"] = z; if (FKEYS.has(f)) keep["data-f"] = f;
-      const an = c.getAttribute("data-ann"); if (an && /^[a-z0-9]{4,24}$/i.test(an)) { keep["data-ann"] = an; keep["data-nt"] = String(c.getAttribute("data-nt") || "").slice(0, 4000); } // an indented note (NotePath)
-      if (!keep["data-c"] && !keep["data-s"] && !keep["data-f"] && !keep["data-ann"]) { c.replaceWith(...c.childNodes); return; } }
+      const an = c.getAttribute("data-ann"); if (an && /^[a-z0-9]{4,24}$/i.test(an)) { keep["data-ann"] = an; keep["data-nt"] = String(c.getAttribute("data-nt") || "").slice(0, 4000); } // a paranote (NotePath)
+      if (!keep["data-c"] && !keep["data-s"] && !keep["data-f"] && !keep["data-ann"] && !keep["data-h"]) { c.replaceWith(...c.childNodes); return; } }
     [...c.attributes].forEach(a => c.removeAttribute(a.name));
     Object.entries(keep).forEach(([k, v]) => c.setAttribute(k, v));
   });
 }
 function sanitize(html) { const t = document.createElement("template"); t.innerHTML = String(html || ""); clean(t.content); return t.innerHTML; }
-const BLOCK = new Set(["DIV", "P", "LI", "H3", "BLOCKQUOTE", "UL", "OL"]);
+const BLOCK = new Set(["DIV", "P", "LI", "H1", "H2", "H3", "H4", "H6", "BLOCKQUOTE", "UL", "OL"]);
 function toText(html) {
   const t = document.createElement("template"); t.innerHTML = String(html || ""); let out = "";
   const walk = n => n.childNodes.forEach(c => {
@@ -1821,6 +1978,9 @@ const textToHtml = t => String(t || "").split("\n").map(l => `<div>${l ? esc(l) 
 const imgIds = html => [...String(html || "").matchAll(/data-img="([a-z0-9]+)"/gi)].map(m => m[1]);
 // photos and video files share the IndexedDB store; a video widget keeps its file id as "vid" in data-src (attribute-escaped JSON)
 const mediaIds = html => imgIds(html).concat([...String(html || "").matchAll(/&quot;vid&quot;:&quot;([a-z0-9]+)&quot;/gi)].map(m => m[1]));
+// every photo a note keeps: the ones in its text and its cover photo (v0.5.4)
+const COVER_ID = /^[a-z0-9]{4,40}$/i;
+const noteMedia = n => mediaIds(n && n.html).concat(n && n.cover && COVER_ID.test(n.cover) ? [n.cover] : []);
 
 /* ---------- notes ---------- */
 /* Spaces (NotePath, Oct 2026): My notes has a Notes tab and a Code tab. A code file is a note with space: "code" and
@@ -1875,6 +2035,7 @@ function create(o = {}) {
   const now = Date.now(), html = o.html != null ? sanitize(o.html) : textToHtml(o.body || "");
   const n = { id: uid(), title: o.title || "Untitled note", html, body: toText(html), created: now, updated: now, src: o.src || null,
     fav: !!o.fav, folder: o.folder || null, links: Array.isArray(o.links) ? o.links.slice() : o.src && o.src.topic ? ["t:" + o.src.topic] : [] };
+  if (o.cover && COVER_ID.test(o.cover)) n.cover = o.cover; // cover photo (v0.5.4)
   if (o.space === "code") { const c = o.code || {}; n.space = "code"; n.code = { lang: String(c.lang || "python"), src: String(c.src || "") }; n.html = ""; n.body = n.code.src; if (!o.title) n.title = "Untitled code"; }
   const all = read(); all.push(n); write(all); return n;
 }
@@ -1885,12 +2046,13 @@ function update(id, patch) {
   else if (patch.html != null) { patch.html = sanitize(patch.html); patch.body = toText(patch.html); }
   else if (patch.body != null) patch.html = textToHtml(patch.body);
   const quiet = patch.quiet; delete patch.quiet;
+  if ("cover" in patch) { const c = patch.cover && COVER_ID.test(patch.cover) ? patch.cover : null; if (n.cover && n.cover !== c) oldCovers.add(n.cover); if (c) patch.cover = c; else { delete patch.cover; delete n.cover; } }
   Object.assign(n, patch); if (!quiet) n.updated = Date.now(); write(all); return n;
 }
 function remove(id) {
   const all = read(), n = all.find(x => x.id === id); if (!n) return;
-  const rest = all.filter(x => x.id !== id), still = new Set(rest.flatMap(x => mediaIds(x.html)));
-  delImages(mediaIds(n.html).filter(i => !still.has(i)));
+  const rest = all.filter(x => x.id !== id), still = new Set(rest.flatMap(noteMedia));
+  delImages(noteMedia(n).filter(i => !still.has(i)));
   write(rest);
 }
 // delete with undo: trash() takes the note out at once but keeps its photos/videos; restore() puts it back as it was;
@@ -1906,10 +2068,13 @@ function restore(id) {
 }
 function purge(id) {
   const n = trashed.get(id); if (!n) return; trashed.delete(id);
-  const still = new Set(read().flatMap(x => mediaIds(x.html)));
-  delImages(mediaIds(n.html).filter(i => !still.has(i)));
+  const still = new Set(read().flatMap(noteMedia));
+  delImages(noteMedia(n).filter(i => !still.has(i)));
 }
 window.addEventListener("pagehide", () => [...trashed.keys()].forEach(purge));
+// cover photos that were changed or taken off go when the app closes (until then ↶ Undo can bring them back), unless a note still uses them
+const oldCovers = new Set();
+window.addEventListener("pagehide", () => { if (!oldCovers.size) return; const still = new Set(read().flatMap(noteMedia)); delImages([...oldCovers].filter(i => !still.has(i))); });
 // a deleted-note message with Undo (shared by My notes and the Assist dock)
 function deleteWithUndo(id, onUndo) {
   const n = trash(id); if (!n) return;
@@ -2030,7 +2195,7 @@ const toDataURL = blob => new Promise((res, rej) => { const r = new FileReader()
 // backups: like exportImages, plus the videos left out for size → { map, skipped: [{ note, title, mb }] }
 async function exportMedia(notes) {
   const map = {}, skipped = [];
-  for (const n of (notes || read())) for (const id of mediaIds(n.html)) {
+  for (const n of (notes || read())) for (const id of noteMedia(n)) {
     if (map[id]) continue;
     const rec = await tx("readonly", st => st.get(id)).catch(() => null); if (!rec || !rec.blob) continue;
     if (rec.blob.size > VIDEO_BACKUP_MAX) { skipped.push({ note: n.title, mb: Math.round(rec.blob.size / 1048576) }); continue; }
@@ -2039,7 +2204,7 @@ async function exportMedia(notes) {
   return { map, skipped };
 }
 async function exportImages(notes) {
-  const out = {}, ids = [...new Set((notes || read()).flatMap(n => mediaIds(n.html)))];
+  const out = {}, ids = [...new Set((notes || read()).flatMap(noteMedia))];
   for (const id of ids) { const rec = await tx("readonly", st => st.get(id)).catch(() => null); if (rec && rec.blob && !(/^video\//.test(rec.blob.type) && rec.blob.size > VIDEO_BACKUP_MAX)) out[id] = await toDataURL(rec.blob); }
   return out;
 }
@@ -2119,7 +2284,7 @@ function mountEditor(host, id, o = {}) {
   ed.innerHTML = sanitize(n.html); hydrate(ed);
   let bar = null;
   // the hint shows only while the note is truly blank: a heading, bullet, number, checkbox, photo or widget hides it too
-  const empty = () => ed.classList.toggle("is-empty", !ed.textContent.trim() && !ed.querySelector("img, ul, ol, li, h1, h2, h3, h4, blockquote, pre, hr, .nw, a.nlink"));
+  const empty = () => ed.classList.toggle("is-empty", !ed.textContent.trim() && !ed.querySelector("img, ul, ol, li, h1, h2, h3, h4, h6, blockquote, pre, hr, .nw, a.nlink"));
   empty();
   let t = null, last = null;
   const flush = () => { if (!t) return; clearTimeout(t); t = null; update(id, { html: ed.innerHTML }); if (o.onSaved) o.onSaved(); };
@@ -2357,7 +2522,7 @@ function mountEditor(host, id, o = {}) {
   }
   // "normal" colour / font: each span[attr="_def"] takes that attribute off every span around it, splitting them so the words
   // before and after keep theirs. Returns the nodes that were inside, to reselect them.
-  const bare = sp => !sp.hasAttribute("data-c") && !sp.hasAttribute("data-s") && !sp.hasAttribute("data-f");
+  const bare = sp => !sp.hasAttribute("data-c") && !sp.hasAttribute("data-s") && !sp.hasAttribute("data-f") && !sp.hasAttribute("data-h") && !sp.hasAttribute("data-ann");
   function lift(attr) {
     const out = [];
     [...ed.querySelectorAll(`span[${attr}="_def"]`)].forEach(x => {
@@ -2368,10 +2533,10 @@ function mountEditor(host, id, o = {}) {
         const before = r1.extractContents(), after = r2.extractContents();
         if (before.textContent) { const c = a.cloneNode(false); c.append(before); a.before(c); }
         if (after.textContent) { const c = a.cloneNode(false); c.append(after); a.after(c); }
-        a.removeAttribute(attr); if (attr === "data-c") a.style.color = "";
+        a.removeAttribute(attr); if (attr === "data-c") a.style.color = ""; if (attr === "data-h") { a.style.backgroundColor = ""; a.removeAttribute("data-hl"); } if (a.getAttribute("style") === "") a.removeAttribute("style");
         if (bare(a)) a.replaceWith(...a.childNodes);
       }
-      const kids = [...x.childNodes]; x.removeAttribute(attr);
+      const kids = [...x.childNodes]; x.removeAttribute(attr); if (attr === "data-h") { x.style.backgroundColor = ""; x.removeAttribute("data-hl"); } if (x.getAttribute("style") === "") x.removeAttribute("style");
       if (bare(x)) { x.replaceWith(...kids); out.push(...kids); } else out.push(x);
     });
     return out;
@@ -2383,19 +2548,20 @@ function mountEditor(host, id, o = {}) {
   function caretStyle(r, kind, v) {
     const at = r.startContainer.nodeType === 1 ? r.startContainer : r.startContainer.parentElement;
     let sp = at && at.closest("span"); if (sp && (!ed.contains(sp) || sp.textContent.replace(/​/g, "") !== "")) sp = null;
-    const attr = kind === "color" ? "data-c" : kind === "size" ? "data-s" : "data-f";
+    const attr = kind === "color" ? "data-c" : kind === "hilite" ? "data-h" : kind === "size" ? "data-s" : "data-f";
     if (!sp) {
       sp = document.createElement("span"); sp.appendChild(document.createTextNode(ZW));
       // at the very end of a styled span, the new one goes after it so "normal" really is normal
       let host = at && at.closest(`span[${attr}]`);
       const atEnd = host && ed.contains(host) && (() => { const t = document.createRange(); t.selectNodeContents(host); t.setStart(r.startContainer, r.startOffset); return !t.toString().replace(/​/g, "").length; })();
       if (atEnd) { // keep the other two styles the caret had inside that span
-        ["data-c", "data-s", "data-f"].filter(a => a !== attr).forEach(a => { const o = at.closest(`span[${a}]`); if (o && (o === host || host.contains(o))) { sp.setAttribute(a, o.getAttribute(a)); if (a === "data-c" && HEX.test(o.getAttribute(a))) sp.style.color = o.getAttribute(a); } });
+        ["data-c", "data-s", "data-f", "data-h"].filter(a => a !== attr).forEach(a => { const o = at.closest(`span[${a}]`); if (o && (o === host || host.contains(o))) { sp.setAttribute(a, o.getAttribute(a)); if (a === "data-c" && HEX.test(o.getAttribute(a))) sp.style.color = o.getAttribute(a); if (a === "data-h" && HEX.test(o.getAttribute(a))) { sp.style.backgroundColor = o.getAttribute(a); const tn = hlTone(o.getAttribute(a)); if (tn) sp.setAttribute("data-hl", tn); } } });
         host.after(sp);
       } else { const rr = r.cloneRange(); rr.insertNode(sp); }
     }
     const inside = a => { const o = sp.parentElement && sp.parentElement.closest(`span[${a}]`); return !!(o && ed.contains(o)); };
     if (kind === "color") { const hx = hexOf(v); if (hx) { sp.setAttribute("data-c", hx); sp.style.color = hx; } else if (inside("data-c")) { sp.setAttribute("data-c", "_def"); sp.style.color = getComputedStyle(ed).color; } else { sp.removeAttribute("data-c"); sp.style.color = ""; } }
+    else if (kind === "hilite") { const hx = hexOf(v); sp.removeAttribute("data-hl"); if (hx) { sp.setAttribute("data-h", hx); sp.style.backgroundColor = hx; const tn = hlTone(hx); if (tn) sp.setAttribute("data-hl", tn); } else if (inside("data-h")) { sp.setAttribute("data-h", "_def"); sp.style.backgroundColor = "transparent"; } else { sp.removeAttribute("data-h"); sp.style.backgroundColor = ""; } }
     else if (kind === "size") { const n = NSIZES.includes(+v) && +v !== 15 ? String(+v) : ""; if (n) sp.setAttribute("data-s", n); else if (inside("data-s")) sp.setAttribute("data-s", "15"); else sp.removeAttribute("data-s"); }
     else { if (FKEYS.has(v)) sp.setAttribute("data-f", v); else if (inside("data-f")) sp.setAttribute("data-f", "_def"); else sp.removeAttribute("data-f"); }
     if (!sp.getAttribute("style")) sp.removeAttribute("style");
@@ -2410,7 +2576,7 @@ function mountEditor(host, id, o = {}) {
     hit.forEach(tn => { let off = r && r.startContainer === tn ? r.startOffset : -1; if (off >= 0) off -= (tn.data.slice(0, off).match(/​/g) || []).length;
       tn.data = tn.data.replace(/​/g, ""); if (off >= 0) { const nr = document.createRange(); nr.setStart(tn, Math.min(off, tn.data.length)); nr.collapse(true); s.removeAllRanges(); s.addRange(nr); } });
   }, true);
-  /* ----- indented notes (Devon, Oct 12 2026): your own note under the words it explains. The words are
+  /* ----- paranotes (Devon, Oct 12 2026): your own note under the words it explains. The words are
      span[data-ann] with the note in data-nt (so it is saved, undone and backed up with the note). While shown, a layer over
      the editor draws each note under its line with a right-angled line from the middle of the words, in --note-indent;
      the line under the words grows (a ::after spacer in a <style> of its own, nothing in the note) so the text below makes
@@ -2457,8 +2623,8 @@ function mountEditor(host, id, o = {}) {
         const left = Math.max(14, Math.min(it.x + 16, W - 240)), width = Math.max(160, Math.min(620, W - left - padR));
         const card = document.createElement("div"); card.className = "nann-card"; card.dataset.ann = it.id;
         card.style.left = left + "px"; card.style.top = top + "px"; card.style.width = width + "px";
-        card.innerHTML = (it.sp.dataset.nt ? annHTML(it.sp.dataset.nt) : `<i class="nann-empty">Empty indented note</i>`);
-        card.title = "Click to edit this indented note";
+        card.innerHTML = (it.sp.dataset.nt ? annHTML(it.sp.dataset.nt) : `<i class="nann-empty">Empty paranote</i>`);
+        card.title = "Click to edit this paranote";
         annIn.appendChild(card);
         const ch = card.offsetHeight, my = top + Math.min(ch / 2, 13);
         const v = document.createElement("div"); v.className = "nann-v"; v.style.left = (it.x - .5) + "px"; v.style.top = (it.y + 1) + "px"; v.style.height = Math.max(4, my - it.y - 1) + "px";
@@ -2483,19 +2649,19 @@ function mountEditor(host, id, o = {}) {
   ed.addEventListener("np:ann-layout", () => annSoon());
   ed.addEventListener("np:ann-edit", e => { if (o.onAnnotation && e.detail) o.onAnnotation(e.detail.id); });
   annLayer.addEventListener("click", e => { const c = e.target.closest(".nann-card"); if (!c || e.target.closest("a")) return; if (o.onAnnotation) o.onAnnotation(c.dataset.ann); });
-  // a new indented note on the words selected in the note (one line of words; not inside a widget or a link)
+  // a new paranote on the words selected in the note (one line of words; not inside a widget or a link)
   function addAnnotation(text) {
     const ae = document.activeElement, box = ae && ae.matches && ae.matches(".nw-ta") && ed.contains(ae) ? ae.closest(".nw") : null;
     if (box && box._ann) { const r0 = box._ann.add(text); if (r0.id) { save(); flush(); } return r0; } // code in a code box
     const s = getSelection(); let r = s.rangeCount && ed.contains(s.getRangeAt(0).commonAncestorContainer) ? s.getRangeAt(0) : last;
     if (!r || r.collapsed || !ed.contains(r.commonAncestorContainer) || !r.toString().trim()) return { error: "Select the words in the note first." };
     if (inWidget(r.startContainer) || inWidget(r.endContainer)) return { error: "Select the code inside the code box, then press ＋ again." };
-    const blk = n => { let el = n.nodeType === 1 ? n : n.parentElement; while (el && el !== ed && !/^(DIV|P|LI|H1|H2|H3|H4|BLOCKQUOTE|PRE)$/.test(el.tagName)) el = el.parentElement; return el; };
+    const blk = n => { let el = n.nodeType === 1 ? n : n.parentElement; while (el && el !== ed && !/^(DIV|P|LI|H1|H2|H3|H4|H6|BLOCKQUOTE|PRE)$/.test(el.tagName)) el = el.parentElement; return el; };
     if (blk(r.startContainer) !== blk(r.endContainer)) return { error: "Select words on one line." };
     const anc = r.commonAncestorContainer.nodeType === 1 ? r.commonAncestorContainer : r.commonAncestorContainer.parentElement;
-    if (anc.closest("span[data-ann], a.nlink") || r.cloneContents().querySelector("span[data-ann], a.nlink, img")) return { error: "Those words already have an indented note or a link." };
+    if (anc.closest("span[data-ann], a.nlink") || r.cloneContents().querySelector("span[data-ann], a.nlink, img")) return { error: "Those words already have a paranote or a link." };
     const sp = document.createElement("span"); sp.dataset.ann = uid(); sp.dataset.nt = String(text || "").slice(0, 4000);
-    try { sp.appendChild(r.extractContents()); r.insertNode(sp); } catch (e) { return { error: "Those words could not take an indented note." }; }
+    try { sp.appendChild(r.extractContents()); r.insertNode(sp); } catch (e) { return { error: "Those words could not take a paranote." }; }
     const r2 = document.createRange(); r2.setStartAfter(sp); r2.collapse(true); s.removeAllRanges(); s.addRange(r2); last = r2.cloneRange();
     ed.classList.remove("is-empty"); save(); flush(); annLayout(); return { id: sp.dataset.ann };
   }
@@ -2503,22 +2669,149 @@ function mountEditor(host, id, o = {}) {
   function removeAnnotation(id) { const sp = ed.querySelector(`span[data-ann="${id}"]`); if (!sp) { const w = annBox(id); if (!w) return false; w._ann.remove(id); flush(); return true; } sp.replaceWith(...sp.childNodes); ed.normalize(); save(); flush(); annLayout(); return true; }
   function showAnnotations(on) { annOn = !!on; annLayout(); annBoxes().forEach(w => w._ann.show(annOn)); }
   function focusAnnotation(id) { const sp = ed.querySelector(`span[data-ann="${id}"]`); if (!sp) { const w = annBox(id); if (w) w._ann.focus(id); return; } sp.scrollIntoView({ block: "nearest" }); sp.classList.add("nann-hi"); setTimeout(() => sp.classList.remove("nann-hi"), 900); }
+  // spans (or other inline elements) Chromium gave a background → span[data-h] (or "_def" for the no-highlight stand-in)
+  function hiliteSpans() {
+    const out = [];
+    [...ed.querySelectorAll("[style]")].forEach(el => {
+      const bg = el.style.backgroundColor; if (!bg || inWidget(el)) return; const hx = hexOf(bg); if (!hx) return;
+      if (el.tagName !== "SPAN") { // a highlight belongs on the words, never on a whole line or a bold/italic tag
+        el.style.backgroundColor = ""; if (el.getAttribute("style") === "") el.removeAttribute("style"); if (BLTAGS.has(el.tagName)) return;
+        const sp = document.createElement("span"); sp.append(...el.childNodes); el.appendChild(sp); sp.style.backgroundColor = hx; el = sp; }
+      const sp = el; if (sp.getAttribute("data-h") === hx) return;
+      sp.removeAttribute("data-hl");
+      if (hx === CLEARH) { sp.setAttribute("data-h", "_def"); sp.style.backgroundColor = ""; }
+      else { sp.setAttribute("data-h", hx); const tn = hlTone(hx); if (tn) sp.setAttribute("data-hl", tn); }
+      // a highlight inside an older one replaces it there
+      sp.querySelectorAll("span[data-h]").forEach(x => { x.removeAttribute("data-h"); x.removeAttribute("data-hl"); x.style.backgroundColor = ""; if (x.getAttribute("style") === "") x.removeAttribute("style"); if (bare(x)) x.replaceWith(...x.childNodes); });
+      out.push(sp);
+    });
+    return out;
+  }
+  /* ----- paragraph layout (v0.5.4, Devon): align, indent, line spacing, space after paragraphs. Nothing selected = the whole
+     note (every line; new lines follow because Enter copies the line's attributes); words selected = only the lines they are
+     on, and for align / indent only those words: a part of one line is split off into a line of its own. ----- */
+  const BLOCKSEL = "div:not(.nw),p,h1,h2,h3,h4,h6,blockquote,li";
+  function topBlocks() { // every top-level line becomes an element (loose text and inline bits get a div)
+    let run = null; const out = [];
+    [...ed.childNodes].forEach(n => {
+      const blk = n.nodeType === 1 && (BLTAGS.has(n.tagName) || n.classList.contains("nw") || n.tagName === "PRE");
+      if (blk) { run = null; if (!n.classList.contains("nw")) out.push(n); return; }
+      if (n.nodeType === 3 && !n.data.trim() && !run) return;
+      if (!run) { run = document.createElement("div"); n.before(run); out.push(run); }
+      run.appendChild(n);
+      if (n.nodeType === 1 && n.tagName === "BR") run = null;
+    });
+    if (!out.length) { const d = document.createElement("div"); d.appendChild(document.createElement("br")); ed.appendChild(d); out.push(d); }
+    return out;
+  }
+  const lineOf = node => { let el = node && (node.nodeType === 1 ? node : node.parentElement); el = el && el.closest(BLOCKSEL); return el && ed.contains(el) && el !== ed && !inWidget(el) ? el : null; };
+  function layoutTargets(split) {
+    const s = getSelection(); let r = s.rangeCount ? s.getRangeAt(0) : null;
+    if (!r || !ed.contains(r.commonAncestorContainer)) r = last && ed.contains(last.commonAncestorContainer) ? last : null;
+    if (!r || r.collapsed || !r.toString().replace(/[\s​]/g, "")) return { whole: true, els: topBlocks() };
+    if (!lineOf(r.startContainer) || !lineOf(r.endContainer)) { // loose text at the top of the note: make it lines first
+      const k = [r.startContainer, r.startOffset, r.endContainer, r.endOffset]; topBlocks();
+      try { r = document.createRange(); r.setStart(k[0], k[1]); r.setEnd(k[2], k[3]); } catch (e) {} }
+    const a = lineOf(r.startContainer), b = lineOf(r.endContainer);
+    if (split && a && a === b && a.tagName !== "LI") { // a part of one line: split it off
+      const pre = document.createRange(); pre.setStart(a, 0); pre.setEnd(r.startContainer, r.startOffset);
+      const post = document.createRange(); post.setStart(r.endContainer, r.endOffset); post.setEnd(a, a.childNodes.length);
+      const has = rg => { const f = rg.cloneContents(); return !!(f.textContent.replace(/[\s​]/g, "") || f.querySelector("img,a,.nw")); };
+      const hp = has(pre), hq = has(post);
+      const edge = (el, end) => { const tw = document.createTreeWalker(el, NodeFilter.SHOW_TEXT); let n, t = null; while ((n = tw.nextNode())) { if (!end) { t = n; break; } t = n; } if (t) t.data = end ? t.data.replace(/\s+$/, "") : t.data.replace(/^\s+/, ""); };
+      if (hq) { const c = a.cloneNode(false); c.appendChild(post.extractContents()); a.after(c); edge(c, false); }
+      if (hp) { const c = a.cloneNode(false); c.appendChild(pre.extractContents()); a.before(c); edge(c, true); }
+      if (hp || hq) { const nr = document.createRange(); nr.selectNodeContents(a); s.removeAllRanges(); s.addRange(nr); last = nr.cloneRange(); }
+      return { whole: false, els: [a] };
+    }
+    // every line the selection touches (the innermost ones: an item, not its whole list)
+    const els = [...ed.querySelectorAll(BLOCKSEL)].filter(el => !inWidget(el) && r.intersectsNode(el) && !el.querySelector(BLOCKSEL));
+    [a, b].forEach(x => { if (x && !els.includes(x) && !els.some(e => x.contains(e))) els.push(x); });
+    return { whole: false, els: els.length ? els : topBlocks() };
+  }
+  /* ----- clear formatting (v0.5.4, Devon): nothing selected = the whole note; words selected = only them. Takes off bold,
+     italic, underline, strikethrough, colour, highlight, font and size from the words, and titles / headings, align, indent
+     and spacing from the lines they are on. Lists, checklists, links, photos, widgets and paranotes stay. ----- */
+  const FMT_SEL = "b,strong,i,em,u,s,strike,font,span[data-c],span[data-s],span[data-f],span[data-h]";
+  function plainEl(x) { // take the formatting off one element (a paranote span keeps being a paranote)
+    if (x.tagName === "SPAN" && x.hasAttribute("data-ann")) { ["data-c", "data-s", "data-f", "data-h", "data-hl", "style"].forEach(a => x.removeAttribute(a)); return; }
+    x.replaceWith(...x.childNodes);
+  }
+  function plainLine(el) { // a title / heading becomes a plain line; align, indent and spacing come off
+    ["data-al", "data-in", "data-lh", "data-ps"].forEach(a => el.removeAttribute(a));
+    if (/^H[1-6]$/.test(el.tagName)) { const d = document.createElement("div"); [...el.attributes].forEach(a => d.setAttribute(a.name, a.value)); d.append(...el.childNodes); el.replaceWith(d); return d; }
+    return el;
+  }
+  function clearFormat() {
+    api.focus();
+    const s = getSelection(); let r = s.rangeCount ? s.getRangeAt(0) : null;
+    if (!r || !ed.contains(r.commonAncestorContainer)) r = last && ed.contains(last.commonAncestorContainer) ? last : null;
+    const whole = !r || r.collapsed || !r.toString().replace(/[\s​]/g, "");
+    if (whole) {
+      [...ed.querySelectorAll(FMT_SEL)].reverse().forEach(x => { if (!inWidget(x)) plainEl(x); });
+      [...ed.querySelectorAll("[data-al],[data-in],[data-lh],[data-ps],h1,h2,h3,h4,h6")].forEach(x => { if (!inWidget(x) && x.isConnected) plainLine(x); });
+      ed.normalize(); save(); flush(); annLayout(); return true;
+    }
+    // only the selected words: split the text at the ends, then split each formatting element around them
+    let { startContainer: sc, startOffset: so, endContainer: ec, endOffset: eo } = r;
+    if (ec.nodeType === 3 && eo < ec.data.length) ec.splitText(eo);
+    if (sc.nodeType === 3 && so > 0) { const t = sc.splitText(so); if (ec === sc) { ec = t; eo = t.data.length; } sc = t; so = 0; }
+    const rr = document.createRange(); rr.setStart(sc, so); rr.setEnd(ec, eo);
+    const first = sc.nodeType === 3 ? sc : (sc.childNodes[so] || sc), lastN = ec.nodeType === 3 ? ec : (ec.childNodes[eo - 1] || ec);
+    const lines = new Set(); [...ed.querySelectorAll(BLOCKSEL + ",h1,h2,h3,h4,h6")].forEach(el => { if (!inWidget(el) && rr.intersectsNode(el) && !el.querySelector(BLOCKSEL)) lines.add(el); });
+    [lineOf(first), lineOf(lastN)].forEach(x => { if (x) lines.add(x); });
+    const hit = [...ed.querySelectorAll(FMT_SEL)].filter(x => !inWidget(x) && rr.intersectsNode(x)).reverse();
+    hit.forEach(x => {
+      if (!x.isConnected) return;
+      if (x.contains(first)) { const r1 = document.createRange(); r1.setStart(x, 0); r1.setEndBefore(first); const f = r1.extractContents(); if (f.textContent || (f.querySelector && f.querySelector("img,a"))) { const c = x.cloneNode(false); c.append(f); x.before(c); } }
+      if (x.contains(lastN)) { const r2 = document.createRange(); r2.setStartAfter(lastN); r2.setEnd(x, x.childNodes.length); const f = r2.extractContents(); if (f.textContent || (f.querySelector && f.querySelector("img,a"))) { const c = x.cloneNode(false); c.append(f); x.after(c); } }
+      plainEl(x);
+    });
+    lines.forEach(el => { if (el.isConnected) plainLine(el); });
+    try { const nr = document.createRange(); nr.setStartBefore(first); nr.setEndAfter(lastN); s.removeAllRanges(); s.addRange(nr); last = nr.cloneRange(); } catch (e) {}
+    save(); flush(); annLayout(); return false;
+  }
+  // what the line the caret is on has: { al, in, lh, ps }
+  function layoutAt() {
+    const s = getSelection(), r = s.rangeCount && ed.contains(s.getRangeAt(0).commonAncestorContainer) ? s.getRangeAt(0) : last;
+    const el = (r && lineOf(r.startContainer)) || ed.firstElementChild;
+    const get = a => { let x = el; while (x && x !== ed) { if (x.hasAttribute(a)) return x.getAttribute(a); x = x.parentElement; } return ""; };
+    return { al: get("data-al"), in: get("data-in"), lh: get("data-lh"), ps: get("data-ps"), whole: !r || r.collapsed || !r.toString().trim() };
+  }
+  // prop "al" (left | center | right | "" none), "in" ("+" | "-" | "0"), "lh" (1 … 3 | "" normal), "ps" (0 | 6 | 12 | 24 | "" normal)
+  function blockStyle(prop, v) {
+    api.focus();
+    const t = layoutTargets(prop === "al" || prop === "in"), a = "data-" + prop;
+    let base = 0; if (t.whole && prop === "in") base = +(((t.els[0] || {}).getAttribute && t.els[0].getAttribute(a)) || 0);
+    if (t.whole) ed.querySelectorAll(`[${a}]`).forEach(x => x.removeAttribute(a)); // the whole note: one setting for every line
+    t.els.forEach(el => {
+      if (prop === "in") { const cur = t.whole ? base : +(el.getAttribute(a) || 0), n = v === "+" ? Math.min(8, cur + 1) : v === "-" ? Math.max(0, cur - 1) : 0; if (n) el.setAttribute(a, String(n)); else el.removeAttribute(a); return; }
+      if (v !== "" && v != null && BLAYOUT[a].has(String(v))) el.setAttribute(a, String(v)); else el.removeAttribute(a);
+      el.querySelectorAll(`[${a}]`).forEach(x => x.removeAttribute(a)); // lines inside take the new setting
+    });
+    save(); flush(); annLayout();
+    return t.whole;
+  }
   // Chromium edits inline colours itself (it may clear or copy style="color"): keep data-c in step with what is shown
   function syncColors() {
     ed.querySelectorAll("span").forEach(sp => {
       const k = sp.getAttribute("data-c"), c = hexOf(sp.style.color);
-      if (k && HEX.test(k) && !c) { sp.removeAttribute("data-c"); sp.removeAttribute("style"); if (bare(sp)) sp.replaceWith(...sp.childNodes); }
+      const hk = sp.getAttribute("data-h"), hb = sp.style.backgroundColor ? hexOf(sp.style.backgroundColor) : "";
+      if (hk && HEX.test(hk) && !hb) { sp.removeAttribute("data-h"); sp.removeAttribute("data-hl"); } else if (hb && hb !== CLEARH && (!hk || HEX.test(hk)) && hk !== hb) { sp.setAttribute("data-h", hb); const tn = hlTone(hb); if (tn) sp.setAttribute("data-hl", tn); else sp.removeAttribute("data-hl"); }
+      if (k && HEX.test(k) && !c) { sp.removeAttribute("data-c"); sp.style.color = ""; if (sp.getAttribute("style") === "") sp.removeAttribute("style"); if (bare(sp)) { sp.replaceWith(...sp.childNodes); return; } }
       else if (c && (!k || HEX.test(k)) && k !== c) sp.setAttribute("data-c", c);
       else if (!c && sp.getAttribute("style") === "") sp.removeAttribute("style");
     });
   }
   const api = { el: ed, id, flush, insertFolderLink, openFolder: fid => { if (!o.openFolder) return false; flush(); o.openFolder(fid); return true; }, indentItem, outdentItem, annotations: annList, addAnnotation, setAnnotation, removeAnnotation, showAnnotations, focusAnnotation, relayoutAnnotations: () => annLayout(),
     openSide: noteId => { if (!o.openSide || !get(noteId)) return false; flush(); o.openSide(noteId); return true; },
+    peek: noteId => { if (!o.peek) return false; flush(); o.peek(noteId); return true; },
     openNote: noteId => { if (!o.openNote || !get(noteId)) return false; flush(); o.openNote(noteId); return true; },
     addFiles, addURL, addVideoLink, linkRange, insertNoteLink, insertWidgetAt, insertText, addWidget, insertBlock,
     focus: () => { ed.focus({ preventScroll: true }); const s = getSelection(); if (last && (!s.rangeCount || !ed.contains(s.getRangeAt(0).commonAncestorContainer))) { s.removeAllRanges(); s.addRange(last); } },
     changed: () => save(),
     // kind "color" (a #hex, or "" for the normal colour), "size" (a number, or "" for normal), "font" (a key, or "" for the note's font)
+    blockStyle, layoutAt, clearFormat,
     format: (kind, v) => {
       api.focus(); document.execCommand("styleWithCSS", false, false);
       { const s0 = getSelection(), r0 = s0.rangeCount ? s0.getRangeAt(0) : null; // nothing selected: what is typed next gets it
@@ -2526,6 +2819,8 @@ function mountEditor(host, id, o = {}) {
       let made = [];
       const conv = over => { made = [...ed.querySelectorAll("font")].reverse().map(f => fontToSpan(f, over)).filter(Boolean).reverse(); };
       if (kind === "color") { document.execCommand("foreColor", false, hexOf(v) || CLEARC); conv({ def: !hexOf(v) }); if (!hexOf(v)) made = lift("data-c"); }
+      else if (kind === "hilite") { // Chromium writes a highlight as span style="background-color"; mark those spans data-h (v0.5.4)
+        document.execCommand("hiliteColor", false, hexOf(v) || CLEARH); made = hiliteSpans(); if (!hexOf(v)) made = lift("data-h"); }
       else if (kind === "font") { document.execCommand("fontName", false, "npf-" + (FKEYS.has(v) ? v : "_def")); conv({ def: !FKEYS.has(v) }); if (!FKEYS.has(v)) made = lift("data-f"); }
       else if (kind === "size") { const n = NSIZES.includes(+v) ? String(+v) : "n"; document.execCommand("fontSize", false, "7"); conv({ s: n }); }
       api.normalizeColors();
@@ -2713,9 +3008,10 @@ function toolbar(api) {
   const bar = document.createElement("div");
   bar.className = "nr-tools"; bar.setAttribute("role", "toolbar"); bar.setAttribute("aria-label", "Formatting");
   const mod = /Mac/.test(navigator.platform) ? "⌘" : "Ctrl+";
-  bar.innerHTML = `<button type="button" data-cmd="bold" title="Bold (${mod}B)" aria-label="Bold"><b>B</b></button><button type="button" data-cmd="italic" title="Italic (${mod}I)" aria-label="Italic"><i>I</i></button><button type="button" data-cmd="underline" title="Underline (${mod}U)" aria-label="Underline"><u>U</u></button><button type="button" data-blk="h3" title="Heading" aria-label="Heading">H</button><button type="button" data-cmd="strikeThrough" title="Strikethrough" aria-label="Strikethrough"><s>S</s></button>
+  bar.innerHTML = `<button type="button" data-cmd="bold" title="Bold (${mod}B)" aria-label="Bold"><b>B</b></button><button type="button" data-cmd="italic" title="Italic (${mod}I)" aria-label="Italic"><i>I</i></button><button type="button" data-cmd="underline" title="Underline (${mod}U)" aria-label="Underline"><u>U</u></button><button type="button" class="nr-dd nr-head" data-dd="heads" title="Titles and headings: Title, Subtitle, Heading 1, 2, 3" aria-haspopup="menu" aria-label="Titles and headings" aria-pressed="false"><span class="nr-ddv">H</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" data-cmd="strikeThrough" title="Strikethrough" aria-label="Strikethrough"><s>S</s></button>
     <span class="nr-sep"></span><button type="button" data-blk="ul" title="Bulleted list · press again to indent (Tab indents, Shift+Tab moves back, delete at the start takes the bullet off)" aria-label="Bulleted list">•≡</button><button type="button" data-blk="ol" title="Numbered list · delete at the start of a line takes the number off" aria-label="Numbered list">1.≡</button><button type="button" data-blk="ck" title="Checklist: click a box to tick an item off · press again to indent · delete at the start of a line takes the box off" aria-label="Checklist">☑</button>
-    <span class="nr-sep"></span><button type="button" class="nr-dd nr-font" data-dd="font" title="Font" aria-haspopup="listbox" aria-label="Font"><span class="nr-ddv">Default</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-dd nr-size" data-dd="size" title="Text size" aria-haspopup="listbox" aria-label="Text size"><span class="nr-ddv num">15</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-dd nr-colb" data-dd="color" title="Text colour" aria-haspopup="dialog" aria-label="Text colour"><span class="nr-cola" aria-hidden="true">A</span><span class="nr-car" aria-hidden="true">▾</span></button>
+    <span class="nr-sep"></span><button type="button" class="nr-dd nr-font" data-dd="font" title="Font" aria-haspopup="listbox" aria-label="Font"><span class="nr-ddv">Default</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-dd nr-size" data-dd="size" title="Text size" aria-haspopup="listbox" aria-label="Text size"><span class="nr-ddv num">15</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-dd nr-colb" data-dd="color" title="Text colour" aria-haspopup="dialog" aria-label="Text colour"><span class="nr-cola" aria-hidden="true">A</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-dd nr-hlb" data-dd="hilite" title="Highlight colour" aria-haspopup="dialog" aria-label="Highlight colour"><span class="nr-hla" aria-hidden="true">ab</span><span class="nr-car" aria-hidden="true">▾</span></button>
+    <span class="nr-sep"></span><button type="button" class="nr-dd nr-alb" data-dd="align" title="Align &amp; indent: nothing selected = the whole note, words selected = only those" aria-haspopup="menu" aria-label="Align and indent"><span class="nr-ali" aria-hidden="true">${ALIGN_IC.left}</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-dd nr-spb" data-dd="spacing" title="Line &amp; paragraph spacing" aria-haspopup="menu" aria-label="Line and paragraph spacing"><span class="nr-ali" aria-hidden="true">${SPACE_IC}</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-clr" data-a="clear" title="Clear formatting: nothing selected = the whole note, words selected = only those" aria-label="Clear formatting">${CLEAR_IC}</button>
     <span class="nr-sep"></span><button type="button" class="nr-sym" title="Emoji and symbols (Greek, maths, alchemical)" aria-haspopup="dialog">☺ Ω</button>
     <span class="nr-sep"></span><button type="button" class="nr-dd nr-wid" data-dd="widgets" title="Widgets: code box, music chart, lead sheet, graph" aria-haspopup="menu" aria-label="Widgets"><span class="nr-widg" aria-hidden="true">▦</span><span class="nr-ddv">Widgets</span><span class="nr-car" aria-hidden="true">▾</span></button>`;
   bar.addEventListener("mousedown", e => e.preventDefault()); // keep the selection in the note
@@ -2723,6 +3019,7 @@ function toolbar(api) {
     const b = e.target.closest("button"); if (!b) return;
     if (b.dataset.cmd) { api.focus(); document.execCommand(b.dataset.cmd); sync(); api.changed(); }
     else if (b.dataset.blk) { api.focus(); block(b.dataset.blk, api); sync(); api.changed(); }
+    else if (b.dataset.a === "clear") { closeDD(); if (api.clearFormat) { const all = api.clearFormat(); sync(); if (window.InquireNotes && InquireNotes.toast) InquireNotes.toast(all ? "Formatting cleared from the whole note." : "Formatting cleared from the selected words.", null, 2500); } }
     else if (b.dataset.dd) ddPanel(b, b.dataset.dd, api, sync);
     else if (b.classList.contains("nr-sym")) symbolPanel(b, api);
     else if (b.dataset.w) api.addWidget(b.dataset.w);
@@ -2731,8 +3028,11 @@ function toolbar(api) {
     bar.querySelectorAll("[data-cmd]").forEach(b => { let on = false; try { on = document.queryCommandState(b.dataset.cmd); } catch (e) {} b.setAttribute("aria-pressed", String(on)); });
     const el = caretEl(api), L = el && el.closest("ul, ol"), on = { h3: !!(el && el.closest("h3")), ul: !!(L && L.tagName === "UL" && !L.hasAttribute("data-ck")), ol: !!(L && L.tagName === "OL"), ck: !!(L && L.hasAttribute("data-ck")) };
     bar.querySelectorAll("[data-blk]").forEach(b => b.setAttribute("aria-pressed", String(on[b.dataset.blk])));
+    const hs = headAt(el), hb = bar.querySelector(".nr-head"); hb.setAttribute("aria-pressed", String(!!hs)); hb.querySelector(".nr-ddv").textContent = hs ? hs[3] : "H"; hb.title = hs ? hs[1] + ": choose another style, or Normal text" : "Titles and headings: Title, Subtitle, Heading 1, 2, 3";
     const f = fmtAt(fmtEl(api)); bar.querySelector(".nr-font .nr-ddv").textContent = f.fontName; bar.querySelector(".nr-font").style.setProperty("--ff", f.fontStack);
-    bar.querySelector(".nr-size .nr-ddv").textContent = f.size; bar.querySelector(".nr-colb").style.setProperty("--c", f.color); };
+    bar.querySelector(".nr-size .nr-ddv").textContent = f.size; bar.querySelector(".nr-colb").style.setProperty("--c", f.color);
+    const hb2 = bar.querySelector(".nr-hlb"); if (f.hl) hb2.style.setProperty("--h", f.hl); else hb2.style.removeProperty("--h"); hb2.classList.toggle("on", !!f.hl);
+    if (api.layoutAt) { const L = api.layoutAt(); bar.querySelector(".nr-alb .nr-ali").innerHTML = ALIGN_IC[L.al || "left"]; bar.querySelector(".nr-alb").classList.toggle("on", !!(L.al || L.in)); bar.querySelector(".nr-spb").classList.toggle("on", !!(L.lh || L.ps)); } };
   document.addEventListener("selectionchange", sync);
   bar.destroy = () => { document.removeEventListener("selectionchange", sync); closeDD(); };
   return bar;
@@ -2753,16 +3053,41 @@ function fmtAt(el) {
   const fsp = el && el.closest("span[data-f]"), ssp = el && el.closest("span[data-s]"), fk = fsp ? fsp.dataset.f : "";
   const nf = (NOTES().NFONTS || []).find(f => f[0] === fk);
   const sz = ssp ? (OLDSIZE[ssp.dataset.s] || +ssp.dataset.s || 15) : 15;
-  return { font: fk, fontName: nf ? nf[1] : "Default", fontStack: FSTACK[fk] || "var(--sans)", size: sz, color: el ? getComputedStyle(el).color : "var(--text)" };
+  const hsp = el && el.closest("span[data-h]"), hl = hsp && /^#[0-9a-f]{6}$/i.test(hsp.dataset.h) ? hsp.dataset.h : "";
+  return { font: fk, fontName: nf ? nf[1] : "Default", fontStack: FSTACK[fk] || "var(--sans)", size: sz, color: el ? getComputedStyle(el).color : "var(--text)", hl };
 }
 let dd = null;
 function closeDD() { if (dd) { dd.remove(); dd = null; document.removeEventListener("pointerdown", outDD, true); window.removeEventListener("keydown", keyDD, true); } }
 const outDD = e => { if (dd && !dd.contains(e.target) && !e.target.closest(".nr-dd")) closeDD(); };
 const keyDD = e => { if (e.key === "Escape" && dd) { e.preventDefault(); e.stopPropagation(); closeDD(); } };
-const RECENT_KEY = "notepath.recentcolors";
-const recent = () => { try { const a = JSON.parse(localStorage.getItem(RECENT_KEY) || "[]"); return Array.isArray(a) ? a.filter(c => /^#[0-9a-f]{6}$/.test(c)).slice(0, 10) : []; } catch (e) { return []; } };
-const addRecent = c => { try { localStorage.setItem(RECENT_KEY, JSON.stringify([c, ...recent().filter(x => x !== c)].slice(0, 10))); } catch (e) {} };
+// recent colours: text in notepath.recentcolors, highlights in notepath.recenthl (v0.5.4)
+const RECENT_KEY = { color: "notepath.recentcolors", hilite: "notepath.recenthl" };
+const recent = (k = "color") => { try { const a = JSON.parse(localStorage.getItem(RECENT_KEY[k]) || "[]"); return Array.isArray(a) ? a.filter(c => /^#[0-9a-f]{6}$/.test(c)).slice(0, 10) : []; } catch (e) { return []; } };
+const addRecent = (c, k = "color") => { try { localStorage.setItem(RECENT_KEY[k], JSON.stringify([c, ...recent(k).filter(x => x !== c)].slice(0, 10))); } catch (e) {} };
+/* colour presets (v0.5.4, Devon): your own swatches under the spectrum, one set for text and one for highlights, kept in
+   notepath.colorpresets; ＋ saves the colour shown beside the code, Edit (or a right-click) takes one away */
+const PRESET_KEY = "notepath.colorpresets", PRESET_MAX = 18;
+const PRESET_DEF = { color: ["#f2b84b", "#5cc8e0", "#f07ca0", "#b49bff", "#7bd88f", "#e5675b"], hilite: ["#ffe066", "#8ce99a", "#66d9e8", "#faa2c1", "#ffc078", "#b197fc"] };
+const presets = k => { try { const o = JSON.parse(localStorage.getItem(PRESET_KEY) || "null"); const a = o && Array.isArray(o[k]) ? o[k] : PRESET_DEF[k]; return a.filter(c => /^#[0-9a-f]{6}$/.test(c)).slice(0, PRESET_MAX); } catch (e) { return PRESET_DEF[k].slice(); } };
+const setPresets = (k, a) => { try { const o = JSON.parse(localStorage.getItem(PRESET_KEY) || "null") || {}; ["color", "hilite"].forEach(x => { if (!Array.isArray(o[x])) o[x] = PRESET_DEF[x].slice(); }); o[k] = a.slice(0, PRESET_MAX); localStorage.setItem(PRESET_KEY, JSON.stringify(o)); } catch (e) {} };
+/* align & indent, line & paragraph spacing (v0.5.4): icons and choices for the two tabs; the work is api.blockStyle in notes.js */
+const AL_PATH = { left: "M2 3h12M2 6.5h8M2 10h12M2 13.5h7", center: "M2 3h12M4 6.5h8M2 10h12M4.5 13.5h7", right: "M2 3h12M6 6.5h8M2 10h12M7 13.5h7", "": "M2 3h12M2 6.5h12M2 10h12M2 13.5h12" };
+const svgI = d => `<svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">${d}</svg>`;
+const ALIGN_IC = Object.fromEntries(Object.entries(AL_PATH).map(([k, d]) => [k, svgI(`<path d="${d}"/>`)]));
+const CLEAR_IC = svgI('<path d="M3 3.5h8M7 3.5l-2.2 9.5"/><path d="M9.5 9.5l4 4M13.5 9.5l-4 4"/>');
+const SPACE_IC = svgI('<path d="M7 3.5h7M7 8h7M7 12.5h7M3 2.5v11M1.5 4l1.5-1.5L4.5 4M1.5 12l1.5 1.5 1.5-1.5"/>');
+const IND_IC = { "+": svgI('<path d="M7 3h7M7 6.5h7M7 10h7M2 13.5h12M2 4.5l2.5 2-2.5 2"/>'), "-": svgI('<path d="M7 3h7M7 6.5h7M7 10h7M2 13.5h12M4.5 4.5l-2.5 2 2.5 2"/>'), "0": svgI('<path d="M2 3h12M2 6.5h12M2 10h12M2 13.5h12"/>') };
+const ALIGNS = [["", "None", "As the note normally is"], ["left", "Left", "Lines start at the left"], ["center", "Middle", "Lines are centred"], ["right", "Right", "Lines end at the right"]];
+const INDENTS = [["-", "Less", "Move back out one step"], ["+", "More", "Move in one step"], ["0", "No indent", "Back to the left edge"]];
+const LINE_SP = [["", "Normal"], ["1", "1.0"], ["1.15", "1.15"], ["1.5", "1.5"], ["2", "2.0"], ["2.5", "2.5"], ["3", "3.0"]];
+const PARA_SP = [["", "Normal"], ["0", "None"], ["6", "Small"], ["12", "Medium"], ["24", "Large"]];
 const toHex = (r, g, b) => "#" + [r, g, b].map(x => Math.round(x).toString(16).padStart(2, "0")).join("");
+/* ---------- titles and headings (v0.5.4, Devon): the H tab. [tag, name, what it is for, short label on the H button] ----------
+   Title h1 · Subtitle h6 · Heading 1 h2 · Heading 2 h3 (the H heading before 0.5.4) · Heading 3 h4; Normal text = a plain line */
+const HEADS = [["h1", "Title", "The biggest line, for the top of the note", "T"], ["h6", "Subtitle", "Under a title: lighter, in italics", "Sub"],
+  ["h2", "Heading 1", "Starts a section", "H1"], ["h3", "Heading 2", "A part of a section", "H2"], ["h4", "Heading 3", "A smaller heading", "H3"]];
+const HTAGS = HEADS.map(x => x[0].toUpperCase()).join(",");
+function headAt(el) { const h = el && el.closest(HTAGS); return h ? HEADS.find(x => x[0] === h.tagName.toLowerCase()) : null; }
 const WIDGET_MENU = [["code", "&lt;/&gt;", "Code box", "Code with highlighting and line numbers"], ["music", "♪", "Music chart", "A staff, a keyboard, chords and playback"],
   ["sheet", "𝄞", "Lead sheet", "Bars with chord symbols and melody"], ["graph", "∿", "Graph", "Click points on a grid and get their equations"]];
 function ddPanel(btn, kind, api, sync) {
@@ -2772,7 +3097,22 @@ function ddPanel(btn, kind, api, sync) {
   // the words selected when the menu opened (typing a colour code moves the focus into the menu)
   const s0 = getSelection(), saved = s0.rangeCount && api.el.contains(s0.getRangeAt(0).commonAncestorContainer) ? s0.getRangeAt(0).cloneRange() : null;
   const apply = (k, v) => { closeDD(); if (saved) { api.el.focus({ preventScroll: true }); const s1 = getSelection(); s1.removeAllRanges(); s1.addRange(saved); } api.format(k, v); sync(); };
-  if (kind === "widgets") { // one tab for every widget (Devon, Oct 2026): keeps the toolbar clean
+  if (kind === "align" || kind === "spacing") {
+    const L = api.layoutAt ? api.layoutAt() : { whole: true }, scope = L.whole ? "nothing selected: the whole note" : "only the selected words";
+    const run = (prop, v) => { closeDD(); if (saved) { api.el.focus({ preventScroll: true }); const s1 = getSelection(); s1.removeAllRanges(); s1.addRange(saved); } else api.focus(); api.blockStyle(prop, v); sync(); };
+    dd.setAttribute("role", "menu"); dd.setAttribute("aria-label", kind === "align" ? "Align and indent" : "Line and paragraph spacing");
+    const chips = (prop, list, cur, ic) => `<div class="np-lay" role="group">${list.map(([v, n, d]) => `<button type="button" role="menuitemradio" data-p="${prop}" data-v2="${v}" aria-checked="${prop !== "in" && String(cur || "") === v}"${d ? ` title="${esc(d)}"` : ""}>${ic ? `<span class="np-layi" aria-hidden="true">${ic[v]}</span>` : ""}<span>${esc(n)}</span></button>`).join("")}</div>`;
+    dd.innerHTML = kind === "align"
+      ? `<div class="np-pop-h">Align &amp; indent <span>${scope}</span></div><div class="np-pop-sub">Align</div>${chips("al", ALIGNS, L.al, ALIGN_IC)}<div class="np-pop-sub">Indent${L.in ? ` <b class="num">${L.in}</b>` : ""}</div>${chips("in", INDENTS, "", IND_IC)}`
+      : `<div class="np-pop-h">Line &amp; paragraph spacing <span>${scope.replace("words", "lines")}</span></div><div class="np-pop-sub">Line spacing</div>${chips("lh", LINE_SP, L.lh)}<div class="np-pop-sub">Space after each paragraph</div>${chips("ps", PARA_SP, L.ps)}`;
+    dd.addEventListener("click", e => { const b = e.target.closest("button[data-p]"); if (b) run(b.dataset.p, b.dataset.v2); });
+  } else if (kind === "heads") { // titles and headings: the line the caret is on (or every line selected) takes the style
+    const curH = headAt(caretEl(api)), ck = curH ? curH[0] : "div";
+    dd.setAttribute("role", "menu"); dd.setAttribute("aria-label", "Titles and headings");
+    dd.innerHTML = `<div class="np-pop-h">Titles &amp; headings <span>for the line you are on</span></div><div class="np-heads">${[["div", "Normal text", "A plain line", ""], ...HEADS].map(([t, n, d]) => `<button type="button" role="menuitemradio" data-h="${t}" aria-checked="${t === ck}" title="${esc(d)}"><span class="np-hs np-hs-${t}">${esc(n)}</span><small>${esc(d)}</small></button>`).join("")}</div>`;
+    dd.addEventListener("click", e => { const b = e.target.closest("button[data-h]"); if (!b) return; closeDD(); if (saved) { api.el.focus({ preventScroll: true }); const s1 = getSelection(); s1.removeAllRanges(); s1.addRange(saved); } else api.focus();
+      block(b.dataset.h === "div" ? "p" : b.dataset.h, api); sync(); api.changed(); });
+  } else if (kind === "widgets") { // one tab for every widget (Devon, Oct 2026): keeps the toolbar clean
     dd.setAttribute("role", "menu"); dd.setAttribute("aria-label", "Widgets");
     dd.innerHTML = `<div class="np-pop-h">Widgets <span>added after the line you are on</span></div><div class="np-wids">${WIDGET_MENU.map(([w, g, n, d]) => `<button type="button" role="menuitem" data-w="${w}"><span class="np-wg" aria-hidden="true">${g}</span><span><b>${n}</b><small>${d}</small></span></button>`).join("")}</div>`;
     dd.addEventListener("click", e => { const b = e.target.closest("button[data-w]"); if (!b) return; closeDD(); if (saved) { api.el.focus({ preventScroll: true }); const s1 = getSelection(); s1.removeAllRanges(); s1.addRange(saved); } api.addWidget(b.dataset.w); });
@@ -2783,14 +3123,29 @@ function ddPanel(btn, kind, api, sync) {
   } else if (kind === "size") {
     dd.setAttribute("role", "listbox"); dd.setAttribute("aria-label", "Text size");
     dd.innerHTML = `<div class="np-pop-h">Size <span>normal text is 15</span></div><div class="np-sizes">${(NOTES().NSIZES || []).map(n => `<button type="button" role="option" class="num" data-v="${n}" aria-selected="${cur.size === n}">${n}</button>`).join("")}</div>`;
-  } else {
-    dd.setAttribute("role", "dialog"); dd.setAttribute("aria-label", "Text colour");
-    const rc = recent();
-    dd.innerHTML = `<div class="np-pop-h">Colour <span>click or drag on the spectrum</span></div>
-      <canvas class="np-spec" width="248" height="132" aria-label="Colour spectrum"></canvas><canvas class="np-grey" width="248" height="16" aria-label="Greys"></canvas>
+  } else { // text colour and highlight colour (v0.5.4): the same panel; presets under the spectrum
+    const HL = kind === "hilite", what = HL ? "Highlight" : "Colour";
+    dd.setAttribute("role", "dialog"); dd.setAttribute("aria-label", HL ? "Highlight colour" : "Text colour");
+    const rc = recent(kind);
+    dd.innerHTML = `<div class="np-pop-h">${what} <span>click or drag on the spectrum</span></div>
+      <canvas class="np-spec" width="248" height="132" aria-label="${what} spectrum"></canvas><canvas class="np-grey" width="248" height="16" aria-label="Greys"></canvas>
+      <div class="np-pop-sub np-psub">Presets <button type="button" class="np-pedit" aria-pressed="false" title="Take presets away">Edit</button></div><div class="np-presets" role="group" aria-label="${what} presets"></div>
       <div class="np-crow"><span class="np-cprev"></span><input class="np-hex" maxlength="7" spellcheck="false" aria-label="Colour code (hex)" placeholder="#RRGGBB"><button type="button" class="nw-b np-capply">Apply</button></div>
-      ${rc.length ? `<div class="np-pop-sub">Recent</div><div class="np-recent">${rc.map(c => `<button type="button" data-c="${c}" style="--c:${c}" title="${c.toUpperCase()}" aria-label="Recent colour ${c.toUpperCase()}"></button>`).join("")}</div>` : ""}
-      <button type="button" class="np-cnorm" data-c="">⊘ Normal colour</button>`;
+      ${rc.length ? `<div class="np-pop-sub">Recent</div><div class="np-recent">${rc.map(c => `<button type="button" data-c="${c}" style="--c:${c}" title="${c.toUpperCase()}" aria-label="Recent ${HL ? "highlight" : "colour"} ${c.toUpperCase()}"></button>`).join("")}</div>` : ""}
+      <button type="button" class="np-cnorm" data-c="">${HL ? "⊘ No highlight" : "⊘ Normal colour"}</button>`;
+    const pbox = dd.querySelector(".np-presets"), pedit = dd.querySelector(".np-pedit");
+    const drawP = () => { const ps = presets(kind), ed = pedit.getAttribute("aria-pressed") === "true"; pbox.classList.toggle("editing", ed);
+      pbox.innerHTML = ps.map(c => `<button type="button" class="np-pre" data-pc="${c}" style="--c:${c}" title="${ed ? "Take away " : ""}${c.toUpperCase()}${ed ? "" : " · right-click to take it away"}" aria-label="${ed ? "Take away preset" : "Preset"} ${c.toUpperCase()}">${ed ? "✕" : ""}</button>`).join("")
+        + (ed ? "" : `<button type="button" class="np-padd" title="${ps.length >= PRESET_MAX ? "Presets are full: take one away first" : "Save the colour shown below as a preset"}" aria-label="Save the colour as a preset"${ps.length >= PRESET_MAX ? " disabled" : ""}>＋</button>`)
+        + (!ps.length && !ed ? `<span class="np-pnone">Pick a colour, then ＋ keeps it here</span>` : ""); };
+    pedit.addEventListener("click", () => { pedit.setAttribute("aria-pressed", String(pedit.getAttribute("aria-pressed") !== "true")); pedit.textContent = pedit.getAttribute("aria-pressed") === "true" ? "Done" : "Edit"; drawP(); });
+    pbox.addEventListener("click", e => {
+      const add = e.target.closest(".np-padd"); if (add) { const c = dd.dataset.pick; if (c && /^#[0-9a-f]{6}$/.test(c)) { setPresets(kind, [...presets(kind).filter(x => x !== c), c]); drawP(); } return; }
+      const b = e.target.closest(".np-pre"); if (!b) return;
+      if (pbox.classList.contains("editing")) { setPresets(kind, presets(kind).filter(x => x !== b.dataset.pc)); drawP(); return; }
+      addRecent(b.dataset.pc, kind); apply(kind, b.dataset.pc); });
+    pbox.addEventListener("contextmenu", e => { const b = e.target.closest(".np-pre"); if (!b) return; e.preventDefault(); e.stopPropagation(); setPresets(kind, presets(kind).filter(x => x !== b.dataset.pc)); drawP(); });
+    drawP();
     const sp = dd.querySelector(".np-spec"), gr = dd.querySelector(".np-grey"), hex = dd.querySelector(".np-hex"), prev = dd.querySelector(".np-cprev");
     const g = sp.getContext("2d", { willReadFrequently: true }), W = sp.width, H = sp.height;
     const hg = g.createLinearGradient(0, 0, W, 0); for (let i = 0; i <= 12; i++) hg.addColorStop(i / 12, `hsl(${i * 30},100%,50%)`);
@@ -2799,20 +3154,20 @@ function ddPanel(btn, kind, api, sync) {
     g.fillStyle = vg; g.fillRect(0, 0, W, H);
     const gg = gr.getContext("2d", { willReadFrequently: true }), grd = gg.createLinearGradient(0, 0, gr.width, 0); grd.addColorStop(0, "#fff"); grd.addColorStop(1, "#000"); gg.fillStyle = grd; gg.fillRect(0, 0, gr.width, gr.height);
     const show = c => { prev.style.background = c; hex.value = c.toUpperCase(); dd.dataset.pick = c; };
-    show(/^#[0-9a-f]{6}$/i.test(rgbHex(cur.color)) ? rgbHex(cur.color) : "#f2b84b");
+    show(HL ? (cur.hl || rc[0] || "#ffe066") : /^#[0-9a-f]{6}$/i.test(rgbHex(cur.color)) ? rgbHex(cur.color) : "#f2b84b");
     const pickAt = (cv, ctx, e) => { const r = cv.getBoundingClientRect(), x = Math.max(0, Math.min(cv.width - 1, (e.clientX - r.left) / r.width * cv.width)), y = Math.max(0, Math.min(cv.height - 1, (e.clientY - r.top) / r.height * cv.height));
       const d = ctx.getImageData(x | 0, y | 0, 1, 1).data; return toHex(d[0], d[1], d[2]); };
     [[sp, g], [gr, gg]].forEach(([cv, ctx]) => {
       cv.addEventListener("pointerdown", e => { e.preventDefault(); cv.setPointerCapture(e.pointerId); show(pickAt(cv, ctx, e)); cv._drag = true; });
       cv.addEventListener("pointermove", e => { if (cv._drag) show(pickAt(cv, ctx, e)); });
-      cv.addEventListener("pointerup", e => { if (!cv._drag) return; cv._drag = false; const c = pickAt(cv, ctx, e); addRecent(c); apply("color", c); });
+      cv.addEventListener("pointerup", e => { if (!cv._drag) return; cv._drag = false; const c = pickAt(cv, ctx, e); addRecent(c, kind); apply(kind, c); });
     });
     hex.addEventListener("input", () => { const v = hex.value.trim().replace(/^([0-9a-f]{6})$/i, "#$1"); if (/^#[0-9a-f]{6}$/i.test(v)) { prev.style.background = v; dd.dataset.pick = v.toLowerCase(); } });
     hex.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); dd.querySelector(".np-capply").click(); } });
-    dd.querySelector(".np-capply").addEventListener("click", () => { const c = dd.dataset.pick; if (c) { addRecent(c); apply("color", c); } });
+    dd.querySelector(".np-capply").addEventListener("click", () => { const c = dd.dataset.pick; if (c) { addRecent(c, kind); apply(kind, c); } });
   }
   dd.addEventListener("mousedown", e => { if (!e.target.closest("input")) e.preventDefault(); }); // keep the selection in the note
-  dd.addEventListener("click", e => { const b = e.target.closest("button[data-v], button[data-c]"); if (!b) return; apply(kind === "color" ? "color" : kind, b.dataset.v != null ? b.dataset.v : b.dataset.c); });
+  dd.addEventListener("click", e => { const b = e.target.closest("button[data-v], button[data-c]"); if (!b) return; apply(kind, b.dataset.v != null ? b.dataset.v : b.dataset.c); });
   document.body.appendChild(dd);
   const r = btn.getBoundingClientRect(), w = dd.offsetWidth, h = dd.offsetHeight;
   dd.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.left)) + "px";
@@ -2827,7 +3182,9 @@ function caretEl(api) { const s = getSelection(); if (!s.rangeCount) return null
 // does that. The bullet or checklist button again indents the item under the one above (api.indentItem); numbers again do nothing.
 function block(kind, api) {
   const el = caretEl(api), list = el && el.closest("ul, ol"), inList = list && api.el.contains(list) ? list : null;
-  if (kind === "h3") { document.execCommand("formatBlock", false, el && el.closest("h3") ? "div" : "h3"); return; }
+  if (kind === "p") { if (headAt(el)) document.execCommand("formatBlock", false, "div"); return; } // Normal text
+  if (/^h[12346]$/.test(kind)) { // a title or heading; the same one again makes it a normal line (the old H did that too)
+    document.execCommand("formatBlock", false, el && el.closest(kind) ? "div" : kind); return; }
   if (kind === "ol") { if (inList && inList.tagName === "OL") return; document.execCommand("insertOrderedList"); return; }
   if (kind === "ul") {
     if (inList && inList.hasAttribute("data-ck")) { inList.removeAttribute("data-ck"); return; } // checklist → bullets
@@ -2877,7 +3234,7 @@ function hlLine(line, lang) {
   }
   return out;
 }
-// an indented note's text: [words](https://…) and bare https:// addresses become links (notes.js uses the same rules)
+// a paranote's text: [words](https://…) and bare https:// addresses become links (notes.js uses the same rules)
 function annHTML(t) {
   const out = [], rest = String(t || ""), re = /\[([^\]\n]{1,200})\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s<>"']+[^\s<>"'.,;:!?)\]])/g; let m, at = 0;
   while ((m = re.exec(rest))) { out.push(esc(rest.slice(at, m.index))); const url = m[2] || m[3], label = m[1] || m[3];
@@ -2895,7 +3252,7 @@ function mountCode(el) {
   let anns = Array.isArray(d.anns) ? d.anns.filter(a => a && /^[a-z0-9]{4,24}$/i.test(a.id) && a.end > a.start).map(a => ({ id: a.id, start: +a.start, end: +a.end, text: String(a.text || "").slice(0, 4000) })) : [];
   const draw = () => { const ls = ta.value.split("\n"); hl.innerHTML = ls.map(l => hlLine(l, lang.value) || " ").join("\n") + "\n"; gut.innerHTML = ls.map((_, i) => `<span>${i + 1}</span>`).join(""); ta.rows = Math.max(3, Math.min(24, ls.length + 1)); annView(); };
   const save = () => writeSrc(el, Object.assign({ lang: lang.value, title: title.value.trim(), src: ta.value }, anns.length ? { anns } : {}));
-  /* indented notes on code (Devon, Oct 12 2026): { id, start, end, text } over the source; they follow edits (shifted, or
+  /* paranotes on code (Devon, Oct 12 2026): { id, start, end, text } over the source; they follow edits (shifted, or
      dropped when their code is deleted). While shown and the box is not being typed in, a view replaces the editor: each
      line with its number, the noted code marked, and the note under its line with a right-angled line from the middle of
      the code. Click the code to type again; the notes come back when you leave the box. */
@@ -2920,7 +3277,7 @@ function mountCode(el) {
         html += hlLine(l.slice(at, a0), lang.value) + `<span class="nann-cw" data-cann="${x.id}">${hlLine(l.slice(a0, b0), lang.value)}</span>`; at = b0; });
       html += hlLine(l.slice(at), lang.value);
       return `<div class="nw-al" data-line="${i}"><span class="nw-an">${i + 1}</span><span class="nw-ac">${html || " "}</span></div>`
-        + here.map(x => `<div class="nann-cblk" data-cann="${x.id}"><div class="nann-card nann-ccard" data-cann="${x.id}" title="Click to edit this indented note">${x.text ? annHTML(x.text) : '<i class="nann-empty">Empty indented note</i>'}</div></div>`).join("");
+        + here.map(x => `<div class="nann-cblk" data-cann="${x.id}"><div class="nann-card nann-ccard" data-cann="${x.id}" title="Click to edit this paranote">${x.text ? annHTML(x.text) : '<i class="nann-empty">Empty paranote</i>'}</div></div>`).join("");
     }).join("");
     requestAnimationFrame(() => view.querySelectorAll(".nann-cblk").forEach(blk => { // the line from the middle of the noted code
       const w = view.querySelector(`.nann-cw[data-cann="${blk.dataset.cann}"]`); if (!w) return;
@@ -2944,7 +3301,7 @@ function mountCode(el) {
       if (document.activeElement !== ta && !el.contains(document.activeElement)) return { error: "Select the code first." };
       if (b <= a || !v.slice(a, b).trim()) return { error: "Select the code first." };
       if (v.slice(a, b).includes("\n")) return { error: "Select code on one line." };
-      if (anns.some(x => a < x.end && b > x.start)) return { error: "That code already has an indented note." };
+      if (anns.some(x => a < x.end && b > x.start)) return { error: "That code already has a paranote." };
       const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7); anns.push({ id, start: a, end: b, text: String(text || "") }); save(); return { id }; },
     set(id, text) { const x = anns.find(y => y.id === id); if (!x) return false; x.text = String(text || "").slice(0, 4000); save(); annView(); return true; },
     remove(id) { const n = anns.length; anns = anns.filter(y => y.id !== id); if (anns.length === n) return false; save(); annView(); return true; },
@@ -3887,6 +4244,7 @@ function pane(el, n, o) {
       <textarea class="nc-in" hidden spellcheck="false" placeholder="What your program reads (input(), scanf, cin, Scanner…): one line per answer." aria-label="Program input"></textarea></div>
     <div class="nc-status num"><span class="nc-s-lang"></span><span class="nc-s-pos">Ln 1, Col 1</span><span>${code.lang === "javascript" ? "Spaces: 2" : "Spaces: 4"}</span><span>UTF-8</span><span class="nc-s-run"></span></div>`;
   const q = s => $(s, el), out = q(".nc-out"), inp = q(".nc-in"), st = q(".nc-pst"), langSel = q(".nc-lang"), ti = q(".nb-title");
+  { const tr = q(".nb-trow"); if (tr && o.main && window.InquireApp && InquireApp.coverButton) tr.prepend(InquireApp.coverButton(NS, n.id, () => o.onSaved && o.onSaved())); } // cover photo (v0.5.4)
   inp.value = code.stdin || "";
   let t = null, tt = null;
   const flush = () => { if (t) { clearTimeout(t); t = null; NS.update(n.id, { code: { lang: code.lang, src: ed.getValue(), stdin: inp.value } }); if (o.onSaved) o.onSaved(); }
@@ -4443,31 +4801,34 @@ function ir(html) {
       if (tg === "B" || tg === "STRONG") s2.b = 1; if (tg === "I" || tg === "EM") s2.i = 1; if (tg === "U") s2.u = 1; if (tg === "S" || tg === "STRIKE") s2.s = 1;
       if (tg === "A" && c.getAttribute("data-note")) s2.link = c.getAttribute("data-note");
       if (tg === "SPAN") { const col = c.getAttribute("data-c"), sz = c.getAttribute("data-s"), f = c.getAttribute("data-f");
-        if (col) s2.color = /^#/.test(col) ? col : PAL[col]; if (sz) s2.size = OLDSIZE[sz] || +sz || undefined; if (f) s2.font = f; }
+        if (col) s2.color = /^#/.test(col) ? col : PAL[col]; if (sz) s2.size = OLDSIZE[sz] || +sz || undefined; if (f) s2.font = f;
+        const hl = c.getAttribute("data-h"); if (/^#[0-9a-f]{6}$/i.test(hl || "")) s2.hl = hl; }
       if (tg === "DIV" || tg === "P") { if (rs.length && !rs[rs.length - 1].br) rs.push({ br: true }); walk(c, s2); return; }
       walk(c, s2);
     });
     walk(node, st || {}); while (rs.length && rs[rs.length - 1].br) rs.pop(); return rs; };
+  // a line's layout (v0.5.4): align, indent, line spacing, space after, from the line or the list / block around it
+  const lay = el => { const o = {}; for (let x = el; x && x.nodeType === 1; x = x.parentElement) { [["al", "data-al"], ["ind", "data-in"], ["lh", "data-lh"], ["ps", "data-ps"]].forEach(([k, a]) => { if (o[k] == null && x.hasAttribute(a)) o[k] = x.getAttribute(a); }); } if (o.ind) o.ind = +o.ind; if (o.lh) o.lh = +o.lh; if (o.ps != null) o.ps = +o.ps; return Object.keys(o).length ? o : undefined; };
   const widget = el => { let d = {}; try { d = JSON.parse(el.getAttribute("data-src") || "{}"); } catch (e) {}
     if (el.getAttribute("data-w") === "code") return { t: "code", lang: d.lang || "", title: d.title || "", src: String(d.src || "") };
     let tx = ""; try { tx = window.InquireWidgets ? InquireWidgets.text(el).trim() : ""; } catch (e) {}
     return { t: "text", text: tx }; };
   const list = (el, depth) => { const kind = el.tagName === "OL" ? "ol" : el.getAttribute("data-ck") === "1" ? "ck" : "ul";
-    [...el.children].forEach(li => { if (li.tagName !== "LI") return; out.push({ t: "li", list: kind, done: li.getAttribute("data-done") === "1", depth, runs: runs(li, {}, true) });
+    [...el.children].forEach(li => { if (li.tagName !== "LI") return; out.push({ t: "li", list: kind, done: li.getAttribute("data-done") === "1", depth, runs: runs(li, {}, true), lay: lay(li) });
       [...li.children].forEach(x => { if (x.tagName === "UL" || x.tagName === "OL") list(x, depth + 1); }); }); };
   let pend = [];
   const flushInline = () => { if (pend.length) { const d = document.createElement("div"); pend.forEach(n => d.appendChild(n.cloneNode(true))); const r = runs(d); if (r.length) out.push({ t: "p", runs: r }); pend = []; } };
   const block = el => {
     const tg = el.tagName;
     if (tg === "DIV" && el.classList.contains("nw")) { out.push(widget(el)); return; }
-    if (tg === "H1" || tg === "H2" || tg === "H3") { out.push({ t: "h", runs: runs(el) }); return; }
+    if (HLV[tg]) { out.push({ t: "h", lv: HLV[tg], runs: runs(el), lay: lay(el) }); return; } // lv: "title", "sub", 1, 2, 3
     if (tg === "UL" || tg === "OL") { list(el, 0); return; }
-    if (tg === "BLOCKQUOTE") { out.push({ t: "quote", runs: runs(el) }); return; }
-    if ((tg === "DIV" || tg === "P") && [...el.children].some(c => /^(DIV|P|UL|OL|H1|H2|H3|BLOCKQUOTE)$/.test(c.tagName))) { walkBlocks(el); return; }
-    if (tg === "DIV" || tg === "P") { const r = runs(el); out.push(r.length ? { t: "p", runs: r } : { t: "p", runs: [] }); return; }
+    if (tg === "BLOCKQUOTE") { out.push({ t: "quote", runs: runs(el), lay: lay(el) }); return; }
+    if ((tg === "DIV" || tg === "P") && [...el.children].some(c => /^(DIV|P|UL|OL|H1|H2|H3|H4|H6|BLOCKQUOTE)$/.test(c.tagName))) { walkBlocks(el); return; }
+    if (tg === "DIV" || tg === "P") { const r = runs(el); out.push({ t: "p", runs: r.length ? r : [], lay: lay(el) }); return; }
     pend.push(el);
   };
-  const walkBlocks = root => { [...root.childNodes].forEach(c => { if (c.nodeType === 1 && /^(DIV|P|UL|OL|H1|H2|H3|BLOCKQUOTE)$/.test(c.tagName)) { flushInline(); block(c); } else if (c.nodeType === 3 || c.nodeType === 1) pend.push(c); }); flushInline(); };
+  const walkBlocks = root => { [...root.childNodes].forEach(c => { if (c.nodeType === 1 && /^(DIV|P|UL|OL|H1|H2|H3|H4|H6|BLOCKQUOTE)$/.test(c.tagName)) { flushInline(); block(c); } else if (c.nodeType === 3 || c.nodeType === 1) pend.push(c); }); flushInline(); };
   walkBlocks(t.content);
   while (out.length && out[out.length - 1].t === "p" && !out[out.length - 1].runs.length) out.pop();
   return out;
@@ -4486,13 +4847,13 @@ function toMD(n, ctx) {
     let s = r.link ? `[[${ctx.title(r.link) || r.text}${ctx.title(r.link) && ctx.title(r.link) !== r.text ? "|" + r.text : ""}]]` : mdEsc(r.text);
     if (!s.trim() || r.link) return s;
     const lead = s.match(/^\s*/)[0], trail = s.match(/\s*$/)[0]; let core = s.trim();
-    if (r.font === "mono") core = "`" + core.replace(/\\(.)/g, "$1") + "`"; if (r.s) core = "~~" + core + "~~"; if (r.i) core = "*" + core + "*"; if (r.b) core = "**" + core + "**"; if (r.u) core = "<u>" + core + "</u>";
+    if (r.font === "mono") core = "`" + core.replace(/\\(.)/g, "$1") + "`"; if (r.s) core = "~~" + core + "~~"; if (r.i) core = "*" + core + "*"; if (r.b) core = "**" + core + "**"; if (r.u) core = "<u>" + core + "</u>"; if (r.hl) core = "==" + core + "==";
     return lead + core + trail; }).join("").replace(/\*\*\*\*/g, "");
   let prev = null, prevList = null;
   blocks.forEach(b => {
     const gap = () => { if (lines.length && lines[lines.length - 1] !== "") lines.push(""); };
     if (b.t === "p") { if (prev && prev !== "p") gap(); lines.push(inl(b.runs)); }
-    else if (b.t === "h") { gap(); lines.push("## " + inl(b.runs)); lines.push(""); }
+    else if (b.t === "h") { gap(); lines.push(b.lv === "sub" ? "*" + inl(b.runs) + "*" : "#".repeat(b.lv === "title" ? 1 : b.lv + 1) + " " + inl(b.runs)); lines.push(""); }
     else if (b.t === "li") { if (prev !== "li" || (b.depth === 0 && prevList && prevList !== b.list)) gap(); prevList = b.depth === 0 ? b.list : prevList; lines.push("    ".repeat(b.depth) + (b.list === "ol" ? "1. " : b.list === "ck" ? (b.done ? "- [x] " : "- [ ] ") : "- ") + inl(b.runs)); }
     else if (b.t === "quote") { gap(); inl(b.runs).split("\n").forEach(l => lines.push("> " + l.replace(/ {2}$/, ""))); lines.push(""); }
     else if (b.t === "code") { gap(); lines.push("```" + (b.lang === "text" ? "" : b.lang || "") + (b.title ? " title=\"" + b.title + "\"" : ""), ...b.src.replace(/\n$/, "").split("\n"), "```"); lines.push(""); }
@@ -4505,7 +4866,9 @@ function toMD(n, ctx) {
 // HTML (web page, PDF, and the .enex content): imgSrc(id) → a data: URL / resource; enml → Evernote's subset
 function toHTMLBody(n, ctx, enml) {
   const blocks = ir(n.html), out = [];
-  const st = r => { const a = []; if (r.color) a.push("color:" + r.color); if (r.size && r.size !== 15) a.push("font-size:" + (enml ? Math.round(r.size * .8) + "pt" : (r.size / 15).toFixed(2) + "em")); if (r.font && fontName(r.font)) a.push("font-family:" + (r.font === "mono" ? "monospace" : `'${fontName(r.font)}'`)); return a.join(";"); };
+  const st = r => { const a = []; if (r.color) a.push("color:" + r.color); if (r.hl) a.push("background-color:" + r.hl); if (r.size && r.size !== 15) a.push("font-size:" + (enml ? Math.round(r.size * .8) + "pt" : (r.size / 15).toFixed(2) + "em")); if (r.font && fontName(r.font)) a.push("font-family:" + (r.font === "mono" ? "monospace" : `'${fontName(r.font)}'`)); return a.join(";"); };
+  // a line's layout as CSS (v0.5.4); more = CSS the line already has
+  const bst = (b, more) => { const L = b.lay || {}, a = more ? [more] : []; if (L.al) a.push("text-align:" + L.al); if (L.ind) a.push(`margin-left:${L.ind * 2}em`); if (L.lh) a.push("line-height:" + L.lh); if (L.ps != null && !isNaN(L.ps)) a.push(`margin-bottom:${L.ps}px`); return a.length ? ` style="${a.join(";")}"` : ""; };
   const inl = rs => rs.map(r => {
     if (r.br) return "<br/>";
     if (r.img) return enml ? ctx.media(r.img) : `<img src="${ctx.src(r.img)}" alt="${xesc(r.alt)}" />`; if (r.url) return `<img src="${xesc(r.url)}" alt="${xesc(r.alt)}" />`;
@@ -4515,13 +4878,13 @@ function toHTMLBody(n, ctx, enml) {
     return s; }).join("");
   for (let i = 0; i < blocks.length; i++) {
     const b = blocks[i];
-    if (b.t === "p") out.push(`<div>${b.runs.length ? inl(b.runs) : "<br/>"}</div>`);
-    else if (b.t === "h") out.push(`<h2>${inl(b.runs)}</h2>`);
-    else if (b.t === "quote") out.push(`<blockquote>${inl(b.runs)}</blockquote>`);
+    if (b.t === "p") out.push(`<div${bst(b)}>${b.runs.length ? inl(b.runs) : "<br/>"}</div>`);
+    else if (b.t === "h") out.push(b.lv === "sub" ? `<p${enml ? bst(b, "font-style:italic;color:#666") : ` class="sub"` + bst(b)}><i>${inl(b.runs)}</i></p>` : `<h${b.lv === "title" ? 2 : b.lv + 2}${bst(b)}>${inl(b.runs)}</h${b.lv === "title" ? 2 : b.lv + 2}>`);
+    else if (b.t === "quote") out.push(`<blockquote${bst(b)}>${inl(b.runs)}</blockquote>`);
     else if (b.t === "code") out.push(`<pre${enml ? ` style="font-family:monospace;background:#f4f4f4;padding:8px"` : ` class="code"`}>${b.title ? xesc(b.title) + "\n" : ""}${xesc(b.src)}</pre>`);
     else if (b.t === "text") out.push(`<pre>${xesc(b.text)}</pre>`);
     else if (b.t === "li") {
-      if (b.list === "ck") { out.push(enml ? `<div><en-todo checked="${b.done}"/>${inl(b.runs)}</div>` : `<div class="ck${b.done ? " done" : ""}"${b.depth ? ` style="margin-left:${b.depth * 24}px"` : ""}><input type="checkbox" disabled${b.done ? " checked" : ""}/> ${inl(b.runs)}</div>`); continue; }
+      if (b.list === "ck") { out.push(enml ? `<div${bst(b)}><en-todo checked="${b.done}"/>${inl(b.runs)}</div>` : `<div class="ck${b.done ? " done" : ""}"${bst(b, b.depth ? `margin-left:${b.depth * 24}px` : "")}><input type="checkbox" disabled${b.done ? " checked" : ""}/> ${inl(b.runs)}</div>`); continue; }
       // a run of list items of one kind → nested <ul>/<ol>, sub-lists inside their item
       const t0 = b.list, items = []; let j = i;
       for (; j < blocks.length && blocks[j].t === "li" && blocks[j].list !== "ck" && (blocks[j].depth > 0 || blocks[j].list === t0); j++) items.push(blocks[j]);
@@ -4530,7 +4893,7 @@ function toHTMLBody(n, ctx, enml) {
         if (!stack.length) { html += `<${tg}>`; stack.push(tg); }
         else if (x.depth + 1 > stack.length) { while (stack.length < x.depth + 1) { html += `<${tg}>`; stack.push(tg); } }
         else { html += "</li>"; while (stack.length > Math.max(1, x.depth + 1)) html += `</${stack.pop()}></li>`; }
-        html += `<li>${inl(x.runs)}`; });
+        html += `<li${bst(x)}>${inl(x.runs)}`; });
       html += "</li>"; while (stack.length) { html += `</${stack.pop()}>`; if (stack.length) html += "</li>"; }
       out.push(html); i = j - 1;
     }
@@ -4548,11 +4911,16 @@ const dataURL = async id => { const b = await mediaBlob(id); return b ? `data:${
 
 /* Word (.docx): WordprocessingML written by hand (styles, bullets / numbers, checkboxes, quotes, code, colours, sizes, fonts, photos) */
 const W_NS = `xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"`;
+// titles and headings in a note (v0.5.4): h1 Title · h6 Subtitle · h2 / h3 / h4 Heading 1 / 2 / 3 (h5 from elsewhere = Heading 3)
+const HLV = { H1: "title", H6: "sub", H2: 1, H3: 2, H4: 3, H5: 3 };
 const STYLES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:eastAsia="Calibri" w:cs="Calibri"/><w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="en-US"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="80" w:line="276" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>
 <w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>
 <w:style w:type="paragraph" w:styleId="Title"><w:name w:val="Title"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:spacing w:after="200"/></w:pPr><w:rPr><w:rFonts w:ascii="Georgia" w:hAnsi="Georgia"/><w:sz w:val="52"/><w:szCs w:val="52"/></w:rPr></w:style>
+<w:style w:type="paragraph" w:styleId="Subtitle"><w:name w:val="Subtitle"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:spacing w:after="160"/></w:pPr><w:rPr><w:rFonts w:ascii="Georgia" w:hAnsi="Georgia"/><w:i/><w:color w:val="595959"/><w:sz w:val="30"/><w:szCs w:val="30"/></w:rPr></w:style>
+<w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:keepNext/><w:spacing w:before="320" w:after="100"/><w:outlineLvl w:val="0"/></w:pPr><w:rPr><w:rFonts w:ascii="Georgia" w:hAnsi="Georgia"/><w:b/><w:sz w:val="36"/><w:szCs w:val="36"/></w:rPr></w:style>
 <w:style w:type="paragraph" w:styleId="Heading2"><w:name w:val="heading 2"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:keepNext/><w:spacing w:before="240" w:after="80"/><w:outlineLvl w:val="1"/></w:pPr><w:rPr><w:b/><w:sz w:val="30"/><w:szCs w:val="30"/></w:rPr></w:style>
+<w:style w:type="paragraph" w:styleId="Heading3"><w:name w:val="heading 3"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:keepNext/><w:spacing w:before="200" w:after="60"/><w:outlineLvl w:val="2"/></w:pPr><w:rPr><w:b/><w:sz w:val="26"/><w:szCs w:val="26"/></w:rPr></w:style>
 <w:style w:type="paragraph" w:styleId="Quote"><w:name w:val="Quote"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:pBdr><w:left w:val="single" w:sz="18" w:space="8" w:color="B49BFF"/></w:pBdr><w:ind w:left="360"/></w:pPr><w:rPr><w:i/><w:color w:val="404858"/></w:rPr></w:style>
 <w:style w:type="paragraph" w:styleId="ListParagraph"><w:name w:val="List Paragraph"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:spacing w:after="40"/><w:ind w:left="720"/></w:pPr></w:style>
 <w:style w:type="paragraph" w:styleId="Code"><w:name w:val="Code"/><w:basedOn w:val="Normal"/><w:pPr><w:shd w:val="clear" w:color="auto" w:fill="F3F5F9"/><w:spacing w:after="0" w:line="240" w:lineRule="auto"/></w:pPr><w:rPr><w:rFonts w:ascii="Courier New" w:hAnsi="Courier New" w:cs="Courier New"/><w:sz w:val="19"/><w:szCs w:val="19"/></w:rPr></w:style>
@@ -4571,7 +4939,12 @@ async function toDOCX(n) {
   const M = Object.fromEntries(media.map(m => [m.id, m]));
   const rpr = r => { let x = ""; const f = r.font && fontName(r.font); if (f) x += `<w:rFonts w:ascii="${xesc(f)}" w:hAnsi="${xesc(f)}" w:cs="${xesc(f)}"/>`;
     if (r.b) x += "<w:b/>"; if (r.i) x += "<w:i/>"; if (r.s) x += "<w:strike/>"; const col = r.link ? "6B4FD8" : r.color && r.color.replace("#", ""); if (col) x += `<w:color w:val="${col.toUpperCase()}"/>`;
-    if (r.size && r.size !== 15) { const hp = Math.round(r.size * 22 / 15); x += `<w:sz w:val="${hp}"/><w:szCs w:val="${hp}"/>`; } if (r.u || r.link) x += `<w:u w:val="single"/>`; return x ? `<w:rPr>${x}</w:rPr>` : ""; };
+    if (r.size && r.size !== 15) { const hp = Math.round(r.size * 22 / 15); x += `<w:sz w:val="${hp}"/><w:szCs w:val="${hp}"/>`; } if (r.u || r.link) x += `<w:u w:val="single"/>`; if (r.hl) x += `<w:shd w:val="clear" w:color="auto" w:fill="${r.hl.slice(1).toUpperCase()}"/>`; return x ? `<w:rPr>${x}</w:rPr>` : ""; };
+  // a line's layout (v0.5.4) in Word's order: spacing, ind, jc (base = the indent the line already has, in twips)
+  const play = (b, base = 0) => { const L = b.lay || {}; let x = "";
+    if (L.lh || (L.ps != null && !isNaN(L.ps))) x += `<w:spacing${L.ps != null && !isNaN(L.ps) ? ` w:after="${L.ps * 15}"` : ""}${L.lh ? ` w:line="${Math.round(240 * L.lh)}" w:lineRule="auto"` : ""}/>`;
+    if (L.ind || base) x += `<w:ind w:left="${base + (L.ind || 0) * 720}"/>`;
+    if (L.al) x += `<w:jc w:val="${L.al === "center" ? "center" : L.al === "right" ? "right" : "left"}"/>`; return x; };
   const runXML = r => {
     if (r.br) return "<w:r><w:br/></w:r>";
     if (r.img) { const m = M[r.img]; if (!m) return ""; pid++; return `<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${m.cx}" cy="${m.cy}"/><wp:docPr id="${pid}" name="Picture ${pid}"/><wp:cNvGraphicFramePr><a:graphicFrameLocks noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="${pid}" name="${m.file}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${m.rid}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${m.cx}" cy="${m.cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`; }
@@ -4580,11 +4953,11 @@ async function toDOCX(n) {
   const para = (style, inner, extra) => `<w:p>${style || extra ? `<w:pPr>${style ? `<w:pStyle w:val="${style}"/>` : ""}${extra || ""}</w:pPr>` : ""}${inner}</w:p>`;
   const body = [para("Title", `<w:r><w:t xml:space="preserve">${xesc(n.title)}</w:t></w:r>`)];
   blocks.forEach(b => {
-    if (b.t === "p") body.push(para("", b.runs.map(runXML).join("")));
-    else if (b.t === "h") body.push(para("Heading2", b.runs.map(runXML).join("")));
-    else if (b.t === "quote") body.push(para("Quote", b.runs.map(runXML).join("")));
-    else if (b.t === "li") body.push(b.list === "ck" ? para("ListParagraph", `<w:r><w:t xml:space="preserve">${b.done ? "☒" : "☐"} </w:t></w:r>` + b.runs.map(r => runXML(b.done && !r.br && !r.img ? Object.assign({}, r, { s: 1 }) : r)).join(""), `<w:ind w:left="${360 + b.depth * 360}"/>`)
-      : para("ListParagraph", b.runs.map(runXML).join(""), `<w:numPr><w:ilvl w:val="${Math.min(8, b.depth)}"/><w:numId w:val="${b.list === "ol" ? 2 : 1}"/></w:numPr>`));
+    if (b.t === "p") body.push(para("", b.runs.map(runXML).join(""), play(b)));
+    else if (b.t === "h") body.push(para(b.lv === "title" ? "Title" : b.lv === "sub" ? "Subtitle" : "Heading" + b.lv, b.runs.map(runXML).join(""), play(b)));
+    else if (b.t === "quote") body.push(para("Quote", b.runs.map(runXML).join(""), play(b)));
+    else if (b.t === "li") body.push(b.list === "ck" ? para("ListParagraph", `<w:r><w:t xml:space="preserve">${b.done ? "☒" : "☐"} </w:t></w:r>` + b.runs.map(r => runXML(b.done && !r.br && !r.img ? Object.assign({}, r, { s: 1 }) : r)).join(""), play(b, 360 + b.depth * 360))
+      : para("ListParagraph", b.runs.map(runXML).join(""), `<w:numPr><w:ilvl w:val="${Math.min(8, b.depth)}"/><w:numId w:val="${b.list === "ol" ? 2 : 1}"/></w:numPr>` + play(b, b.lay && b.lay.ind ? 720 + b.depth * 360 : 0)));
     else if (b.t === "code") { if (b.title) body.push(para("", `<w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">${xesc(b.title)}</w:t></w:r>`)); b.src.replace(/\n$/, "").split("\n").forEach(l => body.push(para("Code", `<w:r><w:t xml:space="preserve">${xesc(l.replace(/\t/g, "    "))}</w:t></w:r>`))); body.push(para("", "")); }
     else if (b.t === "text") b.text.split("\n").forEach(l => body.push(para("Code", `<w:r><w:t xml:space="preserve">${xesc(l)}</w:t></w:r>`)));
   });
@@ -4735,7 +5108,7 @@ function mdToHTML(md, ctx) {
     }
     closeTo(0);
     const h = line.match(/^(#{1,6})\s+(.*?)\s*#*\s*$/);
-    if (h) { if (firstText && h[1].length === 1 && !title) { title = h[2]; firstText = false; continue; } blockStart(); out.push(`<h3>${mdInline(h[2], ctx)}</h3>`); firstText = false; continue; }
+    if (h) { if (firstText && h[1].length === 1 && !title) { title = h[2]; firstText = false; continue; } blockStart(); const ht = ["h1", "h2", "h3", "h4"][Math.min(h[1].length, 4) - 1]; out.push(`<${ht}>${mdInline(h[2], ctx)}</${ht}>`); firstText = false; continue; }
     if (/^\s*>/.test(line)) { blockStart(); const q = []; while (i < L.length && /^\s*>/.test(L[i])) q.push(L[i++].replace(/^\s*>\s?/, "")); i--; out.push(`<blockquote>${q.map(x => mdInline(x, ctx)).join("<br>")}</blockquote>`); firstText = false; continue; }
     if (/^\s*([-*_])(\s*\1){2,}\s*$/.test(line)) { out.push("<div><br></div>"); continue; }
     if (/^\s*\|.*\|\s*$/.test(line)) { if (/^\s*\|?\s*:?-+/.test(line.replace(/\|/g, ""))) continue; out.push(`<div>${mdInline(line.trim().replace(/^\||\|$/g, "").split("|").map(c => c.trim()).join("  ·  "), ctx)}</div>`); continue; }
@@ -4762,6 +5135,8 @@ async function htmlToNote(text, ctx) {
     if (/font-weight:\s*(bold|[6-9]00)/i.test(st)) inner = `<b>${inner}</b>`; if (/font-style:\s*italic/i.test(st)) inner = `<i>${inner}</i>`; if (/text-decoration[^;]*underline/i.test(st)) inner = `<u>${inner}</u>`; if (/text-decoration[^;]*line-through/i.test(st)) inner = `<s>${inner}</s>`;
     if (/font-family:[^;]*mono|font-family:[^;]*(courier|consolas|menlo)/i.test(st)) inner = `<span data-f="mono">${inner}</span>`;
     const col = (st.match(/(?:^|;)\s*color:\s*([^;]+)/i) || [])[1]; if (col && !/^(#000|#000000|black|rgb\(0,\s*0,\s*0\)|inherit|windowtext)$/i.test(col.trim())) inner = `<font color="${esc(col.trim())}">${inner}</font>`;
+    const bg = cssHex((st.match(/(?:^|;)\s*background(?:-color)?:\s*([^;]+)/i) || [])[1]); if (bg && bg !== "#ffffff" && !/^(DIV|P|H\d|LI|UL|OL|BLOCKQUOTE|BODY|TD|TR|TABLE)$/.test(el.tagName)) inner = `<span data-h="${bg}">${inner}</span>`; // highlights (v0.5.4)
+    const ta = (st.match(/(?:^|;)\s*text-align:\s*(left|center|right)/i) || [])[1]; if (ta && /^(DIV|P|H\d|LI|BLOCKQUOTE)$/.test(el.tagName)) el.setAttribute("data-al", ta.toLowerCase());
     el.innerHTML = inner; el.removeAttribute("style"); });
   body.querySelectorAll("input[type=checkbox]").forEach(cb => { const li = cb.closest("li"); if (li) { if (cb.checked || cb.hasAttribute("checked")) li.setAttribute("data-done", "1"); const ul = li.parentElement; if (ul) ul.setAttribute("data-ck", "1"); } cb.remove(); });
   body.querySelectorAll("table").forEach(tb => { const d = doc.createElement("div"); d.innerHTML = [...tb.rows].map(r => `<div>${[...r.cells].map(c => esc(c.textContent.trim())).join("  ·  ")}</div>`).join(""); tb.replaceWith(d); });
@@ -4769,9 +5144,13 @@ async function htmlToNote(text, ctx) {
     if (local) { const t = document.createElement("template"); t.innerHTML = ctx.link(decodeURIComponent(href.split("#")[0]).replace(/^.*\//, "").replace(/\.(md|html?)$/i, ""), a.textContent); a.replaceWith(t.content); }
     else if (/^https?:/.test(href) && a.textContent.trim() && a.textContent.trim() !== href) a.replaceWith(doc.createTextNode(a.textContent + " (" + href + ")")); });
   for (const im of [...body.querySelectorAll("img")]) { const t = document.createElement("template"); t.innerHTML = await ctx.imgAsync(im.getAttribute("src") || "", im.getAttribute("alt") || ""); im.replaceWith(t.content); }
-  body.querySelectorAll("p").forEach(p => { const d = doc.createElement("div"); d.innerHTML = p.innerHTML || "<br>"; p.replaceWith(d); });
+  body.querySelectorAll("p").forEach(p => { const d = doc.createElement("div"); d.innerHTML = p.innerHTML || "<br>"; if (p.hasAttribute("data-al")) d.setAttribute("data-al", p.getAttribute("data-al")); p.replaceWith(d); });
   return { title, html: body.innerHTML };
 }
+// a CSS colour (#abc, #aabbcc, rgb()) → #aabbcc, or "" (v0.5.4)
+const cssHex = v => { v = String(v || "").trim().toLowerCase(); if (/^#[0-9a-f]{3}$/.test(v)) v = "#" + v[1] + v[1] + v[2] + v[2] + v[3] + v[3]; const m = v.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?/); if (m) { if (m[4] != null && +m[4] === 0) return ""; v = "#" + [m[1], m[2], m[3]].map(x => (+x).toString(16).padStart(2, "0")).join(""); } return /^#[0-9a-f]{6}$/.test(v) ? v : ""; };
+// Word's named highlight colours (v0.5.4)
+const WHL = { yellow: "#ffff00", green: "#00ff00", cyan: "#00ffff", magenta: "#ff00ff", blue: "#0000ff", red: "#ff0000", darkblue: "#000080", darkcyan: "#008080", darkgreen: "#008000", darkmagenta: "#800080", darkred: "#800000", darkyellow: "#808000", darkgray: "#808080", lightgray: "#c0c0c0", black: "#000000" };
 // Word (.docx): paragraphs, headings, lists, bold / italic / underline / strike / colour, line breaks, tables, photos
 async function docxToNote(bytes, ctx) {
   const files = await unzip(new Blob([bytes])), get = n => files.find(f => f.name === n);
@@ -4795,7 +5174,9 @@ async function docxToNote(bytes, ctx) {
     }
     const pr = kid(r, "rPr"); if (pr && h) { const on = n => { const e = kid(pr, n); return e && !/^(0|false|none)$/.test(A(e, "val") || ""); };
       const col = kid(pr, "color"), cv = col && A(col, "val");
-      if (cv && /^[0-9a-f]{6}$/i.test(cv) && cv !== "000000") h = `<font color="#${cv}">${h}</font>`; if (on("strike")) h = `<s>${h}</s>`; if (on("u")) h = `<u>${h}</u>`; if (on("i")) h = `<i>${h}</i>`; if (on("b")) h = `<b>${h}</b>`; }
+      if (cv && /^[0-9a-f]{6}$/i.test(cv) && cv !== "000000") h = `<font color="#${cv}">${h}</font>`;
+      const shd = kid(pr, "shd"), hi = kid(pr, "highlight"), fill = shd && A(shd, "fill"), hv = hi && WHL[(A(hi, "val") || "").toLowerCase()];
+      const hx = fill && /^[0-9a-f]{6}$/i.test(fill) && !/^(ffffff|auto)$/i.test(fill) ? "#" + fill.toLowerCase() : hv; if (hx) h = `<span data-h="${hx}">${h}</span>`; if (on("strike")) h = `<s>${h}</s>`; if (on("u")) h = `<u>${h}</u>`; if (on("i")) h = `<i>${h}</i>`; if (on("b")) h = `<b>${h}</b>`; }
     return h; };
   const paraHTML = async p => { let h = ""; for (const c of [...p.childNodes].filter(x => x.nodeType === 1)) { if (c.localName === "r") h += await runHTML(c); else if (c.localName === "hyperlink" || c.localName === "ins" || c.localName === "smartTag") for (const r of kids(c, "r")) h += await runHTML(r); } return h; };
   const out = []; let list = []; let title = null, code = [];
@@ -4811,7 +5192,8 @@ async function docxToNote(bytes, ctx) {
     if (el.localName === "tbl") { flushList(); flushCode(); for (const tr of kids(el, "tr")) { const cells = []; for (const tc of kids(tr, "tc")) { let t = ""; for (const p of kids(tc, "p")) t += (t ? " " : "") + await paraHTML(p); cells.push(t); } out.push(`<div>${cells.join("  ·  ")}</div>`); } continue; }
     if (el.localName !== "p") continue;
     const pPr = kid(el, "pPr"), sty = pPr && kid(pPr, "pStyle"), style = sty ? A(sty, "val") : "", np = pPr && kid(pPr, "numPr");
-    const html = await paraHTML(el);
+    let html = await paraHTML(el);
+    const jc = pPr && kid(pPr, "jc"), jv = jc && A(jc, "val"), al = jv === "center" ? "center" : jv === "right" || jv === "end" ? "right" : "", alA = al ? ` data-al="${al}"` : ""; // Word's alignment (v0.5.4)
     if (/^(code|HTMLPreformatted|SourceCode|PlainText)$/i.test(style)) { flushList(); code.push(el.textContent); continue; } else flushCode();
     if (np) { const nid = kid(np, "numId"), il = kid(np, "ilvl"), id = nid ? A(nid, "val") : "0", lvl = il ? +A(il, "val") : 0; if (id !== "0") { const f = (fmt[id] || {})[String(lvl)]; list.push({ lvl, tag: f && f !== "bullet" && f !== "none" ? "ol" : "ul", html }); continue; } }
     if (/^ListBullet|^ListNumber/i.test(style)) { list.push({ lvl: +(style.match(/(\d)$/) || [0, 1])[1] - 1, tag: /Number/i.test(style) ? "ol" : "ul", html }); continue; }
@@ -4819,9 +5201,11 @@ async function docxToNote(bytes, ctx) {
     if (cbm) { flushList(); const item = `<li${cbm[1] !== "☐" ? ` data-done="1"` : ""}>${html.replace(/[☐☑☒]\s*/, "").replace(/<\/?s>/g, "")}</li>`; const last = out[out.length - 1]; if (last && /^<ul data-ck="1">/.test(last)) out[out.length - 1] = last.replace(/<\/ul>$/, item + "</ul>"); else out.push(`<ul data-ck="1">${item}</ul>`); continue; }
     flushList();
     if (/^title$/i.test(style) && !title && !out.length) { title = html.replace(/<[^>]+>/g, "").trim() || null; continue; }
-    if (/^(heading|title|subtitle)/i.test(style)) out.push(`<h3>${html}</h3>`);
-    else if (/quote/i.test(style)) out.push(`<blockquote>${html}</blockquote>`);
-    else out.push(`<div>${html || "<br>"}</div>`);
+    if (/^title$/i.test(style)) out.push(`<h1${alA}>${html}</h1>`);
+    else if (/^subtitle$/i.test(style)) out.push(`<h6${alA}>${html}</h6>`);
+    else if (/^heading/i.test(style)) { const lv = +(style.match(/(\d)/) || [0, 2])[1], tg = lv <= 1 ? "h2" : lv === 2 ? "h3" : "h4"; out.push(`<${tg}${alA}>${html}</${tg}>`); }
+    else if (/quote/i.test(style)) out.push(`<blockquote${alA}>${html}</blockquote>`);
+    else out.push(`<div${alA}>${html || "<br>"}</div>`);
   }
   flushList(); flushCode();
   const ct = core && core.getElementsByTagName("dc:title")[0];
@@ -5040,18 +5424,44 @@ const viewEl = $("#view");
 let cleanup = [];
 function clearView(){ cleanup.forEach(f => { try{ f(); }catch(e){} }); cleanup = []; viewEl.innerHTML = ""; }
 
+let NAV_GO = false;
 function go(next, push = true){
-  closeWins();
+  NAV_GO = true; try { closeWins(); } finally { NAV_GO = false; } closeShare();
   // My notes / My Tasks already on screen: just show the folder / note / task asked for
-  if (next.view === "notes" && S.view === "notes" && NPAGE) { NPAGE.show(next); return; }
-  if (next.view === "tasks" && S.view === "tasks" && TPAGE) { TPAGE.show(next); return; }
+  if (next.view === "notes" && S.view === "notes" && NPAGE) { NPAGE.show(next); navMark(); return; }
+  if (next.view === "tasks" && S.view === "tasks" && TPAGE) { TPAGE.show(next); navMark(); return; }
   S.view = next.view === "notes" || next.view === "tasks" ? next.view : "menu"; S.opts = next;
   render();
   viewIn(viewEl);
   const hs = S.view === "notes" && SPACE === "code" ? "code" : S.view, st = S.view === "notes" ? { view: "notes", space: SPACE } : { view: S.view };
   if (push) { try { history.pushState(st, "", "#" + hs); } catch(e){} }
   else { try { history.replaceState(st, "", "#" + hs); } catch(e){} }
+  navMark();
   window.dispatchEvent(new CustomEvent("inquire:route"));
+}
+/* ---------- ‹ Back (v0.5.4, Devon): back to the window that was open before this one, not always the Main Menu ----------
+   NAV is the trail of screens ("menu", "notes", "code", "tasks", "office"); its last entry is the one on screen. A window
+   that comes back keeps the folder and note it had (SPACES / the tasks page keep them). Empty trail → the Main Menu. */
+const NAV = [];
+const NAV_NAME = { menu: "the Main Menu", notes: "My notes", code: "My Code", tasks: "My Tasks", office: "Note Office" };
+const curKey = () => S.view === "notes" ? (SPACE === "code" ? "code" : "notes") : S.view === "tasks" ? "tasks" : "menu";
+function navMark(k = curKey()){
+  if (NAV[NAV.length - 1] !== k) NAV.push(k);
+  if (NAV.length > 60) NAV.splice(0, NAV.length - 60);
+  paintBack();
+}
+const backTarget = () => NAV.length > 1 ? NAV[NAV.length - 2] : "menu";
+function paintBack(){
+  const t = "Back to " + NAV_NAME[backTarget()];
+  document.querySelectorAll(".np-back").forEach(b => { b.title = t; b.setAttribute("aria-label", t); });
+}
+function goBack(){
+  if (NAV.length) NAV.pop(); // the window on screen now
+  const k = NAV.length ? NAV.pop() : "menu";
+  if (k === "office") { if (S.view !== "menu") go({ view: "menu" }); if (window.NoteOffice) NoteOffice.open(); return; }
+  if (k === "notes" || k === "code") return go({ view: "notes", space: k });
+  if (k === "tasks") return go({ view: "tasks" });
+  go({ view: "menu" });
 }
 function viewIn(el){
   if (!el) return;
@@ -5113,8 +5523,11 @@ function modalWin(id, o = {}){
       window.dispatchEvent(new CustomEvent("inquire:window", { detail: { id, open: false } }));
     } };
   MW[id] = m;
-  if (o.back) $(".np-back", ov).onclick = () => { m.close(); if (S.view !== "menu") go({ view: "menu" }); }; // ‹ Back: to the Main Menu (Note Office has no ✕)
-  else $(".set-x", ov).onclick = () => m.close();
+  if (o.back) { // a window with ‹ Back (Note Office; it has no ✕) is a screen on the ‹ Back trail; closing it shows the page under it
+    navMark(id); m.cleanup.push(() => { if (!NAV_GO && NAV[NAV.length - 1] === id) { NAV.pop(); paintBack(); } });
+    $(".np-back", ov).onclick = () => m.close(); // Note Office opens over the Main Menu, so closing it is going back
+  }
+  if (!o.back) $(".set-x", ov).onclick = () => m.close();
   ov.addEventListener("pointerdown", e => { if (e.target === ov) m.close(); });
   requestAnimationFrame(() => { if (!m.closed) document.body.classList.add("mw-open"); });
   setTimeout(() => { if (!m.closed && !m.win.contains(document.activeElement)) m.win.focus({ preventScroll: true }); }, 40);
@@ -5137,16 +5550,17 @@ function renderNotesPage(o = {}){
   const pg = h("div", { class: "npage" });
   pg.innerHTML = `<div class="np-wrap"><section class="np-win win" aria-labelledby="np-t">
     <header class="set-h mw-h"><button type="button" class="np-back" data-a="back" title="Back to the Main Menu" aria-label="Back to the Main Menu"><span aria-hidden="true">‹</span> Back</button><span class="dot"></span><h2 id="np-t">My notes</h2><span class="mw-sub"></span><span class="mw-hx"></span></header>
+    <div class="nb-info" role="status" aria-live="polite"></div>
     <div class="mw-body"></div></section></div>`;
   viewEl.appendChild(pg);
-  $(".np-back", pg).onclick = () => go({ view: "menu" });
-  const m = { body: $(".mw-body", pg), head: $(".mw-hx", pg), cleanup: [] };
+  $(".np-back", pg).onclick = () => goBack();
+  const m = { body: $(".mw-body", pg), head: $(".mw-hx", pg), info: $(".nb-info", pg), cleanup: [] };
   const paint = () => { const w = pg.querySelector(".np-win"); w.dataset.space = SPACE; $("#np-t", pg).textContent = TITLES[SPACE]; $(".mw-sub", pg).textContent = SUBS[SPACE]; };
   const draw = focusBody => { m.cleanup.forEach(f => { try { f(); } catch(e){} }); m.cleanup = []; paint(); renderNotes(m, focusBody, SPACE); };
   const switchTo = (sp, x = {}) => {
     if (sp === SPACE && !x.force) return;
     if (m.flush) m.flush();
-    SPACE = sp; store.set("nspace", SPACE); draw(x.focusBody); crumbs(); viewIn(m.body);
+    SPACE = sp; store.set("nspace", SPACE); draw(x.focusBody); crumbs(); viewIn(m.body); navMark();
     try { history.replaceState({ view: "notes", space: SPACE }, "", "#" + (SPACE === "code" ? "code" : "notes")); } catch(e){}
   };
   draw(o.focusBody); crumbs(); // the breadcrumb says My notes or My Code
@@ -5164,11 +5578,79 @@ function renderTasksPage(o = {}){
     <header class="set-h mw-h"><button type="button" class="np-back" data-a="back" title="Back to the Main Menu" aria-label="Back to the Main Menu"><span aria-hidden="true">‹</span> Back</button><span class="dot"></span><h2 id="nt-t">My Tasks</h2><span class="mw-sub">Saved on this computer. Reminders show as notifications while NotePath is running.</span><span class="mw-hx"></span></header>
     <div class="mw-body"></div></section>`;
   viewEl.appendChild(pg);
-  $(".np-back", pg).onclick = () => go({ view: "menu" });
+  $(".np-back", pg).onclick = () => goBack();
   const m = { body: $(".mw-body", pg), head: $(".mw-hx", pg), cleanup: [] };
   if (window.NPTasks) NPTasks.render(m, o);
   TPAGE = { show: x => m.show && m.show(x), newNote: () => m.newNote && m.newNote() };
   cleanup.push(() => { m.cleanup.forEach(f => { try { f(); } catch(e){} }); TPAGE = null; });
+}
+/* ---------- ⇪ Share (v0.5.4, Devon; replaces ⇅ Import / Export): copy a link to the note, copy its words, send a copy as a
+   file, Import & Export. A link is notepath://note/<id>: in another file, a calendar or an email to yourself it opens the note in
+   NotePath (main.js registers notepath:// links). Notes stay on this computer, so for an associate it is Send a copy (a file
+   anyone can open); their NotePath would say the note is not there. ---------- */
+const noteLink = id => "notepath://note/" + id;
+async function copyText(t){
+  try { await navigator.clipboard.writeText(t); return true; } catch (e) {}
+  const ta = h("textarea", { style: "position:fixed;left:-9999px;top:0" }); ta.value = t; document.body.appendChild(ta); ta.select();
+  let ok = false; try { ok = document.execCommand("copy"); } catch (e) {} ta.remove(); return ok;
+}
+const toastMsg = (t, ms = 4000) => { const NS = window.InquireNotes; if (NS && NS.toast) NS.toast(esc(t), null, ms); };
+function openNoteLink(id){
+  const NS = window.InquireNotes, n = NS && NS.get(id);
+  if (!n) { toastMsg("That note is not on this computer. NotePath keeps notes on the computer they were written on: ask for a copy (Share → Send a copy).", 7000); return; }
+  go({ view: "notes", space: NS.spaceOf(n), folder: "all", sel: id });
+}
+let shareEl = null;
+function closeShare(){ if (!shareEl) return; shareEl.remove(); shareEl = null; document.removeEventListener("pointerdown", shareOut, true); window.removeEventListener("keydown", shareKey, true); document.querySelectorAll(".np-share[aria-expanded=true]").forEach(b => b.setAttribute("aria-expanded", "false")); }
+const shareOut = e => { if (shareEl && !shareEl.contains(e.target) && !e.target.closest(".np-share")) closeShare(); };
+const shareKey = e => { if (e.key === "Escape" && shareEl) { e.preventDefault(); e.stopPropagation(); closeShare(); } };
+function shareMenu(btn, o){
+  if (shareEl) { closeShare(); return; }
+  const NS = window.InquireNotes, n = o.id && NS.get(o.id), dis = n ? "" : " disabled";
+  shareEl = h("div", { class: "np-pop win np-share-pop", role: "menu", "aria-label": "Share" });
+  shareEl.innerHTML = `<div class="np-pop-h">Share <span>${n ? "“" + esc(n.title) + "”" : "select a note first"}</span></div>
+    <div class="np-shs">
+      <button type="button" role="menuitem" data-s="link"${dis}><span class="np-shi" aria-hidden="true">🔗</span><span><b>Copy link</b><small>Opens this note in NotePath on this computer. Paste it in another file, a calendar or an email to yourself.</small></span></button>
+      <button type="button" role="menuitem" data-s="text"${dis}><span class="np-shi" aria-hidden="true">⧉</span><span><b>Copy the words</b><small>The title and text, to paste into a message.</small></span></button>
+    </div>
+    <div class="np-pop-sub">Send a copy <span class="np-shnote">for an associate: a file anyone can open, no NotePath needed</span></div>
+    <div class="np-shf">${[["txt", "Text", ".txt"], ["html", "Web page", ".html"], ["docx", "Word", ".docx"], ["pdf", "PDF", ".pdf"]].map(([k, nm, ext]) => `<button type="button" role="menuitem" data-f="${k}"${dis}><b>${nm}</b><small>${ext}</small></button>`).join("")}</div>
+    <div class="np-shs np-shio"><button type="button" role="menuitem" data-s="io"><span class="np-shi" aria-hidden="true">⇅</span><span><b>Import &amp; Export…</b><small>Word, Markdown (Obsidian), Apple Notes / Evernote, web page, PDF, text; a note, a folder or everything.</small></span></button></div>`;
+  document.body.appendChild(shareEl); btn.setAttribute("aria-expanded", "true");
+  const r = btn.getBoundingClientRect(), w = shareEl.offsetWidth;
+  shareEl.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.right - w)) + "px"; shareEl.style.top = (r.bottom + 6) + "px";
+  shareEl.addEventListener("click", async e => {
+    const b = e.target.closest("button"); if (!b || b.disabled) return;
+    const s = b.dataset.s, f = b.dataset.f; closeShare(); if (o.flush) o.flush();
+    if (s === "io") { o.openIO(); return; }
+    const cur = NS.get(o.id); if (!cur) return;
+    if (s === "link") { toastMsg(await copyText(noteLink(cur.id)) ? `Link copied. It opens “${cur.title}” in NotePath on this computer.` : "The link could not be copied."); return; }
+    if (s === "text") { toastMsg(await copyText(cur.title + "\n\n" + (cur.body || "")) ? "The words are copied." : "They could not be copied."); return; }
+    if (f && window.NPIO) { try { const res = await NPIO.exportNotes("note", f, { note: cur.id }); toastMsg(res && res.printed ? "The print window is open: choose Save as PDF." : `Saved “${res.file}”. Attach it to an email or a message.`, 5000); } catch (err) { toastMsg(String(err && err.message || err)); } }
+  });
+  setTimeout(() => { const f0 = shareEl && shareEl.querySelector("button:not([disabled])"); if (f0) f0.focus({ preventScroll: true }); }, 30);
+  document.addEventListener("pointerdown", shareOut, true); window.addEventListener("keydown", shareKey, true);
+}
+/* ---------- cover photos (v0.5.4, Devon): a note or code file can have a photo that replaces its icon in Show as Icons and
+   sits left of the title and time in the List. Set it in the New Note / New File dialog or with the small button by the title
+   (click to choose, or drop a photo on it; ✕ takes it off). Stored like note photos (InquireNotes.putImage), id in note.cover. ---------- */
+const COVER_IC = '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/><path d="M1.5 11l3.5-3.5 3 3 2-2 4.5 4"/><circle cx="11" cy="6" r="1.3"/></svg>';
+function coverButton(NS, id, onChange){
+  const A = window.InquireNotes, w = h("span", { class: "nb-cov-w" });
+  const setFile = async f => { if (!f || !/^image\//.test(f.type || "")) { if (f && A.toast) A.toast("That is not a photo.", null, 2500); return; } const cid = await A.putImage(f); NS.update(id, { cover: cid }); draw(); if (onChange) onChange(); };
+  const draw = () => {
+    const n = NS.get(id), c = n && n.cover;
+    w.innerHTML = `<button type="button" class="nb-covb${c ? " set" : ""}" title="${c ? "Cover photo: click to change it, or drop a photo here" : "Add a cover photo: it shows in the notes list and as the note's icon"}" aria-label="${c ? "Change the cover photo" : "Add a cover photo"}">${c ? '<img alt="">' : COVER_IC}</button>${c ? '<button type="button" class="nb-covx" title="Take the cover photo off" aria-label="Remove the cover photo">✕</button>' : ""}<input type="file" class="nb-covin" accept="image/*" hidden>`;
+    if (c) A.imageURL(c).then(u => { const im = w.querySelector("img"); if (im && u) im.src = u; });
+    const inp = w.querySelector(".nb-covin");
+    w.querySelector(".nb-covb").onclick = () => inp.click();
+    inp.onchange = () => { setFile(inp.files[0]); inp.value = ""; };
+    const x = w.querySelector(".nb-covx"); if (x) x.onclick = () => { NS.update(id, { cover: null }); draw(); if (onChange) onChange(); };
+  };
+  w.addEventListener("dragover", e => { if (e.dataTransfer && [...e.dataTransfer.types].includes("Files")) { e.preventDefault(); e.stopPropagation(); e.dataTransfer.dropEffect = "copy"; w.classList.add("over"); } });
+  w.addEventListener("dragleave", () => w.classList.remove("over"));
+  w.addEventListener("drop", e => { const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (!f) return; e.preventDefault(); e.stopPropagation(); w.classList.remove("over"); setFile(f); });
+  draw(); return w;
 }
 // ＋ New Note (My notes, Alt+Shift+N): ask for a title, then open the note in My notes. o.folder files it there.
 const NOTE_KINDS = [
@@ -5178,12 +5660,13 @@ const NOTE_KINDS = [
 const attr = s => String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 async function newNote(o = {}){
   const NS = window.InquireNotes; if (!NS) return;
-  const r = await askText({ title: "New note", label: "Note title", placeholder: "Untitled note", ok: "Create note", max: 140, kinds: NOTE_KINDS });
+  const r = await askText({ title: "New note", label: "Note title", placeholder: "Untitled note", ok: "Create note", max: 140, kinds: NOTE_KINDS, cover: true });
   if (r == null) return;
   const title = r.text || (r.kind === "code" ? "Untitled code" : r.kind === "sheet" ? "Untitled chart" : "Untitled note");
   const html = r.kind === "code" ? `<div class="nw" data-w="code" data-src="${attr(JSON.stringify({ lang: "python", title: r.text || "", src: "" }))}"></div><div><br></div>`
     : r.kind === "sheet" ? `<div class="nw" data-w="sheet" data-src="${attr(JSON.stringify(Object.assign({}, window.NPSheet ? NPSheet.DEF : {}, { title: r.text || "" })))}"></div><div><br></div>` : undefined;
-  const n = NS.create({ title, html, folder: o.folder || null, fav: !!o.fav });
+  const cover = r.cover ? await NS.putImage(r.cover).catch(() => null) : null;
+  const n = NS.create({ title, html, folder: o.folder || null, fav: !!o.fav, cover });
   NOTES.q = "";
   go({ view: "notes", space: "notes", sel: n.id, focusBody: r.kind === "code" ? "code" : r.kind === "sheet" ? "sheet" : true });
 }
@@ -5193,9 +5676,10 @@ async function newCode(o = {}){
   const NS = window.InquireNotes && InquireNotes.scope("code"), C = window.NPCode; if (!NS || !C) return;
   const r = await askText({ title: "New code file", label: "File name", placeholder: "Untitled Python", ok: "Create file", max: 140,
     kinds: C.LANGS.map(l => ({ k: l.k, glyph: esc(l.short), name: l.name, desc: l.k === "javascript" ? "Runs right here, on this computer" : "Compiles and runs on the run service", placeholder: "Untitled " + l.name })),
-    foot: `<p class="ask-soon"><b>Coming soon:</b> ${C.SOON.map(esc).join(" · ")}</p>` });
+    foot: `<p class="ask-soon"><b>Coming soon:</b> ${C.SOON.map(esc).join(" · ")}</p>`, cover: true });
   if (r == null) return;
-  const l = C.lang(r.kind), n = NS.create({ title: r.text || "Untitled " + l.name, folder: o.folder || null, fav: !!o.fav, code: { lang: l.k, src: l.hello } });
+  const cover = r.cover ? await window.InquireNotes.putImage(r.cover).catch(() => null) : null;
+  const l = C.lang(r.kind), n = NS.create({ title: r.text || "Untitled " + l.name, folder: o.folder || null, fav: !!o.fav, code: { lang: l.k, src: l.hello }, cover });
   SPACES.code.q = "";
   go({ view: "notes", space: "code", sel: n.id, focusBody: true });
 }
@@ -5289,7 +5773,7 @@ function askText(o = {}){
       <header class="set-h"><span class="dot"></span><h2 id="ask-t">${esc(o.title || "Name")}</h2><button type="button" class="set-x" data-x aria-label="Cancel">✕</button></header>
       <div class="ask-body">${o.kinds ? `<div class="ask-kinds" role="radiogroup" aria-label="Kind of note">${o.kinds.map((k, i) => `<button type="button" role="radio" class="ask-kind" data-k="${k.k}" aria-checked="${o.kind ? k.k === o.kind : i === 0}"><span class="ask-kg" aria-hidden="true">${k.glyph}</span><b>${esc(k.name)}</b><small>${esc(k.desc)}</small></button>`).join("")}</div>` : ""}${o.foot || ""}<label class="ask-l" for="ask-in">${esc(o.label || "Name")}</label>
         <input id="ask-in" class="ask-in" maxlength="${o.max || 140}" placeholder="${esc(o.placeholder || "")}" value="${esc(o.value || "")}" autocomplete="off">
-        <div class="ask-btns"><button type="button" class="btn-s" data-x>Cancel</button><button type="submit" class="btn good">${esc(o.ok || "OK")}</button></div></div></form>`);
+        ${o.cover ? `<div class="ask-cov"><button type="button" class="ask-covb" title="Choose a cover photo (optional): it shows in the notes list and as the icon">${COVER_IC}<span>Cover photo</span></button><span class="ask-covn">Optional</span><button type="button" class="ask-covx" hidden aria-label="No cover photo">✕</button><input type="file" accept="image/*" hidden class="ask-covin"></div>` : ""}<div class="ask-btns"><button type="button" class="btn-s" data-x>Cancel</button><button type="submit" class="btn good">${esc(o.ok || "OK")}</button></div></div></form>`);
     document.body.appendChild(ov);
     requestAnimationFrame(() => document.body.classList.add("ask-open"));
     const inp = $(".ask-in", ov);
@@ -5301,7 +5785,11 @@ function askText(o = {}){
     let kind = o.kinds ? (o.kind && o.kinds.some(k => k.k === o.kind) ? o.kind : o.kinds[0].k) : null;
     ov.querySelectorAll(".ask-kind").forEach(b => b.onclick = () => { kind = b.dataset.k; ov.querySelectorAll(".ask-kind").forEach(x => x.setAttribute("aria-checked", String(x === b))); const k = o.kinds.find(x => x.k === kind); if (k && k.placeholder) inp.placeholder = k.placeholder; inp.focus(); });
     $(".ask-kinds", ov) && $(".ask-kinds", ov).addEventListener("keydown", e => { if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return; e.preventDefault(); const bs = [...ov.querySelectorAll(".ask-kind")], i = bs.findIndex(x => x.dataset.k === kind), j = (i + (e.key === "ArrowRight" ? 1 : bs.length - 1)) % bs.length; bs[j].click(); bs[j].focus(); });
-    $("form", ov).onsubmit = e => { e.preventDefault(); fin(o.kinds ? { text: inp.value.trim(), kind } : inp.value.trim()); };
+    let coverFile = null; // optional cover photo (v0.5.4)
+    if (o.cover) { const cb = $(".ask-covb", ov), ci = $(".ask-covin", ov), cn = $(".ask-covn", ov), cx = $(".ask-covx", ov);
+      const show = f => { coverFile = f; cx.hidden = !f; cb.classList.toggle("set", !!f); if (f) { const u = URL.createObjectURL(f); cb.innerHTML = `<img alt="" src="${u}"><span>Cover photo</span>`; cn.textContent = f.name; } else { cb.innerHTML = COVER_IC + "<span>Cover photo</span>"; cn.textContent = "Optional"; } };
+      cb.onclick = () => ci.click(); ci.onchange = () => { const f = ci.files[0]; if (f && /^image\//.test(f.type)) show(f); ci.value = ""; }; cx.onclick = () => show(null); }
+    $("form", ov).onsubmit = e => { e.preventDefault(); const t = inp.value.trim(); fin(o.kinds ? (o.cover ? { text: t, kind, cover: coverFile } : { text: t, kind }) : t); };
     setTimeout(() => { inp.focus(); inp.select(); }, 30);
   });
 }
@@ -5315,9 +5803,10 @@ const SKEYS = { notes: { sort: "notesort", favTop: "notefavtop" }, code: { sort:
    keeps its own choice) and the ◈ Links panel. Details = name, modified, created and kind. ---------- */
 const VIEWS = [["icons", "Icons", '<svg viewBox="0 0 16 16" width="14" height="14"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>'],
   ["list", "List", '<svg viewBox="0 0 16 16" width="14" height="14"><path d="M2 4h12M2 8h12M2 12h12"/></svg>'],
+  ["compact", "Compact: thin rows with the name and when it was made", '<svg viewBox="0 0 16 16" width="14" height="14"><path d="M2 3h12M2 6h12M2 9h12M2 12h12M11 2v12"/></svg>'],
   ["details", "Details: created, modified and kind", '<svg viewBox="0 0 16 16" width="14" height="14"><path d="M2 3.5h12M2 8h12M2 12.5h12M9 2v12"/></svg>']];
 const viewOf = k => { const v = store.get(k, "list"); return VIEWS.some(x => x[0] === v) ? v : "list"; };
-const viewSwitch = (cur, label) => `<div class="np-views" role="radiogroup" aria-label="${esc(label || "Show as")}">${VIEWS.map(([k, n, ic]) => `<button type="button" role="radio" data-view="${k}" aria-checked="${k === cur}" title="Show as ${n}" aria-label="${n.split(":")[0]}">${ic}</button>`).join("")}</div>`;
+const viewSwitch = (cur, label, views = VIEWS) => `<div class="np-views" role="radiogroup" aria-label="${esc(label || "Show as")}">${views.map(([k, n, ic]) => `<button type="button" role="radio" data-view="${k}" aria-checked="${k === cur}" title="Show as ${n}" aria-label="${n.split(":")[0]}">${ic}</button>`).join("")}</div>`;
 const stampShort = t => { if (!t) return "—"; const d = new Date(t); return d.toLocaleString(undefined, { year: d.getFullYear() === new Date().getFullYear() ? undefined : "numeric", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }); };
 function noteKind(n){
   if (n.space === "code") { const l = window.NPCode ? NPCode.lang(n.code.lang) : null; return (l ? l.name : "Code") + " file"; }
@@ -5331,8 +5820,9 @@ function renderNotes(m, focusBody, space = "notes"){
   const NS = window.InquireNotes.scope(space), NOTES = SPACES[space], CODE = space === "code", SK = SKEYS[space];
   const ALLNS = window.InquireNotes, CS = window.InquireNotes.scope("code");
   const s = m.body;
-  s.innerHTML = `    <div class="nb"><nav class="nb-folders" aria-label="Folders"></nav>
-    <aside class="nb-list"><div class="nb-tools"><label class="search"><span aria-hidden="true">⌕</span><input type="search" placeholder="${CODE ? "Search code" : "Search notes"}" aria-label="${CODE ? "Search code files" : "Search notes"}"></label>${viewSwitch(viewOf(CODE ? "codeview" : "noteview"), CODE ? "Show the code files as" : "Show the notes as")}</div>
+  s.innerHTML = `    <div class="nb-sbar"><label class="search nb-search"><span aria-hidden="true">⌕</span><input type="search" placeholder="Search" aria-label="${CODE ? "Search every code file" : "Search every note"}"></label></div>
+    <div class="nb"><nav class="nb-folders" aria-label="Folders"></nav>
+    <aside class="nb-list"><div class="nb-tools">${viewSwitch(viewOf(CODE ? "codeview" : "noteview"), CODE ? "Show the code files as" : "Show the notes as")}</div>
       <div class="nb-filter"><select class="nb-sort" aria-label="${CODE ? "Order of code files" : "Order of notes"}"><option value="mine">My order</option><option value="recent">Recently edited</option></select><button type="button" class="nb-favtop" aria-pressed="false" title="Keep favourites at the top of the list">★ first</button></div><div class="nb-items" role="listbox" aria-label="${CODE ? "Code files" : "Notes"}"></div></aside>
     <section class="nb-ed"><div class="nb-tabs" hidden></div><div class="nb-panes"><div class="nb-pane p1"></div><div class="nb-pane p2" hidden></div></div></section>
     <button type="button" class="nb-fold" data-p="f"></button><button type="button" class="nb-fold" data-p="l"></button>
@@ -5341,16 +5831,17 @@ function renderNotes(m, focusBody, space = "notes"){
   notesLayout($(".nb", s)); $(".nb", s).classList.toggle("nb-code", CODE);
   const mac = /Mac/.test(navigator.platform);
   m.head.innerHTML = CODE ? `<span class="mw-tip" tabindex="0" title="Code files have their own folders: drag files into folders and folders into each other, or up and down to put them in your own order. Drag a file onto ⧉ beside the name to open two side by side. ▶ Run (${mac ? "⌘" : "Ctrl+"}Enter) runs the file; type what it reads in the Input tab. ⇄ Translate turns it into another language (AI). In My notes, the Code section of the folders lets you drop a copy of a code file into a note." aria-label="Tips">?</span><span class="np-hist" role="group" aria-label="Undo and redo"><button type="button" class="np-hb" data-a="undo" title="Undo: new, renamed, moved or deleted files and folders (inside the editor, ${mac ? "⌘" : "Ctrl+"}Z undoes typing)" aria-label="Undo">↶ Undo</button><button type="button" class="np-hb" data-a="redo" title="Redo" aria-label="Redo">↷ Redo</button></span><button type="button" class="np-newb" data-a="newnote" title="Choose a language and name a new code file (Alt+Shift+N)">＋ New File</button>`
-  : `<span class="mw-tip" tabindex="0" title="Drag notes into folders and folders into other folders, drag either up or down to put them in your own order, star the ones you use most, and paste or drop photos and videos in. ▾ on a folder folds its notes away. Drag a note into the open note to link to it, or onto ⧉ beside the title to open the two side by side. Drag a file from the Code section into a note for a copy of its code, or onto a folder to file a copy there. The ◀ tabs hide the folders or the list; drag the lines beside them to resize. Select words and right-click to define them or link them to another note." aria-label="Tips">?</span><span class="np-hist" role="group" aria-label="Undo and redo"><button type="button" class="np-hb" data-a="undo" title="Undo (${/Mac/.test(navigator.platform) ? "⌘" : "Ctrl+"}+Z): writing, folders, new or deleted notes, widgets…" aria-label="Undo">↶ Undo</button><button type="button" class="np-hb" data-a="redo" title="Redo (⇧${/Mac/.test(navigator.platform) ? "⌘" : "Ctrl+"}+Z)" aria-label="Redo">↷ Redo</button></span><button type="button" class="np-hb np-io" data-a="io" title="Import notes from Word, Obsidian, Apple Notes, Evernote, Google Keep, Notion… or export them">⇅ Import / Export</button><button type="button" class="np-newb" data-a="newnote" title="Name a new note and start writing (Alt+Shift+N)">＋ New Note</button>`;
+  : `<span class="mw-tip" tabindex="0" title="Drag notes into folders and folders into other folders, drag either up or down to put them in your own order, star the ones you use most, and paste or drop photos and videos in. Click a folder icon to fold its notes away. Drag a note or a folder into the open note to link to it (right-click a link to open it in a new note tab), or onto ⧉ beside the title to open the two side by side. Drag a file from the Code section into a note for a copy of its code, or onto a folder to file a copy there; drag the line above Code to share the column. ▦ ☰ ≣ beside the search show the notes as icons, a list or details. H in the note's toolbar makes a line a Title, Subtitle or Heading 1, 2 or 3. The align and spacing menus change the whole note when nothing is selected, or only the words you select. ‹ Back goes to the window you had open before. ◈ at the bottom right lists the note's links; ↳ beside it adds your own paranotes under words or code. The ◀ tabs hide the folders or the list; drag the lines beside them to resize. Select words and right-click to define them or link them to another note." aria-label="Tips">?</span><span class="np-hist" role="group" aria-label="Undo and redo"><button type="button" class="np-hb" data-a="undo" title="Undo (${/Mac/.test(navigator.platform) ? "⌘" : "Ctrl+"}+Z): writing, folders, new or deleted notes, widgets…" aria-label="Undo">↶ Undo</button><button type="button" class="np-hb" data-a="redo" title="Redo (⇧${/Mac/.test(navigator.platform) ? "⌘" : "Ctrl+"}+Z)" aria-label="Redo">↷ Redo</button></span><button type="button" class="np-hb np-io np-share" data-a="share" aria-haspopup="menu" aria-expanded="false" title="Share: copy a link to this note, send a copy to someone, import or export notes">⇪ Share</button><button type="button" class="np-newb" data-a="newnote" title="Name a new note and start writing (Alt+Shift+N)">＋ New Note</button>`;
   const fold = $(".nb-folders", s), items = $(".nb-items", s), edSec = $(".nb-ed", s), ed = $(".nb-pane.p1", s), ed2 = $(".nb-pane.p2", s), tabs = $(".nb-tabs", s), nbEl = $(".nb", s), q = $('input[type="search"]', s), sortSel = $(".nb-sort", s);
   const VK = CODE ? "codeview" : "noteview";
   $(".nb-tools .np-views", s).addEventListener("click", e => { const b = e.target.closest("[data-view]"); if (!b) return; store.set(VK, b.dataset.view); $(".nb-tools .np-views", s).querySelectorAll("[data-view]").forEach(x => x.setAttribute("aria-checked", String(x === b)));
-    if (b.dataset.view === "details" && matchMedia("(min-width:861px)").matches) { // Details needs room for its columns: widen the list if the window allows
-      const nb = $(".nb", s), lw = $(".nb-list", s).offsetWidth, w = Math.min(480, nb.offsetWidth - $(".nb-folders", s).offsetWidth - 360);
-      if (w > lw) { store.set("nbw", w); nb.style.setProperty("--nb-lw-user", w + "px"); } }
-    drawList(); });
+    drawList(); }); // the list keeps the width you gave it (v0.5.4, Devon): Details scrolls sideways instead of widening it
   q.value = NOTES.q;
-  q.oninput = () => { NOTES.q = q.value; drawList(); };
+  // Search (v0.5.4, Devon): above the folders, never folded away; it looks through every note (or code file), and shows the
+  // notes list if it was folded so the results can be seen
+  q.oninput = () => { NOTES.q = q.value; if (q.value.trim() && nbEl.classList.contains("lfold")) { const fb = $('.nb-fold[data-p="l"]', s); if (fb) fb.click(); } drawList(); };
+  { const bar = $(".nb-sbar", s), fcol = $(".nb-folders", s), fit = () => { const w = fcol.offsetWidth; if (w > 60) bar.style.setProperty("--sbw", Math.max(200, w - 20) + "px"); };
+    if (window.ResizeObserver) { const ro = new ResizeObserver(fit); ro.observe(fcol); m.cleanup.push(() => ro.disconnect()); } fit(); }
   sortSel.value = NOTES.sort === "recent" ? "recent" : "mine";
   sortSel.onchange = () => { NOTES.sort = sortSel.value; store.set(SK.sort, NOTES.sort); drawList(); };
   const favTop = $(".nb-favtop", s), paintFavTop = () => { favTop.setAttribute("aria-pressed", String(!!NOTES.favTop)); favTop.title = NOTES.favTop ? "Favourites are kept at the top. Click to place them in your own order instead" : "Favourites follow your order. Click to keep them at the top"; };
@@ -5360,7 +5851,7 @@ function renderNotes(m, focusBody, space = "notes"){
   $('[data-a="newnote"]', m.head).onclick = newHere;
   // ⇅ Import / Export (io.js): the note open now and the folder being viewed are offered first
   const openIO = scope => { flushEd(); if (window.NPIO) NPIO.open({ note: NOTES.sel, folder: NOTES.folder, scope, onImported: r => { NOTES.folder = "all"; if (r.made[0]) NOTES.sel = r.made[0]; drawAll(); } }); };
-  const iob = $('[data-a="io"]', m.head); if (iob) iob.onclick = () => openIO();
+  const shb = $('[data-a="share"]', m.head); if (shb) shb.onclick = () => shareMenu(shb, { id: NOTES.sel, flush: flushEd, openIO });
   // undo / redo (notes.js keeps the steps): save what is being typed, step, redraw everything from the store
   const hb = { undo: $('[data-a="undo"]', m.head), redo: $('[data-a="redo"]', m.head) };
   const paintHist = () => { const st = NS.history(); hb.undo.disabled = !st.undo; hb.redo.disabled = !st.redo; };
@@ -5388,18 +5879,21 @@ function renderNotes(m, focusBody, space = "notes"){
   const folderIcon = open => `<span class="nb-fic nb-fold-ic${open ? " open" : ""}" aria-hidden="true"><svg viewBox="0 0 16 16" width="15" height="15">${open
     ? '<path d="M1.5 13.5V3.5h4.2l1.5 1.6h5.8v2" class="b"/><path d="M1.5 13.5l2.3-6.4h10.7l-2.3 6.4z" class="f"/>'
     : '<path d="M1.5 3.5h4.2l1.5 1.6h7.3v8.4h-13z" class="f"/><path d="M1.5 6.6h13" class="b"/>'}</svg></span>`;
-  /* the box at the top of the folders column (Devon, Oct 12 2026): when the selected note was last edited and made, to the
-     second, and the same for the folder being viewed (its last change = the folder itself or any note in it) */
-  const stamp = t => t ? new Date(t).toLocaleString(undefined, { year: "numeric", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", second: "2-digit" }) : "";
-  const infoRow = (k, t, why) => `<dt>${k}</dt><dd${t ? ` class="num"><time datetime="${new Date(t).toISOString()}">${esc(stamp(t))}</time>` : ` class="nb-inone" title="${esc(why || "")}">Not recorded`}</dd>`;
+  /* the info line under the page title and ‹ Back (Devon, Oct 12 2026; moved out of the folders column in v0.5.4): when the
+     selected note was last edited and made, and the same for the folder being viewed (its last change = the folder itself or
+     any note in it), as MM/DD/YY hh:mm:ss AM/PM */
+  const p2 = v => String(v).padStart(2, "0");
+  const stamp = t => { if (!t) return ""; const d = new Date(t), hr = d.getHours(); return `${p2(d.getMonth() + 1)}/${p2(d.getDate())}/${p2(d.getFullYear() % 100)} ${p2(hr % 12 || 12)}:${p2(d.getMinutes())}:${p2(d.getSeconds())} ${hr < 12 ? "AM" : "PM"}`; };
+  const infoRow = (k, t, why) => `<span class="nb-iv"><span class="nb-ilab">${k}</span> ${t ? `<time class="num" datetime="${new Date(t).toISOString()}">${esc(stamp(t))}</time>` : `<span class="nb-inone" title="${esc(why || "")}">Not recorded</span>`}</span>`;
   function drawInfo(){
-    const box = fold.querySelector(".nb-info"); if (!box) return;
+    const box = m.info; if (!box) return;
     const n = NOTES.sel && NS.get(NOTES.sel), all = NS.list(), f = NS.folders().find(x => x.id === NOTES.folder);
     const inF = f ? (() => { const sub = NS.subtree(f.id); return all.filter(x => sub.has(x.folder)); })() : NOTES.folder === "fav" ? all.filter(x => x.fav) : NOTES.folder === "none" ? all.filter(x => !x.folder) : all;
     const fname = f ? f.name : NOTES.folder === "fav" ? "Favourites" : NOTES.folder === "none" ? "Unfiled" : CODE ? "All code" : "All notes";
     const last = Math.max(f && f.updated || 0, ...inF.map(x => x.updated || 0));
-    box.innerHTML = `<div class="nb-ib"><span class="nb-ik">${CODE ? "File" : "Note"}</span>${n ? `<b class="nb-iname">${esc(n.title)}</b><dl>${infoRow("Last edited", n.updated)}${infoRow("Created", n.created)}</dl>` : `<p class="nb-inone">No ${CODE ? "file" : "note"} selected</p>`}</div>`
-      + `<div class="nb-ib"><span class="nb-ik">Folder</span><b class="nb-iname">${esc(fname)}</b><dl>${infoRow("Last change", last > 0 ? last : 0, "Nothing in it yet")}${f ? infoRow("Created", f.created, "Folders made before NotePath 0.5.2 have no creation date") : ""}</dl></div>`;
+    box.setAttribute("aria-label", CODE ? "Selected file and folder" : "Selected note and folder");
+    box.innerHTML = `<span class="nb-ib"><span class="nb-ik">${CODE ? "File" : "Note"}</span>${n ? `<b class="nb-iname" title="${esc(n.title)}">${esc(n.title)}</b>${infoRow("Last edited", n.updated)}${infoRow("Created", n.created)}` : `<span class="nb-inone">No ${CODE ? "file" : "note"} selected</span>`}</span>`
+      + `<span class="nb-ib"><span class="nb-ik">Folder</span><b class="nb-iname" title="${esc(fname)}">${esc(fname)}</b>${infoRow("Last change", last > 0 ? last : 0, "Nothing in it yet")}${f ? infoRow("Created", f.created, "Folders made before NotePath 0.5.2 have no creation date") : ""}</span>`;
   }
   const onInfo = () => drawInfo(); window.addEventListener("inquire:notes-changed", onInfo); m.cleanup.push(() => window.removeEventListener("inquire:notes-changed", onInfo));
   function drawFolders(){
@@ -5413,7 +5907,7 @@ function renderNotes(m, focusBody, space = "notes"){
     const noteRow = (n, d) => `<div class="nb-fnote${n.id === NOTES.sel ? " sel" : ""}" role="button" tabindex="0" draggable="true" data-id="${n.id}" style="--d:${d}" title="Open ${esc(n.title)} · drag it onto a folder, into the open note (a link) or onto ⧉ (side by side)"><span class="nb-fni" aria-hidden="true">${n.fav ? "★" : "▫"}</span><span class="nb-fnt">${esc(n.title)}</span></div>`;
     const tree = parent => fs.filter(f => (f.parent || null) === parent).map(f => row(f.id, "", f.name, count(f.id), f)
       + (shut.has(f.id) ? "" : tree(f.id) + (byFolder[f.id] || []).map(n => noteRow(n, f.depth + 1)).join(""))).join("");
-    fold.innerHTML = (CODE ? "" : `<div class="nb-fmain">`) + `<section class="nb-info" aria-label="${CODE ? "Selected file and folder" : "Selected note and folder"}" aria-live="polite"></section><div class="nb-fh">${CODE ? "Code library" : "Library"}</div>`
+    fold.innerHTML = (CODE ? "" : `<div class="nb-fmain">`) + `<div class="nb-fh">${CODE ? "Code library" : "Library"}</div>`
       + row("all", CODE ? "&lt;/&gt;" : "▤", CODE ? "All code" : "All notes", all.length) + row("fav", "★", "Favourites", all.filter(n => n.fav).length) + row("none", "◌", "Unfiled", all.filter(n => !n.folder).length)
       + `<div class="nb-fh nb-ftop" data-top>${CODE ? "Code folders" : "Folders"}</div>` + tree(null)
       + `<button type="button" class="nb-fadd" data-a="addf">＋ New folder</button>` + (CODE ? "" : `</div><div class="nb-fsplit" role="separator" aria-orientation="horizontal" tabindex="0" aria-label="Share the folders column between notes and code (drag, or ↑/↓; double-click resets)" title="Drag to give the Code section more or less room · double-click resets"></div><div class="nb-fcode">${codeSection(shut)}</div>`);
@@ -5542,19 +6036,43 @@ function renderNotes(m, focusBody, space = "notes"){
     inp.onkeydown = e => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); end(false); } };
     inp.onblur = () => setTimeout(() => end(true), 120);
   }
+  /* Details columns (v0.5.4, Devon): drag the line at the right of a column header to resize it; widths kept per space
+     (notepath.dcols / notepath.codedcols), double-click resets; the list scrolls sideways when they are wider than it */
+  const DCK = CODE ? "codedcols" : "dcols";
+  const paintDcols = () => { const w = store.get(DCK, null); if (Array.isArray(w) && w.length === 4) { items.style.setProperty("--dcols", w.map(x => x + "px").join(" ")); items.style.setProperty("--dmin", (w.reduce((a, b) => a + b, 0) + 3 * 8 + 28) + "px"); } else { items.style.removeProperty("--dcols"); items.style.removeProperty("--dmin"); } };
+  function wireDcols(){
+    paintDcols();
+    items.querySelectorAll(".nb-dcrz").forEach(g => {
+      g.addEventListener("pointerdown", e => {
+        if (e.button !== 0) return; e.preventDefault(); e.stopPropagation();
+        const cols = [...items.querySelectorAll(".nb-dhead > span")].map(x => Math.round(x.getBoundingClientRect().width)), i = +g.dataset.c, x0 = e.clientX, w0 = cols[i];
+        g.setPointerCapture(e.pointerId); g.classList.add("on");
+        const move = ev => { cols[i] = Math.max(50, Math.min(600, Math.round(w0 + ev.clientX - x0))); store.set(DCK, cols); paintDcols(); };
+        const up = () => { g.classList.remove("on"); g.removeEventListener("pointermove", move); g.removeEventListener("pointerup", up); g.removeEventListener("pointercancel", up); };
+        g.addEventListener("pointermove", move); g.addEventListener("pointerup", up); g.addEventListener("pointercancel", up);
+      });
+      g.addEventListener("dblclick", e => { e.stopPropagation(); store.set(DCK, null); paintDcols(); });
+      g.addEventListener("click", e => e.stopPropagation());
+    });
+  }
   function drawList(){
     const mine = NOTES.sort !== "recent";
-    const all = NS.list(NOTES.q).filter(inView).sort((a, b) => (NOTES.favTop ? b.fav - a.fav : 0) || (mine ? NS.byOrder(a, b) : b.updated - a.updated)); // favourites on top unless "★ first" is off
+    const all = (NOTES.q.trim() ? NS.list(NOTES.q) : NS.list().filter(inView)).sort((a, b) => (NOTES.favTop ? b.fav - a.fav : 0) || (mine ? NS.byOrder(a, b) : b.updated - a.updated)); // favourites on top unless "★ first" is off
     if (!NOTES.sel || !all.some(n => n.id === NOTES.sel)) { if (!NOTES.sel || !NS.get(NOTES.sel) || !inView(NS.get(NOTES.sel))) NOTES.sel = all[0] ? all[0].id : null; }
     const fname = Object.fromEntries(NS.folders().map(f => [f.id, f.name]));
     const view = viewOf(VK); items.dataset.view = view;
     const badge = n => CODE ? `<i class="nc-badge" data-lang="${esc(n.code.lang)}">${esc(LG(n.code.lang).short)}</i>` : "", star = n => n.fav ? '<i class="nb-star" aria-label="Favourite">★</i>' : "";
     const itemHTML = n => { const a = `role="option" tabindex="0" draggable="true" aria-selected="${n.id === NOTES.sel}" data-id="${n.id}"`, inF = n.folder && fname[n.folder] && NOTES.folder !== n.folder ? "▸ " + esc(fname[n.folder]) + " · " : "";
-      if (view === "icons") return `<div ${a} class="nb-it nb-tile" title="${esc(n.title)} · ${esc(noteKind(n))} · edited ${esc(stampShort(n.updated))}"><span class="nb-tic">${CODE ? `<i class="nc-badge nb-tbadge" data-lang="${esc(n.code.lang)}">${esc(LG(n.code.lang).short)}</i>` : NOTE_IC}${n.fav ? '<i class="nb-star nb-tstar" aria-label="Favourite">★</i>' : ""}</span><span class="nb-t">${esc(n.title)}</span><span class="nb-m">${when(n.updated)}</span></div>`;
+      const cov = n.cover && /^[a-z0-9]{4,40}$/i.test(n.cover) ? n.cover : null; // cover photo (v0.5.4)
+      if (view === "icons") return `<div ${a} class="nb-it nb-tile" title="${esc(n.title)} · ${esc(noteKind(n))} · edited ${esc(stampShort(n.updated))}"><span class="nb-tic${cov ? " has-cov" : ""}">${cov ? `<img class="nb-cov nb-tcov" data-cov="${cov}" alt="">` : CODE ? `<i class="nc-badge nb-tbadge" data-lang="${esc(n.code.lang)}">${esc(LG(n.code.lang).short)}</i>` : NOTE_IC}${n.fav ? '<i class="nb-star nb-tstar" aria-label="Favourite">★</i>' : ""}</span><span class="nb-t">${esc(n.title)}</span><span class="nb-m">${when(n.updated)}</span></div>`;
       if (view === "details") return `<div ${a} class="nb-it nb-row"><span class="nb-t">${badge(n)}${star(n)}${esc(n.title)}</span><span class="nb-dc num">${esc(stampShort(n.updated))}</span><span class="nb-dc num">${esc(stampShort(n.created))}</span><span class="nb-dc">${esc(noteKind(n))}</span></div>`;
+      if (view === "compact") return `<div ${a} class="nb-it nb-row nb-crow" title="${esc(n.title)} · made ${esc(stampShort(n.created))}"><span class="nb-t">${badge(n)}${star(n)}${esc(n.title)}</span><span class="nb-dc num">${esc(stampShort(n.created))}</span></div>`;
+      if (cov) return `<div ${a} class="nb-it nb-hascov"><img class="nb-cov nb-lcov" data-cov="${cov}" alt=""><span class="nb-ltx"><span class="nb-t">${badge(n)}${star(n)}${esc(n.title)}</span><span class="nb-m">${inF}${when(n.updated)}</span></span></div>`;
       return `<div ${a} class="nb-it"><span class="nb-t">${badge(n)}${star(n)}${esc(n.title)}</span><span class="nb-m">${inF}${when(n.updated)}</span></div>`; };
-    items.innerHTML = all.length ? (view === "details" ? `<div class="nb-dhead" aria-hidden="true"><span>Name</span><span>Modified</span><span>Created</span><span>Kind</span></div>` : "") + all.map(itemHTML).join("")
+    items.innerHTML = all.length ? (view === "details" ? `<div class="nb-dhead" aria-hidden="true">${["Name", "Modified", "Created", "Kind"].map((t, i) => `<span>${t}${i < 3 ? `<i class="nb-dcrz" data-c="${i}" title="Drag to resize this column · double-click to reset all"></i>` : ""}</span>`).join("")}</div>` : "") + all.map(itemHTML).join("")
       : `<p class="nb-empty">${NOTES.q ? (CODE ? "No code files match." : "No notes match.") : NOTES.folder === "fav" ? (CODE ? "No favourites yet. Star a file with ☆." : "No favourites yet. Star a note with ☆.") : CODE ? "No code files here yet. Start one with ＋ New File." : "No notes here yet."}</p>`;
+    items.querySelectorAll("img[data-cov]").forEach(im => window.InquireNotes.imageURL(im.dataset.cov).then(u => { if (u) im.src = u; else im.classList.add("missing"); }));
+    if (view === "details") wireDcols();
     items.querySelectorAll(".nb-it").forEach(b => {
       b.onclick = () => { if (NOTES.sel === b.dataset.id) return; flushEd(); NOTES.sel = b.dataset.id; drawFolders(); drawList(); drawEd(); };
       b.addEventListener("dragstart", e => noteDragStart(e, b.dataset.id, b));
@@ -5621,10 +6139,11 @@ function renderNotes(m, focusBody, space = "notes"){
       <div class="nb-trow"><input class="nb-title" value="${esc(n.title)}" aria-label="Title" maxlength="140"><div class="nb-split" aria-hidden="true" title="Drop a note here to open it beside this one"><span class="nb-split-ic">⧉</span><span>Drop to open side by side</span></div></div>
       <div class="nb-host"></div><input type="file" accept="image/*" multiple hidden>`;
     const ti = $(".nb-title", ed), file = $('input[type="file"]', ed);
+    $(".nb-trow", ed).prepend(coverButton(NS, n.id, () => drawList())); // cover photo by the title (v0.5.4)
     rich = NS.mountEditor($(".nb-host", ed), n.id, {
       onSaved: () => { const it = items.querySelector(`[data-id="${n.id}"]`); if (it) drawList(); },
       openNote: id => openLinked(id),
-      openSide: id => openFromLink(id), openFolder: fid => openFolderLink(fid),
+      openSide: id => openFromLink(id), peek: id => peekOpen(id), openFolder: fid => openFolderLink(fid),
       annotations: indShown(), onAnnotation: aid => { IND.open = true; IND.edit = aid; indOpen(n.id); },
       onMessage: msg
     });
@@ -5672,14 +6191,14 @@ function renderNotes(m, focusBody, space = "notes"){
     if (HOLO.open) holoOpen(n.id);
     indButton(n);
   }
-  /* ----- ↳ Indented notes (Devon, Oct 12 2026): the button above ◈ opens a box above the Links box. "Show indented notes"
+  /* ----- ↳ Paranotes (Devon, Oct 12 2026): the button above ◈ opens a box above the Links box. "Show paranotes"
      draws your own notes under the words they explain (notes.js does the drawing; store "indshow"); ＋ adds one on the
      selected words; click one (in the note or in the list) to edit it. Links: [words](https://…) or a bare https:// address. ----- */
   const IND = NOTES.ind || (NOTES.ind = { open: false, edit: null, box: Object.assign({ r: 16, b: 70, w: 360, h: 300 }, store.get("indbox", {})) });
   let indEl = null, indKey = null;
   const indShown = () => store.get("indshow", true) !== false;
   function indButton(n){
-    const b = h("button", { type: "button", class: "nb-holob nb-indb", "aria-label": "Indented notes", title: "Indented notes: your own notes under the words they explain", "aria-expanded": "false" }, `<span aria-hidden="true">↳</span>`);
+    const b = h("button", { type: "button", class: "nb-holob nb-indb", "aria-label": "Paranotes", title: "Paranotes: your own notes under the words they explain", "aria-expanded": "false" }, `<span aria-hidden="true">↳</span>`);
     ed.appendChild(b);
     b.onclick = () => { IND.open = !IND.open; if (IND.open) indOpen(n.id); else indClose(); };
     if (IND.open) indOpen(n.id);
@@ -5695,9 +6214,9 @@ function renderNotes(m, focusBody, space = "notes"){
   function indOpen(id){
     if (indEl) indEl.remove(); if (indKey) { window.removeEventListener("keydown", indKey, true); indKey = null; }
     const b = $(".nb-indb", ed); if (b) b.setAttribute("aria-expanded", "true");
-    indEl = h("div", { class: "np-holo np-ind", role: "dialog", "aria-label": "Indented notes" });
-    indEl.innerHTML = `<div class="np-holo-h"><div class="np-holo-tabs"><span class="np-ind-t">↳ Indented notes</span></div><button type="button" class="np-holo-x" aria-label="Close">✕</button></div>
-      <div class="np-holo-bar"><label class="np-ind-show"><input type="checkbox"${indShown() ? " checked" : ""}><span>Show indented notes</span></label><button type="button" class="np-ind-add" title="Select words in the note (or code in a code box), then add a note of your own under them">＋ Indent a note</button></div>
+    indEl = h("div", { class: "np-holo np-ind", role: "dialog", "aria-label": "Paranotes" });
+    indEl.innerHTML = `<div class="np-holo-h"><div class="np-holo-tabs"><span class="np-ind-t">↳ Paranotes</span></div><button type="button" class="np-holo-x" aria-label="Close">✕</button></div>
+      <div class="np-holo-bar"><label class="np-ind-show"><input type="checkbox"${indShown() ? " checked" : ""}><span>Show paranotes</span></label><button type="button" class="np-ind-add" title="Select words in the note (or code in a code box), then add a note of your own under them">＋ Add a paranote</button></div>
       <div class="np-holo-b np-ind-b"></div>${RZ}`;
     ed.appendChild(indEl); indFit(); indDraw(id);
     indEl.addEventListener("mousedown", e => { if (e.target.closest("button") && !e.target.closest(".np-ind-ed")) e.preventDefault(); }); // keep the words selected in the note
@@ -5718,10 +6237,10 @@ function renderNotes(m, focusBody, space = "notes"){
     const cur = IND.edit && list.find(a => a.id === IND.edit);
     if (IND.edit && !cur) IND.edit = null;
     body.innerHTML = (cur ? `<form class="np-ind-ed"><p class="np-ind-w${cur.code ? " is-code" : ""}">${cur.code ? esc(cur.words.slice(0, 120)) : `“${esc(cur.words.slice(0, 120))}”`}</p>
-        <textarea rows="4" maxlength="4000" placeholder="Your note on these words… Links: paste https://… or write [words](https://…)" aria-label="Indented note">${esc(cur.text)}</textarea>
+        <textarea rows="4" maxlength="4000" placeholder="Your note on these words… Links: paste https://… or write [words](https://…)" aria-label="Paranote">${esc(cur.text)}</textarea>
         <div class="np-ind-acts"><button type="submit" class="btn-s">Save</button><button type="button" class="btn-s" data-a="cancel">Done</button><button type="button" class="btn-s set-warn" data-a="del">Remove</button></div></form>` : "")
       + (list.length ? `<h4>In this note <span class="num">${list.length}</span></h4><ul class="np-ind-list">${list.map(a => `<li><button type="button" data-ann="${a.id}"${a.id === IND.edit ? ' aria-current="true"' : ""}><span class="np-ind-lw${a.code ? " is-code" : ""}">${esc(a.words.slice(0, 60))}</span><span class="np-ind-lt">${a.text ? esc(a.text.slice(0, 140)) : "<i>Empty</i>"}</span></button></li>`).join("")}</ul>`
-        : `<p class="np-hl-none">No indented notes yet. Select words in the note, or code in a code box, and press <b>＋ Indent a note</b>: your note appears under them, in its own colour (Settings → Appearance).</p>`);
+        : `<p class="np-hl-none">No paranotes yet. Select words in the note, or code in a code box, and press <b>＋ Add a paranote</b>: your note appears under them, in its own colour (Settings → Appearance).</p>`);
     body.querySelectorAll("[data-ann]").forEach(b2 => b2.onclick = () => { IND.edit = b2.dataset.ann; indDraw(NOTES.sel); if (rich) rich.focusAnnotation(b2.dataset.ann); });
     const f = $(".np-ind-ed", body);
     if (f) { const ta = $("textarea", f);
@@ -5748,40 +6267,115 @@ function renderNotes(m, focusBody, space = "notes"){
         <button type="button" role="tab" data-t="links" aria-selected="true">Links</button>
         <button type="button" role="tab" data-t="source" aria-disabled="true" title="Source: coming soon">Source<small>Soon</small></button></div>
         <button type="button" class="np-holo-x" aria-label="Close">✕</button></div>
-      <div class="np-holo-bar"><span class="np-holo-lbl">Show as</span>${viewSwitch(viewOf("holoview"), "Show the links as")}</div>
+      <div class="np-holo-ck" role="group" aria-label="Which links to show"><label><input type="checkbox" data-ck="back"${HSHOW().back ? " checked" : ""}><span>Notes that link here</span></label><label><input type="checkbox" data-ck="out"${HSHOW().out ? " checked" : ""}><span>Links in this note</span></label></div>
+      <div class="np-holo-bar"><span class="np-holo-lbl">Show as</span>${viewSwitch(viewOf("holoview") === "compact" ? "list" : viewOf("holoview"), "Show the links as", VIEWS.filter(v => v[0] !== "compact"))}</div>
       <div class="np-holo-b" role="tabpanel"></div>
       ${RZ}`;
     ed.appendChild(holoEl); holoFit(); holoDraw(id); indFit();
     $(".np-holo-bar .np-views", holoEl).addEventListener("click", e => { const b = e.target.closest("[data-view]"); if (!b) return; store.set("holoview", b.dataset.view); holoEl.querySelectorAll(".np-holo-bar [data-view]").forEach(x => x.setAttribute("aria-checked", String(x === b))); holoDraw(NOTES.sel); });
+    holoEl.querySelectorAll(".np-holo-ck input").forEach(c => c.onchange = () => { const v = HSHOW(); v[c.dataset.ck] = c.checked; store.set("holoshow", v); holoDraw(NOTES.sel); });
     $(".np-holo-x", holoEl).onclick = () => holoClose();
     holoEl.querySelectorAll('.np-holo-tabs [aria-disabled]').forEach(t => t.onclick = () => msg(`${t.dataset.t === "tags" ? "Tags" : "Source"} is coming soon.`));
     panelResize(holoEl, HOLO.box, () => { holoFit(); indFit(); }, "holobox");
-    holoKey = e => { if (e.key === "Escape" && holoEl && !e.defaultPrevented && !(indEl && indEl.isConnected) && !document.querySelector(".tm-menu, .np-pop, .ask-ov")) { e.preventDefault(); e.stopPropagation(); holoClose(); } };
+    holoKey = e => { if (e.key === "Escape" && holoEl && !e.defaultPrevented && !(indEl && indEl.isConnected) && !peekEl && !document.querySelector(".tm-menu, .np-pop, .ask-ov")) { e.preventDefault(); e.stopPropagation(); holoClose(); } };
     window.addEventListener("keydown", holoKey, true);
   }
+  // ◈ Links (v0.5.4, Devon): two boxes choose what is listed: the notes that link here, the links in this note (notepath.holoshow)
+  function HSHOW(){ const v = store.get("holoshow", null); return v && typeof v === "object" ? { back: v.back !== false, out: v.out !== false } : { back: true, out: true }; }
   function holoDraw(id){
     if (!holoEl) return; const n = NS.get(id); if (!n) { holoClose(); return; }
     const all = NS.list(), folderName = x => { const f = x.folder && NS.folders().find(y => y.id === x.folder); return f ? f.name : "Unfiled"; };
     const fl = (() => { const o2 = []; String(n.html || "").replace(/data-folder="([a-z0-9]+)"/gi, (x, f) => { if (!o2.includes(f)) o2.push(f); return x; }); return o2.map(f => NS.folders().find(y => y.id === f) || null); })();
     const out = linksOf(n.html).filter(x => x !== id), back = all.filter(x => x.id !== id && linksOf(x.html).includes(id));
-    const view = viewOf("holoview"), side = x => `<button type="button" class="np-hl-s" data-side="${x.id}" title="Open ${esc(x.title)} in a new note tab (side by side)" aria-label="Open ${esc(x.title)} side by side">⧉</button>`;
+    const view = viewOf("holoview"), side = x => `<button type="button" class="np-hl-s np-hl-pk" data-peek="${x.id}" title="Peek: see ${esc(x.title)} in a small box" aria-label="Peek at ${esc(x.title)}">👁</button><button type="button" class="np-hl-s" data-side="${x.id}" title="Open ${esc(x.title)} in a new note tab (side by side)" aria-label="Open ${esc(x.title)} side by side">⧉</button>`;
     const row = (x, gone) => gone ? `<li class="np-hl gone"><span class="np-hl-t">A deleted note</span><span class="np-hl-f">its link stays in the text</span></li>`
       : view === "icons" ? `<li class="np-hl np-hl-tile"><button type="button" class="np-hl-o" data-id="${x.id}" title="Open ${esc(x.title)} · ${esc(noteKind(x))}"><span class="nb-tic">${NOTE_IC}</span><span class="np-hl-t">${x.fav ? "★ " : ""}${esc(x.title)}</span></button>${side(x)}</li>`
       : view === "details" ? `<li class="np-hl np-hl-row"><button type="button" class="np-hl-o" data-id="${x.id}" title="Open ${esc(x.title)}"><span class="np-hl-t">${x.fav ? "★ " : ""}${esc(x.title)}</span><span class="np-hl-d num">${esc(stampShort(x.updated))}</span><span class="np-hl-d num">${esc(stampShort(x.created))}</span><span class="np-hl-d">${esc(noteKind(x))}</span></button>${side(x)}</li>`
       : `<li class="np-hl"><button type="button" class="np-hl-o" data-id="${x.id}" title="Open ${esc(x.title)}"><span class="np-hl-t">${x.fav ? "★ " : ""}${esc(x.title)}</span><span class="np-hl-f">${esc(folderName(x))} · ${esc(when(x.updated))}</span></button>${side(x)}</li>`;
     const head = view === "details" ? `<div class="np-hl-head" aria-hidden="true"><span>Name</span><span>Modified</span><span>Created</span><span>Kind</span><span></span></div>` : "";
     const lst = arr => `<ul class="np-hl-list" data-view="${view}">${head}${arr.join("")}</ul>`;
-    $(".np-holo-b", holoEl).innerHTML = `<section><h4>In this note <span class="num">${out.length}</span></h4>${out.length ? lst(out.map(k => row(NS.get(k), !NS.get(k)))) : `<p class="np-hl-none">No links yet. Drag a note in from the side bar, or select words and right-click → Link to a note.</p>`}</section>
-      <section><h4>Linking here <span class="num">${back.length}</span></h4>${back.length ? lst(back.map(x => row(x))) : `<p class="np-hl-none">No other note links to this one yet.</p>`}</section>`
+    const SH = HSHOW();
+    $(".np-holo-b", holoEl).innerHTML = (SH.back ? `<section data-sec="back"><h4>Notes that link here <span class="num">${back.length}</span></h4>${back.length ? lst(back.map(x => row(x))) : `<p class="np-hl-none">No other note links to this one yet.</p>`}</section>` : "")
+      + (SH.out ? `<section data-sec="out"><h4>Links in this note <span class="num">${out.length}</span></h4>${out.length ? lst(out.map(k => row(NS.get(k), !NS.get(k)))) : `<p class="np-hl-none">No links yet. Drag a note in from the side bar, or select words and right-click → Link to a note.</p>`}</section>` : "")
+      + (!SH.back && !SH.out ? `<p class="np-hl-none">Tick a box above to list the notes that link here or the links in this note.</p>` : "")
       + (fl.length ? `<section><h4>Folders in this note <span class="num">${fl.length}</span></h4><ul class="np-hl-list">${fl.map(f => f ? `<li class="np-hl"><button type="button" class="np-hl-o" data-fid="${f.id}" title="Open the folder ${esc(f.name)}"><span class="np-hl-t">▤ ${esc(f.name)}</span><span class="np-hl-f">${all.filter(x => NS.subtree(f.id).has(x.folder)).length} notes</span></button></li>` : `<li class="np-hl gone"><span class="np-hl-t">A deleted folder</span></li>`).join("")}</ul></section>` : "");
     holoEl.querySelectorAll("[data-fid]").forEach(b2 => b2.onclick = () => openFolderLink(b2.dataset.fid));
     holoEl.querySelectorAll(".np-hl-o").forEach(b2 => b2.onclick = () => openLinked(b2.dataset.id));
-    holoEl.querySelectorAll(".np-hl-s").forEach(b2 => b2.onclick = () => openFromLink(b2.dataset.side));
+    holoEl.querySelectorAll(".np-hl-s[data-side]").forEach(b2 => b2.onclick = () => openFromLink(b2.dataset.side));
+    holoEl.querySelectorAll(".np-hl-pk").forEach(b2 => b2.onclick = () => peekOpen(b2.dataset.peek));
   }
   const onHolo = () => { if (holoEl && NOTES.sel) holoDraw(NOTES.sel); if (indEl && NOTES.sel && !IND.edit) indDraw(NOTES.sel); }; window.addEventListener("inquire:notes-changed", onHolo);
   const onHoloRz = () => { holoFit(); indFit(); }; window.addEventListener("resize", onHoloRz);
   m.cleanup.push(() => { window.removeEventListener("inquire:notes-changed", onHolo); window.removeEventListener("resize", onHoloRz); if (holoKey) window.removeEventListener("keydown", holoKey, true); if (indKey) window.removeEventListener("keydown", indKey, true); });
 
+  /* ----- 👁 Peek (v0.5.4, Devon): a small note box, after Inquire's floating Notes box (docked bottom right; drag the header
+     to float it anywhere, ⇲ or a double-click on the header docks it, ✕ or Esc closes it). It shows the note a link goes to,
+     read only; a link inside it peeks that note (‹ goes back); Open / ⧉ Side by side take it into the editor. Opened from
+     👁 in ◈ Links or Peek on a link's right-click menu. Place in notepath.peek = { float, x, y }. ----- */
+  let peekEl = null, peekKey = null, peekTrail = [];
+  const PEEK = store.get("peek", { float: false, x: 0, y: 0 });
+  function peekPlace(){
+    if (!peekEl) return;
+    const phone = matchMedia("(max-width:760px)").matches, fl = PEEK.float && !phone;
+    peekEl.classList.toggle("docked", !fl); peekEl.classList.toggle("floating", fl);
+    if (fl) { const w = peekEl.offsetWidth || 360; PEEK.x = Math.round(Math.max(120 - w, Math.min(innerWidth - 120, PEEK.x))); PEEK.y = Math.round(Math.max(0, Math.min(innerHeight - 44, PEEK.y))); peekEl.style.left = PEEK.x + "px"; peekEl.style.top = PEEK.y + "px"; peekEl.style.right = peekEl.style.bottom = ""; return; }
+    peekEl.style.left = peekEl.style.top = "";
+    const hr = holoEl && holoEl.isConnected ? holoEl.getBoundingClientRect() : null; // docked: left of the ◈ Links box when it is open
+    peekEl.style.right = (hr && !phone ? Math.max(16, innerWidth - hr.left + 12) : 16) + "px"; peekEl.style.bottom = "16px";
+  }
+  function peekClose(){ if (!peekEl) return; const el = peekEl; peekEl = null; peekTrail = []; el.classList.remove("is-open"); setTimeout(() => el.remove(), 220); if (peekKey) { window.removeEventListener("keydown", peekKey, true); peekKey = null; } }
+  function peekDraw(){
+    if (!peekEl) return; const id = peekTrail[peekTrail.length - 1], n = id && ALLNS.get(id);
+    const body = $(".np-peek-b", peekEl), back = $(".np-peek-back", peekEl);
+    back.hidden = peekTrail.length < 2;
+    if (!n) { $(".np-peek-t", peekEl).textContent = "A deleted note"; $(".np-peek-m", peekEl).textContent = ""; body.innerHTML = `<p class="np-hl-none">That note was deleted. Its link stays in the text.</p>`; peekEl.querySelectorAll(".np-peek-f button").forEach(b => b.disabled = true); return; }
+    peekEl.querySelectorAll(".np-peek-f button").forEach(b => b.disabled = false);
+    const f = n.folder && ALLNS.folders(ALLNS.spaceOf(n)).find(x => x.id === n.folder);
+    $(".np-peek-t", peekEl).textContent = n.title;
+    $(".np-peek-m", peekEl).textContent = (f ? f.name : "Unfiled") + " · edited " + stampShort(n.updated);
+    if (n.space === "code") { body.innerHTML = `<pre class="np-peek-code"></pre>`; body.firstChild.textContent = (n.code && n.code.src) || ""; return; }
+    const t = document.createElement("template"); t.innerHTML = ALLNS.sanitize(n.html || "");
+    t.content.querySelectorAll("div.nw").forEach(w => { const k = w.getAttribute("data-w"); const p = document.createElement("div"); p.className = "np-peek-w"; p.textContent = "▦ " + ({ code: "Code box", music: "Music chart", sheet: "Lead sheet", graph: "Graph", video: "Video" }[k] || "Widget") + " · open the note to see it"; w.replaceWith(p); });
+    t.content.querySelectorAll("span[data-ann]").forEach(sp => sp.removeAttribute("data-ann"));
+    body.innerHTML = ""; body.appendChild(t.content);
+    if (!body.textContent.trim() && !body.querySelector("img")) body.innerHTML = `<p class="np-hl-none">This note is empty.</p>`;
+    body.querySelectorAll("img[data-img]").forEach(im => ALLNS.imageURL(im.dataset.img).then(u => { if (u) im.src = u; }));
+    body.querySelectorAll("a.nlink[data-note]").forEach(a => { a.href = "#"; a.title = "Peek at " + a.textContent; a.onclick = e => { e.preventDefault(); peekTrail.push(a.dataset.note); peekDraw(); }; });
+    body.querySelectorAll("a.nlink[data-folder]").forEach(a => { a.onclick = e => { e.preventDefault(); openFolderLink(a.dataset.folder); }; });
+  }
+  function peekOpen(id){
+    if (!id) return;
+    if (!peekEl) {
+      peekEl = h("section", { class: "np-peek win", role: "dialog", "aria-label": "Peek at a note" });
+      peekEl.innerHTML = `<header class="np-peek-h" title="Drag to move · double-click to dock"><button type="button" class="np-peek-x np-peek-back" title="Back to the note before" aria-label="Back" hidden>‹</button><div class="np-peek-tt"><span class="np-peek-gem" aria-hidden="true"></span>Peek</div><span class="np-peek-grip" aria-hidden="true">⠿</span>
+        <div class="np-peek-hr"><button type="button" class="np-peek-x np-peek-home" title="Dock at the bottom right" aria-label="Dock at the bottom right">⇲</button><button type="button" class="np-peek-x np-peek-close" title="Close" aria-label="Close">✕</button></div></header>
+        <div class="np-peek-in"><h3 class="np-peek-t"></h3><p class="np-peek-m num"></p><div class="np-peek-b nb-rich" tabindex="0"></div></div>
+        <div class="np-peek-f"><button type="button" class="btn-s" data-a="open" title="Open it in place of this note">↗ Open</button><button type="button" class="btn-s" data-a="side" title="Open it side by side with this note">⧉ Side by side</button></div>`;
+      document.body.appendChild(peekEl);
+      const hd = $(".np-peek-h", peekEl);
+      $(".np-peek-close", peekEl).onclick = () => peekClose();
+      $(".np-peek-home", peekEl).onclick = () => { PEEK.float = false; store.set("peek", PEEK); peekPlace(); };
+      $(".np-peek-back", peekEl).onclick = () => { if (peekTrail.length > 1) { peekTrail.pop(); peekDraw(); } };
+      hd.addEventListener("dblclick", e => { if (!e.target.closest("button")) { PEEK.float = false; store.set("peek", PEEK); peekPlace(); } });
+      hd.addEventListener("pointerdown", e => {
+        if (e.button !== 0 || e.target.closest("button") || matchMedia("(max-width:760px)").matches) return; e.preventDefault();
+        const r = peekEl.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top; hd.setPointerCapture(e.pointerId); peekEl.classList.add("dragging");
+        PEEK.float = true; PEEK.x = r.left; PEEK.y = r.top; peekPlace();
+        const mv = ev => { PEEK.x = ev.clientX - dx; PEEK.y = ev.clientY - dy; peekPlace(); };
+        const up = () => { peekEl && peekEl.classList.remove("dragging"); hd.removeEventListener("pointermove", mv); hd.removeEventListener("pointerup", up); hd.removeEventListener("pointercancel", up); store.set("peek", PEEK); };
+        hd.addEventListener("pointermove", mv); hd.addEventListener("pointerup", up); hd.addEventListener("pointercancel", up);
+      });
+      peekEl.querySelector('[data-a="open"]').onclick = () => { const x = peekTrail[peekTrail.length - 1]; peekClose(); openLinked(x); };
+      peekEl.querySelector('[data-a="side"]').onclick = () => { const x = peekTrail[peekTrail.length - 1]; peekClose(); openFromLink(x); };
+      peekKey = e => { if (e.key === "Escape" && peekEl && !document.querySelector(".tm-menu, .np-pop, .ask-ov")) { e.preventDefault(); e.stopPropagation(); peekClose(); } };
+      window.addEventListener("keydown", peekKey, true);
+      peekTrail = [id]; peekDraw(); peekPlace(); void peekEl.offsetWidth; peekEl.classList.add("is-open");
+    } else { peekTrail = [id]; peekDraw(); peekPlace(); }
+    setTimeout(() => { const b = peekEl && $(".np-peek-close", peekEl); if (b) b.focus({ preventScroll: true }); }, 30);
+  }
+  const onPeek = () => { if (peekEl) peekDraw(); }; window.addEventListener("inquire:notes-changed", onPeek);
+  const onPeekRz = () => peekPlace(); window.addEventListener("resize", onPeekRz);
+  m.cleanup.push(() => { window.removeEventListener("inquire:notes-changed", onPeek); window.removeEventListener("resize", onPeekRz); peekClose(); });
   // a folder link: show that folder (its notes in the list); the open note stays
   function openFolderLink(fid){ if (!NS.folders().some(f => f.id === fid)) return; flushEd(); NOTES.folder = fid; NOTES.q = ""; q.value = ""; drawAll(); }
   // a note link clicked in either pane opens in the main pane
@@ -5813,7 +6407,7 @@ function renderNotes(m, focusBody, space = "notes"){
     }
     ed2.innerHTML = `<div class="nb-p2h"><span class="nb-p2tag">Side by side</span><button type="button" class="btn-s" data-a="swap" title="Make this the main note">Open as main</button><button type="button" class="nb-p2b" data-a="min" title="Minimise to a tab" aria-label="Minimise to a tab">▁</button><button type="button" class="nb-p2b" data-a="close" title="Close this note" aria-label="Close the side note">✕</button></div>
       <div class="nb-trow"><input class="nb-title" value="${esc(n.title)}" aria-label="Title of the side note" maxlength="140"></div><div class="nb-host"></div>`;
-    rich2 = NS.mountEditor($(".nb-host", ed2), n.id, { openNote: id => openLinked(id), openSide: id => openFromLink(id), openFolder: fid => openFolderLink(fid), onMessage: msg, onSaved: () => drawList(), annotations: store.get("indshow", true) !== false });
+    rich2 = NS.mountEditor($(".nb-host", ed2), n.id, { openNote: id => openLinked(id), openSide: id => openFromLink(id), peek: id => peekOpen(id), openFolder: fid => openFolderLink(fid), onMessage: msg, onSaved: () => drawList(), annotations: store.get("indshow", true) !== false });
     const ti = $(".nb-title", ed2);
     ti.oninput = () => { clearTimeout(save2); save2 = setTimeout(() => { save2 = null; NS.update(n.id, { title: ti.value.trim() || "Untitled note" }); drawList(); drawFolders(); }, 400); };
     $('[data-a="min"]', ed2).onclick = () => { flush2(); SPLIT.min = true; drawSplit(); };
@@ -5885,7 +6479,7 @@ let DESK_VERSION = "";
 if (window.inquireDesktop) {
   const D = window.inquireDesktop;
   document.documentElement.classList.add("desktop", "os-" + D.platform);
-  if (D.onRoute) D.onRoute(r => { if (r && r.view) go(r); }); // tray menu: Open My Tasks, the next reminder
+  if (D.onRoute) D.onRoute(r => { if (r && r.note) return openNoteLink(r.note); if (r && r.view) go(r); }); // tray menu: Open My Tasks, the next reminder
   D.version().then(v => { DESK_VERSION = v; const el = document.querySelector("#verline .num"); if (el) el.textContent = "v" + v; });
   const bar = $("#upd");
   let hideT = null;
@@ -5909,6 +6503,7 @@ if (window.inquireDesktop) {
 
 /* ---------- hooks for settings.js and textmenu.js ---------- */
 window.InquireApp = {
+  noteLink, openNoteLink, coverButton,
   context(){ return { view: S.view }; },
   openNotes: id => go({ view: "notes", space: "notes", folder: "all", sel: id || null }),
   newNote,
@@ -5921,7 +6516,7 @@ window.InquireApp = {
     if (name === "newnote") return S.view === "notes" && NPAGE && NPAGE.newNote ? NPAGE.newNote() : S.view === "tasks" && TPAGE ? TPAGE.newNote() : newNote();
     if (name === "tasks") return go({ view: S.view === "tasks" ? "menu" : "tasks" });
     if (name === "favs") return go({ view: "notes", space: "notes", folder: "fav" });
-    if (name === "back") { if (Object.keys(MW).length) return closeWins(); if (S.view !== "menu") return go({ view: "menu" }); }
+    if (name === "back") { const ob = Object.values(MW).find(w => w.ov.querySelector(".np-back")); if (ob) return ob.ov.querySelector(".np-back").click(); if (Object.keys(MW).length) return closeWins(); if (S.view !== "menu" || NAV.length > 1) return goBack(); }
   }
 };
 
@@ -6582,7 +7177,7 @@ function open() {
   if (cur) return m;
   m.head.innerHTML = `<span class="no-counts num" aria-live="polite"></span><button type="button" class="np-hb no-pause" aria-pressed="false" title="Pause or play the office">❚❚ Pause</button>`;
   const counts = m.head.querySelector(".no-counts"), status = m.win.querySelector(".no-status"), pause = m.head.querySelector(".no-pause");
-  const goNotes = x => { m.close(); A.go(Object.assign({ view: "notes", space: "notes" }, x)); };
+  const goNotes = x => { A.go(Object.assign({ view: "notes", space: "notes" }, x)); };
   cur = mount(m.body, {
     onStatus: t => { status.textContent = t; },
     onCounts: c => { counts.textContent = `${c.notes.toLocaleString()} ${c.notes === 1 ? "note" : "notes"} · ${c.folders.toLocaleString()} ${c.folders === 1 ? "folder" : "folders"} · ${c.unfiled.toLocaleString()} unfiled`; },
@@ -6840,6 +7435,7 @@ function linkMenu(x, y, a, zone) {
   menu.innerHTML = `
     <button type="button" role="menuitem" data-a="open"><span class="tm-ic">↗</span><span>Open “${esc(t.title.length > 30 ? t.title.slice(0, 28).trim() + "…" : t.title)}”<small>In place of this note</small></span></button>
     <button type="button" role="menuitem" data-a="side"><span class="tm-ic">⧉</span><span>Open in a new note tab<small>Side by side with this note</small></span></button>
+    ${api.peek ? `<button type="button" role="menuitem" data-a="peek"><span class="tm-ic">👁</span><span>Peek<small>See it in a small box</small></span></button>` : ""}
     <button type="button" role="menuitem" data-a="unlink"><span class="tm-ic">⌫</span><span>Remove link<small>Keeps the words</small></span></button>`;
   document.body.appendChild(menu);
   const W = menu.offsetWidth, H = menu.offsetHeight;
@@ -6849,6 +7445,7 @@ function linkMenu(x, y, a, zone) {
     const b = e.target.closest("button[data-a]"); if (!b) return;
     const k = b.dataset.a; close();
     if (k === "open") api.openNote(id);
+    else if (k === "peek") api.peek(id);
     else if (k === "side") api.openSide(id);
     else if (k === "unlink" && a.isConnected) { a.replaceWith(document.createTextNode(a.textContent)); api.el.normalize(); api.changed(); api.flush(); }
   });
@@ -7059,7 +7656,7 @@ const hexOk = c => /^#[0-9a-f]{6}$/i.test(c);
 function applyAll() {
   applyTheme(S.theme);
   document.documentElement.style.setProperty("--note-link", hexOk(S.noteLink) ? S.noteLink : DEF.noteLink);
-  document.documentElement.style.setProperty("--note-indent", hexOk(S.indent) ? S.indent : DEF.indent); // indented notes (notes.js)
+  document.documentElement.style.setProperty("--note-indent", hexOk(S.indent) ? S.indent : DEF.indent); // paranotes (notes.js)
   Object.keys(TABDEF).forEach(k => document.documentElement.style.setProperty("--tab-" + k, hexOk(S.tabs[k]) ? S.tabs[k] : TABDEF[k]));
   applySizes();
   document.documentElement.toggleAttribute("data-reduce-motion", !!S.reduceMotion);
@@ -7114,7 +7711,7 @@ document.addEventListener("keydown", e => {
   if (ov.hidden) {
     if (e.key === "Escape" && !e.defaultPrevented) {
       // Esc closes the smallest thing first: a popup (it handles Esc itself), then My notes
-      if (document.querySelector(".tm-menu, .nk-pick, .nr-panel, .ask-ov, .nv-pop, .np-pop, .np-holo, .np-ind")) return;
+      if (document.querySelector(".tm-menu, .nk-pick, .nr-panel, .ask-ov, .nv-pop, .np-pop, .np-holo, .np-ind, .np-peek")) return;
       if (document.querySelector(".mw-ov:not(.out)") && window.InquireApp) { e.preventDefault(); e.stopPropagation(); InquireApp.closeWin(); return; }
     }
     if (!act || document.querySelector(".ask-ov")) return;
@@ -7171,10 +7768,10 @@ function paneLook() {
   pick.oninput = () => { S.noteLink = pick.value; applyAll(); mark(); };
   pick.onchange = () => { S.noteLink = pick.value; save(); };
   wrap.appendChild(lc);
-  // colour of indented notes (your own notes under the words they explain)
-  const ic = h(`<div class="set-thfam"><h3>Indented notes</h3><div class="set-item set-lcitem"><div><p>Colour of the notes you indent under words in a note (↳ at the bottom right of a note).
+  // colour of paranotes (your own notes under the words they explain)
+  const ic = h(`<div class="set-thfam"><h3>Paranotes</h3><div class="set-item set-lcitem"><div><p>Colour of your paranotes: the notes you add under words in a note (↳ at the bottom right of a note).
       <span class="set-lcdemo set-inddemo">Example: <span class="set-indw">photosynthesis</span><span class="set-indt">how plants turn light into food</span></span></p></div>
-    <div class="set-lc" role="radiogroup" aria-label="Indented notes colour">${LINKCOL.map(([c, n]) => `<button type="button" role="radio" class="set-lcs" data-c="${c}" aria-checked="${String(S.indent).toLowerCase() === c.toLowerCase()}" title="${n}" aria-label="${n}" style="--c:${c}"></button>`).join("")}
+    <div class="set-lc" role="radiogroup" aria-label="Paranotes colour">${LINKCOL.map(([c, n]) => `<button type="button" role="radio" class="set-lcs" data-c="${c}" aria-checked="${String(S.indent).toLowerCase() === c.toLowerCase()}" title="${n}" aria-label="${n}" style="--c:${c}"></button>`).join("")}
       <label class="set-lcs set-lcpick" title="Any colour" aria-label="Any colour"><input type="color" value="${hexOk(S.indent) ? S.indent : DEF.indent}"></label></div></div></div>`);
   const imark = () => ic.querySelectorAll(".set-lcs[data-c]").forEach(b => b.setAttribute("aria-checked", String(b.dataset.c.toLowerCase() === String(S.indent).toLowerCase())));
   ic.querySelectorAll(".set-lcs[data-c]").forEach(b => b.onclick = () => { S.indent = b.dataset.c; save(); applyAll(); imark(); ic.querySelector('input[type="color"]').value = S.indent; });
@@ -7387,7 +7984,7 @@ const KEYACTS = [
   ["newnote", "New note", "Alt+Shift+KeyN"],
   ["favs", "Favourite notes", "Alt+KeyF"],
   ["tasks", "My Tasks", "Alt+KeyT"],
-  ["back", "Back", "Alt+Backspace", "Closes My notes when it is open."]
+  ["back", "Back", "Alt+Backspace", "Goes back to the window you had open before, like ‹ Back."]
 ];
 const KDEF = Object.fromEntries(KEYACTS.map(a => [a[0], a[2]]));
 const binding = id => (S.keys && id in S.keys ? S.keys[id] : KDEF[id]) || "";

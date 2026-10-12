@@ -264,6 +264,7 @@ function pane(el, n, o) {
       <textarea class="nc-in" hidden spellcheck="false" placeholder="What your program reads (input(), scanf, cin, Scanner…): one line per answer." aria-label="Program input"></textarea></div>
     <div class="nc-status num"><span class="nc-s-lang"></span><span class="nc-s-pos">Ln 1, Col 1</span><span>${code.lang === "javascript" ? "Spaces: 2" : "Spaces: 4"}</span><span>UTF-8</span><span class="nc-s-run"></span></div>`;
   const q = s => $(s, el), out = q(".nc-out"), inp = q(".nc-in"), st = q(".nc-pst"), langSel = q(".nc-lang"), ti = q(".nb-title");
+  { const tr = q(".nb-trow"); if (tr && o.main && window.InquireApp && InquireApp.coverButton) tr.prepend(InquireApp.coverButton(NS, n.id, () => o.onSaved && o.onSaved())); } // cover photo (v0.5.4)
   inp.value = code.stdin || "";
   let t = null, tt = null;
   const flush = () => { if (t) { clearTimeout(t); t = null; NS.update(n.id, { code: { lang: code.lang, src: ed.getValue(), stdin: inp.value } }); if (o.onSaved) o.onSaved(); }

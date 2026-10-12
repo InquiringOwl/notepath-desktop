@@ -46,6 +46,18 @@ let tray = null, quitting = false, nextRem = [];
 const startHidden = process.argv.includes('--hidden');
 function showWin() { if (!win || win.isDestroyed()) createWindow(); if (win.isMinimized()) win.restore(); win.show(); win.focus(); }
 function openIn(route) { showWin(); const go = () => win.webContents.send('app:route', route); if (win.webContents.isLoading()) win.webContents.once('did-finish-load', go); else go(); }
+/* ---------------- note links (v0.5.4): Share → Copy link gives notepath://note/<id>; clicked in another file, an email to
+   yourself or a calendar, it opens that note here. Notes live only on this computer, so on someone else's computer the link
+   only opens NotePath (it says the note is not there); Share → Send a copy is for associates. */
+const NOTE_LINK = /^notepath:\/\/note\/([a-z0-9]+)/i;
+let pendingNote = null;
+function openNoteLink(url) {
+  const m = String(url || '').match(NOTE_LINK); if (!m) return false;
+  if (!app.isReady() || !win) { pendingNote = m[1]; return true; }
+  openIn({ view: 'notes', note: m[1] }); return true;
+}
+app.on('open-url', (e, url) => { if (NOTE_LINK.test(url)) { e.preventDefault(); openNoteLink(url); } }); // macOS
+{ const a = process.argv.find(x => NOTE_LINK.test(x)); if (a) pendingNote = a.match(NOTE_LINK)[1]; } // Windows / Linux: opened by a link
 function trayIcon() { const img = nativeImage.createFromPath(path.join(APP_DIR, 'brand', 'np-mark-64.png')); return img.isEmpty() ? img : img.resize({ width: 16, height: 16, quality: 'best' }); }
 function updateTray() {
   if (!USE_TRAY()) { if (tray) { tray.destroy(); tray = null; } return; }
@@ -74,8 +86,8 @@ function createWindow() {
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true }
   });
   win.loadURL('notepath://app/index.html');
-  win.webContents.setWindowOpenHandler(({ url }) => { if (/^https?:/.test(url)) shell.openExternal(url); return { action: 'deny' }; });
-  win.webContents.on('will-navigate', (e, url) => { if (!url.startsWith('notepath://')) { e.preventDefault(); if (/^https?:/.test(url)) shell.openExternal(url); } });
+  win.webContents.setWindowOpenHandler(({ url }) => { if (NOTE_LINK.test(url)) openNoteLink(url); else if (/^https?:/.test(url)) shell.openExternal(url); return { action: 'deny' }; });
+  win.webContents.on('will-navigate', (e, url) => { if (NOTE_LINK.test(url)) { e.preventDefault(); openNoteLink(url); return; } if (!url.startsWith('notepath://')) { e.preventDefault(); if (/^https?:/.test(url)) shell.openExternal(url); } });
   win.webContents.on('did-finish-load', () => send({}));
   win.on('close', flushStorage); // write localStorage (remembered username, progress, settings) to disk before the window goes
   // Windows / Linux: the ✕ hides NotePath to the tray instead of quitting (Settings → Usage can turn this off)
@@ -267,11 +279,14 @@ app.whenReady().then(() => {
     cb({ requestHeaders: d.requestHeaders });
   });
   createWindow(); updateTray();
+  // note links: NotePath opens notepath://note/… links from other apps (packaged app; from source it passes this script)
+  try { if (process.defaultApp) { if (process.argv.length >= 2) app.setAsDefaultProtocolClient('notepath', process.execPath, [path.resolve(process.argv[1])]); } else app.setAsDefaultProtocolClient('notepath'); } catch (e) { log.warn('note links', e); }
+  if (pendingNote) { const id = pendingNote; pendingNote = null; openIn({ view: 'notes', note: id }); }
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); else showWin(); });
 });
 // one NotePath at a time: opening it again (Start menu, desktop icon) brings the hidden window back instead of a second copy
 if (!app.requestSingleInstanceLock()) app.quit();
-else app.on('second-instance', () => { if (app.isReady()) showWin(); });
+else app.on('second-instance', (_e, argv) => { if (!app.isReady()) return; const l = (argv || []).find(x => NOTE_LINK.test(x)); if (l) openNoteLink(l); else showWin(); });
 /* AI settings: environment first, then ai.config.json beside main.js (packaged with the app; keep it out of git). */
 function aiConfig() {
   let f = {}; try { f = JSON.parse(fs.readFileSync(path.join(__dirname, 'ai.config.json'), 'utf8')) || {}; } catch (e) { /* not set up */ }

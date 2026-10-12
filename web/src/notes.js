@@ -29,12 +29,18 @@ const byUpdated = (a, b) => b.updated - a.updated;
 const changed = () => window.dispatchEvent(new CustomEvent("inquire:notes-changed"));
 
 /* ---------- rich text: sanitise, plain text ---------- */
-const KEEP = new Set(["B", "STRONG", "I", "EM", "U", "S", "STRIKE", "BR", "DIV", "P", "UL", "OL", "LI", "H3", "BLOCKQUOTE", "A", "IMG", "SPAN"]);
+const KEEP = new Set(["B", "STRONG", "I", "EM", "U", "S", "STRIKE", "BR", "DIV", "P", "UL", "OL", "LI", "H1", "H2", "H3", "H4", "H6", "BLOCKQUOTE", "A", "IMG", "SPAN"]); // H1 Title · H6 Subtitle · H2 / H3 / H4 Heading 1 / 2 / 3 (v0.5.4)
 const TCOL = { "#f2b84b": "amber", "#5cc8e0": "cyan", "#f07ca0": "pink", "#b49bff": "violet", "#7bd88f": "green", "#d97ae6": "magenta", "#b5d65a": "lime", "#e5675b": "red", "#8b97ae": "muted" };
 const TKEYS = new Set(Object.values(TCOL)), HEX = /^#[0-9a-f]{6}$/;
 // any colour from the spectrum picker is kept as span[data-c="#rrggbb"] with a matching inline colour (the sanitiser writes the style itself)
 const hexOf = v => { v = String(v || "").trim().toLowerCase(); if (/^#[0-9a-f]{3}$/.test(v)) v = "#" + v[1] + v[1] + v[2] + v[2] + v[3] + v[3];
   const m = v.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/); if (m) v = "#" + [m[1], m[2], m[3]].map(x => (+x).toString(16).padStart(2, "0")).join(""); return HEX.test(v) ? v : ""; };
+const CLEARH = "#010204"; // stand-in highlight for "no highlight" (v0.5.4): becomes span[data-h="_def"], then lift() takes it off
+// a highlight keeps the words readable: a light one makes the text dark, a dark one makes it light (data-hl, set from the colour)
+const hlTone = hx => { const n = parseInt(hx.slice(1), 16), L = (0.2126 * (n >> 16 & 255) + 0.7152 * (n >> 8 & 255) + 0.0722 * (n & 255)) / 255; return L > 0.55 ? "l" : L < 0.3 ? "d" : ""; };
+// paragraph layout (v0.5.4): align, indent, line spacing, space after, as attributes on blocks (see api.blockStyle)
+const BLAYOUT = { "data-al": new Set(["left", "center", "right"]), "data-in": new Set(["1", "2", "3", "4", "5", "6", "7", "8"]), "data-lh": new Set(["1", "1.15", "1.5", "2", "2.5", "3"]), "data-ps": new Set(["0", "6", "12", "24"]) };
+const BLTAGS = new Set(["DIV", "P", "H1", "H2", "H3", "H4", "H6", "BLOCKQUOTE", "UL", "OL", "LI"]);
 const CLEARC = "#010203"; // stand-in colour for "normal colour": becomes span[data-c="_def"] for a moment, then lift() takes the colour off
 // numeric text sizes (toolbar size menu): span[data-s="18"]; the note's normal text is 15. Old notes keep s / n / l / xl.
 const NSIZES = [8, 9, 10, 11, 12, 13, 14, 15, 16, 18, 20, 22, 24, 28, 32, 36, 40, 48, 60, 72];
@@ -86,19 +92,21 @@ function clean(node) {
       if (id && /^[a-z0-9]+$/i.test(id)) keep["data-img"] = id; else if (/^https:\/\/[^\s"'<>]+$/i.test(src)) keep.src = src; else { c.remove(); return; }
       keep.alt = (c.getAttribute("alt") || "").slice(0, 200); keep.class = "nimg";
     }
+    if (BLTAGS.has(tag)) for (const a in BLAYOUT) { const v = c.getAttribute(a); if (v != null && BLAYOUT[a].has(v)) keep[a] = v; } // align, indent, spacing (v0.5.4)
     if (tag === "UL" && c.getAttribute("data-ck") === "1") keep["data-ck"] = "1"; // checklist (NotePath)
     if (tag === "LI" && c.getAttribute("data-done") === "1") keep["data-done"] = "1";
     if (tag === "SPAN") { const k = c.getAttribute("data-c"), z = c.getAttribute("data-s"), f = c.getAttribute("data-f");
       if (TKEYS.has(k)) keep["data-c"] = k; else if (HEX.test(k || "")) { keep["data-c"] = k; keep.style = "color:" + k; }
+      const hl = c.getAttribute("data-h"); if (HEX.test(hl || "")) { keep["data-h"] = hl; keep.style = (keep.style ? keep.style + ";" : "") + "background-color:" + hl; const tn = hlTone(hl); if (tn) keep["data-hl"] = tn; } // highlight (v0.5.4)
       if (SKEYS.has(z)) keep["data-s"] = z; if (FKEYS.has(f)) keep["data-f"] = f;
-      const an = c.getAttribute("data-ann"); if (an && /^[a-z0-9]{4,24}$/i.test(an)) { keep["data-ann"] = an; keep["data-nt"] = String(c.getAttribute("data-nt") || "").slice(0, 4000); } // an indented note (NotePath)
-      if (!keep["data-c"] && !keep["data-s"] && !keep["data-f"] && !keep["data-ann"]) { c.replaceWith(...c.childNodes); return; } }
+      const an = c.getAttribute("data-ann"); if (an && /^[a-z0-9]{4,24}$/i.test(an)) { keep["data-ann"] = an; keep["data-nt"] = String(c.getAttribute("data-nt") || "").slice(0, 4000); } // a paranote (NotePath)
+      if (!keep["data-c"] && !keep["data-s"] && !keep["data-f"] && !keep["data-ann"] && !keep["data-h"]) { c.replaceWith(...c.childNodes); return; } }
     [...c.attributes].forEach(a => c.removeAttribute(a.name));
     Object.entries(keep).forEach(([k, v]) => c.setAttribute(k, v));
   });
 }
 function sanitize(html) { const t = document.createElement("template"); t.innerHTML = String(html || ""); clean(t.content); return t.innerHTML; }
-const BLOCK = new Set(["DIV", "P", "LI", "H3", "BLOCKQUOTE", "UL", "OL"]);
+const BLOCK = new Set(["DIV", "P", "LI", "H1", "H2", "H3", "H4", "H6", "BLOCKQUOTE", "UL", "OL"]);
 function toText(html) {
   const t = document.createElement("template"); t.innerHTML = String(html || ""); let out = "";
   const walk = n => n.childNodes.forEach(c => {
@@ -120,6 +128,9 @@ const textToHtml = t => String(t || "").split("\n").map(l => `<div>${l ? esc(l) 
 const imgIds = html => [...String(html || "").matchAll(/data-img="([a-z0-9]+)"/gi)].map(m => m[1]);
 // photos and video files share the IndexedDB store; a video widget keeps its file id as "vid" in data-src (attribute-escaped JSON)
 const mediaIds = html => imgIds(html).concat([...String(html || "").matchAll(/&quot;vid&quot;:&quot;([a-z0-9]+)&quot;/gi)].map(m => m[1]));
+// every photo a note keeps: the ones in its text and its cover photo (v0.5.4)
+const COVER_ID = /^[a-z0-9]{4,40}$/i;
+const noteMedia = n => mediaIds(n && n.html).concat(n && n.cover && COVER_ID.test(n.cover) ? [n.cover] : []);
 
 /* ---------- notes ---------- */
 /* Spaces (NotePath, Oct 2026): My notes has a Notes tab and a Code tab. A code file is a note with space: "code" and
@@ -174,6 +185,7 @@ function create(o = {}) {
   const now = Date.now(), html = o.html != null ? sanitize(o.html) : textToHtml(o.body || "");
   const n = { id: uid(), title: o.title || "Untitled note", html, body: toText(html), created: now, updated: now, src: o.src || null,
     fav: !!o.fav, folder: o.folder || null, links: Array.isArray(o.links) ? o.links.slice() : o.src && o.src.topic ? ["t:" + o.src.topic] : [] };
+  if (o.cover && COVER_ID.test(o.cover)) n.cover = o.cover; // cover photo (v0.5.4)
   if (o.space === "code") { const c = o.code || {}; n.space = "code"; n.code = { lang: String(c.lang || "python"), src: String(c.src || "") }; n.html = ""; n.body = n.code.src; if (!o.title) n.title = "Untitled code"; }
   const all = read(); all.push(n); write(all); return n;
 }
@@ -184,12 +196,13 @@ function update(id, patch) {
   else if (patch.html != null) { patch.html = sanitize(patch.html); patch.body = toText(patch.html); }
   else if (patch.body != null) patch.html = textToHtml(patch.body);
   const quiet = patch.quiet; delete patch.quiet;
+  if ("cover" in patch) { const c = patch.cover && COVER_ID.test(patch.cover) ? patch.cover : null; if (n.cover && n.cover !== c) oldCovers.add(n.cover); if (c) patch.cover = c; else { delete patch.cover; delete n.cover; } }
   Object.assign(n, patch); if (!quiet) n.updated = Date.now(); write(all); return n;
 }
 function remove(id) {
   const all = read(), n = all.find(x => x.id === id); if (!n) return;
-  const rest = all.filter(x => x.id !== id), still = new Set(rest.flatMap(x => mediaIds(x.html)));
-  delImages(mediaIds(n.html).filter(i => !still.has(i)));
+  const rest = all.filter(x => x.id !== id), still = new Set(rest.flatMap(noteMedia));
+  delImages(noteMedia(n).filter(i => !still.has(i)));
   write(rest);
 }
 // delete with undo: trash() takes the note out at once but keeps its photos/videos; restore() puts it back as it was;
@@ -205,10 +218,13 @@ function restore(id) {
 }
 function purge(id) {
   const n = trashed.get(id); if (!n) return; trashed.delete(id);
-  const still = new Set(read().flatMap(x => mediaIds(x.html)));
-  delImages(mediaIds(n.html).filter(i => !still.has(i)));
+  const still = new Set(read().flatMap(noteMedia));
+  delImages(noteMedia(n).filter(i => !still.has(i)));
 }
 window.addEventListener("pagehide", () => [...trashed.keys()].forEach(purge));
+// cover photos that were changed or taken off go when the app closes (until then ↶ Undo can bring them back), unless a note still uses them
+const oldCovers = new Set();
+window.addEventListener("pagehide", () => { if (!oldCovers.size) return; const still = new Set(read().flatMap(noteMedia)); delImages([...oldCovers].filter(i => !still.has(i))); });
 // a deleted-note message with Undo (shared by My notes and the Assist dock)
 function deleteWithUndo(id, onUndo) {
   const n = trash(id); if (!n) return;
@@ -329,7 +345,7 @@ const toDataURL = blob => new Promise((res, rej) => { const r = new FileReader()
 // backups: like exportImages, plus the videos left out for size → { map, skipped: [{ note, title, mb }] }
 async function exportMedia(notes) {
   const map = {}, skipped = [];
-  for (const n of (notes || read())) for (const id of mediaIds(n.html)) {
+  for (const n of (notes || read())) for (const id of noteMedia(n)) {
     if (map[id]) continue;
     const rec = await tx("readonly", st => st.get(id)).catch(() => null); if (!rec || !rec.blob) continue;
     if (rec.blob.size > VIDEO_BACKUP_MAX) { skipped.push({ note: n.title, mb: Math.round(rec.blob.size / 1048576) }); continue; }
@@ -338,7 +354,7 @@ async function exportMedia(notes) {
   return { map, skipped };
 }
 async function exportImages(notes) {
-  const out = {}, ids = [...new Set((notes || read()).flatMap(n => mediaIds(n.html)))];
+  const out = {}, ids = [...new Set((notes || read()).flatMap(noteMedia))];
   for (const id of ids) { const rec = await tx("readonly", st => st.get(id)).catch(() => null); if (rec && rec.blob && !(/^video\//.test(rec.blob.type) && rec.blob.size > VIDEO_BACKUP_MAX)) out[id] = await toDataURL(rec.blob); }
   return out;
 }
@@ -418,7 +434,7 @@ function mountEditor(host, id, o = {}) {
   ed.innerHTML = sanitize(n.html); hydrate(ed);
   let bar = null;
   // the hint shows only while the note is truly blank: a heading, bullet, number, checkbox, photo or widget hides it too
-  const empty = () => ed.classList.toggle("is-empty", !ed.textContent.trim() && !ed.querySelector("img, ul, ol, li, h1, h2, h3, h4, blockquote, pre, hr, .nw, a.nlink"));
+  const empty = () => ed.classList.toggle("is-empty", !ed.textContent.trim() && !ed.querySelector("img, ul, ol, li, h1, h2, h3, h4, h6, blockquote, pre, hr, .nw, a.nlink"));
   empty();
   let t = null, last = null;
   const flush = () => { if (!t) return; clearTimeout(t); t = null; update(id, { html: ed.innerHTML }); if (o.onSaved) o.onSaved(); };
@@ -656,7 +672,7 @@ function mountEditor(host, id, o = {}) {
   }
   // "normal" colour / font: each span[attr="_def"] takes that attribute off every span around it, splitting them so the words
   // before and after keep theirs. Returns the nodes that were inside, to reselect them.
-  const bare = sp => !sp.hasAttribute("data-c") && !sp.hasAttribute("data-s") && !sp.hasAttribute("data-f");
+  const bare = sp => !sp.hasAttribute("data-c") && !sp.hasAttribute("data-s") && !sp.hasAttribute("data-f") && !sp.hasAttribute("data-h") && !sp.hasAttribute("data-ann");
   function lift(attr) {
     const out = [];
     [...ed.querySelectorAll(`span[${attr}="_def"]`)].forEach(x => {
@@ -667,10 +683,10 @@ function mountEditor(host, id, o = {}) {
         const before = r1.extractContents(), after = r2.extractContents();
         if (before.textContent) { const c = a.cloneNode(false); c.append(before); a.before(c); }
         if (after.textContent) { const c = a.cloneNode(false); c.append(after); a.after(c); }
-        a.removeAttribute(attr); if (attr === "data-c") a.style.color = "";
+        a.removeAttribute(attr); if (attr === "data-c") a.style.color = ""; if (attr === "data-h") { a.style.backgroundColor = ""; a.removeAttribute("data-hl"); } if (a.getAttribute("style") === "") a.removeAttribute("style");
         if (bare(a)) a.replaceWith(...a.childNodes);
       }
-      const kids = [...x.childNodes]; x.removeAttribute(attr);
+      const kids = [...x.childNodes]; x.removeAttribute(attr); if (attr === "data-h") { x.style.backgroundColor = ""; x.removeAttribute("data-hl"); } if (x.getAttribute("style") === "") x.removeAttribute("style");
       if (bare(x)) { x.replaceWith(...kids); out.push(...kids); } else out.push(x);
     });
     return out;
@@ -682,19 +698,20 @@ function mountEditor(host, id, o = {}) {
   function caretStyle(r, kind, v) {
     const at = r.startContainer.nodeType === 1 ? r.startContainer : r.startContainer.parentElement;
     let sp = at && at.closest("span"); if (sp && (!ed.contains(sp) || sp.textContent.replace(/​/g, "") !== "")) sp = null;
-    const attr = kind === "color" ? "data-c" : kind === "size" ? "data-s" : "data-f";
+    const attr = kind === "color" ? "data-c" : kind === "hilite" ? "data-h" : kind === "size" ? "data-s" : "data-f";
     if (!sp) {
       sp = document.createElement("span"); sp.appendChild(document.createTextNode(ZW));
       // at the very end of a styled span, the new one goes after it so "normal" really is normal
       let host = at && at.closest(`span[${attr}]`);
       const atEnd = host && ed.contains(host) && (() => { const t = document.createRange(); t.selectNodeContents(host); t.setStart(r.startContainer, r.startOffset); return !t.toString().replace(/​/g, "").length; })();
       if (atEnd) { // keep the other two styles the caret had inside that span
-        ["data-c", "data-s", "data-f"].filter(a => a !== attr).forEach(a => { const o = at.closest(`span[${a}]`); if (o && (o === host || host.contains(o))) { sp.setAttribute(a, o.getAttribute(a)); if (a === "data-c" && HEX.test(o.getAttribute(a))) sp.style.color = o.getAttribute(a); } });
+        ["data-c", "data-s", "data-f", "data-h"].filter(a => a !== attr).forEach(a => { const o = at.closest(`span[${a}]`); if (o && (o === host || host.contains(o))) { sp.setAttribute(a, o.getAttribute(a)); if (a === "data-c" && HEX.test(o.getAttribute(a))) sp.style.color = o.getAttribute(a); if (a === "data-h" && HEX.test(o.getAttribute(a))) { sp.style.backgroundColor = o.getAttribute(a); const tn = hlTone(o.getAttribute(a)); if (tn) sp.setAttribute("data-hl", tn); } } });
         host.after(sp);
       } else { const rr = r.cloneRange(); rr.insertNode(sp); }
     }
     const inside = a => { const o = sp.parentElement && sp.parentElement.closest(`span[${a}]`); return !!(o && ed.contains(o)); };
     if (kind === "color") { const hx = hexOf(v); if (hx) { sp.setAttribute("data-c", hx); sp.style.color = hx; } else if (inside("data-c")) { sp.setAttribute("data-c", "_def"); sp.style.color = getComputedStyle(ed).color; } else { sp.removeAttribute("data-c"); sp.style.color = ""; } }
+    else if (kind === "hilite") { const hx = hexOf(v); sp.removeAttribute("data-hl"); if (hx) { sp.setAttribute("data-h", hx); sp.style.backgroundColor = hx; const tn = hlTone(hx); if (tn) sp.setAttribute("data-hl", tn); } else if (inside("data-h")) { sp.setAttribute("data-h", "_def"); sp.style.backgroundColor = "transparent"; } else { sp.removeAttribute("data-h"); sp.style.backgroundColor = ""; } }
     else if (kind === "size") { const n = NSIZES.includes(+v) && +v !== 15 ? String(+v) : ""; if (n) sp.setAttribute("data-s", n); else if (inside("data-s")) sp.setAttribute("data-s", "15"); else sp.removeAttribute("data-s"); }
     else { if (FKEYS.has(v)) sp.setAttribute("data-f", v); else if (inside("data-f")) sp.setAttribute("data-f", "_def"); else sp.removeAttribute("data-f"); }
     if (!sp.getAttribute("style")) sp.removeAttribute("style");
@@ -709,7 +726,7 @@ function mountEditor(host, id, o = {}) {
     hit.forEach(tn => { let off = r && r.startContainer === tn ? r.startOffset : -1; if (off >= 0) off -= (tn.data.slice(0, off).match(/​/g) || []).length;
       tn.data = tn.data.replace(/​/g, ""); if (off >= 0) { const nr = document.createRange(); nr.setStart(tn, Math.min(off, tn.data.length)); nr.collapse(true); s.removeAllRanges(); s.addRange(nr); } });
   }, true);
-  /* ----- indented notes (Devon, Oct 12 2026): your own note under the words it explains. The words are
+  /* ----- paranotes (Devon, Oct 12 2026): your own note under the words it explains. The words are
      span[data-ann] with the note in data-nt (so it is saved, undone and backed up with the note). While shown, a layer over
      the editor draws each note under its line with a right-angled line from the middle of the words, in --note-indent;
      the line under the words grows (a ::after spacer in a <style> of its own, nothing in the note) so the text below makes
@@ -756,8 +773,8 @@ function mountEditor(host, id, o = {}) {
         const left = Math.max(14, Math.min(it.x + 16, W - 240)), width = Math.max(160, Math.min(620, W - left - padR));
         const card = document.createElement("div"); card.className = "nann-card"; card.dataset.ann = it.id;
         card.style.left = left + "px"; card.style.top = top + "px"; card.style.width = width + "px";
-        card.innerHTML = (it.sp.dataset.nt ? annHTML(it.sp.dataset.nt) : `<i class="nann-empty">Empty indented note</i>`);
-        card.title = "Click to edit this indented note";
+        card.innerHTML = (it.sp.dataset.nt ? annHTML(it.sp.dataset.nt) : `<i class="nann-empty">Empty paranote</i>`);
+        card.title = "Click to edit this paranote";
         annIn.appendChild(card);
         const ch = card.offsetHeight, my = top + Math.min(ch / 2, 13);
         const v = document.createElement("div"); v.className = "nann-v"; v.style.left = (it.x - .5) + "px"; v.style.top = (it.y + 1) + "px"; v.style.height = Math.max(4, my - it.y - 1) + "px";
@@ -782,19 +799,19 @@ function mountEditor(host, id, o = {}) {
   ed.addEventListener("np:ann-layout", () => annSoon());
   ed.addEventListener("np:ann-edit", e => { if (o.onAnnotation && e.detail) o.onAnnotation(e.detail.id); });
   annLayer.addEventListener("click", e => { const c = e.target.closest(".nann-card"); if (!c || e.target.closest("a")) return; if (o.onAnnotation) o.onAnnotation(c.dataset.ann); });
-  // a new indented note on the words selected in the note (one line of words; not inside a widget or a link)
+  // a new paranote on the words selected in the note (one line of words; not inside a widget or a link)
   function addAnnotation(text) {
     const ae = document.activeElement, box = ae && ae.matches && ae.matches(".nw-ta") && ed.contains(ae) ? ae.closest(".nw") : null;
     if (box && box._ann) { const r0 = box._ann.add(text); if (r0.id) { save(); flush(); } return r0; } // code in a code box
     const s = getSelection(); let r = s.rangeCount && ed.contains(s.getRangeAt(0).commonAncestorContainer) ? s.getRangeAt(0) : last;
     if (!r || r.collapsed || !ed.contains(r.commonAncestorContainer) || !r.toString().trim()) return { error: "Select the words in the note first." };
     if (inWidget(r.startContainer) || inWidget(r.endContainer)) return { error: "Select the code inside the code box, then press ＋ again." };
-    const blk = n => { let el = n.nodeType === 1 ? n : n.parentElement; while (el && el !== ed && !/^(DIV|P|LI|H1|H2|H3|H4|BLOCKQUOTE|PRE)$/.test(el.tagName)) el = el.parentElement; return el; };
+    const blk = n => { let el = n.nodeType === 1 ? n : n.parentElement; while (el && el !== ed && !/^(DIV|P|LI|H1|H2|H3|H4|H6|BLOCKQUOTE|PRE)$/.test(el.tagName)) el = el.parentElement; return el; };
     if (blk(r.startContainer) !== blk(r.endContainer)) return { error: "Select words on one line." };
     const anc = r.commonAncestorContainer.nodeType === 1 ? r.commonAncestorContainer : r.commonAncestorContainer.parentElement;
-    if (anc.closest("span[data-ann], a.nlink") || r.cloneContents().querySelector("span[data-ann], a.nlink, img")) return { error: "Those words already have an indented note or a link." };
+    if (anc.closest("span[data-ann], a.nlink") || r.cloneContents().querySelector("span[data-ann], a.nlink, img")) return { error: "Those words already have a paranote or a link." };
     const sp = document.createElement("span"); sp.dataset.ann = uid(); sp.dataset.nt = String(text || "").slice(0, 4000);
-    try { sp.appendChild(r.extractContents()); r.insertNode(sp); } catch (e) { return { error: "Those words could not take an indented note." }; }
+    try { sp.appendChild(r.extractContents()); r.insertNode(sp); } catch (e) { return { error: "Those words could not take a paranote." }; }
     const r2 = document.createRange(); r2.setStartAfter(sp); r2.collapse(true); s.removeAllRanges(); s.addRange(r2); last = r2.cloneRange();
     ed.classList.remove("is-empty"); save(); flush(); annLayout(); return { id: sp.dataset.ann };
   }
@@ -802,22 +819,149 @@ function mountEditor(host, id, o = {}) {
   function removeAnnotation(id) { const sp = ed.querySelector(`span[data-ann="${id}"]`); if (!sp) { const w = annBox(id); if (!w) return false; w._ann.remove(id); flush(); return true; } sp.replaceWith(...sp.childNodes); ed.normalize(); save(); flush(); annLayout(); return true; }
   function showAnnotations(on) { annOn = !!on; annLayout(); annBoxes().forEach(w => w._ann.show(annOn)); }
   function focusAnnotation(id) { const sp = ed.querySelector(`span[data-ann="${id}"]`); if (!sp) { const w = annBox(id); if (w) w._ann.focus(id); return; } sp.scrollIntoView({ block: "nearest" }); sp.classList.add("nann-hi"); setTimeout(() => sp.classList.remove("nann-hi"), 900); }
+  // spans (or other inline elements) Chromium gave a background → span[data-h] (or "_def" for the no-highlight stand-in)
+  function hiliteSpans() {
+    const out = [];
+    [...ed.querySelectorAll("[style]")].forEach(el => {
+      const bg = el.style.backgroundColor; if (!bg || inWidget(el)) return; const hx = hexOf(bg); if (!hx) return;
+      if (el.tagName !== "SPAN") { // a highlight belongs on the words, never on a whole line or a bold/italic tag
+        el.style.backgroundColor = ""; if (el.getAttribute("style") === "") el.removeAttribute("style"); if (BLTAGS.has(el.tagName)) return;
+        const sp = document.createElement("span"); sp.append(...el.childNodes); el.appendChild(sp); sp.style.backgroundColor = hx; el = sp; }
+      const sp = el; if (sp.getAttribute("data-h") === hx) return;
+      sp.removeAttribute("data-hl");
+      if (hx === CLEARH) { sp.setAttribute("data-h", "_def"); sp.style.backgroundColor = ""; }
+      else { sp.setAttribute("data-h", hx); const tn = hlTone(hx); if (tn) sp.setAttribute("data-hl", tn); }
+      // a highlight inside an older one replaces it there
+      sp.querySelectorAll("span[data-h]").forEach(x => { x.removeAttribute("data-h"); x.removeAttribute("data-hl"); x.style.backgroundColor = ""; if (x.getAttribute("style") === "") x.removeAttribute("style"); if (bare(x)) x.replaceWith(...x.childNodes); });
+      out.push(sp);
+    });
+    return out;
+  }
+  /* ----- paragraph layout (v0.5.4, Devon): align, indent, line spacing, space after paragraphs. Nothing selected = the whole
+     note (every line; new lines follow because Enter copies the line's attributes); words selected = only the lines they are
+     on, and for align / indent only those words: a part of one line is split off into a line of its own. ----- */
+  const BLOCKSEL = "div:not(.nw),p,h1,h2,h3,h4,h6,blockquote,li";
+  function topBlocks() { // every top-level line becomes an element (loose text and inline bits get a div)
+    let run = null; const out = [];
+    [...ed.childNodes].forEach(n => {
+      const blk = n.nodeType === 1 && (BLTAGS.has(n.tagName) || n.classList.contains("nw") || n.tagName === "PRE");
+      if (blk) { run = null; if (!n.classList.contains("nw")) out.push(n); return; }
+      if (n.nodeType === 3 && !n.data.trim() && !run) return;
+      if (!run) { run = document.createElement("div"); n.before(run); out.push(run); }
+      run.appendChild(n);
+      if (n.nodeType === 1 && n.tagName === "BR") run = null;
+    });
+    if (!out.length) { const d = document.createElement("div"); d.appendChild(document.createElement("br")); ed.appendChild(d); out.push(d); }
+    return out;
+  }
+  const lineOf = node => { let el = node && (node.nodeType === 1 ? node : node.parentElement); el = el && el.closest(BLOCKSEL); return el && ed.contains(el) && el !== ed && !inWidget(el) ? el : null; };
+  function layoutTargets(split) {
+    const s = getSelection(); let r = s.rangeCount ? s.getRangeAt(0) : null;
+    if (!r || !ed.contains(r.commonAncestorContainer)) r = last && ed.contains(last.commonAncestorContainer) ? last : null;
+    if (!r || r.collapsed || !r.toString().replace(/[\s​]/g, "")) return { whole: true, els: topBlocks() };
+    if (!lineOf(r.startContainer) || !lineOf(r.endContainer)) { // loose text at the top of the note: make it lines first
+      const k = [r.startContainer, r.startOffset, r.endContainer, r.endOffset]; topBlocks();
+      try { r = document.createRange(); r.setStart(k[0], k[1]); r.setEnd(k[2], k[3]); } catch (e) {} }
+    const a = lineOf(r.startContainer), b = lineOf(r.endContainer);
+    if (split && a && a === b && a.tagName !== "LI") { // a part of one line: split it off
+      const pre = document.createRange(); pre.setStart(a, 0); pre.setEnd(r.startContainer, r.startOffset);
+      const post = document.createRange(); post.setStart(r.endContainer, r.endOffset); post.setEnd(a, a.childNodes.length);
+      const has = rg => { const f = rg.cloneContents(); return !!(f.textContent.replace(/[\s​]/g, "") || f.querySelector("img,a,.nw")); };
+      const hp = has(pre), hq = has(post);
+      const edge = (el, end) => { const tw = document.createTreeWalker(el, NodeFilter.SHOW_TEXT); let n, t = null; while ((n = tw.nextNode())) { if (!end) { t = n; break; } t = n; } if (t) t.data = end ? t.data.replace(/\s+$/, "") : t.data.replace(/^\s+/, ""); };
+      if (hq) { const c = a.cloneNode(false); c.appendChild(post.extractContents()); a.after(c); edge(c, false); }
+      if (hp) { const c = a.cloneNode(false); c.appendChild(pre.extractContents()); a.before(c); edge(c, true); }
+      if (hp || hq) { const nr = document.createRange(); nr.selectNodeContents(a); s.removeAllRanges(); s.addRange(nr); last = nr.cloneRange(); }
+      return { whole: false, els: [a] };
+    }
+    // every line the selection touches (the innermost ones: an item, not its whole list)
+    const els = [...ed.querySelectorAll(BLOCKSEL)].filter(el => !inWidget(el) && r.intersectsNode(el) && !el.querySelector(BLOCKSEL));
+    [a, b].forEach(x => { if (x && !els.includes(x) && !els.some(e => x.contains(e))) els.push(x); });
+    return { whole: false, els: els.length ? els : topBlocks() };
+  }
+  /* ----- clear formatting (v0.5.4, Devon): nothing selected = the whole note; words selected = only them. Takes off bold,
+     italic, underline, strikethrough, colour, highlight, font and size from the words, and titles / headings, align, indent
+     and spacing from the lines they are on. Lists, checklists, links, photos, widgets and paranotes stay. ----- */
+  const FMT_SEL = "b,strong,i,em,u,s,strike,font,span[data-c],span[data-s],span[data-f],span[data-h]";
+  function plainEl(x) { // take the formatting off one element (a paranote span keeps being a paranote)
+    if (x.tagName === "SPAN" && x.hasAttribute("data-ann")) { ["data-c", "data-s", "data-f", "data-h", "data-hl", "style"].forEach(a => x.removeAttribute(a)); return; }
+    x.replaceWith(...x.childNodes);
+  }
+  function plainLine(el) { // a title / heading becomes a plain line; align, indent and spacing come off
+    ["data-al", "data-in", "data-lh", "data-ps"].forEach(a => el.removeAttribute(a));
+    if (/^H[1-6]$/.test(el.tagName)) { const d = document.createElement("div"); [...el.attributes].forEach(a => d.setAttribute(a.name, a.value)); d.append(...el.childNodes); el.replaceWith(d); return d; }
+    return el;
+  }
+  function clearFormat() {
+    api.focus();
+    const s = getSelection(); let r = s.rangeCount ? s.getRangeAt(0) : null;
+    if (!r || !ed.contains(r.commonAncestorContainer)) r = last && ed.contains(last.commonAncestorContainer) ? last : null;
+    const whole = !r || r.collapsed || !r.toString().replace(/[\s​]/g, "");
+    if (whole) {
+      [...ed.querySelectorAll(FMT_SEL)].reverse().forEach(x => { if (!inWidget(x)) plainEl(x); });
+      [...ed.querySelectorAll("[data-al],[data-in],[data-lh],[data-ps],h1,h2,h3,h4,h6")].forEach(x => { if (!inWidget(x) && x.isConnected) plainLine(x); });
+      ed.normalize(); save(); flush(); annLayout(); return true;
+    }
+    // only the selected words: split the text at the ends, then split each formatting element around them
+    let { startContainer: sc, startOffset: so, endContainer: ec, endOffset: eo } = r;
+    if (ec.nodeType === 3 && eo < ec.data.length) ec.splitText(eo);
+    if (sc.nodeType === 3 && so > 0) { const t = sc.splitText(so); if (ec === sc) { ec = t; eo = t.data.length; } sc = t; so = 0; }
+    const rr = document.createRange(); rr.setStart(sc, so); rr.setEnd(ec, eo);
+    const first = sc.nodeType === 3 ? sc : (sc.childNodes[so] || sc), lastN = ec.nodeType === 3 ? ec : (ec.childNodes[eo - 1] || ec);
+    const lines = new Set(); [...ed.querySelectorAll(BLOCKSEL + ",h1,h2,h3,h4,h6")].forEach(el => { if (!inWidget(el) && rr.intersectsNode(el) && !el.querySelector(BLOCKSEL)) lines.add(el); });
+    [lineOf(first), lineOf(lastN)].forEach(x => { if (x) lines.add(x); });
+    const hit = [...ed.querySelectorAll(FMT_SEL)].filter(x => !inWidget(x) && rr.intersectsNode(x)).reverse();
+    hit.forEach(x => {
+      if (!x.isConnected) return;
+      if (x.contains(first)) { const r1 = document.createRange(); r1.setStart(x, 0); r1.setEndBefore(first); const f = r1.extractContents(); if (f.textContent || (f.querySelector && f.querySelector("img,a"))) { const c = x.cloneNode(false); c.append(f); x.before(c); } }
+      if (x.contains(lastN)) { const r2 = document.createRange(); r2.setStartAfter(lastN); r2.setEnd(x, x.childNodes.length); const f = r2.extractContents(); if (f.textContent || (f.querySelector && f.querySelector("img,a"))) { const c = x.cloneNode(false); c.append(f); x.after(c); } }
+      plainEl(x);
+    });
+    lines.forEach(el => { if (el.isConnected) plainLine(el); });
+    try { const nr = document.createRange(); nr.setStartBefore(first); nr.setEndAfter(lastN); s.removeAllRanges(); s.addRange(nr); last = nr.cloneRange(); } catch (e) {}
+    save(); flush(); annLayout(); return false;
+  }
+  // what the line the caret is on has: { al, in, lh, ps }
+  function layoutAt() {
+    const s = getSelection(), r = s.rangeCount && ed.contains(s.getRangeAt(0).commonAncestorContainer) ? s.getRangeAt(0) : last;
+    const el = (r && lineOf(r.startContainer)) || ed.firstElementChild;
+    const get = a => { let x = el; while (x && x !== ed) { if (x.hasAttribute(a)) return x.getAttribute(a); x = x.parentElement; } return ""; };
+    return { al: get("data-al"), in: get("data-in"), lh: get("data-lh"), ps: get("data-ps"), whole: !r || r.collapsed || !r.toString().trim() };
+  }
+  // prop "al" (left | center | right | "" none), "in" ("+" | "-" | "0"), "lh" (1 … 3 | "" normal), "ps" (0 | 6 | 12 | 24 | "" normal)
+  function blockStyle(prop, v) {
+    api.focus();
+    const t = layoutTargets(prop === "al" || prop === "in"), a = "data-" + prop;
+    let base = 0; if (t.whole && prop === "in") base = +(((t.els[0] || {}).getAttribute && t.els[0].getAttribute(a)) || 0);
+    if (t.whole) ed.querySelectorAll(`[${a}]`).forEach(x => x.removeAttribute(a)); // the whole note: one setting for every line
+    t.els.forEach(el => {
+      if (prop === "in") { const cur = t.whole ? base : +(el.getAttribute(a) || 0), n = v === "+" ? Math.min(8, cur + 1) : v === "-" ? Math.max(0, cur - 1) : 0; if (n) el.setAttribute(a, String(n)); else el.removeAttribute(a); return; }
+      if (v !== "" && v != null && BLAYOUT[a].has(String(v))) el.setAttribute(a, String(v)); else el.removeAttribute(a);
+      el.querySelectorAll(`[${a}]`).forEach(x => x.removeAttribute(a)); // lines inside take the new setting
+    });
+    save(); flush(); annLayout();
+    return t.whole;
+  }
   // Chromium edits inline colours itself (it may clear or copy style="color"): keep data-c in step with what is shown
   function syncColors() {
     ed.querySelectorAll("span").forEach(sp => {
       const k = sp.getAttribute("data-c"), c = hexOf(sp.style.color);
-      if (k && HEX.test(k) && !c) { sp.removeAttribute("data-c"); sp.removeAttribute("style"); if (bare(sp)) sp.replaceWith(...sp.childNodes); }
+      const hk = sp.getAttribute("data-h"), hb = sp.style.backgroundColor ? hexOf(sp.style.backgroundColor) : "";
+      if (hk && HEX.test(hk) && !hb) { sp.removeAttribute("data-h"); sp.removeAttribute("data-hl"); } else if (hb && hb !== CLEARH && (!hk || HEX.test(hk)) && hk !== hb) { sp.setAttribute("data-h", hb); const tn = hlTone(hb); if (tn) sp.setAttribute("data-hl", tn); else sp.removeAttribute("data-hl"); }
+      if (k && HEX.test(k) && !c) { sp.removeAttribute("data-c"); sp.style.color = ""; if (sp.getAttribute("style") === "") sp.removeAttribute("style"); if (bare(sp)) { sp.replaceWith(...sp.childNodes); return; } }
       else if (c && (!k || HEX.test(k)) && k !== c) sp.setAttribute("data-c", c);
       else if (!c && sp.getAttribute("style") === "") sp.removeAttribute("style");
     });
   }
   const api = { el: ed, id, flush, insertFolderLink, openFolder: fid => { if (!o.openFolder) return false; flush(); o.openFolder(fid); return true; }, indentItem, outdentItem, annotations: annList, addAnnotation, setAnnotation, removeAnnotation, showAnnotations, focusAnnotation, relayoutAnnotations: () => annLayout(),
     openSide: noteId => { if (!o.openSide || !get(noteId)) return false; flush(); o.openSide(noteId); return true; },
+    peek: noteId => { if (!o.peek) return false; flush(); o.peek(noteId); return true; },
     openNote: noteId => { if (!o.openNote || !get(noteId)) return false; flush(); o.openNote(noteId); return true; },
     addFiles, addURL, addVideoLink, linkRange, insertNoteLink, insertWidgetAt, insertText, addWidget, insertBlock,
     focus: () => { ed.focus({ preventScroll: true }); const s = getSelection(); if (last && (!s.rangeCount || !ed.contains(s.getRangeAt(0).commonAncestorContainer))) { s.removeAllRanges(); s.addRange(last); } },
     changed: () => save(),
     // kind "color" (a #hex, or "" for the normal colour), "size" (a number, or "" for normal), "font" (a key, or "" for the note's font)
+    blockStyle, layoutAt, clearFormat,
     format: (kind, v) => {
       api.focus(); document.execCommand("styleWithCSS", false, false);
       { const s0 = getSelection(), r0 = s0.rangeCount ? s0.getRangeAt(0) : null; // nothing selected: what is typed next gets it
@@ -825,6 +969,8 @@ function mountEditor(host, id, o = {}) {
       let made = [];
       const conv = over => { made = [...ed.querySelectorAll("font")].reverse().map(f => fontToSpan(f, over)).filter(Boolean).reverse(); };
       if (kind === "color") { document.execCommand("foreColor", false, hexOf(v) || CLEARC); conv({ def: !hexOf(v) }); if (!hexOf(v)) made = lift("data-c"); }
+      else if (kind === "hilite") { // Chromium writes a highlight as span style="background-color"; mark those spans data-h (v0.5.4)
+        document.execCommand("hiliteColor", false, hexOf(v) || CLEARH); made = hiliteSpans(); if (!hexOf(v)) made = lift("data-h"); }
       else if (kind === "font") { document.execCommand("fontName", false, "npf-" + (FKEYS.has(v) ? v : "_def")); conv({ def: !FKEYS.has(v) }); if (!FKEYS.has(v)) made = lift("data-f"); }
       else if (kind === "size") { const n = NSIZES.includes(+v) ? String(+v) : "n"; document.execCommand("fontSize", false, "7"); conv({ s: n }); }
       api.normalizeColors();

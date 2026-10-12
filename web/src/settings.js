@@ -134,7 +134,7 @@ const hexOk = c => /^#[0-9a-f]{6}$/i.test(c);
 function applyAll() {
   applyTheme(S.theme);
   document.documentElement.style.setProperty("--note-link", hexOk(S.noteLink) ? S.noteLink : DEF.noteLink);
-  document.documentElement.style.setProperty("--note-indent", hexOk(S.indent) ? S.indent : DEF.indent); // indented notes (notes.js)
+  document.documentElement.style.setProperty("--note-indent", hexOk(S.indent) ? S.indent : DEF.indent); // paranotes (notes.js)
   Object.keys(TABDEF).forEach(k => document.documentElement.style.setProperty("--tab-" + k, hexOk(S.tabs[k]) ? S.tabs[k] : TABDEF[k]));
   applySizes();
   document.documentElement.toggleAttribute("data-reduce-motion", !!S.reduceMotion);
@@ -189,7 +189,7 @@ document.addEventListener("keydown", e => {
   if (ov.hidden) {
     if (e.key === "Escape" && !e.defaultPrevented) {
       // Esc closes the smallest thing first: a popup (it handles Esc itself), then My notes
-      if (document.querySelector(".tm-menu, .nk-pick, .nr-panel, .ask-ov, .nv-pop, .np-pop, .np-holo, .np-ind")) return;
+      if (document.querySelector(".tm-menu, .nk-pick, .nr-panel, .ask-ov, .nv-pop, .np-pop, .np-holo, .np-ind, .np-peek")) return;
       if (document.querySelector(".mw-ov:not(.out)") && window.InquireApp) { e.preventDefault(); e.stopPropagation(); InquireApp.closeWin(); return; }
     }
     if (!act || document.querySelector(".ask-ov")) return;
@@ -246,10 +246,10 @@ function paneLook() {
   pick.oninput = () => { S.noteLink = pick.value; applyAll(); mark(); };
   pick.onchange = () => { S.noteLink = pick.value; save(); };
   wrap.appendChild(lc);
-  // colour of indented notes (your own notes under the words they explain)
-  const ic = h(`<div class="set-thfam"><h3>Indented notes</h3><div class="set-item set-lcitem"><div><p>Colour of the notes you indent under words in a note (↳ at the bottom right of a note).
+  // colour of paranotes (your own notes under the words they explain)
+  const ic = h(`<div class="set-thfam"><h3>Paranotes</h3><div class="set-item set-lcitem"><div><p>Colour of your paranotes: the notes you add under words in a note (↳ at the bottom right of a note).
       <span class="set-lcdemo set-inddemo">Example: <span class="set-indw">photosynthesis</span><span class="set-indt">how plants turn light into food</span></span></p></div>
-    <div class="set-lc" role="radiogroup" aria-label="Indented notes colour">${LINKCOL.map(([c, n]) => `<button type="button" role="radio" class="set-lcs" data-c="${c}" aria-checked="${String(S.indent).toLowerCase() === c.toLowerCase()}" title="${n}" aria-label="${n}" style="--c:${c}"></button>`).join("")}
+    <div class="set-lc" role="radiogroup" aria-label="Paranotes colour">${LINKCOL.map(([c, n]) => `<button type="button" role="radio" class="set-lcs" data-c="${c}" aria-checked="${String(S.indent).toLowerCase() === c.toLowerCase()}" title="${n}" aria-label="${n}" style="--c:${c}"></button>`).join("")}
       <label class="set-lcs set-lcpick" title="Any colour" aria-label="Any colour"><input type="color" value="${hexOk(S.indent) ? S.indent : DEF.indent}"></label></div></div></div>`);
   const imark = () => ic.querySelectorAll(".set-lcs[data-c]").forEach(b => b.setAttribute("aria-checked", String(b.dataset.c.toLowerCase() === String(S.indent).toLowerCase())));
   ic.querySelectorAll(".set-lcs[data-c]").forEach(b => b.onclick = () => { S.indent = b.dataset.c; save(); applyAll(); imark(); ic.querySelector('input[type="color"]').value = S.indent; });
@@ -462,7 +462,7 @@ const KEYACTS = [
   ["newnote", "New note", "Alt+Shift+KeyN"],
   ["favs", "Favourite notes", "Alt+KeyF"],
   ["tasks", "My Tasks", "Alt+KeyT"],
-  ["back", "Back", "Alt+Backspace", "Closes My notes when it is open."]
+  ["back", "Back", "Alt+Backspace", "Goes back to the window you had open before, like ‹ Back."]
 ];
 const KDEF = Object.fromEntries(KEYACTS.map(a => [a[0], a[2]]));
 const binding = id => (S.keys && id in S.keys ? S.keys[id] : KDEF[id]) || "";

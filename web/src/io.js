@@ -107,31 +107,34 @@ function ir(html) {
       if (tg === "B" || tg === "STRONG") s2.b = 1; if (tg === "I" || tg === "EM") s2.i = 1; if (tg === "U") s2.u = 1; if (tg === "S" || tg === "STRIKE") s2.s = 1;
       if (tg === "A" && c.getAttribute("data-note")) s2.link = c.getAttribute("data-note");
       if (tg === "SPAN") { const col = c.getAttribute("data-c"), sz = c.getAttribute("data-s"), f = c.getAttribute("data-f");
-        if (col) s2.color = /^#/.test(col) ? col : PAL[col]; if (sz) s2.size = OLDSIZE[sz] || +sz || undefined; if (f) s2.font = f; }
+        if (col) s2.color = /^#/.test(col) ? col : PAL[col]; if (sz) s2.size = OLDSIZE[sz] || +sz || undefined; if (f) s2.font = f;
+        const hl = c.getAttribute("data-h"); if (/^#[0-9a-f]{6}$/i.test(hl || "")) s2.hl = hl; }
       if (tg === "DIV" || tg === "P") { if (rs.length && !rs[rs.length - 1].br) rs.push({ br: true }); walk(c, s2); return; }
       walk(c, s2);
     });
     walk(node, st || {}); while (rs.length && rs[rs.length - 1].br) rs.pop(); return rs; };
+  // a line's layout (v0.5.4): align, indent, line spacing, space after, from the line or the list / block around it
+  const lay = el => { const o = {}; for (let x = el; x && x.nodeType === 1; x = x.parentElement) { [["al", "data-al"], ["ind", "data-in"], ["lh", "data-lh"], ["ps", "data-ps"]].forEach(([k, a]) => { if (o[k] == null && x.hasAttribute(a)) o[k] = x.getAttribute(a); }); } if (o.ind) o.ind = +o.ind; if (o.lh) o.lh = +o.lh; if (o.ps != null) o.ps = +o.ps; return Object.keys(o).length ? o : undefined; };
   const widget = el => { let d = {}; try { d = JSON.parse(el.getAttribute("data-src") || "{}"); } catch (e) {}
     if (el.getAttribute("data-w") === "code") return { t: "code", lang: d.lang || "", title: d.title || "", src: String(d.src || "") };
     let tx = ""; try { tx = window.InquireWidgets ? InquireWidgets.text(el).trim() : ""; } catch (e) {}
     return { t: "text", text: tx }; };
   const list = (el, depth) => { const kind = el.tagName === "OL" ? "ol" : el.getAttribute("data-ck") === "1" ? "ck" : "ul";
-    [...el.children].forEach(li => { if (li.tagName !== "LI") return; out.push({ t: "li", list: kind, done: li.getAttribute("data-done") === "1", depth, runs: runs(li, {}, true) });
+    [...el.children].forEach(li => { if (li.tagName !== "LI") return; out.push({ t: "li", list: kind, done: li.getAttribute("data-done") === "1", depth, runs: runs(li, {}, true), lay: lay(li) });
       [...li.children].forEach(x => { if (x.tagName === "UL" || x.tagName === "OL") list(x, depth + 1); }); }); };
   let pend = [];
   const flushInline = () => { if (pend.length) { const d = document.createElement("div"); pend.forEach(n => d.appendChild(n.cloneNode(true))); const r = runs(d); if (r.length) out.push({ t: "p", runs: r }); pend = []; } };
   const block = el => {
     const tg = el.tagName;
     if (tg === "DIV" && el.classList.contains("nw")) { out.push(widget(el)); return; }
-    if (tg === "H1" || tg === "H2" || tg === "H3") { out.push({ t: "h", runs: runs(el) }); return; }
+    if (HLV[tg]) { out.push({ t: "h", lv: HLV[tg], runs: runs(el), lay: lay(el) }); return; } // lv: "title", "sub", 1, 2, 3
     if (tg === "UL" || tg === "OL") { list(el, 0); return; }
-    if (tg === "BLOCKQUOTE") { out.push({ t: "quote", runs: runs(el) }); return; }
-    if ((tg === "DIV" || tg === "P") && [...el.children].some(c => /^(DIV|P|UL|OL|H1|H2|H3|BLOCKQUOTE)$/.test(c.tagName))) { walkBlocks(el); return; }
-    if (tg === "DIV" || tg === "P") { const r = runs(el); out.push(r.length ? { t: "p", runs: r } : { t: "p", runs: [] }); return; }
+    if (tg === "BLOCKQUOTE") { out.push({ t: "quote", runs: runs(el), lay: lay(el) }); return; }
+    if ((tg === "DIV" || tg === "P") && [...el.children].some(c => /^(DIV|P|UL|OL|H1|H2|H3|H4|H6|BLOCKQUOTE)$/.test(c.tagName))) { walkBlocks(el); return; }
+    if (tg === "DIV" || tg === "P") { const r = runs(el); out.push({ t: "p", runs: r.length ? r : [], lay: lay(el) }); return; }
     pend.push(el);
   };
-  const walkBlocks = root => { [...root.childNodes].forEach(c => { if (c.nodeType === 1 && /^(DIV|P|UL|OL|H1|H2|H3|BLOCKQUOTE)$/.test(c.tagName)) { flushInline(); block(c); } else if (c.nodeType === 3 || c.nodeType === 1) pend.push(c); }); flushInline(); };
+  const walkBlocks = root => { [...root.childNodes].forEach(c => { if (c.nodeType === 1 && /^(DIV|P|UL|OL|H1|H2|H3|H4|H6|BLOCKQUOTE)$/.test(c.tagName)) { flushInline(); block(c); } else if (c.nodeType === 3 || c.nodeType === 1) pend.push(c); }); flushInline(); };
   walkBlocks(t.content);
   while (out.length && out[out.length - 1].t === "p" && !out[out.length - 1].runs.length) out.pop();
   return out;
@@ -150,13 +153,13 @@ function toMD(n, ctx) {
     let s = r.link ? `[[${ctx.title(r.link) || r.text}${ctx.title(r.link) && ctx.title(r.link) !== r.text ? "|" + r.text : ""}]]` : mdEsc(r.text);
     if (!s.trim() || r.link) return s;
     const lead = s.match(/^\s*/)[0], trail = s.match(/\s*$/)[0]; let core = s.trim();
-    if (r.font === "mono") core = "`" + core.replace(/\\(.)/g, "$1") + "`"; if (r.s) core = "~~" + core + "~~"; if (r.i) core = "*" + core + "*"; if (r.b) core = "**" + core + "**"; if (r.u) core = "<u>" + core + "</u>";
+    if (r.font === "mono") core = "`" + core.replace(/\\(.)/g, "$1") + "`"; if (r.s) core = "~~" + core + "~~"; if (r.i) core = "*" + core + "*"; if (r.b) core = "**" + core + "**"; if (r.u) core = "<u>" + core + "</u>"; if (r.hl) core = "==" + core + "==";
     return lead + core + trail; }).join("").replace(/\*\*\*\*/g, "");
   let prev = null, prevList = null;
   blocks.forEach(b => {
     const gap = () => { if (lines.length && lines[lines.length - 1] !== "") lines.push(""); };
     if (b.t === "p") { if (prev && prev !== "p") gap(); lines.push(inl(b.runs)); }
-    else if (b.t === "h") { gap(); lines.push("## " + inl(b.runs)); lines.push(""); }
+    else if (b.t === "h") { gap(); lines.push(b.lv === "sub" ? "*" + inl(b.runs) + "*" : "#".repeat(b.lv === "title" ? 1 : b.lv + 1) + " " + inl(b.runs)); lines.push(""); }
     else if (b.t === "li") { if (prev !== "li" || (b.depth === 0 && prevList && prevList !== b.list)) gap(); prevList = b.depth === 0 ? b.list : prevList; lines.push("    ".repeat(b.depth) + (b.list === "ol" ? "1. " : b.list === "ck" ? (b.done ? "- [x] " : "- [ ] ") : "- ") + inl(b.runs)); }
     else if (b.t === "quote") { gap(); inl(b.runs).split("\n").forEach(l => lines.push("> " + l.replace(/ {2}$/, ""))); lines.push(""); }
     else if (b.t === "code") { gap(); lines.push("```" + (b.lang === "text" ? "" : b.lang || "") + (b.title ? " title=\"" + b.title + "\"" : ""), ...b.src.replace(/\n$/, "").split("\n"), "```"); lines.push(""); }
@@ -169,7 +172,9 @@ function toMD(n, ctx) {
 // HTML (web page, PDF, and the .enex content): imgSrc(id) → a data: URL / resource; enml → Evernote's subset
 function toHTMLBody(n, ctx, enml) {
   const blocks = ir(n.html), out = [];
-  const st = r => { const a = []; if (r.color) a.push("color:" + r.color); if (r.size && r.size !== 15) a.push("font-size:" + (enml ? Math.round(r.size * .8) + "pt" : (r.size / 15).toFixed(2) + "em")); if (r.font && fontName(r.font)) a.push("font-family:" + (r.font === "mono" ? "monospace" : `'${fontName(r.font)}'`)); return a.join(";"); };
+  const st = r => { const a = []; if (r.color) a.push("color:" + r.color); if (r.hl) a.push("background-color:" + r.hl); if (r.size && r.size !== 15) a.push("font-size:" + (enml ? Math.round(r.size * .8) + "pt" : (r.size / 15).toFixed(2) + "em")); if (r.font && fontName(r.font)) a.push("font-family:" + (r.font === "mono" ? "monospace" : `'${fontName(r.font)}'`)); return a.join(";"); };
+  // a line's layout as CSS (v0.5.4); more = CSS the line already has
+  const bst = (b, more) => { const L = b.lay || {}, a = more ? [more] : []; if (L.al) a.push("text-align:" + L.al); if (L.ind) a.push(`margin-left:${L.ind * 2}em`); if (L.lh) a.push("line-height:" + L.lh); if (L.ps != null && !isNaN(L.ps)) a.push(`margin-bottom:${L.ps}px`); return a.length ? ` style="${a.join(";")}"` : ""; };
   const inl = rs => rs.map(r => {
     if (r.br) return "<br/>";
     if (r.img) return enml ? ctx.media(r.img) : `<img src="${ctx.src(r.img)}" alt="${xesc(r.alt)}" />`; if (r.url) return `<img src="${xesc(r.url)}" alt="${xesc(r.alt)}" />`;
@@ -179,13 +184,13 @@ function toHTMLBody(n, ctx, enml) {
     return s; }).join("");
   for (let i = 0; i < blocks.length; i++) {
     const b = blocks[i];
-    if (b.t === "p") out.push(`<div>${b.runs.length ? inl(b.runs) : "<br/>"}</div>`);
-    else if (b.t === "h") out.push(`<h2>${inl(b.runs)}</h2>`);
-    else if (b.t === "quote") out.push(`<blockquote>${inl(b.runs)}</blockquote>`);
+    if (b.t === "p") out.push(`<div${bst(b)}>${b.runs.length ? inl(b.runs) : "<br/>"}</div>`);
+    else if (b.t === "h") out.push(b.lv === "sub" ? `<p${enml ? bst(b, "font-style:italic;color:#666") : ` class="sub"` + bst(b)}><i>${inl(b.runs)}</i></p>` : `<h${b.lv === "title" ? 2 : b.lv + 2}${bst(b)}>${inl(b.runs)}</h${b.lv === "title" ? 2 : b.lv + 2}>`);
+    else if (b.t === "quote") out.push(`<blockquote${bst(b)}>${inl(b.runs)}</blockquote>`);
     else if (b.t === "code") out.push(`<pre${enml ? ` style="font-family:monospace;background:#f4f4f4;padding:8px"` : ` class="code"`}>${b.title ? xesc(b.title) + "\n" : ""}${xesc(b.src)}</pre>`);
     else if (b.t === "text") out.push(`<pre>${xesc(b.text)}</pre>`);
     else if (b.t === "li") {
-      if (b.list === "ck") { out.push(enml ? `<div><en-todo checked="${b.done}"/>${inl(b.runs)}</div>` : `<div class="ck${b.done ? " done" : ""}"${b.depth ? ` style="margin-left:${b.depth * 24}px"` : ""}><input type="checkbox" disabled${b.done ? " checked" : ""}/> ${inl(b.runs)}</div>`); continue; }
+      if (b.list === "ck") { out.push(enml ? `<div${bst(b)}><en-todo checked="${b.done}"/>${inl(b.runs)}</div>` : `<div class="ck${b.done ? " done" : ""}"${bst(b, b.depth ? `margin-left:${b.depth * 24}px` : "")}><input type="checkbox" disabled${b.done ? " checked" : ""}/> ${inl(b.runs)}</div>`); continue; }
       // a run of list items of one kind → nested <ul>/<ol>, sub-lists inside their item
       const t0 = b.list, items = []; let j = i;
       for (; j < blocks.length && blocks[j].t === "li" && blocks[j].list !== "ck" && (blocks[j].depth > 0 || blocks[j].list === t0); j++) items.push(blocks[j]);
@@ -194,7 +199,7 @@ function toHTMLBody(n, ctx, enml) {
         if (!stack.length) { html += `<${tg}>`; stack.push(tg); }
         else if (x.depth + 1 > stack.length) { while (stack.length < x.depth + 1) { html += `<${tg}>`; stack.push(tg); } }
         else { html += "</li>"; while (stack.length > Math.max(1, x.depth + 1)) html += `</${stack.pop()}></li>`; }
-        html += `<li>${inl(x.runs)}`; });
+        html += `<li${bst(x)}>${inl(x.runs)}`; });
       html += "</li>"; while (stack.length) { html += `</${stack.pop()}>`; if (stack.length) html += "</li>"; }
       out.push(html); i = j - 1;
     }
@@ -212,11 +217,16 @@ const dataURL = async id => { const b = await mediaBlob(id); return b ? `data:${
 
 /* Word (.docx): WordprocessingML written by hand (styles, bullets / numbers, checkboxes, quotes, code, colours, sizes, fonts, photos) */
 const W_NS = `xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"`;
+// titles and headings in a note (v0.5.4): h1 Title · h6 Subtitle · h2 / h3 / h4 Heading 1 / 2 / 3 (h5 from elsewhere = Heading 3)
+const HLV = { H1: "title", H6: "sub", H2: 1, H3: 2, H4: 3, H5: 3 };
 const STYLES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:eastAsia="Calibri" w:cs="Calibri"/><w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="en-US"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="80" w:line="276" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>
 <w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>
 <w:style w:type="paragraph" w:styleId="Title"><w:name w:val="Title"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:spacing w:after="200"/></w:pPr><w:rPr><w:rFonts w:ascii="Georgia" w:hAnsi="Georgia"/><w:sz w:val="52"/><w:szCs w:val="52"/></w:rPr></w:style>
+<w:style w:type="paragraph" w:styleId="Subtitle"><w:name w:val="Subtitle"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:spacing w:after="160"/></w:pPr><w:rPr><w:rFonts w:ascii="Georgia" w:hAnsi="Georgia"/><w:i/><w:color w:val="595959"/><w:sz w:val="30"/><w:szCs w:val="30"/></w:rPr></w:style>
+<w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:keepNext/><w:spacing w:before="320" w:after="100"/><w:outlineLvl w:val="0"/></w:pPr><w:rPr><w:rFonts w:ascii="Georgia" w:hAnsi="Georgia"/><w:b/><w:sz w:val="36"/><w:szCs w:val="36"/></w:rPr></w:style>
 <w:style w:type="paragraph" w:styleId="Heading2"><w:name w:val="heading 2"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:keepNext/><w:spacing w:before="240" w:after="80"/><w:outlineLvl w:val="1"/></w:pPr><w:rPr><w:b/><w:sz w:val="30"/><w:szCs w:val="30"/></w:rPr></w:style>
+<w:style w:type="paragraph" w:styleId="Heading3"><w:name w:val="heading 3"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:keepNext/><w:spacing w:before="200" w:after="60"/><w:outlineLvl w:val="2"/></w:pPr><w:rPr><w:b/><w:sz w:val="26"/><w:szCs w:val="26"/></w:rPr></w:style>
 <w:style w:type="paragraph" w:styleId="Quote"><w:name w:val="Quote"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:pBdr><w:left w:val="single" w:sz="18" w:space="8" w:color="B49BFF"/></w:pBdr><w:ind w:left="360"/></w:pPr><w:rPr><w:i/><w:color w:val="404858"/></w:rPr></w:style>
 <w:style w:type="paragraph" w:styleId="ListParagraph"><w:name w:val="List Paragraph"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:spacing w:after="40"/><w:ind w:left="720"/></w:pPr></w:style>
 <w:style w:type="paragraph" w:styleId="Code"><w:name w:val="Code"/><w:basedOn w:val="Normal"/><w:pPr><w:shd w:val="clear" w:color="auto" w:fill="F3F5F9"/><w:spacing w:after="0" w:line="240" w:lineRule="auto"/></w:pPr><w:rPr><w:rFonts w:ascii="Courier New" w:hAnsi="Courier New" w:cs="Courier New"/><w:sz w:val="19"/><w:szCs w:val="19"/></w:rPr></w:style>
@@ -235,7 +245,12 @@ async function toDOCX(n) {
   const M = Object.fromEntries(media.map(m => [m.id, m]));
   const rpr = r => { let x = ""; const f = r.font && fontName(r.font); if (f) x += `<w:rFonts w:ascii="${xesc(f)}" w:hAnsi="${xesc(f)}" w:cs="${xesc(f)}"/>`;
     if (r.b) x += "<w:b/>"; if (r.i) x += "<w:i/>"; if (r.s) x += "<w:strike/>"; const col = r.link ? "6B4FD8" : r.color && r.color.replace("#", ""); if (col) x += `<w:color w:val="${col.toUpperCase()}"/>`;
-    if (r.size && r.size !== 15) { const hp = Math.round(r.size * 22 / 15); x += `<w:sz w:val="${hp}"/><w:szCs w:val="${hp}"/>`; } if (r.u || r.link) x += `<w:u w:val="single"/>`; return x ? `<w:rPr>${x}</w:rPr>` : ""; };
+    if (r.size && r.size !== 15) { const hp = Math.round(r.size * 22 / 15); x += `<w:sz w:val="${hp}"/><w:szCs w:val="${hp}"/>`; } if (r.u || r.link) x += `<w:u w:val="single"/>`; if (r.hl) x += `<w:shd w:val="clear" w:color="auto" w:fill="${r.hl.slice(1).toUpperCase()}"/>`; return x ? `<w:rPr>${x}</w:rPr>` : ""; };
+  // a line's layout (v0.5.4) in Word's order: spacing, ind, jc (base = the indent the line already has, in twips)
+  const play = (b, base = 0) => { const L = b.lay || {}; let x = "";
+    if (L.lh || (L.ps != null && !isNaN(L.ps))) x += `<w:spacing${L.ps != null && !isNaN(L.ps) ? ` w:after="${L.ps * 15}"` : ""}${L.lh ? ` w:line="${Math.round(240 * L.lh)}" w:lineRule="auto"` : ""}/>`;
+    if (L.ind || base) x += `<w:ind w:left="${base + (L.ind || 0) * 720}"/>`;
+    if (L.al) x += `<w:jc w:val="${L.al === "center" ? "center" : L.al === "right" ? "right" : "left"}"/>`; return x; };
   const runXML = r => {
     if (r.br) return "<w:r><w:br/></w:r>";
     if (r.img) { const m = M[r.img]; if (!m) return ""; pid++; return `<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${m.cx}" cy="${m.cy}"/><wp:docPr id="${pid}" name="Picture ${pid}"/><wp:cNvGraphicFramePr><a:graphicFrameLocks noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="${pid}" name="${m.file}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${m.rid}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${m.cx}" cy="${m.cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`; }
@@ -244,11 +259,11 @@ async function toDOCX(n) {
   const para = (style, inner, extra) => `<w:p>${style || extra ? `<w:pPr>${style ? `<w:pStyle w:val="${style}"/>` : ""}${extra || ""}</w:pPr>` : ""}${inner}</w:p>`;
   const body = [para("Title", `<w:r><w:t xml:space="preserve">${xesc(n.title)}</w:t></w:r>`)];
   blocks.forEach(b => {
-    if (b.t === "p") body.push(para("", b.runs.map(runXML).join("")));
-    else if (b.t === "h") body.push(para("Heading2", b.runs.map(runXML).join("")));
-    else if (b.t === "quote") body.push(para("Quote", b.runs.map(runXML).join("")));
-    else if (b.t === "li") body.push(b.list === "ck" ? para("ListParagraph", `<w:r><w:t xml:space="preserve">${b.done ? "☒" : "☐"} </w:t></w:r>` + b.runs.map(r => runXML(b.done && !r.br && !r.img ? Object.assign({}, r, { s: 1 }) : r)).join(""), `<w:ind w:left="${360 + b.depth * 360}"/>`)
-      : para("ListParagraph", b.runs.map(runXML).join(""), `<w:numPr><w:ilvl w:val="${Math.min(8, b.depth)}"/><w:numId w:val="${b.list === "ol" ? 2 : 1}"/></w:numPr>`));
+    if (b.t === "p") body.push(para("", b.runs.map(runXML).join(""), play(b)));
+    else if (b.t === "h") body.push(para(b.lv === "title" ? "Title" : b.lv === "sub" ? "Subtitle" : "Heading" + b.lv, b.runs.map(runXML).join(""), play(b)));
+    else if (b.t === "quote") body.push(para("Quote", b.runs.map(runXML).join(""), play(b)));
+    else if (b.t === "li") body.push(b.list === "ck" ? para("ListParagraph", `<w:r><w:t xml:space="preserve">${b.done ? "☒" : "☐"} </w:t></w:r>` + b.runs.map(r => runXML(b.done && !r.br && !r.img ? Object.assign({}, r, { s: 1 }) : r)).join(""), play(b, 360 + b.depth * 360))
+      : para("ListParagraph", b.runs.map(runXML).join(""), `<w:numPr><w:ilvl w:val="${Math.min(8, b.depth)}"/><w:numId w:val="${b.list === "ol" ? 2 : 1}"/></w:numPr>` + play(b, b.lay && b.lay.ind ? 720 + b.depth * 360 : 0)));
     else if (b.t === "code") { if (b.title) body.push(para("", `<w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">${xesc(b.title)}</w:t></w:r>`)); b.src.replace(/\n$/, "").split("\n").forEach(l => body.push(para("Code", `<w:r><w:t xml:space="preserve">${xesc(l.replace(/\t/g, "    "))}</w:t></w:r>`))); body.push(para("", "")); }
     else if (b.t === "text") b.text.split("\n").forEach(l => body.push(para("Code", `<w:r><w:t xml:space="preserve">${xesc(l)}</w:t></w:r>`)));
   });
@@ -399,7 +414,7 @@ function mdToHTML(md, ctx) {
     }
     closeTo(0);
     const h = line.match(/^(#{1,6})\s+(.*?)\s*#*\s*$/);
-    if (h) { if (firstText && h[1].length === 1 && !title) { title = h[2]; firstText = false; continue; } blockStart(); out.push(`<h3>${mdInline(h[2], ctx)}</h3>`); firstText = false; continue; }
+    if (h) { if (firstText && h[1].length === 1 && !title) { title = h[2]; firstText = false; continue; } blockStart(); const ht = ["h1", "h2", "h3", "h4"][Math.min(h[1].length, 4) - 1]; out.push(`<${ht}>${mdInline(h[2], ctx)}</${ht}>`); firstText = false; continue; }
     if (/^\s*>/.test(line)) { blockStart(); const q = []; while (i < L.length && /^\s*>/.test(L[i])) q.push(L[i++].replace(/^\s*>\s?/, "")); i--; out.push(`<blockquote>${q.map(x => mdInline(x, ctx)).join("<br>")}</blockquote>`); firstText = false; continue; }
     if (/^\s*([-*_])(\s*\1){2,}\s*$/.test(line)) { out.push("<div><br></div>"); continue; }
     if (/^\s*\|.*\|\s*$/.test(line)) { if (/^\s*\|?\s*:?-+/.test(line.replace(/\|/g, ""))) continue; out.push(`<div>${mdInline(line.trim().replace(/^\||\|$/g, "").split("|").map(c => c.trim()).join("  ·  "), ctx)}</div>`); continue; }
@@ -426,6 +441,8 @@ async function htmlToNote(text, ctx) {
     if (/font-weight:\s*(bold|[6-9]00)/i.test(st)) inner = `<b>${inner}</b>`; if (/font-style:\s*italic/i.test(st)) inner = `<i>${inner}</i>`; if (/text-decoration[^;]*underline/i.test(st)) inner = `<u>${inner}</u>`; if (/text-decoration[^;]*line-through/i.test(st)) inner = `<s>${inner}</s>`;
     if (/font-family:[^;]*mono|font-family:[^;]*(courier|consolas|menlo)/i.test(st)) inner = `<span data-f="mono">${inner}</span>`;
     const col = (st.match(/(?:^|;)\s*color:\s*([^;]+)/i) || [])[1]; if (col && !/^(#000|#000000|black|rgb\(0,\s*0,\s*0\)|inherit|windowtext)$/i.test(col.trim())) inner = `<font color="${esc(col.trim())}">${inner}</font>`;
+    const bg = cssHex((st.match(/(?:^|;)\s*background(?:-color)?:\s*([^;]+)/i) || [])[1]); if (bg && bg !== "#ffffff" && !/^(DIV|P|H\d|LI|UL|OL|BLOCKQUOTE|BODY|TD|TR|TABLE)$/.test(el.tagName)) inner = `<span data-h="${bg}">${inner}</span>`; // highlights (v0.5.4)
+    const ta = (st.match(/(?:^|;)\s*text-align:\s*(left|center|right)/i) || [])[1]; if (ta && /^(DIV|P|H\d|LI|BLOCKQUOTE)$/.test(el.tagName)) el.setAttribute("data-al", ta.toLowerCase());
     el.innerHTML = inner; el.removeAttribute("style"); });
   body.querySelectorAll("input[type=checkbox]").forEach(cb => { const li = cb.closest("li"); if (li) { if (cb.checked || cb.hasAttribute("checked")) li.setAttribute("data-done", "1"); const ul = li.parentElement; if (ul) ul.setAttribute("data-ck", "1"); } cb.remove(); });
   body.querySelectorAll("table").forEach(tb => { const d = doc.createElement("div"); d.innerHTML = [...tb.rows].map(r => `<div>${[...r.cells].map(c => esc(c.textContent.trim())).join("  ·  ")}</div>`).join(""); tb.replaceWith(d); });
@@ -433,9 +450,13 @@ async function htmlToNote(text, ctx) {
     if (local) { const t = document.createElement("template"); t.innerHTML = ctx.link(decodeURIComponent(href.split("#")[0]).replace(/^.*\//, "").replace(/\.(md|html?)$/i, ""), a.textContent); a.replaceWith(t.content); }
     else if (/^https?:/.test(href) && a.textContent.trim() && a.textContent.trim() !== href) a.replaceWith(doc.createTextNode(a.textContent + " (" + href + ")")); });
   for (const im of [...body.querySelectorAll("img")]) { const t = document.createElement("template"); t.innerHTML = await ctx.imgAsync(im.getAttribute("src") || "", im.getAttribute("alt") || ""); im.replaceWith(t.content); }
-  body.querySelectorAll("p").forEach(p => { const d = doc.createElement("div"); d.innerHTML = p.innerHTML || "<br>"; p.replaceWith(d); });
+  body.querySelectorAll("p").forEach(p => { const d = doc.createElement("div"); d.innerHTML = p.innerHTML || "<br>"; if (p.hasAttribute("data-al")) d.setAttribute("data-al", p.getAttribute("data-al")); p.replaceWith(d); });
   return { title, html: body.innerHTML };
 }
+// a CSS colour (#abc, #aabbcc, rgb()) → #aabbcc, or "" (v0.5.4)
+const cssHex = v => { v = String(v || "").trim().toLowerCase(); if (/^#[0-9a-f]{3}$/.test(v)) v = "#" + v[1] + v[1] + v[2] + v[2] + v[3] + v[3]; const m = v.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?/); if (m) { if (m[4] != null && +m[4] === 0) return ""; v = "#" + [m[1], m[2], m[3]].map(x => (+x).toString(16).padStart(2, "0")).join(""); } return /^#[0-9a-f]{6}$/.test(v) ? v : ""; };
+// Word's named highlight colours (v0.5.4)
+const WHL = { yellow: "#ffff00", green: "#00ff00", cyan: "#00ffff", magenta: "#ff00ff", blue: "#0000ff", red: "#ff0000", darkblue: "#000080", darkcyan: "#008080", darkgreen: "#008000", darkmagenta: "#800080", darkred: "#800000", darkyellow: "#808000", darkgray: "#808080", lightgray: "#c0c0c0", black: "#000000" };
 // Word (.docx): paragraphs, headings, lists, bold / italic / underline / strike / colour, line breaks, tables, photos
 async function docxToNote(bytes, ctx) {
   const files = await unzip(new Blob([bytes])), get = n => files.find(f => f.name === n);
@@ -459,7 +480,9 @@ async function docxToNote(bytes, ctx) {
     }
     const pr = kid(r, "rPr"); if (pr && h) { const on = n => { const e = kid(pr, n); return e && !/^(0|false|none)$/.test(A(e, "val") || ""); };
       const col = kid(pr, "color"), cv = col && A(col, "val");
-      if (cv && /^[0-9a-f]{6}$/i.test(cv) && cv !== "000000") h = `<font color="#${cv}">${h}</font>`; if (on("strike")) h = `<s>${h}</s>`; if (on("u")) h = `<u>${h}</u>`; if (on("i")) h = `<i>${h}</i>`; if (on("b")) h = `<b>${h}</b>`; }
+      if (cv && /^[0-9a-f]{6}$/i.test(cv) && cv !== "000000") h = `<font color="#${cv}">${h}</font>`;
+      const shd = kid(pr, "shd"), hi = kid(pr, "highlight"), fill = shd && A(shd, "fill"), hv = hi && WHL[(A(hi, "val") || "").toLowerCase()];
+      const hx = fill && /^[0-9a-f]{6}$/i.test(fill) && !/^(ffffff|auto)$/i.test(fill) ? "#" + fill.toLowerCase() : hv; if (hx) h = `<span data-h="${hx}">${h}</span>`; if (on("strike")) h = `<s>${h}</s>`; if (on("u")) h = `<u>${h}</u>`; if (on("i")) h = `<i>${h}</i>`; if (on("b")) h = `<b>${h}</b>`; }
     return h; };
   const paraHTML = async p => { let h = ""; for (const c of [...p.childNodes].filter(x => x.nodeType === 1)) { if (c.localName === "r") h += await runHTML(c); else if (c.localName === "hyperlink" || c.localName === "ins" || c.localName === "smartTag") for (const r of kids(c, "r")) h += await runHTML(r); } return h; };
   const out = []; let list = []; let title = null, code = [];
@@ -475,7 +498,8 @@ async function docxToNote(bytes, ctx) {
     if (el.localName === "tbl") { flushList(); flushCode(); for (const tr of kids(el, "tr")) { const cells = []; for (const tc of kids(tr, "tc")) { let t = ""; for (const p of kids(tc, "p")) t += (t ? " " : "") + await paraHTML(p); cells.push(t); } out.push(`<div>${cells.join("  ·  ")}</div>`); } continue; }
     if (el.localName !== "p") continue;
     const pPr = kid(el, "pPr"), sty = pPr && kid(pPr, "pStyle"), style = sty ? A(sty, "val") : "", np = pPr && kid(pPr, "numPr");
-    const html = await paraHTML(el);
+    let html = await paraHTML(el);
+    const jc = pPr && kid(pPr, "jc"), jv = jc && A(jc, "val"), al = jv === "center" ? "center" : jv === "right" || jv === "end" ? "right" : "", alA = al ? ` data-al="${al}"` : ""; // Word's alignment (v0.5.4)
     if (/^(code|HTMLPreformatted|SourceCode|PlainText)$/i.test(style)) { flushList(); code.push(el.textContent); continue; } else flushCode();
     if (np) { const nid = kid(np, "numId"), il = kid(np, "ilvl"), id = nid ? A(nid, "val") : "0", lvl = il ? +A(il, "val") : 0; if (id !== "0") { const f = (fmt[id] || {})[String(lvl)]; list.push({ lvl, tag: f && f !== "bullet" && f !== "none" ? "ol" : "ul", html }); continue; } }
     if (/^ListBullet|^ListNumber/i.test(style)) { list.push({ lvl: +(style.match(/(\d)$/) || [0, 1])[1] - 1, tag: /Number/i.test(style) ? "ol" : "ul", html }); continue; }
@@ -483,9 +507,11 @@ async function docxToNote(bytes, ctx) {
     if (cbm) { flushList(); const item = `<li${cbm[1] !== "☐" ? ` data-done="1"` : ""}>${html.replace(/[☐☑☒]\s*/, "").replace(/<\/?s>/g, "")}</li>`; const last = out[out.length - 1]; if (last && /^<ul data-ck="1">/.test(last)) out[out.length - 1] = last.replace(/<\/ul>$/, item + "</ul>"); else out.push(`<ul data-ck="1">${item}</ul>`); continue; }
     flushList();
     if (/^title$/i.test(style) && !title && !out.length) { title = html.replace(/<[^>]+>/g, "").trim() || null; continue; }
-    if (/^(heading|title|subtitle)/i.test(style)) out.push(`<h3>${html}</h3>`);
-    else if (/quote/i.test(style)) out.push(`<blockquote>${html}</blockquote>`);
-    else out.push(`<div>${html || "<br>"}</div>`);
+    if (/^title$/i.test(style)) out.push(`<h1${alA}>${html}</h1>`);
+    else if (/^subtitle$/i.test(style)) out.push(`<h6${alA}>${html}</h6>`);
+    else if (/^heading/i.test(style)) { const lv = +(style.match(/(\d)/) || [0, 2])[1], tg = lv <= 1 ? "h2" : lv === 2 ? "h3" : "h4"; out.push(`<${tg}${alA}>${html}</${tg}>`); }
+    else if (/quote/i.test(style)) out.push(`<blockquote${alA}>${html}</blockquote>`);
+    else out.push(`<div${alA}>${html || "<br>"}</div>`);
   }
   flushList(); flushCode();
   const ct = core && core.getElementsByTagName("dc:title")[0];
