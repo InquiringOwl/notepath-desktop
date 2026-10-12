@@ -1,0 +1,254 @@
+{
+  "geometry": {
+    "finite": 826658,
+    "lengthError": 1.1368683772161603e-13,
+    "minBallElbowBelowShoulder": 2.2743461109904217,
+    "minPlaneElbowBelowShoulder": 5.404898953029459,
+    "maxElbowFrameJumpAt240Hz": 4.05911889030631,
+    "worst": {
+      "name": "drum",
+      "t": 4.7291666666667185,
+      "side": "r"
+    },
+    "slide": 0,
+    "legError": 9.947598300641403e-14
+  },
+  "tosses": [
+    {
+      "release": 3.12,
+      "rise": 98,
+      "releaseError": 0,
+      "velocityError": 0.06042620812833449,
+      "catchError": 8.038873388460929e-14
+    },
+    {
+      "release": 4.65,
+      "rise": 62.72,
+      "releaseError": 0,
+      "velocityError": 0.050659301526641234,
+      "catchError": 8.038873388460929e-14
+    },
+    {
+      "release": 5.92,
+      "rise": 88.62645661157023,
+      "releaseError": 0,
+      "velocityError": 0.05793922589203924,
+      "catchError": 0
+    }
+  ],
+  "plane": {
+    "3.68": {
+      "hand": [
+        415,
+        249
+      ],
+      "elbow": [
+        419.6189943044861,
+        293.7623155300876
+      ],
+      "shoulder": [
+        404.7700706268923,
+        254.47479250283388
+      ],
+      "angle": 14.812883708475928
+    },
+    "3.86": {
+      "hand": [
+        430,
+        263
+      ],
+      "elbow": [
+        400.3329646854184,
+        296.8358835505055
+      ],
+      "shoulder": [
+        403.97872669016687,
+        254.99441584913617
+      ],
+      "angle": 36.26426663450502
+    },
+    "4.05": {
+      "hand": [
+        499,
+        262
+      ],
+      "elbow": [
+        454.0363719735677,
+        263.8089098099776
+      ],
+      "shoulder": [
+        413.5154492821524,
+        252.7610672949729
+      ],
+      "angle": 162.4454522300951
+    },
+    "4.14": {
+      "hand": [
+        498.9458639715146,
+        269.40696724769117
+      ],
+      "elbow": [
+        454.6027333208871,
+        261.7462385551072
+      ],
+      "shoulder": [
+        413.5606282249693,
+        252.82740402947323
+      ],
+      "angle": 177.54138961289385
+    },
+    "releaseError": 0,
+    "velocityError": 0.017535417064480124
+  },
+  "neck": 5,
+  "headRadius": 20.7675,
+  "ball": {
+    "heldError": 0,
+    "bottom": 0,
+    "heldBottom": 0
+  },
+  "greeting": {
+    "first": "surprise",
+    "second": "wave",
+    "resumed": "sing",
+    "elapsed": 1.5
+  },
+  "deferral": {
+    "act": "plane",
+    "queued": "greeting",
+    "after": "idle",
+    "greeting": true
+  },
+  "queue": {
+    "q": "ball",
+    "act": "ball"
+  },
+  "counts": {
+    "notes": 24,
+    "folders": 4,
+    "folderId": "test",
+    "filed": 6,
+    "loose": 18,
+    "carrying": 0,
+    "activity": "tidy",
+    "queued": null,
+    "playing": true
+  },
+  "regression": {
+    "headRadius": 20.7675,
+    "flightLength": 520.8114456204718,
+    "planeLaunchSpeed": 228.3875310457496,
+    "geometry": {
+      "finite": 413330,
+      "maxArm": 87.00000000000004,
+      "worstArm": [
+        "wave",
+        2.774999999999993,
+        "lh"
+      ],
+      "maxFrame": 7.805213931574258,
+      "worstFrame": [
+        "drum",
+        4.733333333333358,
+        "rh"
+      ],
+      "maxLegError": 9.947598300641403e-14,
+      "slide": 0,
+      "peakLift": 30.539343757867357
+    },
+    "tosses": [
+      {
+        "flight": 0.7,
+        "rise": 98,
+        "releaseError": 0,
+        "velocityError": 0.06042620812833449,
+        "catchError": 8.038873388460929e-14,
+        "peakAtRelease": true
+      },
+      {
+        "flight": 0.56,
+        "rise": 62.72,
+        "releaseError": 0,
+        "velocityError": 0.050659301526641234,
+        "catchError": 8.038873388460929e-14,
+        "peakAtRelease": true
+      },
+      {
+        "flight": 0.66,
+        "rise": 88.62645661157023,
+        "releaseError": 0,
+        "velocityError": 0.05793922589203924,
+        "catchError": 0,
+        "peakAtRelease": true
+      }
+    ],
+    "ball": {
+      "bottom": 0,
+      "heldError": 0,
+      "bounceTimes": [
+        7.4549509756796395,
+        7.842003603209381,
+        8.058029916974252
+      ]
+    },
+    "plane": {
+      "speedIncreases": 0,
+      "physicalIncreases": 0,
+      "minX": 499,
+      "maxX": 779.2056008132955,
+      "lastSpeed": 30.479181709971623,
+      "releaseVelocity": [
+        227.7117518332261,
+        -17.499257734243656
+      ],
+      "expected": [
+        227.71481226179637,
+        -17.51652402013818
+      ]
+    },
+    "greeting": {
+      "first": "surprise",
+      "second": "wave",
+      "resumed": "sing",
+      "elapsed": 1.5
+    },
+    "deferral": {
+      "act": "plane",
+      "queued": "greeting",
+      "after": "idle",
+      "greeting": true
+    },
+    "holds": {
+      "sing": 0,
+      "drum": 0,
+      "voice": 0
+    },
+    "neck": 5,
+    "queue": {
+      "q": "ball",
+      "act": "ball"
+    },
+    "counts": {
+      "notes": 24,
+      "folders": 4,
+      "folderId": "test",
+      "filed": 12,
+      "loose": 12,
+      "carrying": 0,
+      "activity": "tidy",
+      "queued": null,
+      "playing": true
+    },
+    "assertions": "PASS"
+  },
+  "articulation": {
+    "waveElbowTravel": 0.14105078001039245,
+    "waveHandTravel": 16.479043331499476,
+    "walkingElbowAngles": [
+      145.03899284139027,
+      174.85396149945203
+    ]
+  },
+  "interruptionJump": 0,
+  "assertions": "PASS"
+}

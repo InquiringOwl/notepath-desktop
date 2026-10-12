@@ -305,6 +305,22 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   ok(!(await p.$('.mw-ov[data-mw=office]:not(.out)')) && await p.$eval('.p1 .nb-title', e => e.value).catch(() => '') === tgt.title, 'clicking a sheet opens that note in My notes', tgt.title);
   await p.click('#brand'); await wait(300); await p.click('[data-a=office]'); await wait(700);
   await p.evaluate(() => window.dispatchEvent(new CustomEvent('inquire:theme'))); await wait(100);
+  // Stickman v2.3: one connected 42 + 45 arm chain (also mid-stride), 5 px of neck, greeting defers during a walk and resumes singing after the wave
+  const bones = () => p.evaluate(() => { const q = NoteOffice.current.pose(), d = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]), out = [];
+    for (const s of ['l', 'r']) { const sh = [q.chest[0] + (s === 'l' ? -7 : 7), q.chest[1] + 1 - (s === 'l' ? -1 : 1) * (q.twist || 0)]; out.push(d(sh, q[s + 'e']), d(q[s + 'e'], q[s + 'h'])); }
+    return { arms: out, neck: d(q.head, q.chest) - 19.5 * 1.065 - 11.5 * 1.17 / 2 }; });
+  await p.evaluate(() => NoteOffice.current.poke('walk')); await wait(2600);
+  let bn = await bones();
+  ok(bn.arms.every((v, i) => Math.abs(v - (i % 2 ? 45 : 42)) < .01) && Math.abs(bn.neck - 5) < .01, 'Note Office: walking arms keep 42 + 45 px bones and a 5 px neck', bn);
+  await p.evaluate(() => NoteOffice.current.greet()); await wait(100);
+  ok(await p.evaluate(() => NoteOffice.current.state().act) === 'walk', 'Note Office: a greeting waits until his stroll is over');
+  await p.evaluate(() => NoteOffice.current.poke('sing')); await wait(700);
+  await p.evaluate(() => NoteOffice.current.greet()); await wait(100);
+  ok(await p.evaluate(() => NoteOffice.current.state().act) === 'surprise', 'Note Office: clicking him mid-song starts the greeting');
+  await wait(1700); bn = await bones();
+  ok(await p.evaluate(() => NoteOffice.current.state().act) === 'wave' && bn.arms.every((v, i) => Math.abs(v - (i % 2 ? 45 : 42)) < .01), 'Note Office: he waves with connected arms', bn);
+  await wait(3100);
+  ok(await p.evaluate(() => NoteOffice.current.state().act) === 'sing', 'Note Office: after the wave he goes back to his song');
   await p.keyboard.press('Escape'); await wait(400);
   ok(!(await p.$('.mw-ov[data-mw=office]:not(.out)')) && await p.evaluate(() => !NoteOffice.current && !document.body.classList.contains('office-on')), 'Esc closes Note Office and it stops');
   await p.click('[data-a=open]'); await wait(400);

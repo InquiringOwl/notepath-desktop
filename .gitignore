@@ -8,3 +8,4 @@ __pycache__/
 .snap/
 app/vendor/
 ai.config.json
+Claude outputs/*.tgz

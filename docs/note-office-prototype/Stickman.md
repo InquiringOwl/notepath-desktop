@@ -1,8 +1,16 @@
 # Stickman — Note Office
 
 Updated: October 11, 2026  
-Version: 2 · working prototype  
-Status: User-approved as a prototype; ready for another agent to refine and integrate.
+Version: 2.3 · articulated arm revision for review  
+Status: Version 2 was user-approved; this proportions and motion revision is ready for review and porting.
+
+## Current revision — October 11, 2026
+
+The real app now has its own implementation in `web/src/office.js`; see `Stickman-for-Astra.md` for that context. This file documents the standalone prototype. The revised prototype is not yet ported into the real app.
+
+The latest arm fixes, measurements, checks, and porting notes are in [ARMS-UPDATE.md](ARMS-UPDATE.md). Preview `arms-preview.gif`, `arms-contact-sheet.png`, and the updated `stride-contact-sheet.png`. The older ACTING-UPDATE.md remains a record of the earlier personality changes; its arm-rounding description is superseded.
+
+See [MOTION-UPDATE.md](MOTION-UPDATE.md) for measurements, changed function names, checks and limitations. Open `index.html?review=1` to scrub the animation. Contact sheets are included beside the prototype.
 
 ## Start here
 
@@ -53,7 +61,7 @@ The package contains no remote dependencies, API keys, proprietary application d
 | Accent / music notes | `#bb765b` |
 | Base limb width | 11.5 logical pixels |
 | Desk line width | 3.5 logical pixels |
-| Head | Filled circle, radius 19.5 logical pixels |
+| Head | Filled circle, radius 20.7675 logical pixels; 5 px visible neck |
 
 The torso and arms use small width multipliers around the base limb width. Line weights scale with the scene. The scene intentionally uses a fixed light palette. The interactive demo adds a title, counts, activity selector, and controls; embedded mode hides that surrounding interface.
 
@@ -203,6 +211,27 @@ Everything is in the inline script in `index.html`:
 The motion combines eased pose targets, anchored stance feet, lifted swing feet, two-segment limb solving, curved joints, anticipation, and body follow-through. It is procedural animation, not a full physics simulation or an authored skeletal animation asset.
 
 ## Change record
+
+### Version 2.2 — expressive gestures
+
+- Softened arm curves and added asymmetric singing phrases, synchronized drumming patterns, and deliberate pauses.
+- Added readable head/shoulder attention, a notice-and-wave greeting, and resumption of interrupted singing/drumming.
+- Added reading reconsideration/paper adjustment and a clearer plane-landing nod.
+- Preserved the 5 px neck, enlarged head, joint lengths, routine durations and prop physics.
+- New pause/interruption checks and prior motion regressions passed; key poses visually reviewed. Live-app porting remains pending. See [ACTING-UPDATE.md](ACTING-UPDATE.md).
+
+### Proportion follow-up — 5 px neck
+
+- Added 5 logical pixels of visible neck above the rounded torso cap, keeping the enlarged head radius at 20.7675 px. Previous motion contact sheets show the earlier neckless version.
+
+### Version 2.1 — proportions and motion review
+
+- Removed the neck and increased head radius by exactly 6.5% (19.5 → 20.7675 px).
+- Replaced the walking travel model with fixed foot contacts, 30.54 px foot lift, heel/toe roll, counter-sway and 34 px opposite arm swing; preserved the stroll itinerary and duration.
+- Added four crumple stages, three alternating ballistic tosses/catches, release-matched hand velocity, 8 px catch absorption, desk bounces and a friction roll.
+- Replaced the plane's looping path with a 5.3 s decelerating glide, bank, landing and skid; preserved the 12 s routine.
+- Added opt-in review scrubbing and stride/ball/plane contact sheets. Numerical and browser checks passed; live app integration, caching and load performance remain unverified.
+- Full details and next tuning target: [MOTION-UPDATE.md](MOTION-UPDATE.md).
 
 ### Version 2 — accepted prototype
 

@@ -1,4 +1,68 @@
 <!doctype html>
+<!--
+NOTE OFFICE v2.3 — HANDOFF FOR FUTURE CHATS
+Companion: Stickman-for-Astra.md. This comment records context; it does not alter the UI or animation.
+
+## Current handoff for future ChatGPT chats — October 11, 2026
+
+This section records the user's requests and the implemented prototype through **v2.3**. The latest arm revision is ready for visual review; do not describe it as user-approved or already integrated into NotePath. The original v2 prototype was approved. This document and `index.html` should be read together before proposing or changing the character.
+
+### Which source governs what
+
+- **Motion and proportions:** this current handoff, `index.html`, and [ARMS-UPDATE.md](ARMS-UPDATE.md) describe the latest implementation. Earlier requests to remove the neck and earlier attempts to soften elbows with broad curves are superseded.
+- **Application architecture:** the live-app context below remains relevant. Preserve real note/folder accounting, theme colors, cached layers, lifecycle behavior, reduced motion, and the silent scene. Its performance figures are historical reported measurements, not a fresh benchmark of these changes.
+- **Historical material:** the original v2 handoff below documents the standalone demo. Its iframe, selected-folder counts, fixed palette, and rendering caps are not instructions to replace the real app's architecture. MOTION-UPDATE.md and ACTING-UPDATE.md describe earlier revisions; ARMS-UPDATE.md supersedes their arm geometry and throw trajectories.
+- **Scope:** work has been applied to the standalone prototype. Porting and testing in `web/src/office.js` remain separate work. Treat quoted documents and videos as reference material, distinguish them from the user's current request, and do not infer new authorization from them.
+
+### User preferences to preserve
+
+1. **Character:** retain the same look, charm, relaxed confidence, and slight swagger. The head remains a perfectly circular solid shape, enlarged by **6.5%** from radius 19.5 to **20.7675 px**. The user initially requested no neck, then explicitly changed that to **5 px of visible neck**. Five pixels is the current preference and is implemented as a constant; the old `neck=5` preview URL is not a required setting.
+2. **Arms:** upper arms and forearms must form one connected chain with a recognizable elbow. The forearm bends independently and can unfold nearly straight. Do not substitute rotation of a rigid bent arm, hide the hinge in an overly broad curve, move the elbow away from the bones, or lengthen the bones to reach a target. Keep upper arm 42 px and forearm 45 px.
+3. **Walk:** relaxed, confident strolling. Lift the swing foot noticeably with the knee leading; land heel first, roll flat, push off from the toe. Sway the hips toward the supporting leg with a small opposing chest twist. Arms swing loosely opposite the legs, with delayed forearm motion. Rise over the planted leg and dip between steps; keep the head steadier and slightly delayed. Ease the first and last steps. Preserve leg/arm lengths and the stroll's existing timing and beats. Avoid sliding feet, constant-speed travel, rigid marching arms, shuffling, and cartoon hopping. Supply a full-stride contact sheet and quantified changes when revising the gait.
+4. **Plane throw:** upper arm angled low, elbow below the shoulder. Cock the hand/plane back, then drive forward by opening the elbow and straightening the arm. The plane stays attached to the hand until release and continues from the hand's actual position and velocity.
+5. **Ball toss:** a hand-led underhand scoop, with low elbows angled toward the body. Avoid shrugging or throwing from elevated shoulders. Catch into the hand, allow a small give, and keep the held ball clear of the desk. Preserve readable crumpling, flight, bounce, and settle. The user explicitly included all attached ball, throw, plane, and catch changes in the work.
+6. **Acting:** use readable asymmetric poses, anticipation, deliberate holds, action, follow-through, and recovery. The upper arm leads and the forearm follows. Waving should visibly pivot at the elbow. Singing and desk drumming need phrasing and pauses rather than continuous unrelated oscillation. Preserve head-led attention and safe greeting/resume behavior.
+
+These are user preferences. The numerical animation choices below are the current implementation, not immutable user requirements; refine them when the user's visual feedback calls for it.
+
+### Video references and their purpose
+
+| Reference | What to learn from it |
+| --- | --- |
+| [Original StickNodes style reference — STRENGTH VS SPEED](https://www.youtube.com/watch?v=cDoo53YgQhY) | Earlier visual direction: bold rounded line weight, solid head, character attitude. |
+| [Alan Becker — Note Block Concert](https://www.youtube.com/watch?v=w0bYgvYokFM) | Expressive head/arm acting, asymmetric gestures, readable silhouettes, pauses and reactions. Informed the singing, drumming, and greeting pass. |
+| [Tito Animate — Walking Tutorial](https://www.youtube.com/watch?v=jZusA9pDgJk) | Low relaxed walking arms, connected joints, changing elbow bend, and the opening greeting/gesture. This was supplied when the user rejected stiff, disjointed arms. |
+| [Rakuto — How to animate a Stick Fight Punch](https://www.youtube.com/shorts/e1Q-aZhbgkA) | Clear preparation, bent-to-extended arm action, and follow-through. Adapt the mechanics to gentle office gestures; the user did not request fighting, punch effects, or exaggerated body distortion. |
+
+Selected passages/key poses were inspected in the earlier work. These are qualitative references, not full motion capture or frame-for-frame reconstructions. No video assets are bundled. If a later chat needs new frame-specific conclusions, it should inspect the relevant passage rather than claim knowledge from these notes alone.
+
+### What is implemented now
+
+- `finishPose`, `shoulder`, `articulateArms`, and `drawArms` resolve and draw one connected chain. Arms use straight segments meeting at a rounded elbow. Held props use the resolved hands. `lGoal`/`rGoal` retain the unsolved targets for transition blending; do not solve an already resolved arm again.
+- Walking uses upper-arm swing of ±0.43 radians (about 25°) and a forearm lag of 0.30 radians of stride phase. Internal elbow angle varies approximately **145–175°**. The gait retains its foot contacts, lift, sway, easing, and **18.5 s** duration.
+- The plane hand draws back from x=445 to x=415, holds at **3.68–3.78 s**, and releases at **4.05 s** from **(499, 262)**. Elbow angle progresses approximately **15° → 162° at release → 178° in follow-through**. The first flight curve matches the new release; the glide remains **5.3 s**, within the **12 s** routine.
+- Ball catches are low, and body-drive offsets are reduced to **22%** of the prior strength. Flights remain **0.70, 0.56, and 0.66 s**; gravity is now **1600 px/s²**, producing rises of **98, 62.7, and 88.6 px**. A **6.95 s** hand transfer precedes the desk drop; bounce height ratio is **45%**, with final rest at x=489. The routine remains **9.4 s**.
+- The wave rotates the forearm **±0.20 radians** around a quiet elbow. Measured hand travel is **16.5 px**, versus **0.14 px** at the elbow. Authored singing/drumming holds and the notice → wave → resume behavior are retained. Greeting waits during prop handling and trips.
+
+Port the pose finalization and rendering together, then the gait fields, then each throw's hand track and trajectory as a unit. Preserve the live app's caching and allocation constraints when adapting this prototype's procedural code.
+
+### Evidence, preview, and remaining work
+
+See [ARMS-UPDATE.md](ARMS-UPDATE.md) for detailed porting steps and [arm-verification.json](arm-verification.json) for current results. Offline execution of the actual animation code sampled every routine at 240 Hz: segment lengths, low throwing elbows, near-full extension, release/catch continuity, held-ball clearance, foot contacts, queued actions, paper conservation, and greeting transitions passed. These are geometric/state checks, not proof that the user considers the motion finished.
+
+- [Moving preview](arms-preview.gif): four normal-speed clips. Panel loop cuts are preview edits.
+- [Throwing and gesture contact sheet](arms-contact-sheet.png).
+- [One full stride](stride-contact-sheet.png).
+- Open `index.html?review=1`, choose a routine, and scrub its timing. Refresh an already open tab after source edits.
+
+The live app still needs porting, visual review, and integration/performance checks. Fresh browser-layout testing was not performed for v2.3. Future chats should review full motion, including transitions, rather than judging only still poses. Update this document and the source handoff comment whenever preferences or implementation change.
+
+---
+
+
+END CURRENT HANDOFF
+-->
+
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Note Office</title>
 <style>html,body{margin:0;padding:0;background:#f5f2eb}body{max-width:1000px;margin:auto}button,select{cursor:pointer}</style>
 </head><body>
@@ -6,7 +70,7 @@
  <header class="office-header"><div class="office-title">Note Office<span aria-hidden="true"></span></div><span class="office-subtitle">a little life between the lines</span></header>
  <div class="office-stage"><canvas role="img" aria-label="A playful stick figure in an office with filing cabinets, shelves, a desk, and papers. He walks, files papers, sings, reads, and plays.">A playful office companion. Use the controls to add papers or choose a routine.</canvas><span class="office-bubble" aria-hidden="true"></span><button type="button" class="office-hello cursor-interaction">Say hello</button></div>
  <div class="office-caption"><span class="office-status" role="status" aria-live="polite">Very busy doing nothing.</span><span class="office-count" aria-live="polite"></span></div>
- <footer class="office-controls"><div class="office-additions"><button type="button" class="office-note cursor-interaction">+ Note</button><button type="button" class="office-folder cursor-interaction">+ Folder</button></div><div class="office-playback"><select class="office-activity cursor-interaction" aria-label="Choose an activity"><option value="auto">Let him do his thing</option><option value="sing">Sing &amp; groove</option><option value="walk">Take a stroll</option><option value="tidy">Put papers away</option><option value="stretch">A big stretch</option><option value="drum">Desk beat</option><option value="read">Read a paper</option><option value="ball">Paper ball</option><option value="plane">Paper plane</option></select><button type="button" class="office-pause cursor-interaction" aria-pressed="false">Pause</button></div></footer>
+ <footer class="office-controls"><div class="office-additions"><button type="button" class="office-note cursor-interaction">+ Note</button><button type="button" class="office-folder cursor-interaction">+ Folder</button></div><div class="office-playback"><select class="office-activity cursor-interaction" aria-label="Choose an activity"><option value="auto">Let him do his thing</option><option value="surprise">Notice the viewer</option><option value="wave">Wave hello</option><option value="sing">Sing &amp; groove</option><option value="walk">Take a stroll</option><option value="tidy">Put papers away</option><option value="stretch">A big stretch</option><option value="drum">Desk beat</option><option value="read">Read a paper</option><option value="ball">Paper ball</option><option value="plane">Paper plane</option></select><button type="button" class="office-pause cursor-interaction" aria-pressed="false">Pause</button></div></footer>
 </div>
 <style>
 #note-office-room{--office-bg:#f5f2eb;--office-ink:#363932;--office-soft:#75776d;--office-line:#dcd9cf;--office-accent:#bb765b;background:var(--office-bg);color:var(--office-ink);border-radius:16px;overflow:hidden;font:400 13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color-scheme:light;width:100%;isolation:isolate;box-sizing:border-box}
@@ -70,21 +134,21 @@
  function ui(){dirty=true;count.textContent=`${notes.toLocaleString()} ${notes===1?'note':'notes'} · ${folders.toLocaleString()} ${folders===1?'folder':'folders'}`;pause.textContent=playing?'Pause':'Play';pause.setAttribute('aria-pressed',String(!playing));}
  function save(){try{window.openai?.setWidgetState?.({modelContent:{notes,folders,folderId},privateContent:{version:2,filed,shelfFiled,playing}})?.catch(()=>{});}catch{}}
  function restore(s){if(valid(s?.modelContent?.notes))notes=s.modelContent.notes;if(valid(s?.modelContent?.folders))folders=s.modelContent.folders;if(typeof s?.modelContent?.folderId==='string')folderId=s.modelContent.folderId.slice(0,200);if(s?.privateContent?.version===2&&valid(s.privateContent.filed))filed=Math.min(notes,s.privateContent.filed);if(valid(s?.privateContent?.shelfFiled))shelfFiled=Math.min(filed,s.privateContent.shelfFiled);if(typeof s?.privateContent?.playing==='boolean')playing=s.privateContent.playing;ui();}
- function begin(name){fromPose=currentPose?clone(currentPose):null;act=name;startTime=time;dirty=true;status.textContent=words[name];if(name==='ball')restingBall=false;if(name==='plane')restingPlane=false;if(name==='tidy'){batch=Math.min(6,notes-filed);picked=false;deposited=false;destination=filingTrips%2&&folders>0?'box':'shelf';}if(name==='idle')nextAt=time+3.1+rand(round+10)*2;}
- function request(name){greeting=false;if(away()){pending=name;status.textContent='Just finishing this little errand…';return;}pending=null;begin(name==='auto'?'idle':name);if(!playing)dirty=true;}
- function open(){if(away()){pending='greeting';return;}greeting=true;begin('idle');nextAt=time+2.2;picker.value='auto';}
+ function begin(name){fromPose=currentPose?clone(currentPose):null;if(fromPose){fromPose.lh=[...fromPose.lGoal];fromPose.rh=[...fromPose.rGoal];}act=name;startTime=time;transitionAt=time;dirty=true;status.textContent=words[name];if(name==='ball')restingBall=false;if(name==='plane')restingPlane=false;if(name==='tidy'){batch=Math.min(6,notes-filed);picked=false;deposited=false;destination=filingTrips%2&&folders>0?'box':'shelf';}if(name==='idle')nextAt=time+3.1+rand(round+10)*2;}
+ function request(name){interruptedActivity=null;greeting=false;if(away()){pending=name;status.textContent='Just finishing this little errand…';return;}pending=null;begin(name==='auto'?'idle':name);if(!playing)dirty=true;}
+ function open(){interruptedActivity=null;if(away()){pending='greeting';return;}greeting=true;begin('idle');nextAt=time+2.2;picker.value='auto';}
  function setCounts(n,f,id=folderId,animate=true){if(!valid(n)||!valid(f))return;const switched=String(id)!==folderId;const oldN=notes,oldF=folders;notes=n;folders=f;folderId=String(id).slice(0,200);if(switched){filed=0;shelfFiled=0;batch=0;picked=false;deposited=false;arrivals=[];}filed=Math.min(filed,notes);shelfFiled=Math.min(shelfFiled,filed);batch=Math.min(batch,Math.max(0,notes-filed));if(playing&&animate){for(let i=oldN;i<Math.min(notes,oldN+10);i++)arrivals.push({kind:'note',at:time+(i-oldN)*.06,seed:i});for(let i=oldF;i<Math.min(folders,oldF+5);i++)arrivals.push({kind:'folder',at:time+(i-oldF)*.09,seed:i});}arrivals=arrivals.slice(-24);ui();save();}
  function add(kind){setCounts(Math.min(1000000,notes+(kind==='note'?1:0)),Math.min(1000000,folders+(kind==='folder'?1:0)));}
- function seated(){const b=Math.sin(time*1.6),s=Math.sin(time*.68);return{hip:[401,323],chest:[399+s,253+b*.8],head:[397+s*1.8,215+b*1.2],lh:[366,313],rh:[437,312],lf:[358,418],rf:[448,418],lk:[366,348],rk:[435,349],face:0,tilt:-.04,chair:0};}
- function standing(x=400,y=420){return{hip:[x,y-119],chest:[x+2,y-191],head:[x+3,y-228],lh:[x-20,y-115],rh:[x+23,y-113],lf:[x-12,y],rf:[x+14,y],lk:[x-17,y-60],rk:[x+20,y-59],face:1,tilt:.05,chair:9};}
+ function seated(localTime=time){const b=Math.sin(localTime*1.6),s=Math.sin(localTime*.68);return{hip:[401,323],chest:[399+s,253+b*.8],head:[397+s*1.8,215+b*1.2],lh:[366,313],rh:[437,312],lf:[358,418],rf:[448,418],lk:[366,348],rk:[435,349],armFold:0,walkWeight:0,walkPhase:0,walkDir:1,face:0,tilt:-.04,chair:0};}
+ function standing(x=400,y=420){return{hip:[x,y-119],chest:[x+2,y-191],head:[x+3,y-228],lh:[x-20,y-115],rh:[x+23,y-113],lf:[x-12,y],rf:[x+14,y],lk:[x-17,y-60],rk:[x+20,y-59],armFold:0,walkWeight:0,walkPhase:0,walkDir:1,face:1,tilt:.05,chair:9};}
  // Two-segment limbs: joints are solved from anchored hands and feet.
  function joint(a,b,l1,l2,side){const dx=b[0]-a[0],dy=b[1]-a[1],raw=Math.hypot(dx,dy),d=clamp(raw,.001,l1+l2-.001),ux=dx/(raw||1),uy=dy/(raw||1),along=(l1*l1-l2*l2+d*d)/(2*d),height=Math.sqrt(Math.max(0,l1*l1-along*along));return[a[0]+ux*along-uy*height*side,a[1]+uy*along+ux*height*side];}
- function gait(x,ground,distance,dir,amount=1,carry=false){const p=standing(x,ground),phase=distance/59;const bob=Math.cos(phase*TAU*2)*2.1*amount;p.hip[1]+=bob;p.chest[0]+=dir*4*amount;p.chest[1]+=bob*.75;p.head[0]+=dir*6*amount;p.head[1]+=bob*.5;p.face=dir;
+ function gait(x,ground,distance,dir,amount=1,carry=false){if(amount===0){const p=standing(x,ground);p.face=dir;if(carry){p.lh=[p.chest[0]+dir*18-17,p.chest[1]+53];p.rh=[p.chest[0]+dir*18+17,p.chest[1]+51];}return p;}const p=standing(x,ground),phase=distance/59;const bob=Math.cos(phase*TAU*2)*2.1*amount;p.hip[1]+=bob;p.chest[0]+=dir*4*amount;p.chest[1]+=bob*.75;p.head[0]+=dir*6*amount;p.head[1]+=bob*.5;p.face=dir;
    for(let k=0;k<2;k++){const f=(phase+k*.5)%1,shift=(.5-f)*59+(f>.6?59*smooth((f-.6)/.4):0),lift=f>.6?Math.sin((f-.6)/.4*Math.PI)*16:0;const foot=[x+dir*shift*amount+(k?6:-6)*(1-amount),ground-lift*amount];p[k?'rf':'lf']=foot;p[k?'rk':'lk']=joint(p.hip,foot,61,62,-dir);}
    const swing=Math.sin(phase*TAU)*24*amount; p.lh=[x-8+dir*swing,p.chest[1]+73-5*amount];p.rh=[x+8-dir*swing,p.chest[1]+73-5*amount];p.tilt=dir*.06+Math.sin(phase*TAU-.4)*.045*amount;
    if(carry){p.lh=[x+dir*18-17,p.chest[1]+53];p.rh=[x+dir*18+17,p.chest[1]+51];p.head[0]-=dir*2;}return p;
  }
- function travel(t,a,b,x0,x1,carry=false){const u=ramp(t,a,b),d=Math.abs(x1-x0)*u,dir=x1>x0?1:-1,amount=Math.min(ramp(t,a,a+.4),1-ramp(t,b-.4,b));return gait(mix(x0,x1,u),420,d,dir,amount,carry);}
+
  function rise(t,a=0,b=1.6){const seatedPose=seated(),stand=standing(),p=blend(seatedPose,stand,ramp(t,a+.35,b));const anticipation=pulse(t,a,a+.28,a+.55,b);p.head[0]+=anticipation*17;p.head[1]+=anticipation*7;p.chest[0]+=anticipation*11;p.lh=point(p.lh,[358,313],anticipation*.65);p.rh=point(p.rh,[440,313],anticipation*.65);p.chair=ramp(t,a+.25,b)*9;return p;}
  function sit(t,a,b){const p=blend(standing(),seated(),ramp(t,a,b));const settle=Math.sin(clamp((t-b)/.6)*Math.PI)*3;if(t>b){p.hip[1]+=settle;p.chest[1]+=settle*.7;p.head[1]+=settle*.4;}return p;}
  function walkingPose(t){let p;if(t<1.8)p=rise(t,0,1.8);else if(t<5)p=travel(t,1.8,5,400,560);else if(t<6.4){p=standing(560);const a=pulse(t,5,5.4,5.9,6.4);p.chest[0]-=a*7;p.head[0]-=a*11;p.lh=[540-8*a,309-30*a];p.rh=[584+12*a,307-35*a];p.tilt=-.1*a;}else if(t<11.7)p=travel(t,6.4,11.7,560,249);else if(t<13){p=standing(249);p.face=-1;p.head[0]-=ramp(t,11.7,12.1)*7*(1-ramp(t,12.5,13));}else if(t<16.8)p=travel(t,13,16.8,249,400);else p=sit(t,16.8,18);return p;}
@@ -96,20 +160,357 @@
    else if(t<9.6){p=standing(563);const a=pulse(t,8.7,9,9.3,9.6);p.lh=[543,305];p.rh=[587,300-a*30];p.head[1]-=a*3;p.tilt=-a*.1;}
    else if(t<13.2)p=travel(t,9.6,13.2,563,400);else p=sit(t,13.2,14.5);return p;
  }
- function actionPose(name,t){let p=seated(),k;
-   if(name==='walk')return soften(walkingPose,t,[1.8,5,6.4,11.7,13,16.8]);if(name==='tidy')return soften(tidyPose,t,[1.3,2.9,6.3,8.7,9.6,13.2]);
-   const envelope=Math.min(ramp(t,0,.5),1-ramp(t,duration[name]-.65,duration[name]));
-   if(name==='surprise'){k=pulse(t,0,.16,.32,.85);p.head[1]-=9*k;p.chest[1]-=5*k;p.lh[1]-=15*k;p.rh[1]-=17*k;p.tilt=0;}
-   if(name==='wave'){k=envelope;const w=Math.sin((t-.3)*9);p.chest[0]-=k*5;p.head[0]-=k*9;p.head[1]-=k*3;p.rh=point(p.rh,[455+w*10,205+Math.cos(t*9)*4],k);p.tilt=-.13*k;p.rf[0]+=k*6;}
-   if(name==='drum'){const beat=t*10.5;p.hip[0]+=Math.sin(beat/2)*2*envelope;p.chest[0]+=Math.sin(beat/2-.3)*6*envelope;p.head[0]+=Math.sin(beat/2-.7)*9*envelope;p.head[1]+=Math.sin(beat-.8)*3*envelope;p.lh=[365,311-Math.pow(Math.max(0,Math.sin(beat)),2)*24*envelope];p.rh=[440,311-Math.pow(Math.max(0,Math.sin(beat+2.6)),2)*29*envelope];p.rf[1]-=Math.pow(Math.max(0,Math.sin(beat/2)),2)*8*envelope;p.tilt=Math.sin(beat/2-1)*.1*envelope;}
-   if(name==='read'){const grab=pulse(t,0,.8,1.1,2),read=pulse(t,.9,2,6.7,8.2);p.chest[0]+=grab*13-read*7;p.head[0]+=grab*19-read*9;p.head[1]+=grab*6+read*4;p.lh=point(p.lh,[382,271],read);p.rh=point(point(p.rh,[480,304],grab),[425,270],read);p.tilt=-read*.12+Math.sin(t*1.3)*read*.035;p.rf[0]+=read*9;}
-   if(name==='sing'){const b=t*TAU*1.62,sw=Math.sin(b/2)*envelope;p.hip[0]+=sw*4;p.chest[0]+=Math.sin(b/2-.35)*11*envelope;p.head[0]+=Math.sin(b/2-.7)*15*envelope;p.chest[1]+=Math.sin(b)*2.8*envelope;p.head[1]+=Math.sin(b-.45)*4.5*envelope;p.tilt=Math.sin(b/2-.8)*.2*envelope;p.rh=point(p.rh,[p.head[0]+25,p.head[1]+17],envelope);p.lh=point(p.lh,[352+Math.sin(b/2)*10,266+Math.sin(b)*7],envelope);p.lf[1]-=Math.max(0,Math.sin(b))*9*envelope;p.rf[1]-=Math.max(0,-Math.sin(b))*9*envelope;p.face=.6;}
-   if(name==='stretch'){k=pulse(t,.2,1.4,3.7,5.7);p.hip[0]-=k*3;p.chest[0]-=k*8;p.chest[1]-=k*7;p.head[0]-=k*12;p.head[1]-=k*10;p.lh=point(p.lh,[355+Math.sin(t*1.3)*3,171],k);p.rh=point(p.rh,[441,170],k);p.lf[0]-=k*13;p.rf[0]+=k*15;p.tilt=-k*.18;}
-   if(name==='ball'){const crush=pulse(t,0,.65,1.9,2.4),wind=pulse(t,2,2.65,2.8,3.3),throwing=pulse(t,2.8,3.12,3.45,4.4),catching=pulse(t,4.7,5.4,5.9,6.7),bounce=pulse(t,6.6,7,7.3,8.2);p.lh=point(p.lh,[391+Math.sin(t*22)*2,281],crush);p.rh=point(p.rh,[413-Math.sin(t*22)*2,280],crush);p.rh=point(p.rh,[425,216],wind);p.rh=point(p.rh,[472,237],throwing);p.rh=point(p.rh,[477,283],catching);p.rh=point(p.rh,[467,307],bounce);p.chest[0]-=wind*8;p.head[0]-=wind*12;p.chest[0]+=throwing*9+catching*6;p.head[0]+=throwing*14+catching*10;p.tilt=-wind*.13+throwing*.15;}
-   if(name==='plane'){const fold=pulse(t,0,.6,2.7,3.3),wind=pulse(t,2.8,3.45,3.6,4.05),throwing=pulse(t,3.6,4,4.2,5.1);p.lh=point(p.lh,[394+Math.sin(t*9)*4,301],fold);p.rh=point(p.rh,[415+Math.sin(t*9+1)*4,300],fold);p.rh=point(p.rh,[421,218],wind);p.rh=point(p.rh,[475,239],throwing);p.chest[0]-=wind*9;p.head[0]-=wind*14;p.chest[0]+=throwing*12;p.head[0]+=throwing*17;p.tilt=-wind*.18+throwing*.2;if(t>4.1){const q=flight((t-4.05)/7);p.head[0]+=(q[0]-400)/32*envelope;p.head[1]+=(q[1]-215)/47*envelope;}}
+ // Proportions: preserve the enlarged head and add 5 px of visible neck.
+ const HEAD_RADIUS = 19.5 * 1.065;
+ const NECK_LENGTH = 5;
+ function finishPose(p) {
+   const dx=p.head[0]-p.chest[0],dy=p.head[1]-p.chest[1];
+   const length=Math.hypot(dx,dy)||1;
+   // Include the rounded torso cap so all 5 px of neck remain visible.
+   const headDistance=HEAD_RADIUS+NECK_LENGTH+config.limb*1.17/2;
+   p.head[0]=p.chest[0]+dx/length*headDistance;
+   p.head[1]=p.chest[1]+dy/length*headDistance;
+   // Keep the unsolved targets for interruption blends; do not articulate twice.
+   p.lGoal=[...p.lh];p.rGoal=[...p.rh];
+   articulateArms(p);
    return p;
  }
- function flight(u){u=clamp(u);const pts=[[[469,238],[740,170],[677,62],[440,111]],[[440,111],[157,151],[97,255],[266,246]],[[266,246],[460,224],[643,307],[265,404]]];const i=Math.min(2,Math.floor(u*3)),t=u===1?1:u*3-i,v=1-t,[a,b,c,d]=pts[i];return[v*v*v*a[0]+3*v*v*t*b[0]+3*v*t*t*c[0]+t*t*t*d[0],v*v*v*a[1]+3*v*v*t*b[1]+3*v*t*t*c[1]+t*t*t*d[1]];}
+
+ // A finite set of world-space footholds. Only the swinging foot changes anchor.
+ // q counts individual steps, not frames; the two final steps close the stance.
+ function travel(t,a,b,x0,x1,carry=false) {
+   const z=clamp((t-a)/(b-a)),edge=.20;
+   const easeIn=z=> (z/2-edge*Math.sin(Math.PI*z/edge)/(2*Math.PI))/(1-edge);
+   const progress=z<edge?easeIn(z):z>1-edge?1-easeIn(1-z):(z-edge/2)/(1-edge);
+   const u=progress-.012*Math.sin(TAU*progress),dir=Math.sign(x1-x0),distance=Math.abs(x1-x0);
+   const steps=Math.max(4,Math.round(distance/32/2)*2),stride=distance/steps;
+   const q=Math.min(steps-1e-8,u*steps),step=Math.floor(q),f=q-step;
+   const amount=Math.min(ramp(q,0,1.2),1-ramp(q,steps-1.2,steps));
+   const p=standing(mix(x0,x1,u),420),phase=q*Math.PI;
+   const sway=Math.sin(phase)*3.2*amount;
+   p.hip[0]+=sway;
+   p.hip[1]=420-119+5*amount-3.8*Math.sin(f*Math.PI)*amount;
+   p.chest[0]=p.hip[0]+2+dir*3*amount-sway*1.45;
+   p.chest[1]=p.hip[1]-72;
+   p.head[0]=mix(x0,x1,u)+3+dir*4*amount+Math.sin(phase-.42)*1.4*amount;
+   p.head[1]=p.chest[1]-37;
+   p.face=dir;p.twist=-sway*.65;p.stridePhase=q;
+   const anchor=(j,k)=>j<0?x0+(k?14:-12):j>=steps-2?x1+(k?14:-12):x0+dir*(j+1.35)*stride;
+   for(let k=0;k<2;k++) {
+     const moving=step%2===k,previous=step-1-((step-1-k)%2+2)%2;
+     let ax=anchor(previous,k),ay=420,toeX=ax+dir*10,toeY=420;
+     if(moving) {
+       const v=ramp(f,.10,.90),target=anchor(step,k);
+       ax=mix(ax,target,v);ay-=28*Math.pow(Math.sin(Math.PI*v),1.15)+5*(1-v);
+       // Toe-off, then a relaxed toe-down swing; toe rises before heel contact.
+       const angle=mix(.42,-.38,smooth(v));
+       toeX=ax+dir*10*Math.cos(angle);toeY=ay+10*Math.sin(angle);
+       if(f<.10) {const lift=5*ramp(f,0,.10);ay=420-lift;toeX=anchor(previous,k)+dir*10;toeY=420;}
+       if(f>.90) {ay=420;toeX=target+dir*10;toeY=420-4*(1-ramp(f,.90,1));}
+     }
+     p[k?'rf':'lf']=[ax,ay];p[k?'rtoe':'ltoe']=[toeX,toeY];
+     p[k?'rcontact':'lcontact']=moving?(f<.10?2:f>.90?1:0):3;
+   }
+   // Keep both legs reachable without stretching the original 61 + 62 segments.
+   for(const foot of [p.lf,p.rf]) {
+     const reach=Math.sqrt(Math.max(0,122.8*122.8-(foot[0]-p.hip[0])**2));
+     const correction=Math.max(0,foot[1]-p.hip[1]-reach);
+     p.hip[1]+=correction;p.chest[1]+=correction;p.head[1]+=correction;
+   }
+   p.lk=joint(p.hip,p.lf,61,62,-dir);p.rk=joint(p.hip,p.rf,61,62,-dir);
+   // Shoulder pendulum and a delayed forearm, blended into the standing pose.
+   p.walkWeight=carry?0:amount;p.walkPhase=phase;p.walkDir=dir;
+   if(carry){p.lh=[p.chest[0]+dir*18-17,p.chest[1]+53];p.rh=[p.chest[0]+dir*18+17,p.chest[1]+51];}
+   return p;
+ }
+
+ // Cubic Hermite tracks preserve the release velocity exactly. Whip segments
+ // start at rest, accelerate to release, then decelerate into follow-through.
+ function key(t,x,y,vx=0,vy=0){return {t,x,y,vx,vy};}
+ function track(keys,t,out) {
+   let i=0;while(i<keys.length-2&&t>keys[i+1].t)i++;
+   const a=keys[i],b=keys[i+1],dt=b.t-a.t,u=clamp((t-a.t)/dt),v=1-u;
+   const h0=(1+2*u)*v*v,h1=u*v*v,h2=u*u*(3-2*u),h3=u*u*(u-1);
+   out[0]=h0*a.x+h1*dt*a.vx+h2*b.x+h3*dt*b.vx;
+   out[1]=h0*a.y+h1*dt*a.vy+h2*b.y+h3*dt*b.vy;
+   return out;
+ }
+ const GRAVITY=1600,BALL_RADIUS=6,DESK_SURFACE=323;
+ const tosses=[
+   {release:3.12,flight:.70,hand:'rh',catchHand:'lh',x:453,y:282,cx:347,cy:282},
+   {release:4.65,flight:.56,hand:'lh',catchHand:'rh',x:347,y:282,cx:453,cy:282},
+   {release:5.92,flight:.66,hand:'rh',catchHand:'lh',x:453,y:282,cx:347,cy:279}
+ ];
+ for(const e of tosses){e.catch=e.release+e.flight;e.vx=(e.cx-e.x)/e.flight;e.vy=(e.cy-e.y-.5*GRAVITY*e.flight**2)/e.flight;}
+ function releaseKeys(e){return [key(e.release-.12,e.x-e.vx*.12/3,e.y+6-e.vy*.12/3),key(e.release,e.x,e.y+6,e.vx,e.vy),key(e.release+.08,e.x+e.vx*.08/3,e.y+6+e.vy*.08/3)];}
+ const leftBallTrack=[key(2.15,396,300),key(2.64,347,309),key(3.48,347,288),key(3.82,347,288),key(3.94,347,296),key(4.18,347,311),...releaseKeys(tosses[1]),key(5.26,347,307),key(6.38,347,285),key(6.58,347,285),key(6.70,347,293),key(6.95,410,310),key(7.36,378,310),key(7.96,366,313),key(9.4,366,313)];
+ const rightBallTrack=[key(2.15,408,300),key(2.64,453,311),...releaseKeys(tosses[0]),key(3.82,453,307),key(5.03,453,288),key(5.21,453,288),key(5.33,453,296),key(5.54,453,309),...releaseKeys(tosses[2]),key(6.52,453,307),key(6.95,410,310),key(7.20,453,271),key(7.36,459,278),key(7.96,437,312),key(9.4,437,312)];
+ const drop={at:7.20,x:453,y:265,vx:18};
+ drop.impact=drop.at+Math.sqrt(2*(DESK_SURFACE-BALL_RADIUS-drop.y)/GRAVITY);
+ drop.rebound=Math.sqrt(2*GRAVITY*(DESK_SURFACE-BALL_RADIUS-drop.y)*.45);
+ const IMPACT_TIME=.045;
+ drop.second=drop.impact+IMPACT_TIME+2*drop.rebound/GRAVITY;
+ drop.end=drop.second+IMPACT_TIME+drop.rebound/GRAVITY;
+ drop.vx=(489-drop.x)/(drop.end-drop.at+.65/2);
+ const restingBallAngle=drop.end*5+(489-drop.x-drop.vx*(drop.end-drop.at))/BALL_RADIUS;
+ const ballState={x:0,y:0,angle:0,squash:0,held:null};
+ function ballMotion(t,p) {
+   const o=ballState;o.squash=0;o.held=null;o.angle=t*5;
+   let hand='rh';
+   for(const e of tosses){
+     if(t<e.release)break;
+     if(t<e.catch){const q=t-e.release;o.x=e.x+e.vx*q;o.y=e.y+e.vy*q+.5*GRAVITY*q*q;if(e===tosses[2])o.angle+=q*9;return o;}
+     hand=e.catchHand;
+   }
+   if(t>=6.95)hand='rh';
+   if(t<drop.at){o.held=hand;o.x=p[hand][0];o.y=p[hand][1]-BALL_RADIUS;return o;}
+   let q=t-drop.at;
+   o.x=drop.x+drop.vx*q;
+   if(t<drop.impact)o.y=drop.y+.5*GRAVITY*q*q;
+   else if(t<drop.second){q=Math.max(0,t-drop.impact-IMPACT_TIME);o.y=DESK_SURFACE-BALL_RADIUS-drop.rebound*q+.5*GRAVITY*q*q;}
+   else if(t<drop.end){q=Math.max(0,t-drop.second-IMPACT_TIME);o.y=DESK_SURFACE-BALL_RADIUS-drop.rebound*.5*q+.5*GRAVITY*q*q;}
+   else {const u=clamp((t-drop.end)/.65),x0=drop.x+drop.vx*(drop.end-drop.at);o.x=mix(x0,489,1-(1-u)**2);o.y=DESK_SURFACE-BALL_RADIUS;o.angle=drop.end*5+(o.x-x0)/BALL_RADIUS+Math.sin(u*TAU*2)*.09*(1-u);}
+   // A 45 ms impact deformation, with the lower edge pinned to the surface.
+   const since=t>=drop.end?t-drop.end:t>=drop.second?t-drop.second:t>=drop.impact?t-drop.impact:Infinity;
+   if(since<IMPACT_TIME){o.squash=.27*Math.sin(Math.PI*since/IMPACT_TIME);o.y=DESK_SURFACE-BALL_RADIUS*(1-o.squash);}
+   return o;
+ }
+ function throwBody(p,t,e,strength=1) {
+   const wind=pulse(t,e.release-.62,e.release-.22,e.release-.12,e.release+.02);
+   const drive=pulse(t,e.release-.15,e.release+.02,e.release+.16,e.release+.60);
+   const dir=(e.vx>0?1:-1)*strength;
+   const hipDrive=pulse(t,e.release-.23,e.release-.06,e.release+.10,e.release+.50);
+   p.hip[0]+=dir*(-3*wind+5*hipDrive);
+   p.chest[0]+=dir*(-7*wind+9*drive);
+   p.head[0]+=dir*(-4*wind+5*drive);
+   p.twist=(p.twist||0)+dir*(-3*wind+4*drive);
+   p[dir>0?'lf':'rf'][1]-=5*drive;
+ }
+ function crumpleAmount(t){return .25*(ramp(t,.30,.55)+ramp(t,.75,.98)+ramp(t,1.16,1.42)+ramp(t,1.68,2.12));}
+ function ballPose(t) {
+   const p=seated(t);p.gripArc=1;p.armFold=pulse(t,2.15,2.64,7.36,7.96);
+   if(t<2.15){const k=crumpleAmount(t),reach=ramp(t,0,.35),squeeze=Math.sin(k*Math.PI*4)**2;
+     p.lh=point(p.lh,[402-(21-15*k),300-3*Math.sin(k*TAU)],reach);
+     p.rh=point(p.rh,[402+(21-15*k),300+3*Math.sin(k*TAU)],reach);
+     p.chest[1]-=squeeze*3;p.head[1]-=squeeze;
+   } else {track(leftBallTrack,t,p.lh);track(rightBallTrack,t,p.rh);}
+   for(const e of tosses){throwBody(p,t,e,.22);const give=pulse(t,e.catch,e.catch+.10,e.catch+.17,e.catch+.35);p.hip[1]+=give*2;p.chest[1]+=give*3;p.head[1]+=give*1.5;p.lk[1]+=give*2;p.rk[1]+=give*2;}
+   const o=ballMotion(t,p),watch=pulse(t,2.6,3.12,8.6,9.25);
+   p.head[0]+=clamp((o.x-400)*.09,-10,10)*watch;p.head[1]+=clamp((o.y-240)*.05,-8,5)*watch;
+   return p;
+ }
+
+ // Arc-length lookup is built once. The glide loses speed exponentially, while
+ // the authored broad turn clears the shelves and the outer edge of the boxes.
+ const planeCurves=[
+   [[499,262],[590,255],[654,184],[728,199]],
+   [[728,199],[802,214],[780,326],[759,415]],
+   [[759,415],[754,436],[742,437],[732,437]]
+ ];
+ const PLANE_RELEASE=4.05,PLANE_FLIGHT=5.3,PLANE_DRAG=.38;
+ const flightTable=new Float64Array(513*3);
+ function flightPoint(u,out) {const f=clamp(u)*3,i=Math.min(2,Math.floor(f)),v=f-i,w=1-v,c=planeCurves[i];for(let j=0;j<2;j++)out[j]=w*w*w*c[0][j]+3*w*w*v*c[1][j]+3*w*v*v*c[2][j]+v*v*v*c[3][j];return out;}
+ const flightTemp=[0,0];let flightLength=0;
+ for(let i=0;i<=512;i++){flightPoint(i/512,flightTemp);if(i)flightLength+=Math.hypot(flightTemp[0]-flightTable[(i-1)*3],flightTemp[1]-flightTable[(i-1)*3+1]);flightTable[i*3]=flightTemp[0];flightTable[i*3+1]=flightTemp[1];flightTable[i*3+2]=flightLength;}
+ const planeSpeed0=flightLength*PLANE_DRAG/(1-Math.exp(-PLANE_DRAG*PLANE_FLIGHT));
+ const planeLaunchAngle=Math.atan2(-7,91);
+ const planeThrow={release:PLANE_RELEASE,x:499,y:262-6,vx:Math.cos(planeLaunchAngle)*planeSpeed0,vy:Math.sin(planeLaunchAngle)*planeSpeed0};
+ const planeHandTrack=[key(3.10,415+Math.sin(3.10*9+1)*4,300),key(3.48,445,269),key(3.68,415,249),key(3.78,415,249),key(3.86,430,263),key(PLANE_RELEASE,499,262,planeThrow.vx,planeThrow.vy),key(4.14,502,270),key(4.38,473,285),key(4.85,444,307),key(5.25,437,312),key(12,437,312)];
+ const planeState={x:443,y:232,angle:0,bank:0,speed:0};
+ function flight(u) {
+   const t=clamp(u)*PLANE_FLIGHT,dist=planeSpeed0*(1-Math.exp(-PLANE_DRAG*t))/PLANE_DRAG;
+   let lo=0,hi=512;while(hi-lo>1){const m=(lo+hi)>>1;if(flightTable[m*3+2]<dist)lo=m;else hi=m;}
+   const v=clamp((dist-flightTable[lo*3+2])/(flightTable[hi*3+2]-flightTable[lo*3+2]));
+   const o=planeState;o.x=mix(flightTable[lo*3],flightTable[hi*3],v);o.y=mix(flightTable[lo*3+1],flightTable[hi*3+1],v);
+   const z=(lo+v)/512*3,i=Math.min(2,Math.floor(z)),f=z-i,w=1-f,c=planeCurves[i];
+   const dx=3*w*w*(c[1][0]-c[0][0])+6*w*f*(c[2][0]-c[1][0])+3*f*f*(c[3][0]-c[2][0]);
+   const dy=3*w*w*(c[1][1]-c[0][1])+6*w*f*(c[2][1]-c[1][1])+3*f*f*(c[3][1]-c[2][1]);
+   o.angle=Math.atan2(dy,dx)+.025*Math.sin(t*5)*Math.sin(Math.PI*clamp(u));
+   o.bank=.30*Math.sin(t*1.2)*Math.sin(Math.PI*clamp(u));o.speed=planeSpeed0*Math.exp(-PLANE_DRAG*t);return o;
+ }
+ function planeMotion(t,p) {
+   const o=planeState;
+   if(t<PLANE_RELEASE){o.x=p.rh[0];o.y=p.rh[1];o.angle=mix(-.1,planeLaunchAngle,ramp(t,3.49,PLANE_RELEASE));o.bank=0;o.speed=0;return o;}
+   if(t<PLANE_RELEASE+PLANE_FLIGHT)return flight((t-PLANE_RELEASE)/PLANE_FLIGHT);
+   const q=t-PLANE_RELEASE-PLANE_FLIGHT,v=planeSpeed0*Math.exp(-PLANE_DRAG*PLANE_FLIGHT),stop=.65,u=clamp(q/stop);
+   o.x=732-v*stop*(u-u*u/2);o.y=437;o.angle=Math.PI+.09*smooth(u);o.bank=.12*smooth(u);o.speed=v*(1-u);return o;
+ }
+ function planePose(t) {
+   const p=seated(t),fold=pulse(t,0,.6,3.10,3.5);p.lFold=0;p.gripArc=1;p.armFold=pulse(t,3.10,3.48,4.70,5.25);
+   p.lh=point(p.lh,[394+Math.sin(t*9)*4,301],fold);
+   if(t<3.10)p.rh=point(p.rh,[415+Math.sin(t*9+1)*4,300],fold);else track(planeHandTrack,t,p.rh);
+   throwBody(p,t,planeThrow,.36);
+   // Weight settles forward as the elbow opens; the hand supplies the launch.
+   p.chest[0]+=4*pulse(t,3.85,4.05,4.18,4.65);
+   if(t>=PLANE_RELEASE){const o=planeMotion(t,p),watch=pulse(t,PLANE_RELEASE,4.3,10.1,10.8);p.head[0]+=clamp((o.x-400)/30,0,12)*watch;p.head[1]+=(o.y-232)/55*watch;}
+   const nod=pulse(t,9.72,9.95,10.10,10.42);p.head[0]+=nod*7;p.chest[1]+=nod*1.8;
+   return p;
+ }
+ // A changing outline and crease pattern, not a scaled rectangular sheet.
+ const crumpleOutline=[[-22,-16],[1,-16],[20,-16],[22,0],[23,15],[1,15],[-20,15],[-21,0]];
+ const crumpleBall=[[-6,-2],[-3.6,-6],[1.8,-6],[6,-1.8],[4.8,3.6],[0,6],[-4.8,3.6],[-6,-2]];
+ function drawCrumple(t,p) {
+   const k=crumpleAmount(t),handoff=ramp(t,1.96,2.15),x=mix((p.lh[0]+p.rh[0])/2,p.rh[0],handoff),y=mix((p.lh[1]+p.rh[1])/2,p.rh[1]-BALL_RADIUS,handoff);
+   ctx.save();ctx.globalAlpha=ramp(t,0,.30);ctx.translate(x,y);ctx.rotate(Math.sin(k*TAU)*.16);
+   ctx.beginPath();
+   for(let i=0;i<8;i++){const a=crumpleOutline[i],b=crumpleBall[i],jag=Math.sin(i*2.7+k*15)*Math.sin(k*Math.PI)*4,xx=mix(a[0],b[0],k)+jag,yy=mix(a[1],b[1],k)-jag*.6;if(i)ctx.lineTo(xx,yy);else ctx.moveTo(xx,yy);}
+   ctx.closePath();ctx.fillStyle=C.paper;ctx.fill();ctx.strokeStyle=C.ink;ctx.lineWidth=1.1;ctx.stroke();
+   for(let i=0;i<4;i++){const a=crumpleOutline[i*2],b=crumpleBall[i*2];line([mix(a[0],b[0],k),mix(a[1],b[1],k)],[Math.sin(i*3)*4*(1-k),Math.cos(i*2)*3],C.line,.8);}
+   ctx.restore();
+ }
+
+ // Short authored phrases: exact holds separate preparation, action and reaction.
+ // Rows: time, hip offset, chest X/Y offsets, head angle, left/right hand X/Y,
+ // shoulder roll. All coordinates use the existing 800 x 480 scene.
+ const singKeys=[
+   [0,0,0,0,-.05,366,313,437,312,0],
+   [.42,1,3,2,.06,362,309,440,300,-1],
+   [1.05,-1,-4,-1,-.16,358,282,430,251,2],
+   [1.65,-2,-7,-2,-.22,350,276,434,246,3],
+   [2.12,0,1,0,.08,359,287,435,252,-1],
+   [2.55,0,1,0,.08,359,287,435,252,-1],
+   [3.12,2,4,3,.19,367,298,429,272,-2],
+   [3.78,-3,-8,-3,-.28,346,259,460,204,4],
+   [4.12,-3,-8,-3,-.28,346,259,460,204,4],
+   [4.72,1,6,-1,.20,356,244,450,257,-3],
+   [5.22,0,2,1,.04,362,300,438,288,0],
+   [5.58,0,2,1,.04,362,300,438,288,0],
+   [6.22,-1,-4,-1,-.15,354,281,432,253,2],
+   [6.88,2,8,-2,.23,369,275,454,225,-3],
+   [7.48,2,8,-2,.23,369,275,454,225,-3],
+   [8.05,0,2,1,.18,364,299,440,279,1],
+   [8.43,0,2,1,.18,364,299,440,279,1],
+   [9.18,0,0,0,-.05,366,313,437,312,0],
+   [10,0,0,0,-.05,366,313,437,312,0]
+ ];
+ const drumKeys=[
+   [0,0,0,0,-.05,366,313,437,312,0],
+   [.4,0,2,1,.15,365,311,440,311,-1],
+   [1.85,1,4,1,.20,365,311,440,311,-2],
+   [2.20,0,1,0,-.13,365,311,440,294,1],
+   [2.65,0,1,0,-.13,365,311,440,294,1],
+   [2.87,-1,-3,2,.16,365,311,440,311,2],
+   [4.20,1,4,0,.21,365,311,440,311,-2],
+   [4.48,-1,-4,2,-.12,365,311,440,311,2],
+   [5.18,0,1,0,-.10,365,311,440,311,0],
+   [5.68,0,1,0,-.10,365,311,440,311,0],
+   [5.86,0,2,1,.12,365,311,440,311,0],
+   [6.65,0,0,0,-.05,366,313,437,312,0],
+   [7,0,0,0,-.05,366,313,437,312,0]
+ ];
+ const drumHits=[
+   [.65,'lh',19],[.98,'rh',24],[1.32,'lh',16],[1.70,'rh',27],
+   [3.12,'lh',20],[3.46,'rh',24],[3.78,'lh',17],[4.04,'rh',27],
+   [4.65,'lh',30],[4.76,'rh',33],[6.10,'lh',16],[6.40,'rh',20]
+ ];
+ const noticeKeys=[
+   [0,0,0,0,-.05,366,313,437,312,0],
+   [.17,0,0,0,.22,366,313,438,306,0],
+   [.34,0,1,-2,.08,366,311,441,291,-1],
+   [.62,0,1,-2,.08,366,311,441,291,-1],
+   [.85,0,0,-1,-.06,366,312,443,284,0]
+ ];
+ const waveKeys=[
+   [0,0,0,-1,-.06,366,312,443,284,0],
+   [.38,-1,-4,-1,-.15,364,313,456,239,2],
+   [.70,-1,-4,-1,-.15,364,313,456,239,2],
+   [2.05,-1,-4,-1,-.15,364,313,456,239,2],
+   [2.45,0,-2,0,-.09,365,313,449,265,1],
+   [3.10,0,0,0,-.05,366,313,437,312,0],
+   [3.40,0,0,0,-.05,366,313,437,312,0]
+ ];
+ function actingChannel(keys,t,column) {
+   let i=0;while(i<keys.length-2&&t>keys[i+1][0])i++;
+   const a=keys[i],b=keys[i+1],u=ramp(t,a[0],b[0]);
+   return mix(a[column],b[column],u);
+ }
+ function actingPose(keys,t,headDelay=.08) {
+   const p=seated(0),breath=Math.sin(t*1.6)*.25;
+   p.hip[0]+=actingChannel(keys,t,1);
+   p.chest[0]+=actingChannel(keys,t,2);p.chest[1]+=actingChannel(keys,t,3)+breath;
+   const look=actingChannel(keys,t-headDelay,4);
+   p.head[0]=p.chest[0]+Math.sin(look)*40;p.head[1]=p.chest[1]-Math.cos(look)*40;
+   p.lh[0]=actingChannel(keys,t,5);p.lh[1]=actingChannel(keys,t,6);
+   p.rh[0]=actingChannel(keys,t,7);p.rh[1]=actingChannel(keys,t,8);
+   p.twist=actingChannel(keys,t,9);
+   return p;
+ }
+ function singVoice(t) {
+   return Math.max(pulse(t,.65,.90,1.88,2.12),pulse(t,3.35,3.62,4.50,4.88),pulse(t,6.0,6.20,7.45,7.80));
+ }
+ function singingPose(t) {
+   const p=actingPose(singKeys,t),voice=singVoice(t);
+   // Small supporting motion inside the phrase; no oscillation in the holds.
+   const groove=voice*(1-pulse(t,3.65,3.78,4.12,4.24));
+   p.hip[0]+=Math.sin(t*TAU*1.15)*1.2*groove;
+   p.chest[1]+=Math.sin(t*TAU*1.15-.2)*.7*groove;
+   p.rf[1]-=Math.max(0,Math.sin(t*TAU*1.15))*3*groove;
+   p.armFold=pulse(t,.42,1.05,8.43,9.18);p.face=.35;return p;
+ }
+ function tapLift(t,hit) {
+   const d=t-hit[0];
+   if(d<0)return hit[2]*ramp(d,-.24,-.065)*(1-ramp(d,-.065,0));
+   return 4.5*pulse(d,0,.045,.075,.17);
+ }
+ function drummingPose(t) {
+   const p=actingPose(drumKeys,t),enter=ramp(t,0,.40),leave=1-ramp(t,6.55,7);
+   let left=0,right=0,settle=0;
+   for(const hit of drumHits){const lift=tapLift(t,hit);if(hit[1]==='lh')left=Math.max(left,lift);else right=Math.max(right,lift);settle+=pulse(t,hit[0],hit[0]+.045,hit[0]+.08,hit[0]+.19);}
+   p.lh[1]-=left;p.rh[1]-=right;
+   p.chest[1]+=settle*.7*enter*leave;p.head[0]+=settle*1.8*enter*leave;
+   p.rf[1]-=Math.min(1,settle)*2.5*enter*leave;return p;
+ }
+ function greetingPose(name,t) {
+   const p=actingPose(name==='surprise'?noticeKeys:waveKeys,t,name==='surprise'?0:.06);
+   if(name==='wave'){
+     p.armFold=pulse(t,0,.38,2.45,3.10);
+     const w=pulse(t,.38,.70,2.05,2.45),beat=(t-.70)*10;
+     const rs=shoulder(p,'r'),base=joint(rs,p.rh,42,45,1);
+     const a=Math.atan2(p.rh[0]-base[0],p.rh[1]-base[1]);
+     const angle=a+.20*Math.sin(beat)*w;
+     p.rh=[base[0]+45*Math.sin(angle),base[1]+45*Math.cos(angle)];
+   }
+   return p;
+ }
+ // A greeting may interrupt a safe desk performance. Prop-handling and trips
+ // finish first, so a paper, ball or plane never disappears mid-action.
+ let interruptedActivity=null,transitionAt=0;
+ function greet() {
+   if(away()||act==='ball'||act==='plane'||act==='read'){
+     pending='greeting';status.textContent='Just a moment…';return;
+   }
+   if(act==='surprise'||act==='wave')return;
+   interruptedActivity=act==='sing'||act==='drum'?{name:act,elapsed:time-startTime}:null;
+   greeting=false;begin('surprise');
+ }
+ function resumeActivity() {
+   const saved=interruptedActivity;interruptedActivity=null;
+   begin(saved.name);startTime=time-saved.elapsed;picker.value=saved.name;
+ }
+
+ function actionPose(name,t){let p=seated(),k;
+   if(name==='walk')return softenContact(walkingPose,t,[1.8,5,6.4,11.7,13,16.8]);if(name==='tidy')return softenContact(tidyPose,t,[1.3,2.9,6.3,8.7,9.6,13.2]);
+   if(name==='ball')return ballPose(t);if(name==='plane')return planePose(t);
+   if(name==='sing')return singingPose(t);if(name==='drum')return drummingPose(t);
+   if(name==='surprise'||name==='wave')return greetingPose(name,t);
+   const envelope=Math.min(ramp(t,0,.5),1-ramp(t,duration[name]-.65,duration[name]));
+   if(name==='read'){const grab=pulse(t,0,.8,1.1,2),read=pulse(t,.9,2,6.7,8.2);p.chest[0]+=grab*13-read*7;p.head[0]+=grab*19-read*9;p.head[1]+=grab*6+read*4;p.lh=point(p.lh,[382,271],read);p.rh=point(point(p.rh,[480,304],grab),[425,270],read);p.tilt=-read*.12+Math.sin(t*1.3)*read*.035;p.rf[0]+=read*9;
+     const inspect=pulse(t,2.45,3.05,3.55,4.0),consider=pulse(t,4.05,4.35,4.70,5.10),adjust=pulse(t,4.85,5.18,5.65,6.25);
+     p.chest[0]+=inspect*4-consider*4;p.head[0]+=inspect*14-consider*12;
+     p.chest[1]+=inspect*1.5;p.head[1]+=inspect*2;
+     p.lh[0]+=adjust*4;p.rh[0]+=adjust*4;p.lh[1]-=adjust*2;p.rh[1]-=adjust*2;
+
+   }
+   if(name==='stretch'){k=pulse(t,.2,1.4,3.7,5.7);p.hip[0]-=k*3;p.chest[0]-=k*8;p.chest[1]-=k*7;p.head[0]-=k*12;p.head[1]-=k*10;p.lh=point(p.lh,[355+Math.sin(t*1.3)*3,171],k);p.rh=point(p.rh,[441,170],k);p.lf[0]-=k*13;p.rf[0]+=k*15;p.tilt=-k*.18;}
+   return p;
+ }
+
+ function softenContact(fn,t,bounds){
+   const p=fn(t),soft=soften(fn,t,bounds);
+   // Stationary feet stay stationary even while the torso changes pose.
+   for(const k of ['hip','lf','rf','lk','rk','ltoe','rtoe','lcontact','rcontact'])if(p[k]!==undefined)soft[k]=p[k];
+   return soft;
+ }
  function soften(fn,t,bounds){const b=[...bounds].reverse().find(b=>t>=b);return b!==undefined&&t<b+.4?blend(fn(b-.0001),fn(t),smooth((t-b)/.4)):fn(t);}
  function path(points,color=C.ink,width=1.5,fill=null){ctx.beginPath();ctx.moveTo(...points[0]);for(let i=1;i<points.length;i++)ctx.lineTo(...points[i]);if(fill){ctx.closePath();ctx.fillStyle=fill;ctx.fill();}if(color){ctx.strokeStyle=color;ctx.lineWidth=width;ctx.stroke();}}
  function line(a,b,c=C.ink,w=1.5){path([a,b],c,w)}
@@ -140,53 +541,99 @@
  function drawStored(){const arriving=arrivals.filter(a=>a.kind==='note'&&time-a.at<1.65).length,n=Math.min(Math.max(0,loose()-arriving),90);for(let i=0;i<n;i++){const col=i%3,j=Math.floor(i/3);const p=col===0?[467,308,.84]:col===1?[260,407,1]:[237,430,.94];paper(p[0]+(rand(i)-.5)*7,p[1]-j*1.65,(rand(i+1)-.5)*.12,p[2],true);}
    const total=Math.min(folders,14),top=Math.max(0,Math.floor((total-1)/2)*2);for(let col=0;col<2;col++)for(let i=col;i<total;i+=2){if(arrivals.some(a=>a.kind==='folder'&&a.seed===i&&time-a.at<1.65))continue;const p=folderSlot(i);box(p.x,p.y,p.s,i===top);}
    if(filed>0){const sf=shelfFiled||Math.min(filed,6);stack(627,239,Math.min(sf,14),-.025,.76);if(sf>14)stack(688,239,Math.min(sf-14,12),.018,.69);if(filed>shelfFiled&&folders>0){const b=filingTarget();stack(b[0],b[1]+3,Math.min(filed-shelfFiled,5),0,.63);}}
-   if(restingBall)ball(489,312,5,1);if(restingPlane)plane(265,413,.11,.64);
+   if(restingBall)ball(489,DESK_SURFACE-BALL_RADIUS,BALL_RADIUS,restingBallAngle);if(restingPlane){const o=planeMotion(12,null);plane(o.x,o.y,o.angle,.69,o.bank);}
  }
- function limb(a,j,b,width,side=0){const q1=point(a,j,.8),q2=point(b,j,.8);ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...q1);ctx.quadraticCurveTo(j[0],j[1],q2[0],q2[1]);ctx.lineTo(...b);ctx.strokeStyle=C.ink;ctx.lineWidth=width;ctx.stroke();}
- function drawLegs(p){limb(p.hip,p.lk,p.lf,config.limb);limb(p.hip,p.rk,p.rf,config.limb);const dir=p.face;line(p.lf,[p.lf[0]+(dir<-.3?-10:dir>.3?10:-10),p.lf[1]+.5],C.ink,config.limb*.86);line(p.rf,[p.rf[0]+(dir<-.3?-10:10),p.rf[1]+.5],C.ink,config.limb*.86);}
- function drawBody(p){const [hx,hy]=p.hip,[cx,cy]=p.chest;curve([hx,hy,hx-3,hy-28,cx+2,cy+23,cx,cy],C.ink,config.limb*1.17);line(p.chest,[p.head[0],p.head[1]+13],C.ink,config.limb*.91);circle(p.head[0],p.head[1],19.5,C.ink);}
- function drawArms(p){const ls=[p.chest[0]-7,p.chest[1]+1],rs=[p.chest[0]+7,p.chest[1]+1];let le=joint(ls,p.lh,42,45,1),re=joint(rs,p.rh,42,45,-1);const t=time-startTime,e=Math.min(ramp(t,0,.5),1-ramp(t,duration[act]-.65,duration[act]));if(act==='wave')re=point(re,[p.chest[0]+49,p.chest[1]-5],e);if(act==='sing')re=point(re,[p.head[0]+44,p.head[1]+49],e);if(act==='stretch'){const k=pulse(t,.2,1.4,3.7,5.7);le=point(le,[p.chest[0]-43,p.chest[1]-38],k);re=point(re,[p.chest[0]+47,p.chest[1]-37],k);}limb(ls,le,p.lh,config.limb*.9);limb(rs,re,p.rh,config.limb*.9);}
- function ball(x,y,r=6,angle=0){ctx.save();ctx.translate(x,y);ctx.rotate(angle);path([[-r,-2],[-r*.6,-r],[r*.3,-r],[r,-r*.3],[r*.8,r*.6],[0,r],[-r*.8,r*.6],[-r,-2]],C.ink,1.1,C.paper);path([[-r*.6,-r],[0,-1],[-r*.5,r*.7]],C.line,.8);line([0,-1],[r*.7,r*.5],C.line,.8);ctx.restore();}
- function plane(x,y,a=0,s=1){ctx.save();ctx.translate(x,y);ctx.rotate(a);ctx.scale(s,s);path([[-24,-11],[26,0],[-22,12],[-12,1],[-24,-11]],C.ink,1.3,C.paper);path([[-24,-11],[-6,-1],[26,0],[-12,1],[-6,-1],[-8,9],[-12,1]],C.soft,.85);ctx.restore();}
+ function limb(a,j,b,width,roundness=.8){const q1=point(a,j,roundness),q2=point(b,j,roundness);ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...q1);ctx.quadraticCurveTo(j[0],j[1],q2[0],q2[1]);ctx.lineTo(...b);ctx.strokeStyle=C.ink;ctx.lineWidth=width;ctx.stroke();}
+ function drawLegs(p){
+   limb(p.hip,p.lk,p.lf,config.limb);limb(p.hip,p.rk,p.rf,config.limb);
+   const dir=p.face;
+   line(p.lf,p.ltoe||[p.lf[0]+(dir>.3?10:-10),p.lf[1]+.5],C.ink,config.limb*.86);
+   line(p.rf,p.rtoe||[p.rf[0]+(dir<-.3?-10:10),p.rf[1]+.5],C.ink,config.limb*.86);
+ }
+ function drawBody(p){
+   const [hx,hy]=p.hip,[cx,cy]=p.chest;
+   curve([hx,hy,hx-3,hy-28,cx+2,cy+23,cx,cy],C.ink,config.limb*1.17);
+   line(p.chest,p.head,C.ink,config.limb*.91);
+   circle(p.head[0],p.head[1],HEAD_RADIUS,C.ink);
+ }
+ // One connected 42 + 45 px chain per arm. Endpoints are shared by the
+ // renderer and held props. Throwing uses low elbows; resting grips keep their natural bend.
+ function shoulder(p,side){const sign=side==='l'?-1:1;return[p.chest[0]+sign*7,p.chest[1]+1-sign*(p.twist||0)];}
+ function articulateArms(p){
+   for(const side of ['l','r']){
+     const s=shoulder(p,side),h=p[side+'h'],dx=h[0]-s[0],dy=h[1]-s[1],d=Math.hypot(dx,dy);
+     // A singular straight arm is permitted, but never a rubber forearm.
+     if(d>86.98){h[0]=s[0]+dx*86.98/d;h[1]=s[1]+dy*86.98/d;}
+     let e=joint(s,h,42,45,side==='l'?1:-1);
+     const angleMix=(a,b,t)=>a+Math.atan2(Math.sin(b-a),Math.cos(b-a))*t;
+     const fold=p[side+'Fold']??p.armFold;
+     if(fold>0){
+       const low=joint(s,h,42,45,side==='l'?-1:1);
+       if(fold>=1)e=low;
+       else {
+         // Rotate both real bones during a change of grip; never flip an IK pole.
+         const arc=(p.gripArc||0)*(side==='l'?-1:1)*.60*Math.sin(Math.PI*fold);
+         const a=arc+angleMix(Math.atan2(e[0]-s[0],e[1]-s[1]),Math.atan2(low[0]-s[0],low[1]-s[1]),fold);
+         const b=arc+angleMix(Math.atan2(h[0]-e[0],h[1]-e[1]),Math.atan2(h[0]-low[0],h[1]-low[1]),fold);
+         e=[s[0]+42*Math.sin(a),s[1]+42*Math.cos(a)];
+         h[0]=e[0]+45*Math.sin(b);h[1]=e[1]+45*Math.cos(b);
+       }
+     }
+     if(p.walkWeight>0){
+       const phase=p.walkPhase+(side==='r'?Math.PI:0),dir=p.walkDir;
+       const upper=dir*.43*Math.cos(phase);
+       const fore=dir*(.43*Math.cos(phase-.30)+.35+.14*Math.sin(phase-.65));
+       const a=Math.atan2(e[0]-s[0],e[1]-s[1]),b=Math.atan2(h[0]-e[0],h[1]-e[1]);
+       const u=angleMix(a,upper,p.walkWeight),v=angleMix(b,fore,p.walkWeight);
+       e=[s[0]+42*Math.sin(u),s[1]+42*Math.cos(u)];
+       h[0]=e[0]+45*Math.sin(v);h[1]=e[1]+45*Math.cos(v);
+     }
+     p[side+'e']=e;
+   }
+ }
+ function drawArms(p){
+   for(const side of ['l','r']){
+     // Straight segments meet at exactly one rounded hinge; no cut-away curve.
+     path([shoulder(p,side),p[side+'e'],p[side+'h']],C.ink,config.limb*.9);
+   }
+ }
+ function ball(x,y,r=6,angle=0,squash=0){ctx.save();ctx.translate(x,y);ctx.scale(1+squash*.6,1-squash);ctx.rotate(squash?0:angle);path([[-r*.94,-r*.3],[-r*.6,-r*.8],[r*.3,-r*.94],[r*.94,-r*.3],[r*.8,r*.6],[0,r],[-r*.8,r*.6],[-r*.94,-r*.3]],C.ink,1.1,C.paper);path([[-r*.6,-r],[0,-1],[-r*.5,r*.7]],C.line,.8);line([0,-1],[r*.7,r*.5],C.line,.8);ctx.restore();}
+ function plane(x,y,a=0,s=1,bank=0){ctx.save();ctx.translate(x,y);ctx.rotate(a);ctx.transform(s,0,bank*s*.35,s*(1-Math.abs(bank)*.7),0,0);path([[-24,-11],[26,0],[-22,12],[-12,1],[-24,-11]],C.ink,1.3,C.paper);path([[-24,-11],[-6,-1],[26,0],[-12,1],[-6,-1],[-8,9],[-12,1]],C.soft,.85);ctx.restore();}
  function musicalNote(x,y,angle,size,double=false){ctx.save();ctx.translate(x,y);ctx.rotate(angle);ctx.scale(size,size);ellipse(0,0,3.6,2.6,C.accent);line([3,-1],[3,-15],C.accent,1.5);if(double){line([3,-15],[13,-18],C.accent,2);line([13,-18],[13,-4],C.accent,1.5);ellipse(10,-3,3.6,2.6,C.accent);}else curve([3,-15,12,-12,10,-7,5,-8],C.accent,1.5);ctx.restore();}
  function drawProps(p,t){
    if(act==='surprise'){const a=pulse(t,0,.12,.45,.85);ctx.save();ctx.globalAlpha=a;line([p.head[0]+23,p.head[1]-19],[p.head[0]+29,p.head[1]-28],C.accent,2);line([p.head[0]+29,p.head[1]-9],[p.head[0]+38,p.head[1]-13],C.accent,2);ctx.restore();}
-   if(act==='drum'){for(let i=0;i<2;i++){const v=(t*10.5+i*2.6)%TAU;if(v>3&&v<4.1){const x=i?440:365;ctx.save();ctx.globalAlpha=(4.1-v)/1.1;line([x-7,307],[x-11,302],C.accent,1.5);line([x+7,307],[x+10,301],C.accent,1.5);ctx.restore();}}}
-   if(act==='read'&&t>.65&&t<8.45){const up=ramp(t,.65,2),down=ramp(t,6.8,8.3),x=mix(mix(474,403,up),474,down),y=mix(mix(303,270,up),304,down);ctx.save();ctx.globalAlpha=Math.min(ramp(t,.65,.9),1-ramp(t,8.2,8.45));paper(x,y,-.07*Math.sin(t),.94,false);ctx.restore();}
-   if(act==='sing'&&t>.5&&t<9.55){const strength=pulse(t,.5,1,8.8,9.55);ctx.save();ctx.globalAlpha=strength;ellipse(p.head[0]+10,p.head[1]+7,2.3,2.5+Math.max(0,Math.sin(t*10))*1.8,C.paper);ctx.restore();for(let i=0;i<6;i++){const age=t-.65-i*.48;if(age<0)continue;const u=(age%2.6)/2.6;ctx.save();ctx.globalAlpha=Math.sin(u*Math.PI)*strength*.8;musicalNote(p.head[0]+24+u*82+Math.sin(u*TAU+i)*8,p.head[1]+4-u*85+Math.sin(u*6+i)*6,Math.sin(u*5+i)*.25,.75+u*.45,i%3===0);ctx.restore();}}
+   if(act==='drum'){
+     for(const hit of drumHits){const age=t-hit[0];if(age<0||age>.12)continue;const hand=p[hit[1]],x=hand[0],y=hand[1]+2;ctx.save();ctx.globalAlpha=(1-age/.12)*.7;line([x-7,y-2],[x-11,y-7],C.accent,1.3);line([x+7,y-2],[x+10,y-8],C.accent,1.3);ctx.restore();}
+   }
+   if(act==='read'&&t>.65&&t<8.45){const up=ramp(t,.65,2),down=ramp(t,6.8,8.3),x=mix(mix(474,403,up),474,down),y=mix(mix(303,270,up),304,down);ctx.save();ctx.globalAlpha=Math.min(ramp(t,.65,.9),1-ramp(t,8.2,8.45));const adjust=pulse(t,4.85,5.18,5.65,6.25);paper(x+adjust*4,y-adjust*2,-.07*Math.sin(t),.94,false);ctx.restore();}
+   if(act==='sing'&&t>.5&&t<9.55){const strength=singVoice(t);ctx.save();ctx.globalAlpha=strength;ellipse(p.head[0]+10,p.head[1]+7,2.3,2.5+Math.max(0,Math.sin(t*10))*1.8,C.paper);ctx.restore();for(let i=0;i<6;i++){const age=t-.65-i*.48;if(age<0)continue;const u=(age%2.6)/2.6;ctx.save();ctx.globalAlpha=Math.sin(u*Math.PI)*strength*.8;musicalNote(p.head[0]+24+u*82+Math.sin(u*TAU+i)*8,p.head[1]+4-u*85+Math.sin(u*6+i)*6,Math.sin(u*5+i)*.25,.75+u*.45,i%3===0);ctx.restore();}}
    if(act==='tidy'&&carried()>0){const c=point(p.lh,p.rh,.5);stack(c[0],c[1]-3,Math.min(6,carried()),Math.sin(time*6)*.012,.85);}
    if(act==='ball'){
-     if(t<2.15){const k=ramp(t,.5,2.15);ctx.save();ctx.globalAlpha=ramp(t,0,.5);if(k<.6)paper(402,281,Math.sin(t*20)*.035,1-k);else ball(402,281,9-k*4,t*5);ctx.restore();}
-     else if(t<3.12){const c=point([402,281],[p.rh[0],p.rh[1]-5],ramp(t,2.15,2.55));ball(...c,6,t*3);}
-     else if(t<5.4){const u=(t-3.12)/2.28;ball(mix(471,477,u)+Math.sin(u*Math.PI)*63,mix(232,277,u)-4*102*u*(1-u),6,t*5);}
-     else if(t<6.8)ball(p.rh[0],p.rh[1]-6,6,t*2);
-     else if(t<8.55){const u=(t-6.8)/1.75;ball(mix(467,481,u)+Math.sin(u*Math.PI)*47,mix(302,300,u)+Math.sin(u*Math.PI)*111,6,t*4);}
-     else{const u=ramp(t,8.55,9.3);ball(mix(481,489,u),mix(300,312,u)-Math.sin(u*Math.PI)*8,6,t);}
+     if(t<2.15)drawCrumple(t,p);
+     else {const o=ballMotion(t,p);ball(o.x,o.y,BALL_RADIUS,o.angle,o.squash);}
    }
    if(act==='plane'){
-     if(t<3.1){ctx.save();ctx.globalAlpha=ramp(t,0,.6);paper(404,300,Math.sin(t*8)*.025,.88-ramp(t,1,3.1)*.26,true,true);ctx.restore();}
-     else if(t<4.05)plane(p.rh[0]+7,p.rh[1]-5,-.3,.69);
-     else if(t<11.05){const u=(t-4.05)/7,q=flight(u),q2=flight(Math.min(1,u+.001)),a=Math.atan2(q2[1]-q[1],q2[0]-q[0]);ctx.save();ctx.globalAlpha=.6;ctx.setLineDash([2,7]);const points=[];for(let v=Math.max(0,u-.08);v<u;v+=.004)points.push(flight(v));if(points.length>1)path(points,C.line,1);ctx.restore();plane(...q,a,.72);}
-     else plane(265,mix(404,413,ramp(t,11.05,11.5)),.11,.64);
+     if(t<3.10){ctx.save();ctx.globalAlpha=ramp(t,0,.6);paper(mix(404,p.rh[0],ramp(t,2.9,3.1)),300,Math.sin(t*8)*.025,.88-ramp(t,1,3.1)*.26,true,true);ctx.restore();}
+     else {const o=planeMotion(t,p);plane(o.x,o.y,o.angle,.69,o.bank);}
    }
  }
  function drawArrivals(){arrivals=arrivals.filter(a=>time-a.at<1.65);for(let a of arrivals){const t=time-a.at;if(t<0)continue;const u=ramp(t,0,1.65);if(a.kind==='note'){const n=Math.min(30,Math.floor(loose()/3));paper(mix(386,467,u)+Math.sin(u*TAU*2)*20*(1-u),mix(45,308-n*1.65,u),Math.sin(u*7)*.6*(1-u),.84,true);}else{const p=folderSlot(a.seed);box(p.x,mix(67,p.y,u),p.s);}}}
  function advance(dt){time+=dt*config.pace;const t=time-startTime;
    if(act==='tidy'){if(t>=1.05&&!picked){picked=true;dirty=true;}if(t>=7.65&&!deposited){filed=Math.min(notes,filed+batch);if(destination==='shelf')shelfFiled=Math.min(filed,shelfFiled+batch);deposited=true;filingTrips++;save();}}
    if(act==='idle'&&time>=nextAt){if(greeting){greeting=false;begin('surprise');}else if(notes-filed>=16){begin('tidy');}else{const seq=['sing','walk','drum','read','plane','stretch','ball'];begin(seq[round++%seq.length]);}}
-   else if(act!=='idle'&&t>=duration[act]){if(act==='ball')restingBall=true;if(act==='plane')restingPlane=true;if(act==='surprise')begin('wave');else if(pending){const n=pending;pending=null;if(n==='greeting')open();else begin(n==='auto'?'idle':n);}else{picker.value='auto';begin('idle');}}
+   else if(act!=='idle'&&t>=duration[act]){if(act==='ball')restingBall=true;if(act==='plane')restingPlane=true;if(act==='surprise')begin('wave');else if(pending){const n=pending;pending=null;if(n==='greeting')open();else begin(n==='auto'?'idle':n);}else if(act==='wave'&&interruptedActivity)resumeActivity();else{picker.value='auto';begin('idle');}}
  }
- function draw(){const {w,h,s,ox,oy}=dimensions;ctx.setTransform(canvas.width/w,0,0,canvas.height/h,0,0);ctx.clearRect(0,0,w,h);ctx.fillStyle=C.bg;ctx.fillRect(0,0,w,h);ctx.translate(ox,oy);ctx.scale(s,s);ctx.lineCap='round';ctx.lineJoin='round';const t=time-startTime;let p=actionPose(act,t);if(fromPose&&t<.45)p=blend(fromPose,p,smooth(t/.45));if(act==='idle'&&gaze.active){p.head[0]+=(gaze.x-400)/100;p.head[1]+=(gaze.y-220)/180;}currentPose=p;
+ function draw(){const {w,h,s,ox,oy}=dimensions;ctx.setTransform(canvas.width/w,0,0,canvas.height/h,0,0);ctx.clearRect(0,0,w,h);ctx.fillStyle=C.bg;ctx.fillRect(0,0,w,h);ctx.translate(ox,oy);ctx.scale(s,s);ctx.lineCap='round';ctx.lineJoin='round';const t=time-startTime;let p=actionPose(act,t);const transition=time-transitionAt;if(fromPose&&transition<.45)p=blend(fromPose,p,smooth(transition/.45));if(act==='idle'&&gaze.active){p.head[0]+=(gaze.x-400)/100;p.head[1]+=(gaze.y-220)/180;}finishPose(p);currentPose=p;
    drawRoom();drawChair(p.chair);const outside=p.hip[0]<285||p.hip[0]>538;
    if(outside){drawDesk();drawStored();drawLegs(p);drawBody(p);drawArms(p);}else{drawLegs(p);drawBody(p);drawDesk();drawStored();drawArms(p);}drawProps(p,t);drawArrivals();
    const show=act==='wave'&&t>.3&&t<2.9; bubble.textContent='oh, hey.';bubble.style.opacity=show?'1':'0';bubble.style.left=`${(ox+(p.head[0]+33)*s)/w*100}%`;bubble.style.top=`${(oy+(p.head[1]-43)*s)/h*100}%`;
  }
  function resize(){const r=canvas.getBoundingClientRect(),d=Math.min(2,devicePixelRatio||1);if(!r.width||!r.height)return;canvas.width=Math.round(r.width*d);canvas.height=Math.round(r.height*d);const s=Math.min(r.width/800,r.height/480);dimensions={w:r.width,h:r.height,s,ox:(r.width-800*s)/2,oy:(r.height-480*s)/2};draw();}
  on($('.office-note'),'click',()=>add('note'));on($('.office-folder'),'click',()=>add('folder'));
- on($('.office-hello'),'click',()=>{if(away()){pending='greeting';status.textContent='Be right with you…';}else{greeting=false;begin('surprise');}});
+ on($('.office-hello'),'click',greet);
  on(picker,'change',()=>request(picker.value));on(pause,'click',()=>{playing=!playing;lastFrame=0;ui();save();});on(motion,'change',e=>{playing=!e.matches;ui();});
  on(canvas,'pointermove',e=>{const r=canvas.getBoundingClientRect();gaze={x:(e.clientX-r.left-dimensions.ox)/dimensions.s,y:(e.clientY-r.top-dimensions.oy)/dimensions.s,active:true};if(playing)dirty=true;});on(canvas,'pointerleave',()=>{gaze.active=false;if(playing)dirty=true;});
- on(canvas,'click',e=>{const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left-dimensions.ox)/dimensions.s,y=(e.clientY-r.top-dimensions.oy)/dimensions.s;if(currentPose&&Math.hypot(x-currentPose.head[0],y-currentPose.head[1])<70)request('wave');});
+ on(canvas,'click',e=>{const r=canvas.getBoundingClientRect(),x=(e.clientX-r.left-dimensions.ox)/dimensions.s,y=(e.clientY-r.top-dimensions.oy)/dimensions.s;if(currentPose&&Math.hypot(x-currentPose.head[0],y-currentPose.head[1])<70)greet();});
  on(document,'visibilitychange',()=>{lastFrame=0;});on(window,'openai:set_globals',e=>{if(e.detail?.globals?.widgetState)restore(e.detail.globals.widgetState);});
  let expectedOrigin=params.get('parentOrigin');if(!expectedOrigin){try{expectedOrigin=document.referrer?new URL(document.referrer).origin:location.origin;}catch{expectedOrigin=location.origin;}}
  on(window,'message',e=>{if(e.source!==window.parent||e.origin!==expectedOrigin)return;const m=e.data;if(!m||typeof m!=='object'||m.source!=='note-office')return;if(m.type==='set-state')setCounts(m.notes,m.folders,typeof m.folderId==='string'?m.folderId:folderId);else if(m.type==='note-created')add('note');else if(m.type==='folder-created')add('folder');else if(m.type==='open')open();else if(m.type==='set-playing'&&typeof m.playing==='boolean'){playing=m.playing;ui();}});
@@ -194,6 +641,16 @@
  function frame(ts){if(!root.isConnected)return;const dt=lastFrame?Math.min((ts-lastFrame)/1000,.04):0;lastFrame=ts;if(playing&&!document.hidden&&visible){advance(dt);dirty=true;}if(dirty){draw();dirty=false;}frameId=requestAnimationFrame(frame);}
  root.noteOffice={setState:(n,f,id=folderId)=>setCounts(n,f,id),addNote:()=>add('note'),addFolder:()=>add('folder'),open,getState:()=>({notes,folders,folderId,filed,loose:loose(),carrying:carried(),activity:act,queued:pending,playing}),destroy(){abort.abort();cancelAnimationFrame(frameId);resizeObserver.disconnect();visibilityObserver.disconnect();}};
  if(globalThis.Tweak){const tweak=new Tweak({container:root,onChange:()=>{C.bg=config.background;C.ink=config.ink;root.style.setProperty('--office-bg',C.bg);root.style.setProperty('--office-ink',C.ink);draw();}});tweak.addSlider(config,'limb',{label:'Character line weight',min:7,max:15,step:.5,unit:'px'});tweak.addSlider(config,'desk',{label:'Desk line weight',min:2,max:5,step:.25,unit:'px'});tweak.addSlider(config,'pace',{label:'Animation pace',min:.65,max:1.25,step:.05});}
+
+ if(params.get('review')==='1'){
+   const controls=document.createElement('div');controls.className='office-controls';
+   controls.innerHTML='<label>Review time <input aria-label="Review time" type="range" min="0" max="18.5" step="0.01" value="0"> <output>0.00 s</output></label>';
+   root.appendChild(controls);const slider=controls.querySelector('input'),output=controls.querySelector('output');
+   const seek=(name,t)=>{if(!duration[name])return;act=name;playing=false;greeting=false;pending=null;interruptedActivity=null;time=t;startTime=0;fromPose=null;restingBall=false;restingPlane=false;arrivals=[];status.textContent=words[name];picker.value=name==='idle'?'auto':name;slider.max=duration[name];slider.value=t;output.value=t.toFixed(2)+' s';ui();draw();};
+   on(slider,'input',()=>seek(act,Number(slider.value)));
+   on(picker,'change',()=>seek(picker.value==='auto'?'idle':picker.value,0));
+   root.noteOffice.seek=seek;
+ }
  restore(window.openai?.widgetState);resize();frameId=requestAnimationFrame(frame);
 })();
 </script>

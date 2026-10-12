@@ -1,0 +1,108 @@
+{
+  "headRadius": 20.7675,
+  "flightLength": 569.0362760726453,
+  "planeLaunchSpeed": 249.5352036913656,
+  "geometry": {
+    "finite": 272708,
+    "maxArm": 80.4114419695563,
+    "worstArm": [
+      "walk",
+      6.400000000000108,
+      "lh"
+    ],
+    "maxFrame": 7.805213931574258,
+    "worstFrame": [
+      "drum",
+      4.733333333333358,
+      "rh"
+    ],
+    "maxLegError": 9.947598300641403e-14,
+    "slide": 0,
+    "peakLift": 30.539343757867357
+  },
+  "tosses": [
+    {
+      "flight": 0.7,
+      "rise": 96.17244897959185,
+      "releaseError": 0,
+      "velocityError": 0.027310389574335153,
+      "catchError": 6.355287432313019e-14,
+      "peakAtRelease": true
+    },
+    {
+      "flight": 0.56,
+      "rise": 21.380165816326528,
+      "releaseError": 0,
+      "velocityError": 0.01489909832152304,
+      "catchError": 8.038873388460929e-14,
+      "peakAtRelease": true
+    },
+    {
+      "flight": 0.66,
+      "rise": 58.00624426078973,
+      "releaseError": 0,
+      "velocityError": 0.021658599900146625,
+      "catchError": 0,
+      "peakAtRelease": true
+    }
+  ],
+  "ball": {
+    "bottom": 0,
+    "heldError": 0,
+    "bounceTimes": [
+      7.522490309931942,
+      8.00015646298762,
+      8.261489539515459
+    ]
+  },
+  "plane": {
+    "speedIncreases": 0,
+    "physicalIncreases": 0,
+    "minX": 443,
+    "maxX": 779.205663867067,
+    "lastSpeed": 33.30141878376183,
+    "releaseVelocity": [
+      242.88710406494826,
+      -57.14990683713949
+    ],
+    "expected": [
+      242.9018513767912,
+      -57.153376794539106
+    ]
+  },
+  "greeting": {
+    "first": "surprise",
+    "second": "wave",
+    "resumed": "sing",
+    "elapsed": 1.5
+  },
+  "deferral": {
+    "act": "plane",
+    "queued": "greeting",
+    "after": "idle",
+    "greeting": true
+  },
+  "holds": {
+    "sing": 0,
+    "drum": 0,
+    "voice": 0
+  },
+  "neck": 5,
+  "queue": {
+    "q": "ball",
+    "act": "ball"
+  },
+  "counts": {
+    "notes": 24,
+    "folders": 4,
+    "folderId": "test",
+    "filed": 6,
+    "loose": 18,
+    "carrying": 0,
+    "activity": "tidy",
+    "queued": null,
+    "playing": true
+  },
+  "errors": [],
+  "assertions": "PASS"
+}
