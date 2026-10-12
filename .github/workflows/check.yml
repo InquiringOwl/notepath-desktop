@@ -1,5 +1,6 @@
 # Runs on every push to main and every pull request (and before each release, see release.yml).
-# 1. build-web.js  - every source file must parse; builds app/index.html
+# 0. npm ci          - the packages (Monaco for the Code tab); --ignore-scripts skips Electron's download
+# 1. build-web.js  - every source file must parse; builds app/index.html (and copies Monaco into app/vendor)
 # 2. unit.js       - identity (name, app id, repo, scheme, storage keys) and helper rules, no browser
 # 3. smoke.js      - headless Chromium opens every screen and window at desktop and phone width; any JS error fails
 # 4. interact.js   - drives the notes features (folders, order, lists, checklists, widgets, right-click, backups, shortcuts)
@@ -17,15 +18,11 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with: { node-version: 22 }
+      - name: Install packages (the Code tab's editor, Monaco, comes from here; no Electron download)
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - run: node tools/build-web.js
       - run: node tools/unit.js
-      - name: Install Playwright only (skips downloading Electron)
-        run: |
-          npm install --prefix "$RUNNER_TEMP/pw" --no-save playwright@1.56.0
-          "$RUNNER_TEMP/pw/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Install the test browser (for the Playwright version in package-lock.json)
+        run: npx playwright install --with-deps chromium
       - run: node tools/smoke.js
-        env:
-          NODE_PATH: ${{ runner.temp }}/pw/node_modules
       - run: node tools/interact.js
-        env:
-          NODE_PATH: ${{ runner.temp }}/pw/node_modules

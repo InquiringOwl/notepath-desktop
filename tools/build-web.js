@@ -72,7 +72,7 @@ const desktop = `<!doctype html>
 ${css}
 </style>
 </head><body>
-${monacoTag('vendor/monaco/vs')}
+${monacoTag(fs.existsSync(path.join(R, 'node_modules/monaco-editor/min/vs/loader.js')) || fs.existsSync(path.join(R, 'app/vendor/monaco/vs/loader.js')) ? 'vendor/monaco/vs' : '')}
 ${body}
 </body></html>
 `;
