@@ -11,9 +11,9 @@
 (function () {
 "use strict";
 const KEY = "notepath.settings";
-// tabs: colours of the My notes thumb tabs (Notes = NotePath amber-orange, Code = blue, Music = magenta); only the tabs take them
+// tabs: colours of the My notes, My Code and My Music buttons on the Main Menu (amber-orange, blue, magenta); only their glyphs take them
 const TABDEF = { notes: "#F2B84B", code: "#4FA3F7", music: "#D97AE6" };
-const DEF = { theme: "capsuleer", uiScale: 1, textSize: 1, reduceMotion: false, escKey: true, invertScroll: false, noteLink: "#B49BFF", tabs: TABDEF };
+const DEF = { theme: "capsuleer", uiScale: 1, textSize: 1, reduceMotion: false, escKey: true, invertScroll: false, noteLink: "#B49BFF", indent: "#B5D65A", tabs: TABDEF };
 const load = () => {
   let o = {}; try { o = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) {}
   if (o.uiScale == null && typeof o.textScale === "number") o.uiScale = o.textScale; // the old single "Text & interface size" was a zoom
@@ -134,6 +134,7 @@ const hexOk = c => /^#[0-9a-f]{6}$/i.test(c);
 function applyAll() {
   applyTheme(S.theme);
   document.documentElement.style.setProperty("--note-link", hexOk(S.noteLink) ? S.noteLink : DEF.noteLink);
+  document.documentElement.style.setProperty("--note-indent", hexOk(S.indent) ? S.indent : DEF.indent); // indented notes (notes.js)
   Object.keys(TABDEF).forEach(k => document.documentElement.style.setProperty("--tab-" + k, hexOk(S.tabs[k]) ? S.tabs[k] : TABDEF[k]));
   applySizes();
   document.documentElement.toggleAttribute("data-reduce-motion", !!S.reduceMotion);
@@ -188,7 +189,7 @@ document.addEventListener("keydown", e => {
   if (ov.hidden) {
     if (e.key === "Escape" && !e.defaultPrevented) {
       // Esc closes the smallest thing first: a popup (it handles Esc itself), then My notes
-      if (document.querySelector(".tm-menu, .nk-pick, .nr-panel, .ask-ov, .nv-pop, .np-pop")) return;
+      if (document.querySelector(".tm-menu, .nk-pick, .nr-panel, .ask-ov, .nv-pop, .np-pop, .np-holo, .np-ind")) return;
       if (document.querySelector(".mw-ov:not(.out)") && window.InquireApp) { e.preventDefault(); e.stopPropagation(); InquireApp.closeWin(); return; }
     }
     if (!act || document.querySelector(".ask-ov")) return;
@@ -245,9 +246,20 @@ function paneLook() {
   pick.oninput = () => { S.noteLink = pick.value; applyAll(); mark(); };
   pick.onchange = () => { S.noteLink = pick.value; save(); };
   wrap.appendChild(lc);
-  // colours of the My notes thumb tabs (Notes / Code / Music)
-  const tc = h(`<div class="set-thfam"><h3>My notes tabs</h3><div class="set-item"><div><p>Colours of the tabs on the right of My notes. Only the tabs change colour; the page keeps your theme.</p></div>
-    <div class="set-tabc">${[["notes", "Notes"], ["code", "Code"], ["music", "Music"]].map(([k, n]) => `<label class="set-tabcl" style="--c:${S.tabs[k]}"><input type="color" data-tab="${k}" value="${hexOk(S.tabs[k]) ? S.tabs[k] : TABDEF[k]}" aria-label="${n} tab colour"><span>${n}</span></label>`).join("")}
+  // colour of indented notes (your own notes under the words they explain)
+  const ic = h(`<div class="set-thfam"><h3>Indented notes</h3><div class="set-item set-lcitem"><div><p>Colour of the notes you indent under words in a note (↳ at the bottom right of a note).
+      <span class="set-lcdemo set-inddemo">Example: <span class="set-indw">photosynthesis</span><span class="set-indt">how plants turn light into food</span></span></p></div>
+    <div class="set-lc" role="radiogroup" aria-label="Indented notes colour">${LINKCOL.map(([c, n]) => `<button type="button" role="radio" class="set-lcs" data-c="${c}" aria-checked="${String(S.indent).toLowerCase() === c.toLowerCase()}" title="${n}" aria-label="${n}" style="--c:${c}"></button>`).join("")}
+      <label class="set-lcs set-lcpick" title="Any colour" aria-label="Any colour"><input type="color" value="${hexOk(S.indent) ? S.indent : DEF.indent}"></label></div></div></div>`);
+  const imark = () => ic.querySelectorAll(".set-lcs[data-c]").forEach(b => b.setAttribute("aria-checked", String(b.dataset.c.toLowerCase() === String(S.indent).toLowerCase())));
+  ic.querySelectorAll(".set-lcs[data-c]").forEach(b => b.onclick = () => { S.indent = b.dataset.c; save(); applyAll(); imark(); ic.querySelector('input[type="color"]').value = S.indent; });
+  const ipick = ic.querySelector('input[type="color"]');
+  ipick.oninput = () => { S.indent = ipick.value; applyAll(); imark(); };
+  ipick.onchange = () => { S.indent = ipick.value; save(); };
+  wrap.appendChild(ic);
+  // colours of the My notes / My Code / My Music Main Menu buttons
+  const tc = h(`<div class="set-thfam"><h3>Main Menu colours</h3><div class="set-item"><div><p>Colours of the My notes, My Code and My Music buttons on the Main Menu. Only their icons change colour; the rest keeps your theme.</p></div>
+    <div class="set-tabc">${[["notes", "My notes"], ["code", "My Code"], ["music", "My Music"]].map(([k, n]) => `<label class="set-tabcl" style="--c:${S.tabs[k]}"><input type="color" data-tab="${k}" value="${hexOk(S.tabs[k]) ? S.tabs[k] : TABDEF[k]}" aria-label="${n} tab colour"><span>${n}</span></label>`).join("")}
       <button type="button" class="btn-s" data-a="tabreset" title="Back to orange, blue and magenta">Reset</button></div></div></div>`);
   tc.querySelectorAll('input[type="color"]').forEach(inp => {
     inp.oninput = () => { S.tabs[inp.dataset.tab] = inp.value; inp.parentElement.style.setProperty("--c", inp.value); applyAll(); };
@@ -380,7 +392,7 @@ function paneUsage() {
   pane.appendChild(w);
 }
 
-/* Code (the Code tab of My notes, code.js): where ▶ Run sends code, and the AI status */
+/* Code (My Code of My notes, code.js): where ▶ Run sends code, and the AI status */
 function paneCode() {
   const C = window.NPCode; if (!C) return;
   const c = C.settings();
@@ -392,7 +404,7 @@ function paneCode() {
       <div class="set-item"><div><h3>Run JavaScript on this computer</h3><p>On: JavaScript runs inside NotePath, even offline. Off: it goes to the run service (Node.js) like the other languages.</p></div>
         <label class="set-tog"><input type="checkbox" data-k="jsHere"${c.jsHere !== false ? " checked" : ""}><span></span></label></div>
       <div class="set-item"><div><h3>Test the run service</h3><p>Runs a one-line Python program there.</p></div><button type="button" class="btn-s" data-a="test">Test</button></div></div>
-    <div class="set-thfam"><h3>AI</h3><div class="set-item"><div><h3>Translate code (⇄ in the Code tab)</h3><p class="set-ai">Checking…</p></div></div></div>
+    <div class="set-thfam"><h3>AI</h3><div class="set-item"><div><h3>Translate code (⇄ in My Code)</h3><p class="set-ai">Checking…</p></div></div></div>
   </div>`);
   const m = msgEl(); w.appendChild(m);
   const url = w.querySelector('[data-k="url"]'), key = w.querySelector('[data-k="key"]');
@@ -409,7 +421,7 @@ function paneCode() {
     b.disabled = false;
   };
   C.ai.status().then(st => { const p = w.querySelector(".set-ai"); if (!p) return;
-    p.innerHTML = st && st.configured ? `Ready${st.model ? ` (${esc(st.model)})` : ""}. ⇄ Translate in the Code tab turns a file into another language.`
+    p.innerHTML = st && st.configured ? `Ready${st.model ? ` (${esc(st.model)})` : ""}. ⇄ Translate in My Code turns a file into another language.`
       : `Not set up in this copy yet. The AI key goes into NotePath itself (not here), so it stays hidden; once it is in, ⇄ Translate works with no setup.`; });
   pane.appendChild(w);
 }

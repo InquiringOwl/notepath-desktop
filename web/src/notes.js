@@ -91,7 +91,8 @@ function clean(node) {
     if (tag === "SPAN") { const k = c.getAttribute("data-c"), z = c.getAttribute("data-s"), f = c.getAttribute("data-f");
       if (TKEYS.has(k)) keep["data-c"] = k; else if (HEX.test(k || "")) { keep["data-c"] = k; keep.style = "color:" + k; }
       if (SKEYS.has(z)) keep["data-s"] = z; if (FKEYS.has(f)) keep["data-f"] = f;
-      if (!keep["data-c"] && !keep["data-s"] && !keep["data-f"]) { c.replaceWith(...c.childNodes); return; } }
+      const an = c.getAttribute("data-ann"); if (an && /^[a-z0-9]{4,24}$/i.test(an)) { keep["data-ann"] = an; keep["data-nt"] = String(c.getAttribute("data-nt") || "").slice(0, 4000); } // an indented note (NotePath)
+      if (!keep["data-c"] && !keep["data-s"] && !keep["data-f"] && !keep["data-ann"]) { c.replaceWith(...c.childNodes); return; } }
     [...c.attributes].forEach(a => c.removeAttribute(a.name));
     Object.entries(keep).forEach(([k, v]) => c.setAttribute(k, v));
   });
@@ -262,10 +263,10 @@ function addFolder(name, parent, sp) {
   sp = sp || "notes";
   const all = readF().map(fnorm), pid = parent && all.some(f => f.id === parent && spaceOf(f) === sp) ? parent : null;
   const sib = all.filter(f => f.parent === pid && spaceOf(f) === sp), order = sib.length ? Math.max(...sib.map(f => f.order ?? sib.indexOf(f))) + 1 : 0;
-  const f = { id: uid(), name: String(name || "").trim().slice(0, 60) || "New folder", parent: pid, order }; if (sp === "code") f.space = "code"; writeF(all.concat(f)); return f;
+  const now = Date.now(), f = { id: uid(), name: String(name || "").trim().slice(0, 60) || "New folder", parent: pid, order, created: now, updated: now }; if (sp === "code") f.space = "code"; writeF(all.concat(f)); return f;
 }
 function setFolderFav(id, on) { const all = readF(), f = all.find(x => x.id === id); if (!f) return; if (on) f.fav = true; else delete f.fav; writeF(all); }
-function renameFolder(id, name) { const all = readF(), f = all.find(x => x.id === id); if (!f) return; f.name = String(name || "").trim().slice(0, 60) || f.name; writeF(all); }
+function renameFolder(id, name) { const all = readF(), f = all.find(x => x.id === id); if (!f) return; f.name = String(name || "").trim().slice(0, 60) || f.name; f.updated = Date.now(); writeF(all); }
 // move folder id into parent (null = top level), placed before folder `before` (or last); refuses to move a folder into itself or its own subfolders
 function moveFolder(id, parent, before) {
   parent = parent || null;
@@ -692,6 +693,99 @@ function mountEditor(host, id, o = {}) {
     hit.forEach(tn => { let off = r && r.startContainer === tn ? r.startOffset : -1; if (off >= 0) off -= (tn.data.slice(0, off).match(/​/g) || []).length;
       tn.data = tn.data.replace(/​/g, ""); if (off >= 0) { const nr = document.createRange(); nr.setStart(tn, Math.min(off, tn.data.length)); nr.collapse(true); s.removeAllRanges(); s.addRange(nr); } });
   }, true);
+  /* ----- indented notes (Devon, Oct 12 2026): your own note under the words it explains. The words are
+     span[data-ann] with the note in data-nt (so it is saved, undone and backed up with the note). While shown, a layer over
+     the editor draws each note under its line with a right-angled line from the middle of the words, in --note-indent;
+     the line under the words grows (a ::after spacer in a <style> of its own, nothing in the note) so the text below makes
+     room. Hidden = nothing drawn, nothing styled. Text: [words](https://…) and bare https:// addresses become links. ----- */
+  const annKey = "a" + Math.random().toString(36).slice(2, 8); ed.dataset.annEd = annKey;
+  const annStyle = document.createElement("style"); document.head.appendChild(annStyle);
+  const annLayer = document.createElement("div"); annLayer.className = "nann-layer"; annLayer.setAttribute("aria-hidden", "false");
+  const annIn = document.createElement("div"); annIn.className = "nann-in"; annLayer.appendChild(annIn);
+  let annOn = !!o.annotations, annT = 0, annH = {};
+  const annEsc = t => String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  function annHTML(t) {
+    const parts = []; let rest = String(t || "");
+    const re = /\[([^\]\n]{1,200})\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s<>"']+[^\s<>"'.,;:!?)\]])/g; let m, at = 0;
+    while ((m = re.exec(rest))) { parts.push(annEsc(rest.slice(at, m.index))); const url = m[2] || m[3], label = m[1] || m[3];
+      parts.push(`<a href="${annEsc(url)}" target="_blank" rel="noopener noreferrer" title="${annEsc(url)}">${annEsc(label)}</a>`); at = m.index + m[0].length; }
+    parts.push(annEsc(rest.slice(at))); return parts.join("").replace(/\n/g, "<br>");
+  }
+  const annSpans = () => [...ed.querySelectorAll("span[data-ann]")];
+  const annBoxes = () => [...ed.querySelectorAll(".nw")].filter(w => w._ann);
+  const annBox = id => annBoxes().find(w => w._ann.has(id));
+  function annList() { // in the order they appear: words in the text, and code in code boxes
+    return [...ed.querySelectorAll("span[data-ann], .nw")].flatMap(x => x.matches(".nw") ? (x._ann ? x._ann.list() : []) : [{ id: x.dataset.ann, words: x.textContent.replace(/\u200B/g, ""), text: x.dataset.nt || "" }]); }
+  function annLayout(again) {
+    annT = 0;
+    if (!annOn || !ed.isConnected) { annStyle.textContent = ""; annIn.innerHTML = ""; annLayer.hidden = true; ed.classList.remove("nann-on"); return; }
+    ed.classList.add("nann-on"); annLayer.hidden = false;
+    const host = ed.parentElement; if (annLayer.parentElement !== host) host.appendChild(annLayer);
+    annLayer.style.top = ed.offsetTop + "px"; annLayer.style.left = ed.offsetLeft + "px"; annLayer.style.width = ed.clientWidth + "px"; annLayer.style.height = ed.clientHeight + "px";
+    const er = ed.getBoundingClientRect(), W = ed.clientWidth, padR = 18, items = [];
+    annSpans().forEach(sp => {
+      const rs = [...sp.getClientRects()].filter(r => r.width || r.height); if (!rs.length) return;
+      const r = rs[rs.length - 1], lh = parseFloat(getComputedStyle(sp).lineHeight) || r.height * 1.6;
+      const x = r.left + r.width / 2 - er.left + ed.scrollLeft, lineTop = r.top - er.top + ed.scrollTop - Math.max(0, (lh - r.height) / 2);
+      items.push({ sp, id: sp.dataset.ann, x, y: r.bottom - er.top + ed.scrollTop, lineTop, lh, key: Math.round(lineTop / 4) });
+    });
+    // cards: one per note, stacked when two notes share a line
+    const seen = new Set(); annIn.innerHTML = ""; const groups = {};
+    items.forEach(it => { (groups[it.key] = groups[it.key] || []).push(it); });
+    const css = [];
+    Object.values(groups).forEach(g => {
+      let top = g[0].lineTop + g[0].lh + 8;
+      g.forEach((it, i) => {
+        if (seen.has(it.id)) return; seen.add(it.id);
+        const left = Math.max(14, Math.min(it.x + 16, W - 240)), width = Math.max(160, Math.min(620, W - left - padR));
+        const card = document.createElement("div"); card.className = "nann-card"; card.dataset.ann = it.id;
+        card.style.left = left + "px"; card.style.top = top + "px"; card.style.width = width + "px";
+        card.innerHTML = (it.sp.dataset.nt ? annHTML(it.sp.dataset.nt) : `<i class="nann-empty">Empty indented note</i>`);
+        card.title = "Click to edit this indented note";
+        annIn.appendChild(card);
+        const ch = card.offsetHeight, my = top + Math.min(ch / 2, 13);
+        const v = document.createElement("div"); v.className = "nann-v"; v.style.left = (it.x - .5) + "px"; v.style.top = (it.y + 1) + "px"; v.style.height = Math.max(4, my - it.y - 1) + "px";
+        const hz = document.createElement("div"); hz.className = "nann-h"; const x0 = Math.min(it.x, left), x1 = Math.max(it.x, left); hz.style.left = x0 + "px"; hz.style.width = Math.max(2, x1 - x0) + "px"; hz.style.top = (my - .5) + "px";
+        const dot = document.createElement("div"); dot.className = "nann-dot"; dot.style.left = it.x + "px"; dot.style.top = (it.y + 1) + "px";
+        annIn.append(v, hz, dot);
+        top += ch + 6; it.h = ch;
+      });
+      // the line grows by everything stacked under it: a spacer at the end of the last note's words on that line
+      const last = g[g.length - 1], need = Math.round(top - g[0].lineTop + 4);
+      css.push(`.nb-rich[data-ann-ed="${annKey}"] span[data-ann="${last.id}"]::after{content:"";display:inline-block;width:0;height:${need}px;vertical-align:top}`);
+    });
+    const next = css.join("\n"), changed = next !== annStyle.textContent;
+    annStyle.textContent = next; annScroll();
+    if (changed && !again) requestAnimationFrame(() => annLayout(true)); // the lines moved: place the cards again once
+  }
+  const annScroll = () => { annIn.style.transform = `translate(${-ed.scrollLeft}px, ${-ed.scrollTop}px)`; };
+  const annSoon = () => { if (!annOn) return; clearTimeout(annT); annT = setTimeout(() => annLayout(), 60); };
+  ed.addEventListener("scroll", annScroll); ed.addEventListener("input", annSoon);
+  const annRO = new ResizeObserver(() => annSoon()); annRO.observe(ed);
+  annLayer.addEventListener("mousedown", e => { if (e.target.closest(".nann-card") && !e.target.closest("a")) e.preventDefault(); });
+  ed.addEventListener("np:ann-layout", () => annSoon());
+  ed.addEventListener("np:ann-edit", e => { if (o.onAnnotation && e.detail) o.onAnnotation(e.detail.id); });
+  annLayer.addEventListener("click", e => { const c = e.target.closest(".nann-card"); if (!c || e.target.closest("a")) return; if (o.onAnnotation) o.onAnnotation(c.dataset.ann); });
+  // a new indented note on the words selected in the note (one line of words; not inside a widget or a link)
+  function addAnnotation(text) {
+    const ae = document.activeElement, box = ae && ae.matches && ae.matches(".nw-ta") && ed.contains(ae) ? ae.closest(".nw") : null;
+    if (box && box._ann) { const r0 = box._ann.add(text); if (r0.id) { save(); flush(); } return r0; } // code in a code box
+    const s = getSelection(); let r = s.rangeCount && ed.contains(s.getRangeAt(0).commonAncestorContainer) ? s.getRangeAt(0) : last;
+    if (!r || r.collapsed || !ed.contains(r.commonAncestorContainer) || !r.toString().trim()) return { error: "Select the words in the note first." };
+    if (inWidget(r.startContainer) || inWidget(r.endContainer)) return { error: "Select the code inside the code box, then press ＋ again." };
+    const blk = n => { let el = n.nodeType === 1 ? n : n.parentElement; while (el && el !== ed && !/^(DIV|P|LI|H1|H2|H3|H4|BLOCKQUOTE|PRE)$/.test(el.tagName)) el = el.parentElement; return el; };
+    if (blk(r.startContainer) !== blk(r.endContainer)) return { error: "Select words on one line." };
+    const anc = r.commonAncestorContainer.nodeType === 1 ? r.commonAncestorContainer : r.commonAncestorContainer.parentElement;
+    if (anc.closest("span[data-ann], a.nlink") || r.cloneContents().querySelector("span[data-ann], a.nlink, img")) return { error: "Those words already have an indented note or a link." };
+    const sp = document.createElement("span"); sp.dataset.ann = uid(); sp.dataset.nt = String(text || "").slice(0, 4000);
+    try { sp.appendChild(r.extractContents()); r.insertNode(sp); } catch (e) { return { error: "Those words could not take an indented note." }; }
+    const r2 = document.createRange(); r2.setStartAfter(sp); r2.collapse(true); s.removeAllRanges(); s.addRange(r2); last = r2.cloneRange();
+    ed.classList.remove("is-empty"); save(); flush(); annLayout(); return { id: sp.dataset.ann };
+  }
+  function setAnnotation(id, text) { const sp = ed.querySelector(`span[data-ann="${id}"]`); if (!sp) { const w = annBox(id); if (!w) return false; w._ann.set(id, text); flush(); return true; } sp.dataset.nt = String(text || "").slice(0, 4000); save(); flush(); annLayout(); return true; }
+  function removeAnnotation(id) { const sp = ed.querySelector(`span[data-ann="${id}"]`); if (!sp) { const w = annBox(id); if (!w) return false; w._ann.remove(id); flush(); return true; } sp.replaceWith(...sp.childNodes); ed.normalize(); save(); flush(); annLayout(); return true; }
+  function showAnnotations(on) { annOn = !!on; annLayout(); annBoxes().forEach(w => w._ann.show(annOn)); }
+  function focusAnnotation(id) { const sp = ed.querySelector(`span[data-ann="${id}"]`); if (!sp) { const w = annBox(id); if (w) w._ann.focus(id); return; } sp.scrollIntoView({ block: "nearest" }); sp.classList.add("nann-hi"); setTimeout(() => sp.classList.remove("nann-hi"), 900); }
   // Chromium edits inline colours itself (it may clear or copy style="color"): keep data-c in step with what is shown
   function syncColors() {
     ed.querySelectorAll("span").forEach(sp => {
@@ -701,7 +795,7 @@ function mountEditor(host, id, o = {}) {
       else if (!c && sp.getAttribute("style") === "") sp.removeAttribute("style");
     });
   }
-  const api = { el: ed, id, flush, indentItem, outdentItem,
+  const api = { el: ed, id, flush, indentItem, outdentItem, annotations: annList, addAnnotation, setAnnotation, removeAnnotation, showAnnotations, focusAnnotation, relayoutAnnotations: () => annLayout(),
     openSide: noteId => { if (!o.openSide || !get(noteId)) return false; flush(); o.openSide(noteId); return true; },
     openNote: noteId => { if (!o.openNote || !get(noteId)) return false; flush(); o.openNote(noteId); return true; },
     addFiles, addURL, addVideoLink, linkRange, insertNoteLink, insertWidgetAt, insertText, addWidget, insertBlock,
@@ -739,10 +833,12 @@ function mountEditor(host, id, o = {}) {
         sel.removeAllRanges(); sel.addRange(nr);
       } catch (e) {}
     },
-    destroy: () => { flush(); live.delete(api); document.removeEventListener("selectionchange", remember); document.removeEventListener("selectionchange", ckSoon); document.removeEventListener("scroll", ckScroll, true); ckHide(); if (bar && bar.destroy) bar.destroy(); } };
+    destroy: () => { flush(); annRO.disconnect(); annStyle.remove(); annLayer.remove(); clearTimeout(annT); live.delete(api); document.removeEventListener("selectionchange", remember); document.removeEventListener("selectionchange", ckSoon); document.removeEventListener("scroll", ckScroll, true); ckHide(); if (bar && bar.destroy) bar.destroy(); } };
   if (window.InquireWidgets) { bar = InquireWidgets.toolbar(api); host.appendChild(bar); }
   host.appendChild(ed);
   editors.set(ed, api); live.add(api);
+  if (annOn) requestAnimationFrame(() => annLayout());
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => annSoon());
   return api;
 }
 const editorFor = el => { const ed = el && el.closest ? el.closest(".nb-rich") : null; return ed ? editors.get(ed) || null : null; };

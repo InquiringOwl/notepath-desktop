@@ -138,7 +138,7 @@ function toolbar(api) {
     <span class="nr-sep"></span><button type="button" data-blk="ul" title="Bulleted list · press again to indent (Tab indents, Shift+Tab moves back, delete at the start takes the bullet off)" aria-label="Bulleted list">•≡</button><button type="button" data-blk="ol" title="Numbered list · delete at the start of a line takes the number off" aria-label="Numbered list">1.≡</button><button type="button" data-blk="ck" title="Checklist: click a box to tick an item off · press again to indent · delete at the start of a line takes the box off" aria-label="Checklist">☑</button>
     <span class="nr-sep"></span><button type="button" class="nr-dd nr-font" data-dd="font" title="Font" aria-haspopup="listbox" aria-label="Font"><span class="nr-ddv">Default</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-dd nr-size" data-dd="size" title="Text size" aria-haspopup="listbox" aria-label="Text size"><span class="nr-ddv num">15</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-dd nr-colb" data-dd="color" title="Text colour" aria-haspopup="dialog" aria-label="Text colour"><span class="nr-cola" aria-hidden="true">A</span><span class="nr-car" aria-hidden="true">▾</span></button>
     <span class="nr-sep"></span><button type="button" class="nr-sym" title="Emoji and symbols (Greek, maths, alchemical)" aria-haspopup="dialog">☺ Ω</button>
-    <span class="nr-sep"></span><button type="button" data-w="code" title="Add a code box">&lt;/&gt; Code</button><button type="button" data-w="music" title="Add a music chart">♪ Music</button><button type="button" data-w="sheet" title="Add a lead sheet: bars with chord symbols and melody">𝄞 Sheet</button><button type="button" data-w="graph" title="Add a graph: click points on a grid and get their equations">∿ Graph</button>`;
+    <span class="nr-sep"></span><button type="button" class="nr-dd nr-wid" data-dd="widgets" title="Widgets: code box, music chart, lead sheet, graph" aria-haspopup="menu" aria-label="Widgets"><span class="nr-widg" aria-hidden="true">▦</span><span class="nr-ddv">Widgets</span><span class="nr-car" aria-hidden="true">▾</span></button>`;
   bar.addEventListener("mousedown", e => e.preventDefault()); // keep the selection in the note
   bar.addEventListener("click", e => {
     const b = e.target.closest("button"); if (!b) return;
@@ -184,6 +184,8 @@ const RECENT_KEY = "notepath.recentcolors";
 const recent = () => { try { const a = JSON.parse(localStorage.getItem(RECENT_KEY) || "[]"); return Array.isArray(a) ? a.filter(c => /^#[0-9a-f]{6}$/.test(c)).slice(0, 10) : []; } catch (e) { return []; } };
 const addRecent = c => { try { localStorage.setItem(RECENT_KEY, JSON.stringify([c, ...recent().filter(x => x !== c)].slice(0, 10))); } catch (e) {} };
 const toHex = (r, g, b) => "#" + [r, g, b].map(x => Math.round(x).toString(16).padStart(2, "0")).join("");
+const WIDGET_MENU = [["code", "&lt;/&gt;", "Code box", "Code with highlighting and line numbers"], ["music", "♪", "Music chart", "A staff, a keyboard, chords and playback"],
+  ["sheet", "𝄞", "Lead sheet", "Bars with chord symbols and melody"], ["graph", "∿", "Graph", "Click points on a grid and get their equations"]];
 function ddPanel(btn, kind, api, sync) {
   const was = dd && dd.dataset.kind; closeDD(); if (was === kind) return;
   const cur = fmtAt(fmtEl(api));
@@ -191,7 +193,11 @@ function ddPanel(btn, kind, api, sync) {
   // the words selected when the menu opened (typing a colour code moves the focus into the menu)
   const s0 = getSelection(), saved = s0.rangeCount && api.el.contains(s0.getRangeAt(0).commonAncestorContainer) ? s0.getRangeAt(0).cloneRange() : null;
   const apply = (k, v) => { closeDD(); if (saved) { api.el.focus({ preventScroll: true }); const s1 = getSelection(); s1.removeAllRanges(); s1.addRange(saved); } api.format(k, v); sync(); };
-  if (kind === "font") {
+  if (kind === "widgets") { // one tab for every widget (Devon, Oct 2026): keeps the toolbar clean
+    dd.setAttribute("role", "menu"); dd.setAttribute("aria-label", "Widgets");
+    dd.innerHTML = `<div class="np-pop-h">Widgets <span>added after the line you are on</span></div><div class="np-wids">${WIDGET_MENU.map(([w, g, n, d]) => `<button type="button" role="menuitem" data-w="${w}"><span class="np-wg" aria-hidden="true">${g}</span><span><b>${n}</b><small>${d}</small></span></button>`).join("")}</div>`;
+    dd.addEventListener("click", e => { const b = e.target.closest("button[data-w]"); if (!b) return; closeDD(); if (saved) { api.el.focus({ preventScroll: true }); const s1 = getSelection(); s1.removeAllRanges(); s1.addRange(saved); } api.addWidget(b.dataset.w); });
+  } else if (kind === "font") {
     dd.setAttribute("role", "listbox"); dd.setAttribute("aria-label", "Font");
     const fonts = [["", "Default (IBM Plex Sans)"], ...(NOTES().NFONTS || [])];
     dd.innerHTML = `<div class="np-pop-h">Font</div><div class="np-fonts">${fonts.map(([k, n], i) => `${i === 5 ? `<div class="np-pop-sub">On this computer</div>` : i === 1 ? `<div class="np-pop-sub">Bundled with NotePath</div>` : ""}<button type="button" role="option" data-v="${k}" aria-selected="${cur.font === k}" style="font-family:${esc(FSTACK[k] || "var(--sans)")}">${esc(n)}</button>`).join("")}</div>`;
@@ -292,6 +298,13 @@ function hlLine(line, lang) {
   }
   return out;
 }
+// an indented note's text: [words](https://…) and bare https:// addresses become links (notes.js uses the same rules)
+function annHTML(t) {
+  const out = [], rest = String(t || ""), re = /\[([^\]\n]{1,200})\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s<>"']+[^\s<>"'.,;:!?)\]])/g; let m, at = 0;
+  while ((m = re.exec(rest))) { out.push(esc(rest.slice(at, m.index))); const url = m[2] || m[3], label = m[1] || m[3];
+    out.push(`<a href="${esc(url)}" target="_blank" rel="noopener noreferrer" title="${esc(url)}">${esc(label)}</a>`); at = m.index + m[0].length; }
+  out.push(esc(rest.slice(at))); return out.join("").replace(/\n/g, "<br>");
+}
 function mountCode(el) {
   const d = readSrc(el, { lang: "python", title: "", src: "" });
   el.innerHTML = `<div class="nw-h"><span class="nw-tag">&lt;/&gt;</span><input class="nw-title" maxlength="80" placeholder="Code" aria-label="Code box title" value="${esc(d.title)}">
@@ -300,9 +313,67 @@ function mountCode(el) {
     <div class="nw-code"><div class="nw-gut" aria-hidden="true"></div><div class="nw-edit"><pre class="nw-hl" aria-hidden="true"></pre><textarea class="nw-ta" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code"></textarea></div></div>`;
   const ta = el.querySelector(".nw-ta"), hl = el.querySelector(".nw-hl"), gut = el.querySelector(".nw-gut"), lang = el.querySelector(".nw-lang"), title = el.querySelector(".nw-title");
   ta.value = d.src;
-  const draw = () => { const ls = ta.value.split("\n"); hl.innerHTML = ls.map(l => hlLine(l, lang.value) || " ").join("\n") + "\n"; gut.innerHTML = ls.map((_, i) => `<span>${i + 1}</span>`).join(""); ta.rows = Math.max(3, Math.min(24, ls.length + 1)); };
-  const save = () => writeSrc(el, { lang: lang.value, title: title.value.trim(), src: ta.value });
-  ta.addEventListener("input", e => { e.stopPropagation(); draw(); save(); });
+  let anns = Array.isArray(d.anns) ? d.anns.filter(a => a && /^[a-z0-9]{4,24}$/i.test(a.id) && a.end > a.start).map(a => ({ id: a.id, start: +a.start, end: +a.end, text: String(a.text || "").slice(0, 4000) })) : [];
+  const draw = () => { const ls = ta.value.split("\n"); hl.innerHTML = ls.map(l => hlLine(l, lang.value) || " ").join("\n") + "\n"; gut.innerHTML = ls.map((_, i) => `<span>${i + 1}</span>`).join(""); ta.rows = Math.max(3, Math.min(24, ls.length + 1)); annView(); };
+  const save = () => writeSrc(el, Object.assign({ lang: lang.value, title: title.value.trim(), src: ta.value }, anns.length ? { anns } : {}));
+  /* indented notes on code (Devon, Oct 12 2026): { id, start, end, text } over the source; they follow edits (shifted, or
+     dropped when their code is deleted). While shown and the box is not being typed in, a view replaces the editor: each
+     line with its number, the noted code marked, and the note under its line with a right-angled line from the middle of
+     the code. Click the code to type again; the notes come back when you leave the box. */
+  let prev = ta.value, showAnn = (() => { try { return localStorage.getItem("notepath.indshow") !== "false"; } catch (e) { return true; } })();
+  const view = document.createElement("div"); view.className = "nw-annv"; view.hidden = true; el.querySelector(".nw-code").after(view);
+  const track = () => { const v = ta.value; if (v === prev) return; let a = 0; while (a < prev.length && a < v.length && prev[a] === v[a]) a++;
+    let b = 0; while (b < prev.length - a && b < v.length - a && prev[prev.length - 1 - b] === v[v.length - 1 - b]) b++;
+    const oldEnd = prev.length - b, newEnd = v.length - b, delta = v.length - prev.length;
+    anns = anns.map(x => { if (x.end <= a) return x; if (x.start >= oldEnd) return Object.assign({}, x, { start: x.start + delta, end: x.end + delta });
+      const st = x.start < a ? x.start : (x.end > oldEnd ? newEnd : a), en = x.end > oldEnd ? x.end + delta : newEnd; return Object.assign({}, x, { start: st, end: Math.max(st, en) }); })
+      .filter(x => x.end > x.start && v.slice(x.start, x.end).trim());
+    prev = v; };
+  function annView() {
+    const on = showAnn && anns.length && document.activeElement !== ta;
+    const was = el.classList.contains("nw-annon");
+    el.classList.toggle("nw-annon", !!on); view.hidden = !on; if (!on) { view.innerHTML = ""; if (was) el.dispatchEvent(new Event("np:ann-layout", { bubbles: true })); return; }
+    const v = ta.value, ls = v.split("\n"), starts = []; let p = 0; ls.forEach(l => { starts.push(p); p += l.length + 1; });
+    const byLine = {}; anns.forEach(x => { const i = starts.findIndex((s0, k) => x.start >= s0 && x.start <= s0 + ls[k].length); if (i >= 0) (byLine[i] = byLine[i] || []).push(x); });
+    view.innerHTML = ls.map((l, i) => {
+      const here = (byLine[i] || []).sort((x, y) => x.start - y.start); let html = "", at = 0;
+      here.forEach(x => { const a0 = Math.max(at, x.start - starts[i]), b0 = Math.min(l.length, x.end - starts[i]); if (b0 <= a0) return;
+        html += hlLine(l.slice(at, a0), lang.value) + `<span class="nann-cw" data-cann="${x.id}">${hlLine(l.slice(a0, b0), lang.value)}</span>`; at = b0; });
+      html += hlLine(l.slice(at), lang.value);
+      return `<div class="nw-al" data-line="${i}"><span class="nw-an">${i + 1}</span><span class="nw-ac">${html || " "}</span></div>`
+        + here.map(x => `<div class="nann-cblk" data-cann="${x.id}"><div class="nann-card nann-ccard" data-cann="${x.id}" title="Click to edit this indented note">${x.text ? annHTML(x.text) : '<i class="nann-empty">Empty indented note</i>'}</div></div>`).join("");
+    }).join("");
+    requestAnimationFrame(() => view.querySelectorAll(".nann-cblk").forEach(blk => { // the line from the middle of the noted code
+      const w = view.querySelector(`.nann-cw[data-cann="${blk.dataset.cann}"]`); if (!w) return;
+      const vr = view.getBoundingClientRect(), wr = w.getBoundingClientRect(), mid = wr.left + wr.width / 2 - vr.left + view.scrollLeft;
+      blk.style.setProperty("--mx", mid + "px"); blk.style.setProperty("--cx", Math.min(mid + 16, Math.max(40, view.clientWidth - 220)) + "px"); }));
+    el.dispatchEvent(new Event("np:ann-layout", { bubbles: true })); // notes drawn under the text below this box move with it
+  }
+  view.addEventListener("mousedown", e => { if (e.target.closest("a")) return; e.preventDefault(); });
+  view.addEventListener("click", e => {
+    if (e.target.closest("a")) return;
+    const c = e.target.closest(".nann-ccard"); if (c) { el.dispatchEvent(new CustomEvent("np:ann-edit", { bubbles: true, detail: { id: c.dataset.cann } })); return; }
+    const ln = e.target.closest(".nw-al"), ls = ta.value.split("\n"); let pos = ta.value.length;
+    if (ln) { const i = +ln.dataset.line; pos = ls.slice(0, i).reduce((n, l) => n + l.length + 1, 0) + ls[i].length; }
+    el.classList.remove("nw-annon"); view.hidden = true; ta.focus({ preventScroll: true }); ta.setSelectionRange(pos, pos);
+  });
+  ta.addEventListener("blur", () => setTimeout(annView, 0));
+  el._ann = {
+    list: () => anns.map(x => ({ id: x.id, words: ta.value.slice(x.start, x.end), text: x.text, code: true })),
+    has: id => anns.some(x => x.id === id),
+    add(text) { const a = ta.selectionStart, b = ta.selectionEnd, v = ta.value;
+      if (document.activeElement !== ta && !el.contains(document.activeElement)) return { error: "Select the code first." };
+      if (b <= a || !v.slice(a, b).trim()) return { error: "Select the code first." };
+      if (v.slice(a, b).includes("\n")) return { error: "Select code on one line." };
+      if (anns.some(x => a < x.end && b > x.start)) return { error: "That code already has an indented note." };
+      const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7); anns.push({ id, start: a, end: b, text: String(text || "") }); save(); return { id }; },
+    set(id, text) { const x = anns.find(y => y.id === id); if (!x) return false; x.text = String(text || "").slice(0, 4000); save(); annView(); return true; },
+    remove(id) { const n = anns.length; anns = anns.filter(y => y.id !== id); if (anns.length === n) return false; save(); annView(); return true; },
+    show(on) { showAnn = !!on; annView(); },
+    focus(id) { const w = view.querySelector(`.nann-cw[data-cann="${id}"]`) || el; w.scrollIntoView({ block: "nearest" }); if (w !== el) { w.classList.add("nann-hi"); setTimeout(() => w.classList.remove("nann-hi"), 900); } },
+    relayout: () => annView()
+  };
+  ta.addEventListener("input", e => { e.stopPropagation(); track(); draw(); save(); });
   title.addEventListener("input", e => { e.stopPropagation(); save(); });
   lang.addEventListener("change", () => { draw(); save(); });
   ta.addEventListener("scroll", () => { hl.scrollLeft = ta.scrollLeft; });
@@ -312,7 +383,7 @@ function mountCode(el) {
     const s = ta.selectionStart, en = ta.selectionEnd, v = ta.value, ls = v.lastIndexOf("\n", s - 1) + 1;
     if (e.shiftKey) { const cut = v.slice(ls).match(/^ {1,4}/); if (cut) { ta.value = v.slice(0, ls) + v.slice(ls + cut[0].length); ta.selectionStart = ta.selectionEnd = Math.max(ls, s - cut[0].length); } }
     else { ta.value = v.slice(0, s) + "    " + v.slice(en); ta.selectionStart = ta.selectionEnd = s + 4; }
-    draw(); save();
+    track(); draw(); save();
   });
   el.querySelector('[data-a="copy"]').onclick = e => { const b = e.currentTarget; ta.select(); let ok = false; try { ok = document.execCommand("copy"); } catch (err) {} if (!ok && navigator.clipboard) navigator.clipboard.writeText(ta.value); b.textContent = "Copied"; setTimeout(() => b.textContent = "Copy", 1400); };
   delButton(el);
