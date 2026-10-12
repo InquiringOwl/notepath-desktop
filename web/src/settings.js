@@ -11,14 +11,16 @@
 (function () {
 "use strict";
 const KEY = "notepath.settings";
-const DEF = { theme: "capsuleer", uiScale: 1, textSize: 1, reduceMotion: false, escKey: true, invertScroll: false, noteLink: "#B49BFF" };
+// tabs: colours of the My notes thumb tabs (Notes = NotePath amber-orange, Code = blue, Music = magenta); only the tabs take them
+const TABDEF = { notes: "#F2B84B", code: "#4FA3F7", music: "#D97AE6" };
+const DEF = { theme: "capsuleer", uiScale: 1, textSize: 1, reduceMotion: false, escKey: true, invertScroll: false, noteLink: "#B49BFF", tabs: TABDEF };
 const load = () => {
   let o = {}; try { o = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) {}
   if (o.uiScale == null && typeof o.textScale === "number") o.uiScale = o.textScale; // the old single "Text & interface size" was a zoom
   delete o.textScale;
   if (o.escKey === false && !(o.keys && "settings" in o.keys)) o.keys = Object.assign({}, o.keys, { settings: "" }); // the old "Esc opens Settings" switch
   const pr = Array.isArray(o.presets) ? o.presets.slice(0, 3) : []; while (pr.length < 3) pr.push(null);
-  return Object.assign({}, DEF, o, { keys: Object.assign({}, o.keys), presets: pr });
+  return Object.assign({}, DEF, o, { keys: Object.assign({}, o.keys), presets: pr, tabs: Object.assign({}, TABDEF, o.tabs) });
 };
 let S = load();
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
@@ -132,6 +134,7 @@ const hexOk = c => /^#[0-9a-f]{6}$/i.test(c);
 function applyAll() {
   applyTheme(S.theme);
   document.documentElement.style.setProperty("--note-link", hexOk(S.noteLink) ? S.noteLink : DEF.noteLink);
+  Object.keys(TABDEF).forEach(k => document.documentElement.style.setProperty("--tab-" + k, hexOk(S.tabs[k]) ? S.tabs[k] : TABDEF[k]));
   applySizes();
   document.documentElement.toggleAttribute("data-reduce-motion", !!S.reduceMotion);
   window.dispatchEvent(new CustomEvent("inquire:theme")); // canvases that paint with the theme (Note Office) repaint
@@ -139,7 +142,7 @@ function applyAll() {
 applyAll();
 
 /* ---------- window ---------- */
-const TABS = [["look", "Appearance"], ["display", "Display & comfort"], ["keys", "Shortcuts"], ["usage", "Usage"], ["data", "Data & backups"], ["about", "About"]];
+const TABS = [["look", "Appearance"], ["display", "Display & comfort"], ["keys", "Shortcuts"], ["usage", "Usage"], ["code", "Code"], ["data", "Data & backups"], ["about", "About"]];
 const ov = document.createElement("div");
 ov.className = "set-ov"; ov.hidden = true;
 ov.innerHTML = `<div class="set-win win" role="dialog" aria-modal="true" aria-labelledby="set-title">
@@ -206,7 +209,7 @@ function show(id) {
   tab = id;
   tabsEl.querySelectorAll(".set-tab").forEach(b => b.setAttribute("aria-selected", String(b.dataset.tab === id)));
   pane.innerHTML = ""; pane.scrollTop = 0;
-  ({ look: paneLook, display: paneDisplay, keys: paneKeys, usage: paneUsage, data: paneData, about: paneAbout })[id]();
+  ({ look: paneLook, display: paneDisplay, keys: paneKeys, usage: paneUsage, code: paneCode, data: paneData, about: paneAbout })[id]();
 }
 const h = html => { const d = document.createElement("div"); d.innerHTML = html; return d.firstElementChild; };
 const msgEl = () => h(`<p class="set-msg" role="status" aria-live="polite"></p>`);
@@ -242,6 +245,16 @@ function paneLook() {
   pick.oninput = () => { S.noteLink = pick.value; applyAll(); mark(); };
   pick.onchange = () => { S.noteLink = pick.value; save(); };
   wrap.appendChild(lc);
+  // colours of the My notes thumb tabs (Notes / Code / Music)
+  const tc = h(`<div class="set-thfam"><h3>My notes tabs</h3><div class="set-item"><div><p>Colours of the tabs on the right of My notes. Only the tabs change colour; the page keeps your theme.</p></div>
+    <div class="set-tabc">${[["notes", "Notes"], ["code", "Code"], ["music", "Music"]].map(([k, n]) => `<label class="set-tabcl" style="--c:${S.tabs[k]}"><input type="color" data-tab="${k}" value="${hexOk(S.tabs[k]) ? S.tabs[k] : TABDEF[k]}" aria-label="${n} tab colour"><span>${n}</span></label>`).join("")}
+      <button type="button" class="btn-s" data-a="tabreset" title="Back to orange, blue and magenta">Reset</button></div></div></div>`);
+  tc.querySelectorAll('input[type="color"]').forEach(inp => {
+    inp.oninput = () => { S.tabs[inp.dataset.tab] = inp.value; inp.parentElement.style.setProperty("--c", inp.value); applyAll(); };
+    inp.onchange = () => { S.tabs[inp.dataset.tab] = inp.value; save(); };
+  });
+  tc.querySelector('[data-a="tabreset"]').onclick = () => { S.tabs = Object.assign({}, TABDEF); save(); applyAll(); tc.querySelectorAll('input[type="color"]').forEach(inp => { inp.value = TABDEF[inp.dataset.tab]; inp.parentElement.style.setProperty("--c", inp.value); }); };
+  wrap.appendChild(tc);
   pane.appendChild(wrap);
 }
 
@@ -352,6 +365,52 @@ function paneUsage() {
     <div class="set-scrolltry" tabindex="0" aria-label="Scroll test area">${Array.from({ length: 12 }, (_, i) => `<p>Line ${i + 1}: try scrolling here.</p>`).join("")}</div>
   </div>`);
   w.querySelector('[data-k="invertScroll"]').onchange = e => { S.invertScroll = e.target.checked; save(); };
+  // the desktop app: stay in the tray (Windows / Linux) and start at sign-in, so My Tasks reminders keep arriving
+  const D = window.inquireDesktop;
+  if (D && D.prefs) D.prefs().then(p => {
+    if (!p || (!p.trayAvailable && !p.loginAvailable) || !w.isConnected) return;
+    const box = h(`<div><p class="set-lede set-run">Keeping NotePath running lets <b>My Tasks</b> reminders arrive even when its window is closed.</p>
+      ${p.trayAvailable ? `<div class="set-item"><div><h3>Keep running in the system tray</h3><p>On: closing the window hides NotePath in the notification area (by the clock), and reminders still pop up. Quit it from the tray icon's menu. Off: closing the window quits NotePath.</p></div>
+        <label class="set-tog"><input type="checkbox" data-p="tray"${p.tray ? " checked" : ""}><span></span></label></div>` : ""}
+      ${p.loginAvailable ? `<div class="set-item"><div><h3>Start NotePath when I sign in</h3><p>${p.trayAvailable ? "It starts quietly in the tray" : "It opens when you sign in to your Mac"}, so reminders arrive after a restart too.</p></div>
+        <label class="set-tog"><input type="checkbox" data-p="login"${p.login ? " checked" : ""}><span></span></label></div>` : ""}</div>`);
+    box.querySelectorAll("[data-p]").forEach(c => c.onchange = () => D.setPrefs({ [c.dataset.p]: c.checked }));
+    w.appendChild(box);
+  });
+  pane.appendChild(w);
+}
+
+/* Code (the Code tab of My notes, code.js): where ▶ Run sends code, and the AI status */
+function paneCode() {
+  const C = window.NPCode; if (!C) return;
+  const c = C.settings();
+  const w = h(`<div>
+    <p class="set-lede">The <b>Code</b> tab of My notes runs <b>Python, C, C++ and Java</b> on a run service: your code is sent over the internet, compiled and run there, and the output comes back. <b>JavaScript</b> runs right here, on this computer.</p>
+    <div class="set-thfam"><h3>Run service</h3><div class="set-svcs" role="radiogroup" aria-label="Run service">${C.SERVICES.map(x => `<label class="set-svc"><input type="radio" name="svc" value="${x.k}"${c.service === x.k ? " checked" : ""}><span><b>${esc(x.name)}</b><small>${esc(x.note)}</small></span></label>`).join("")}</div>
+      <div class="set-item"><div><h3>Address</h3><p>Leave empty for the service's usual address.</p></div><input class="set-in" data-k="url" type="url" spellcheck="false" autocomplete="off" aria-label="Run service address"></div>
+      <div class="set-item"><div><h3>Key</h3><p>Only if the service needs one. Kept on this computer.</p></div><input class="set-in" data-k="key" type="password" spellcheck="false" autocomplete="off" aria-label="Run service key"></div>
+      <div class="set-item"><div><h3>Run JavaScript on this computer</h3><p>On: JavaScript runs inside NotePath, even offline. Off: it goes to the run service (Node.js) like the other languages.</p></div>
+        <label class="set-tog"><input type="checkbox" data-k="jsHere"${c.jsHere !== false ? " checked" : ""}><span></span></label></div>
+      <div class="set-item"><div><h3>Test the run service</h3><p>Runs a one-line Python program there.</p></div><button type="button" class="btn-s" data-a="test">Test</button></div></div>
+    <div class="set-thfam"><h3>AI</h3><div class="set-item"><div><h3>Translate code (⇄ in the Code tab)</h3><p class="set-ai">Checking…</p></div></div></div>
+  </div>`);
+  const m = msgEl(); w.appendChild(m);
+  const url = w.querySelector('[data-k="url"]'), key = w.querySelector('[data-k="key"]');
+  const fill = () => { const x = C.settings(), sv = C.SERVICES.find(v => v.k === x.service) || C.SERVICES[0]; url.value = x.url || ""; url.placeholder = sv.url; key.value = x.key || ""; };
+  fill();
+  const changed = p => { C.setSettings(p); window.dispatchEvent(new CustomEvent("np:code-settings")); };
+  w.querySelectorAll('input[name="svc"]').forEach(r => r.onchange = () => { changed({ service: r.value, url: "" }); fill(); say(m, "", true); });
+  url.onchange = () => changed({ url: url.value.trim() }); key.onchange = () => changed({ key: key.value.trim() });
+  w.querySelector('[data-k="jsHere"]').onchange = e => changed({ jsHere: e.target.checked });
+  w.querySelector('[data-a="test"]').onclick = async e => {
+    const b = e.currentTarget; b.disabled = true; say(m, "Running print(\"Hello from NotePath\")…", true);
+    try { const r = await C.run("python", 'print("Hello from NotePath")\n', ""); say(m, /Hello from NotePath/.test(r.out) ? "The run service works: it printed “Hello from NotePath”." : "The run service answered, but not as expected: " + (r.err || r.status), /Hello/.test(r.out)); }
+    catch (err) { say(m, err.message || "The run service did not answer."); }
+    b.disabled = false;
+  };
+  C.ai.status().then(st => { const p = w.querySelector(".set-ai"); if (!p) return;
+    p.innerHTML = st && st.configured ? `Ready${st.model ? ` (${esc(st.model)})` : ""}. ⇄ Translate in the Code tab turns a file into another language.`
+      : `Not set up in this copy yet. The AI key goes into NotePath itself (not here), so it stays hidden; once it is in, ⇄ Translate works with no setup.`; });
   pane.appendChild(w);
 }
 
@@ -390,6 +449,7 @@ const KEYACTS = [
   ["notes", "My notes", "Alt+KeyN"],
   ["newnote", "New note", "Alt+Shift+KeyN"],
   ["favs", "Favourite notes", "Alt+KeyF"],
+  ["tasks", "My Tasks", "Alt+KeyT"],
   ["back", "Back", "Alt+Backspace", "Closes My notes when it is open."]
 ];
 const KDEF = Object.fromEntries(KEYACTS.map(a => [a[0], a[2]]));
@@ -481,15 +541,18 @@ function paneData() {
   const nn = readJ(K().notes(), []).length, NS0 = window.InquireNotes, nf = NS0 ? NS0.readFolders().length : 0;
   const w = h(`<div>
     <p class="set-lede">Saved on this computer: <b>${nn}</b> note${nn === 1 ? "" : "s"} in <b>${nf}</b> folder${nf === 1 ? "" : "s"}.</p>
-    <div class="set-item"><div><h3>Back up</h3><p>Saves your notes (with their folders, photos, code boxes, music charts and videos up to 25 MB) and settings to one file. Bigger video files stay on this computer only: the backup tells you which.</p></div><button type="button" class="btn-s" data-a="exp">Export…</button></div>
+    <div class="set-item"><div><h3>Back up</h3><p>Saves your notes (with their folders, photos, code boxes, music charts and videos up to 25 MB), code files, tasks (with their pictures and files up to 25 MB) and settings to one file. Bigger video files stay on this computer only: the backup tells you which.</p></div><button type="button" class="btn-s" data-a="exp">Export…</button></div>
     <div class="set-item"><div><h3>Restore a backup</h3><p>Loads a file made with Export, on this or another computer. Adds the backup's notes, folders and photos to yours and restores its settings.</p></div><label class="btn-s set-file">Import…<input type="file" accept=".json,application/json" hidden></label></div>
   </div>`);
   const m = msgEl(); w.appendChild(m);
   w.querySelector('[data-a="exp"]').onclick = async e => {
     const btn = e.currentTarget; btn.disabled = true; btn.textContent = "Saving…";
     const NS = window.InquireNotes, notes = readJ(K().notes(), []);
-    let images = {}, skipped = []; try { if (NS) ({ map: images, skipped } = await NS.exportMedia(NS.list())); } catch (err) {}
-    const data = { notes, folders: NS ? NS.readFolders() : [], images, settings: readJ("notepath.settings", {}) };
+    const T = window.NPTasks, tasks = T ? T.readRaw() : [];
+    // the tasks' pictures and files go in with the notes' photos (as if one note held them all)
+    const holders = NS ? NS.list().concat(tasks.length ? [{ title: "My Tasks", html: T.media().map(i => `data-img="${i}"`).join(" ") }] : []) : [];
+    let images = {}, skipped = []; try { if (NS) ({ map: images, skipped } = await NS.exportMedia(holders)); } catch (err) {}
+    const data = { notes, folders: NS ? NS.readFolders() : [], tasks, images, settings: readJ("notepath.settings", {}) };
     btn.disabled = false; btn.textContent = "Export…";
     const blob = new Blob([JSON.stringify({ app: "NotePath", kind: "notes-backup", version: 3, saved: new Date().toISOString(), data })], { type: "application/json" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "notepath-backup-" + new Date().toISOString().slice(0, 10) + ".json";
@@ -512,6 +575,7 @@ function paneData() {
       if (set && typeof set === "object") localStorage.setItem("notepath.settings", JSON.stringify(set));
       const NS = window.InquireNotes; let np = 0;
       if (NS && Array.isArray(d.folders)) { const have = NS.readFolders(), fids = new Set(have.map(f => f.id)); NS.writeFolders(have.concat(d.folders.filter(f => f && f.id && f.name && !fids.has(f.id)))); }
+      if (Array.isArray(d.tasks) && window.NPTasks) { const have = NPTasks.readRaw(), tids = new Set(d.tasks.map(t => t && t.id)); NPTasks.writeRaw(have.filter(t => !tids.has(t.id)).concat(d.tasks.filter(t => t && t.id && typeof t.title === "string"))); }
       if (NS && d.images && typeof d.images === "object") np = await NS.importImages(d.images);
       S = load(); applyAll(); window.dispatchEvent(new CustomEvent("inquire:notes-changed"));
       show("data"); say(pane.querySelector(".set-msg") || m, `Backup restored: ${notes.length} notes${np ? `, ${np} photo${np === 1 ? "" : "s"}` : ""}.`, true);

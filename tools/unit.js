@@ -10,6 +10,9 @@ const ok = (c, name, got) => (c ? pass : fails).push(name + (c ? '' : ' → got 
 // 1. every page script parses
 const { files } = require('./build-web.js');
 for (const f of files) { try { new vm.Script(read(f), { filename: f }); ok(true, 'parses: ' + f); } catch (e) { ok(false, 'parses: ' + f, e.message); } }
+// every script in web/src is built into the page (a file left out of build-web.js = a feature that silently does nothing)
+{ const fsx = require('fs'), px = require('path'), all = fsx.readdirSync(px.join(__dirname, '../web/src')).filter(f => f.endsWith('.js')).map(f => 'web/src/' + f), miss = all.filter(f => !files.includes(f));
+  ok(!miss.length, 'every web/src script is in the page', miss); }
 
 // 2. identity: one name, one app id, one repo, one scheme, one storage prefix
 const pkg = JSON.parse(read('package.json')), main = read('main.js'), rel = read('tools/release.js'), wf = read('.github/workflows/release.yml');

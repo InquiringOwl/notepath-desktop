@@ -121,7 +121,12 @@ const imgIds = html => [...String(html || "").matchAll(/data-img="([a-z0-9]+)"/g
 const mediaIds = html => imgIds(html).concat([...String(html || "").matchAll(/&quot;vid&quot;:&quot;([a-z0-9]+)&quot;/gi)].map(m => m[1]));
 
 /* ---------- notes ---------- */
+/* Spaces (NotePath, Oct 2026): My notes has a Notes tab and a Code tab. A code file is a note with space: "code" and
+   code: { lang, src } (html stays empty; body = the source, for search). Code folders carry space: "code" too.
+   list() / folders() with no space give the Notes tab only, so the start menu, Note Office and pickers never see code. */
+const spaceOf = x => (x && x.space === "code" ? "code" : "notes");
 function normalize(n) {
+  if (n.space === "code") { if (!n.code || typeof n.code !== "object") n.code = { lang: "python", src: n.body || "" }; n.html = ""; n.body = String(n.code.src || ""); }
   if (n.html == null) n.html = textToHtml(n.body);
   if (!Array.isArray(n.links)) n.links = n.src && n.src.topic ? ["t:" + n.src.topic] : [];
   if (n.folder === undefined) n.folder = null;
@@ -156,8 +161,9 @@ function histStep(from, to) {
 }
 const undo = () => histStep(H.undo, H.redo), redo = () => histStep(H.redo, H.undo);
 const history = () => ({ undo: H.undo.length, redo: H.redo.length });
-function list(q) {
-  const all = read().sort(byUpdated);
+function list(q, sp) {
+  sp = sp || "notes";
+  const all = read().filter(n => spaceOf(n) === sp).sort(byUpdated);
   if (!q) return all;
   const s = q.toLowerCase();
   return all.filter(n => (n.title + "\n" + n.body + "\n" + (n.src ? n.src.title : "")).toLowerCase().includes(s));
@@ -167,12 +173,14 @@ function create(o = {}) {
   const now = Date.now(), html = o.html != null ? sanitize(o.html) : textToHtml(o.body || "");
   const n = { id: uid(), title: o.title || "Untitled note", html, body: toText(html), created: now, updated: now, src: o.src || null,
     fav: !!o.fav, folder: o.folder || null, links: Array.isArray(o.links) ? o.links.slice() : o.src && o.src.topic ? ["t:" + o.src.topic] : [] };
+  if (o.space === "code") { const c = o.code || {}; n.space = "code"; n.code = { lang: String(c.lang || "python"), src: String(c.src || "") }; n.html = ""; n.body = n.code.src; if (!o.title) n.title = "Untitled code"; }
   const all = read(); all.push(n); write(all); return n;
 }
 function update(id, patch) {
   const all = read(), n = all.find(x => x.id === id); if (!n) return null;
   patch = Object.assign({}, patch);
-  if (patch.html != null) { patch.html = sanitize(patch.html); patch.body = toText(patch.html); }
+  if (n.space === "code") { delete patch.html; if (patch.code) { patch.code = { lang: String(patch.code.lang || n.code.lang), src: String(patch.code.src ?? n.code.src), stdin: String(patch.code.stdin ?? n.code.stdin ?? "") }; patch.body = patch.code.src; } else delete patch.body; }
+  else if (patch.html != null) { patch.html = sanitize(patch.html); patch.body = toText(patch.html); }
   else if (patch.body != null) patch.html = textToHtml(patch.body);
   const quiet = patch.quiet; delete patch.quiet;
   Object.assign(n, patch); if (!quiet) n.updated = Date.now(); write(all); return n;
@@ -239,8 +247,9 @@ const fnorm = f => { if (f.parent === undefined) f.parent = null; return f; };
 // starred folders (fav) come first among their sibling folders, so starred top-level folders lead the folders column
 const fcmp = (a, b) => (!!b.fav - !!a.fav) || ((a.order ?? 1e9) - (b.order ?? 1e9)) || a.name.localeCompare(b.name);
 // flat list in tree order (parents before children, siblings in order), each with depth
-function folders() {
-  const all = readF().map(fnorm), ids = new Set(all.map(f => f.id)), out = [], seen = new Set();
+function folders(sp) {
+  sp = sp || "notes";
+  const all = readF().map(fnorm).filter(f => spaceOf(f) === sp), ids = new Set(all.map(f => f.id)), out = [], seen = new Set();
   all.forEach(f => { if (f.parent && (!ids.has(f.parent) || f.parent === f.id)) f.parent = null; });
   const walk = (pid, d) => all.filter(f => f.parent === pid && !seen.has(f.id)).sort(fcmp).forEach(f => { seen.add(f.id); out.push(Object.assign({}, f, { depth: d })); walk(f.id, d + 1); });
   walk(null, 0);
@@ -249,10 +258,11 @@ function folders() {
 }
 // a folder and every folder inside it
 function subtree(id) { const all = readF().map(fnorm), out = new Set([id]); let grew = true; while (grew) { grew = false; all.forEach(f => { if (f.parent && out.has(f.parent) && !out.has(f.id)) { out.add(f.id); grew = true; } }); } return out; }
-function addFolder(name, parent) {
-  const all = readF().map(fnorm), pid = parent && all.some(f => f.id === parent) ? parent : null;
-  const sib = all.filter(f => f.parent === pid), order = sib.length ? Math.max(...sib.map(f => f.order ?? sib.indexOf(f))) + 1 : 0;
-  const f = { id: uid(), name: String(name || "").trim().slice(0, 60) || "New folder", parent: pid, order }; writeF(all.concat(f)); return f;
+function addFolder(name, parent, sp) {
+  sp = sp || "notes";
+  const all = readF().map(fnorm), pid = parent && all.some(f => f.id === parent && spaceOf(f) === sp) ? parent : null;
+  const sib = all.filter(f => f.parent === pid && spaceOf(f) === sp), order = sib.length ? Math.max(...sib.map(f => f.order ?? sib.indexOf(f))) + 1 : 0;
+  const f = { id: uid(), name: String(name || "").trim().slice(0, 60) || "New folder", parent: pid, order }; if (sp === "code") f.space = "code"; writeF(all.concat(f)); return f;
 }
 function setFolderFav(id, on) { const all = readF(), f = all.find(x => x.id === id); if (!f) return; if (on) f.fav = true; else delete f.fav; writeF(all); }
 function renameFolder(id, name) { const all = readF(), f = all.find(x => x.id === id); if (!f) return; f.name = String(name || "").trim().slice(0, 60) || f.name; writeF(all); }
@@ -261,7 +271,8 @@ function moveFolder(id, parent, before) {
   parent = parent || null;
   if (parent && subtree(id).has(parent)) return false;
   const all = readF().map(fnorm), f = all.find(x => x.id === id); if (!f) return false;
-  const sib = folders().filter(x => x.parent === parent && x.id !== id).map(x => x.id);
+  if (parent) { const p = all.find(x => x.id === parent); if (!p || spaceOf(p) !== spaceOf(f)) return false; }
+  const sib = folders(spaceOf(f)).filter(x => x.parent === parent && x.id !== id).map(x => x.id);
   const at = before && sib.includes(before) ? sib.indexOf(before) : sib.length;
   sib.splice(at, 0, id);
   f.parent = parent;
@@ -320,7 +331,7 @@ async function exportMedia(notes) {
   for (const n of (notes || read())) for (const id of mediaIds(n.html)) {
     if (map[id]) continue;
     const rec = await tx("readonly", st => st.get(id)).catch(() => null); if (!rec || !rec.blob) continue;
-    if (/^video\//.test(rec.blob.type) && rec.blob.size > VIDEO_BACKUP_MAX) { skipped.push({ note: n.title, mb: Math.round(rec.blob.size / 1048576) }); continue; }
+    if (rec.blob.size > VIDEO_BACKUP_MAX) { skipped.push({ note: n.title, mb: Math.round(rec.blob.size / 1048576) }); continue; }
     map[id] = await toDataURL(rec.blob);
   }
   return { map, skipped };
@@ -333,7 +344,7 @@ async function exportImages(notes) {
 async function importImages(map) {
   let n = 0;
   for (const [id, url] of Object.entries(map || {})) {
-    if (!/^[a-z0-9]+$/i.test(id) || !/^data:(image|video)\/[a-z0-9+.-]+;base64,/i.test(String(url))) continue;
+    if (!/^[a-z0-9]+$/i.test(id) || !/^data:(image|video|audio|text|application)\/[a-z0-9+.-]+;base64,/i.test(String(url))) continue; // My Tasks also keeps any file
     try { const b = fromDataURL(url); await tx("readwrite", st => st.put({ blob: b, at: Date.now() }, id)); if (urls[id]) { URL.revokeObjectURL(urls[id]); delete urls[id]; } n++; } catch (e) {}
   }
   return n;
@@ -465,6 +476,15 @@ function mountEditor(host, id, o = {}) {
     const r2 = document.createRange(); r2.setStartAfter(sp); r2.collapse(true); const s = getSelection(); s.removeAllRanges(); s.addRange(r2); last = r2.cloneRange();
     ed.classList.remove("is-empty"); hydrate(ed); save(); flush(); return true;
   }
+  // a code file dragged in from the Code folders: a code box (a copy of its source) after the line at the drop point
+  function insertWidgetAt(range, type, data) {
+    if (!window.InquireWidgets) return false;
+    const w = InquireWidgets.create(type, data), after = document.createElement("div"); after.appendChild(document.createElement("br"));
+    let block = range && ed.contains(range.endContainer) && !inWidget(range.endContainer) ? range.endContainer : null;
+    while (block && block.parentNode !== ed) block = block.parentNode;
+    if (block) block.after(w, after); else ed.append(w, after);
+    ed.classList.remove("is-empty"); hydrate(ed); save(); flush(); w.scrollIntoView({ block: "nearest" }); return true;
+  }
   ed.addEventListener("paste", async e => {
     const cd = e.clipboardData; if (!cd || inWidget(e.target)) return;
     e.preventDefault();
@@ -590,7 +610,7 @@ function mountEditor(host, id, o = {}) {
       else if (!c && sp.getAttribute("style") === "") sp.removeAttribute("style");
     });
   }
-  const api = { el: ed, id, flush, addFiles, addURL, addVideoLink, linkRange, insertNoteLink, insertText, addWidget, insertBlock,
+  const api = { el: ed, id, flush, addFiles, addURL, addVideoLink, linkRange, insertNoteLink, insertWidgetAt, insertText, addWidget, insertBlock,
     focus: () => { ed.focus({ preventScroll: true }); const s = getSelection(); if (last && (!s.rangeCount || !ed.contains(s.getRangeAt(0).commonAncestorContainer))) { s.removeAllRanges(); s.addRange(last); } },
     changed: () => save(),
     // kind "color" (a #hex, or "" for the normal colour), "size" (a number, or "" for normal), "font" (a key, or "" for the note's font)
@@ -632,7 +652,16 @@ function mountEditor(host, id, o = {}) {
 const editorFor = el => { const ed = el && el.closest ? el.closest(".nb-rich") : null; return ed ? editors.get(ed) || null : null; };
 
 H.base = snap(); // the state the first undo step goes back to
-window.InquireNotes = { list, get, create, update, remove, trash, restore, purge, deleteWithUndo, toast, appendBlock, exportMedia, key, link, unlink, appendQuote,
+// the same store seen from one tab of My notes: list / folders / new folders / new notes stay in that space
+function scope(sp) {
+  sp = sp === "code" ? "code" : "notes";
+  return Object.assign({}, window.InquireNotes, { space: sp, list: q => list(q, sp), folders: () => folders(sp), addFolder: (name, parent) => addFolder(name, parent, sp),
+    create: o => create(Object.assign({}, o, { space: sp })) });
+}
+// My Tasks (tasks.js) keeps its pictures and files in the same store
+async function putFile(blob) { if (blob.size > VIDEO_MAX) throw new Error("too big"); const id = uid(); await tx("readwrite", st => st.put({ blob, at: Date.now() }, id)); return id; }
+async function mediaBlob(id) { const rec = await tx("readonly", st => st.get(id)).catch(() => null); return rec && rec.blob ? rec.blob : null; } // (import / export: no fetch of blob: URLs, which the CSP refuses)
+window.InquireNotes = { scope, spaceOf, putImage, putFile, delMedia: delImages, mediaBlob, list, get, create, update, remove, trash, restore, purge, deleteWithUndo, toast, appendBlock, exportMedia, key, link, unlink, appendQuote,
   undo, redo, history, NSIZES, NFONTS, folders, addFolder, renameFolder, setFolderFav, removeFolder, moveFolder, subtree, setOrder, byOrder, sanitize, toText, mountEditor, editorFor, hydrate, pick, pickNote, imageURL, exportImages, importImages,
   readFolders: readF, writeFolders: writeF };
 })();

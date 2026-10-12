@@ -256,19 +256,22 @@ function colorKey(hex) {
 }
 
 /* ---------- code box ---------- */
-const LANGS = [["python", "Python"], ["javascript", "JavaScript"], ["html", "HTML"], ["css", "CSS"], ["sql", "SQL"], ["text", "Plain text"]];
+const LANGS = [["python", "Python"], ["javascript", "JavaScript"], ["c", "C"], ["cpp", "C++"], ["java", "Java"], ["html", "HTML"], ["css", "CSS"], ["sql", "SQL"], ["text", "Plain text"]];
 const KW = {
   javascript: "break case catch class const continue debugger default delete do else export extends finally for function if import in instanceof let new of return super switch this throw try typeof var void while with yield async await true false null undefined",
   sql: "select from where and or not insert into values update set delete create table drop alter join left right inner outer on group by order having limit as distinct null is in like between union primary key foreign references count sum avg min max",
+  c: "auto break case char const continue default do double else enum extern float for goto if inline int long register return short signed sizeof static struct switch typedef union unsigned void volatile while bool true false NULL include define",
+  java: "abstract assert boolean break byte case catch char class const continue default do double else enum extends final finally float for if implements import instanceof int interface long native new package private protected public return short static super switch synchronized this throw throws try void volatile while var record true false null String System",
   css: "", html: "", text: ""
 };
+KW.cpp = KW.c + " class namespace template typename public private protected virtual override new delete this using try catch throw nullptr auto std cout cin endl string vector";
 function hlLine(line, lang) {
   if (lang === "python" && window.CSRules && CSRules.tokens) return CSRules.tokens(line).map(x => x.t === "ws" || x.t === "op" || x.t === "name" ? esc(x.s) : `<span class="${x.t}">${esc(x.s)}</span>`).join("");
   if (lang === "text") return esc(line);
   const kw = new Set((KW[lang] || "").split(" ").filter(Boolean)); let out = "", i = 0;
   while (i < line.length) {
     const r = line.slice(i); let m;
-    if ((lang === "javascript" || lang === "css") && (m = r.match(/^\/\/.*|^\/\*.*?(\*\/|$)/))) { out += `<span class="com">${esc(m[0])}</span>`; i += m[0].length; continue; }
+    if ((lang === "javascript" || lang === "css" || lang === "c" || lang === "cpp" || lang === "java") && (m = r.match(/^\/\/.*|^\/\*.*?(\*\/|$)/))) { out += `<span class="com">${esc(m[0])}</span>`; i += m[0].length; continue; }
     if (lang === "sql" && (m = r.match(/^--.*/))) { out += `<span class="com">${esc(m[0])}</span>`; break; }
     if (lang === "html" && (m = r.match(/^<!--.*?(-->|$)/))) { out += `<span class="com">${esc(m[0])}</span>`; i += m[0].length; continue; }
     if (lang === "html" && (m = r.match(/^<\/?[A-Za-z][\w-]*/))) { out += `<span class="kw">${esc(m[0])}</span>`; i += m[0].length; continue; }
@@ -514,7 +517,7 @@ function mount(el) {
 }
 function create(type, data) {
   const el = document.createElement("div"); el.className = "nw"; el.dataset.w = type;
-  el.dataset.src = JSON.stringify(type === "sheet" ? Object.assign({}, window.NPSheet ? NPSheet.DEF : {}, data || {}) : type === "graph" ? Object.assign({}, window.NPGraph ? NPGraph.DEF : {}, data || {}) : type === "video" ? Object.assign({ title: "" }, data || {}) : type === "code" ? { lang: "python", title: "", src: "" } : { title: "", clef: "treble", time: "4/4", tempo: 90, seq: "" });
+  el.dataset.src = JSON.stringify(type === "sheet" ? Object.assign({}, window.NPSheet ? NPSheet.DEF : {}, data || {}) : type === "graph" ? Object.assign({}, window.NPGraph ? NPGraph.DEF : {}, data || {}) : type === "video" ? Object.assign({ title: "" }, data || {}) : type === "code" ? Object.assign({ lang: "python", title: "", src: "" }, data || {}) : { title: "", clef: "treble", time: "4/4", tempo: 90, seq: "" });
   return el;
 }
 // plain-text version for search, previews and .md export

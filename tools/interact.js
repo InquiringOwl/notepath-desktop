@@ -1,5 +1,5 @@
 // Interaction test: drives what smoke.js only loads. Fails (exit 1) on a wrong result or any page error.
-//   start menu: My notes, recent notes, three Coming soon buttons that do nothing;
+//   start menu: My notes, My Tasks, a Coming soon button that does nothing, Note Office (all one size), recent notes;
 //   My notes (a page): ＋ New Note + title dialog, folders (drag into / above, cycle refused, fold, notes listed under them), notes onto folders,
 //             My order drag + Alt+↑/↓, ★ first, folders + list resize, list fold, drag a note in (link) or onto ⧉ (side by side, minimise, maximise),
 //             text sizes, headings / bullets / numbers / checklists (tick + survive a reload), strikethrough, code box, music chart,
@@ -11,15 +11,15 @@
 let chromium;
 try { ({ chromium } = require('playwright')); } catch (e) { console.error('interact.js needs Playwright (see smoke.js).'); process.exit(1); }
 const path = require('path'), fs = require('fs'), os = require('os');
-const { desktop, R } = require('./build-web.js');
-const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'notepath-interact-')), file = path.join(dir, 'index.html');
-fs.writeFileSync(file, desktop.replace('href="fonts/fonts.css"', `href="file://${path.join(R, 'app/fonts/fonts.css')}"`).replace(/<meta http-equiv="Content-Security-Policy"[^>]*>/, ''));
-const URL0 = 'file://' + file;
+const { desktop, R, copyMonaco } = require('./build-web.js');
+let URL0 = '', srv = null;
+const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'notepath-interact-'));
 const fails = [], pass = [];
 const ok = (cond, name, got) => { (cond ? pass : fails).push(name + (cond ? '' : ' → got ' + JSON.stringify(got))); };
 const wait = ms => new Promise(r => setTimeout(r, ms));
 
 (async () => {
+  copyMonaco(); srv = await require('./serve.js')(R, desktop); URL0 = srv.url;
   const b = await chromium.launch();
   const errs = [];
   const page = async (init) => { const p = await b.newPage({ viewport: { width: 1440, height: 900 }, acceptDownloads: true }); p.setDefaultTimeout(6000); p.on('pageerror', e => errs.push(e.message)); if (init) await p.addInitScript(init); return p; };
@@ -50,9 +50,10 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
 
   /* ---------- start menu ---------- */
   ok(await p.$eval('.hello h1', e => e.textContent) === 'Main Menu', 'start menu heading is Main Menu');
-  ok(JSON.stringify(await p.$$eval('.npn-acts .slot h3', e => e.map(x => x.textContent))) === '["My notes","Note Office","Coming soon","Coming soon"]', 'the Notes console: My notes, Note Office, then two Coming soon buttons');
-  ok(await p.$$eval('.npn-acts .slot', e => e.every(x => Math.abs(x.getBoundingClientRect().top - e[0].getBoundingClientRect().top) < 2)), 'Coming soon sits beside My notes, in one row');
-  ok(await p.$$eval('.slot.npn-soon', e => e.length === 2 && e.every(x => x.querySelector('h3').textContent === 'Coming soon' && !x.querySelector('p') && x.getAttribute('aria-disabled') === 'true')), 'two Coming soon buttons, labelled only that');
+  ok(JSON.stringify(await p.$$eval('.npn-acts .slot h3', e => e.map(x => x.textContent))) === '["My notes","My Tasks","Coming soon","Note Office"]', 'the Notes console: My notes, My Tasks, Coming soon, Note Office on the far right');
+  ok(await p.$$eval('.npn-acts .slot', e => e.every(x => Math.abs(x.getBoundingClientRect().top - e[0].getBoundingClientRect().top) < 2)), 'the four buttons sit in one row');
+  ok(await p.$$eval('.npn-acts .slot', e => e.every(x => Math.abs(x.getBoundingClientRect().width - e[0].getBoundingClientRect().width) < 1.5 && Math.abs(x.getBoundingClientRect().height - e[0].getBoundingClientRect().height) < 1.5)), 'the four buttons are the same size');
+  ok(await p.$$eval('.slot.npn-soon', e => e.length === 1 && e.every(x => x.querySelector('h3').textContent === 'Coming soon' && !x.querySelector('p') && x.getAttribute('aria-disabled') === 'true')), 'one Coming soon button, labelled only that');
   await p.click('.slot.npn-soon >> nth=0', { force: true }); await wait(300);
   ok(!(await p.$('.mw-ov, .ask-ov')) && await p.evaluate(() => location.hash) === '#menu', 'a Coming soon button is not linked to anything');
   ok(/No notes yet/.test(await p.$eval('.npn-recent', e => e.textContent)), 'empty recent list says how to start');
@@ -66,7 +67,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   await p.keyboard.type('Shopping list'); await p.keyboard.press('Enter'); await wait(500);
   ok(await p.$eval('.nb-title', e => e.value).catch(() => null) === 'Shopping list', 'the title dialog makes the note and opens it');
   ok(!(await p.$('.nb-fsel')) && !(await p.$('.nb-saved')), 'no Folder picker or Saved text on the note bar');
-  ok(JSON.stringify(await p.$$eval('.nb-bar .btn-s', e => e.map(x => x.textContent.trim()))) === '["＋ Photo","Photo link","▶ Video","Save as .md","Delete"]' && !(await p.$('.nr-tools .nr-vid')), '▶ Video sits on the note bar between Photo link and Save as .md');
+  ok(JSON.stringify(await p.$$eval('.nb-bar .btn-s', e => e.map(x => x.textContent.trim()))) === '["＋ Photo","Photo link","▶ Video","Export…","Delete"]' && !(await p.$('.nr-tools .nr-vid')), '▶ Video sits on the note bar between Photo link and Export…');
   await p.click('.crumbs .crumb'); await wait(400);
   ok(!!(await p.$('.hello h1')), 'the Main Menu breadcrumb goes back to the menu');
   ok(await p.$eval('.mnote .mnote-t', e => e.textContent.trim()) === 'Shopping list' && await p.$eval('[data-n=all]', e => e.textContent) === '1', 'the new note shows under Recent and in the count');
@@ -368,8 +369,285 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   ok(await p2.evaluate(() => /data-done="1"/.test(InquireNotes.list().find(n => n.title === 'Note C').html)), 'the imported note keeps its checklist ticks');
   await p2.close();
 
+
+  /* ---------- My notes tabs (Notes / Code / Music) and the Code tab (code.js) ---------- */
+  {
+    const c = await page();
+    // a fake Judge0: decodes the program and its input, "runs" the Python greeting
+    await c.route('https://ce.judge0.com/**', r => {
+      const u = r.request().url();
+      if (/\/languages/.test(u)) return r.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify([{ id: 71, name: 'Python (3.8.1)' }, { id: 100, name: 'Python (3.12.5)' }, { id: 62, name: 'Java (OpenJDK 13.0.1)' }]) });
+      const d = JSON.parse(r.request().postData() || '{}'), src = Buffer.from(d.source_code || '', 'base64').toString(), inp = Buffer.from(d.stdin || '', 'base64').toString();
+      const out = d.language_id === 100 && /input\(/.test(src) ? 'What is your name? Hello, ' + inp.split('\n')[0] + '!\n' : '';
+      r.fulfill({ status: 201, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({ stdout: Buffer.from(out).toString('base64'), stderr: null, compile_output: null, status: { id: 3, description: 'Accepted' }, time: '0.02', lang: d.language_id }) });
+    });
+    await c.goto(URL0 + '#menu'); await wait(400);
+    await c.evaluate(() => { const n = InquireNotes.create({ title: 'Plain note', body: 'hello' }); InquireNotes.addFolder('Work'); return n.id; });
+    await c.click('[data-a=open]'); await wait(400);
+    ok(JSON.stringify(await c.$$eval('.np-thumb', e => e.map(x => x.querySelector('.np-tht').textContent + (x.querySelector('.np-ths') ? ' soon' : '')))) === '["Notes","Code","Music soon"]', 'My notes has three thumb tabs: Notes, Code, Music (soon)');
+    const th = await c.$$eval('.np-thumb', e => e.map(x => x.getBoundingClientRect())), win = await c.$eval('.np-win', e => e.getBoundingClientRect());
+    ok(th.every(r => Math.abs(r.left - win.right) < 3), 'the tabs sit on the right edge of the My notes window', { th: th.map(r => r.left), right: win.right });
+    ok(await c.$eval('.np-thumb[data-sp=notes]', e => e.getAttribute('aria-selected')) === 'true', 'the Notes tab is open first');
+    const tcol = sp => c.$eval(`.np-thumb[data-sp=${sp}]`, e => getComputedStyle(e).getPropertyValue('--tc').trim());
+    ok(/#F2B84B/i.test(await c.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--tab-notes'))) && /#4FA3F7/i.test(await c.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--tab-code'))) && /#D97AE6/i.test(await c.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--tab-music'))), 'tab colours default to orange, blue and magenta');
+    await c.click('.np-thumb[data-sp=music]', { force: true }); await wait(200);
+    ok(await c.$eval('.np-thumb[data-sp=notes]', e => e.getAttribute('aria-selected')) === 'true', 'Music is not open yet (coming soon)');
+    ok(await c.$eval('.np-win', e => getComputedStyle(e).borderTopColor) === await c.evaluate(() => { const d = document.createElement('div'); d.className = 'win'; document.body.appendChild(d); const v = getComputedStyle(d).borderTopColor; d.remove(); return v; }), 'only the tabs are coloured, not the page');
+    await c.click('.np-thumb[data-sp=code]'); await wait(300);
+    ok(await c.evaluate(() => location.hash) === '#code' && /Code/.test(await c.$eval('#crumbs', e => e.textContent)) && await c.$eval('.np-newb', e => e.textContent) === '＋ New File', 'the Code tab: #code, breadcrumb, ＋ New File');
+    ok(await c.$$eval('.nb-fd.user', e => e.length) === 0 && /No code files/.test(await c.$eval('.nb-items', e => e.textContent)), 'Code has its own folders (none yet), not the notes folders');
+    // ＋ New File: language cards, coming soon list
+    await c.click('.np-newb'); await wait(250);
+    ok(JSON.stringify(await c.$$eval('.ask-kind b', e => e.map(x => x.textContent))) === '["Python","C","C++","JavaScript","Java"]' && /Coming soon:.*Rust/.test(await c.$eval('.ask-soon', e => e.textContent)), 'New File offers Python, C, C++, JavaScript, Java; the rest are Coming soon');
+    await c.keyboard.type('greet'); await c.keyboard.press('Enter');
+    await c.waitForSelector('.p1 .nc-edhost[data-ready]', { timeout: 15000 }); await wait(400);
+    ok(await c.$eval('.p1 .nc-edhost', e => e.dataset.kind) === 'monaco' && !!(await c.$('.p1 .monaco-editor')), 'the code editor is Monaco (VS Code)');
+    ok(await c.evaluate(() => { const n = InquireNotes.scope('code').list()[0]; return n.code.lang === 'python' && /input\(/.test(n.code.src) && n.title === 'greet'; }), 'a new Python file starts with a small program');
+    await c.click('.p1 .nc-pt[data-p=in]'); await c.fill('.p1 .nc-in', 'Ada'); await wait(700);
+    await c.click('.p1 [data-a=run]'); await c.waitForFunction(() => /■/.test(document.querySelector('.p1 .nc-out').textContent), null, { timeout: 8000 });
+    const out1 = await c.$eval('.p1 .nc-out', e => e.textContent);
+    ok(/Hello, Ada!/.test(out1) && /Accepted/.test(out1) && /Judge0/.test(out1), '▶ Run sends Python to Judge0 (newest Python) with the Input and shows the output', out1);
+    ok(await c.evaluate(() => InquireNotes.scope('code').list()[0].code.stdin) === 'Ada', 'the Input is saved with the file');
+    // typing in the editor is saved
+    await c.click('.p1 .monaco-editor .view-lines'); await c.keyboard.press('Control+End'); await c.keyboard.type('print(42)'); await wait(900);
+    ok(await c.evaluate(() => /print\(42\)/.test(InquireNotes.scope('code').list()[0].code.src)), 'typing in the code editor is saved');
+    // JavaScript runs here
+    await c.click('.np-newb'); await wait(250); await c.click('.ask-kind[data-k=javascript]'); await c.keyboard.type('hello js'); await c.keyboard.press('Enter');
+    await c.waitForSelector('.p1 .nc-edhost[data-ready]', { timeout: 15000 }); await wait(300);
+    await c.click('.p1 [data-a=run]'); await c.waitForFunction(() => /■/.test(document.querySelector('.p1 .nc-out').textContent), null, { timeout: 8000 });
+    ok(/Hello, world!/.test(await c.$eval('.p1 .nc-out', e => e.textContent)) && /this computer/.test(await c.$eval('.p1 .nc-out', e => e.textContent)), 'JavaScript runs on this computer');
+    // a language change
+    await c.selectOption('.p1 .nc-lang', 'cpp'); await wait(300);
+    ok(await c.evaluate(() => InquireNotes.scope('code').list().find(n => n.title === 'hello js').code.lang) === 'cpp' && await c.$eval('.p1 .nc-badge', e => e.textContent) === 'C++', 'the language menu changes the file\'s language');
+    await c.selectOption('.p1 .nc-lang', 'javascript'); await wait(200);
+    // code folders: new folder, drag a file in
+    await c.click('[data-a=addf]'); await c.keyboard.type('Algorithms'); await c.keyboard.press('Enter'); await wait(300);
+    await c.locator('.nb-fd[data-f=all] .nb-fdb').click(); await wait(200);
+    await c.locator('.nb-it', { hasText: 'greet' }).dragTo(c.locator('.nb-fd.user', { hasText: 'Algorithms' })); await wait(300);
+    ok(await c.evaluate(() => { const f = InquireNotes.scope('code').folders(); const g = InquireNotes.scope('code').list().find(n => n.title === 'greet'); return f.length === 1 && g.folder === f[0].id && InquireNotes.folders().length === 1; }), 'code files go into code folders; the notes folders are untouched');
+    // side by side: drag a file onto ⧉
+    await c.locator('.nb-it', { hasText: 'hello js' }).click(); await wait(400);
+    await c.locator('.nb-it', { hasText: 'greet' }).dragTo(c.locator('.p1 .nb-trow'), { targetPosition: { x: 30, y: 10 } }).catch(() => {}); await wait(100);
+    await c.evaluate(() => { const it = [...document.querySelectorAll('.nb-it')].find(x => /greet/.test(x.textContent)); const sp = document.querySelector('.p1 .nb-split'); const dt = new DataTransfer();
+      it.dispatchEvent(new DragEvent('dragstart', { bubbles: true, dataTransfer: dt })); const r = sp.getBoundingClientRect(); const o = { bubbles: true, cancelable: true, dataTransfer: dt, clientX: r.left + 10, clientY: r.top + 10 };
+      sp.dispatchEvent(new DragEvent('dragover', o)); sp.dispatchEvent(new DragEvent('drop', o)); it.dispatchEvent(new DragEvent('dragend', { bubbles: true, dataTransfer: dt })); }); await wait(600);
+    ok(!(await c.$eval('.nb-pane.p2', e => e.hidden)) && /greet/.test(await c.$eval('.p2 .nb-title', e => e.value)) && !!(await c.$('.p2 .nc-edhost')), 'a code file dropped on ⧉ opens side by side with its own editor');
+    await c.click('.p2 [data-a=close]'); await wait(200);
+    // ⇄ Translate: not set up → says so; with the AI → a new file beside it
+    await c.click('.p1 [data-a=tr]'); await wait(150);
+    ok(await c.$$eval('.nc-trpop [data-to]', e => e.length) === 4, 'Translate offers the other four languages');
+    await c.click('.nc-trpop [data-to=python]'); await wait(300);
+    ok(/not set up/.test(await c.$eval('.p1 .nc-out', e => e.textContent)), 'without the AI key, Translate says it is not set up yet');
+    await c.evaluate(() => { NPCode.ai.status = async () => ({ configured: true, model: 'test' }); NPCode.ai.ask = async q => (window.__ask = q, '```python\nprint("Hello, world!")\n```'); });
+    await c.click('.p1 [data-a=tr]'); await wait(150); await c.click('.nc-trpop [data-to=python]'); await wait(800);
+    ok(await c.evaluate(() => { const n = InquireNotes.scope('code').list().find(x => /\(Python\)/.test(x.title)); return !!n && n.code.lang === 'python' && n.code.src === 'print("Hello, world!")\n' && /JavaScript program into idiomatic Python/.test(window.__ask.prompt); }), 'with the AI, Translate makes a new Python file (no code fences)');
+    ok(!(await c.$eval('.nb-pane.p2', e => e.hidden)) && /\(Python\)/.test(await c.$eval('.p2 .nb-title', e => e.value)), 'the translation opens side by side');
+    await c.click('.p2 [data-a=close]'); await wait(200);
+    // Notes tab: the Code section under the folders
+    await c.click('.np-thumb[data-sp=notes]'); await wait(400);
+    ok(await c.evaluate(() => location.hash) === '#notes' && await c.$$eval('.nb-cfile', e => e.length) === 3 && !!(await c.$('.nb-cfd')), 'the Notes tab lists the Code folders and files under a Code divider');
+    ok(await c.$$eval('.nb-it', e => e.length) === 1, 'code files are not in the notes list');
+    await c.locator('.nb-it', { hasText: 'Plain note' }).click(); await wait(300);
+    await c.locator('.nb-cfile', { hasText: 'greet' }).dragTo(c.locator('.p1 .nb-rich')); await wait(500);
+    ok(await c.evaluate(() => { const n = InquireNotes.list().find(x => x.title === 'Plain note'); return /data-w="code"/.test(n.html) && /&quot;lang&quot;:&quot;python&quot;/.test(n.html) && /print\(42\)/.test(n.body); }), 'a code file dragged into a note becomes a code box (a copy, its language shown)');
+    ok(await c.$eval('.p1 .nw[data-w=code] .nw-lang', e => e.value) === 'python', 'the code box shows the language');
+    const codeN = await c.evaluate(() => InquireNotes.scope('code').list().length);
+    await c.locator('.nb-cfile', { has: c.locator('.nb-cfi[data-lang=javascript]') }).dragTo(c.locator('.nb-fd.user', { hasText: 'Work' })); await wait(500);
+    ok(await c.evaluate(() => { const w = InquireNotes.folders()[0], n = InquireNotes.list().find(x => x.title === 'hello js'); return !!n && n.folder === w.id && /data-w="code"/.test(n.html) && /&quot;javascript&quot;/.test(n.html); }) && await c.evaluate(() => InquireNotes.scope('code').list().length) === codeN, 'a code file dropped on a notes folder is copied there as a note; the original stays in Code');
+    ok(await c.evaluate(() => InquireNotes.list().length) === 2 && /2 notes/.test(await c.evaluate(() => (InquireNotes.list().length) + ' notes')), 'the notes count leaves code files out');
+    await c.locator('.nb-cfile', { hasText: 'greet' }).click(); await wait(500);
+    ok(await c.$eval('.np-thumb[data-sp=code]', e => e.getAttribute('aria-selected')) === 'true' && /greet/.test(await c.$eval('.p1 .nb-title', e => e.value)), 'clicking a code file in the Notes tab opens it in the Code tab');
+    // the tab is remembered; #code opens it
+    await c.goto(URL0 + '#code'); await wait(600);
+    ok(await c.$eval('.np-thumb[data-sp=code]', e => e.getAttribute('aria-selected')) === 'true', '#code opens My notes on the Code tab');
+    // Settings: tab colours, run service
+    await c.evaluate(() => InquireSettings.open('look')); await wait(200);
+    await c.$eval('.set-tabcl input[data-tab=code]', e => { e.value = '#ff0000'; e.dispatchEvent(new Event('input')); e.dispatchEvent(new Event('change')); }); await wait(100);
+    ok(/#ff0000/i.test(await c.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--tab-code'))) && /ff0000/i.test(await c.evaluate(() => localStorage.getItem('notepath.settings'))), 'Settings → Appearance changes and keeps the Code tab colour');
+    await c.click('.set-tab[data-tab=code]'); await wait(200);
+    await c.check('.set-svc input[value=piston]'); await wait(100);
+    ok(await c.evaluate(() => NPCode.settings().service) === 'piston' && /Runs on Piston/.test(await c.$eval('.p1 .nc-s-run', e => e.textContent)), 'Settings → Code picks the run service (the status bar follows)');
+    await c.check('.set-svc input[value=judge0]');
+    await c.click('.set-pane [data-a=test]'); await c.waitForFunction(() => /works|answered|not/.test(document.querySelector('.set-pane .set-msg').textContent), null, { timeout: 6000 }).catch(() => {});
+    ok(/Ready \(test\)/.test(await c.$eval('.set-ai', e => e.textContent)), 'Settings → Code shows the AI status');
+    await c.evaluate(() => InquireSettings.close());
+    await c.close();
+  }
+
+  /* ---------- My Tasks (tasks.js) ---------- */
+  {
+    const t = await page();
+    const png = fs.readFileSync(path.join(R, 'app/brand/np-mark-64.png'));
+    await t.route('https://nominatim.openstreetmap.org/**', r => r.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' },
+      body: JSON.stringify(/Nowhere/.test(r.request().url()) ? [] : [{ display_name: '1 Infinite Loop, Cupertino, California, 95014, United States', lat: '37.3318', lon: '-122.0312' }, { display_name: 'Infinite Loop, Elsewhere', lat: '40', lon: '-100' }]) }));
+    await t.route('https://tile.openstreetmap.org/**', r => r.fulfill({ status: 200, contentType: 'image/png', body: png }));
+    await t.goto(URL0 + '#menu'); await wait(400);
+    await t.click('[data-a=tasks]'); await wait(400);
+    ok(await t.evaluate(() => location.hash) === '#tasks' && /My Tasks/.test(await t.$eval('#crumbs', e => e.textContent)) && !!(await t.$('.nt .nt-list')) && !!(await t.$('.nt .nt-ed')), 'My Tasks is a page: the task list on the left, the overview on the right');
+    const T = () => t.evaluate(() => NPTasks.all());
+    const one = name => t.evaluate(n => NPTasks.all().find(x => x.title === n), name);
+    await t.click('.np-newb'); await wait(250);
+    ok(JSON.stringify(await t.$$eval('.ask-kind b', e => e.map(x => x.textContent))) === '["High priority","Medium priority","Low priority"]' && await t.$eval('.ask-kind[data-k=med]', e => e.getAttribute('aria-checked')) === 'true', 'New Task asks the priority (Medium chosen first)');
+    await t.click('.ask-kind[data-k=high]'); await t.keyboard.type('Pick up the cake'); await t.keyboard.press('Enter'); await wait(300);
+    ok((await one('Pick up the cake')).pri === 'high' && await t.$eval('.nt-it[aria-selected=true]', e => e.dataset.pri) === 'high' && await t.$eval('.nt-it[aria-selected=true] .nt-pri', e => e.textContent) === '▲', 'a High task: red ▲ in the list');
+    await t.click('.nt-prib[data-p=low]'); await wait(150);
+    ok((await one('Pick up the cake')).pri === 'low' && await t.$eval('.nt-it[aria-selected=true] .nt-pri', e => e.textContent) === '●', 'priority changes in the overview (Low ●)');
+    await t.click('.nt-prib[data-p=high]'); await wait(150);
+    // due date and time → an "at the due time" reminder comes with it
+    await t.fill('.nt-in[data-k=dueDate]', '2030-06-14'); await t.dispatchEvent('.nt-in[data-k=dueDate]', 'change'); await wait(150);
+    await t.fill('.nt-in[data-k=dueTime]', '16:30'); await t.dispatchEvent('.nt-in[data-k=dueTime]', 'change'); await wait(150);
+    let c1 = await one('Pick up the cake');
+    ok(c1.dueDate === '2030-06-14' && c1.dueTime === '16:30' && JSON.stringify(c1.rem) === '[0]', 'a due date and time; the first due date brings an "at the due time" reminder', c1);
+    ok(/Jun 14/.test(await t.$eval('.nt-it[aria-selected=true] .nt-due', e => e.textContent)), 'the list shows the due date');
+    await t.click('[data-rem="60"]'); await wait(120);
+    await t.fill('.nt-cn', '2'); await t.selectOption('.nt-cu', '60'); await t.click('.nt-custom button'); await wait(150);
+    ok(JSON.stringify((await one('Pick up the cake')).rem) === '[0,60,120]' && /2 hours before/.test(await t.$eval('.nt-chips', e => e.textContent)), 'reminders: chips (1 hour before) and a custom one (2 hours before)');
+    await t.click('[data-rem="0"]'); await wait(120);
+    ok(JSON.stringify((await one('Pick up the cake')).rem) === '[60,120]', 'a reminder chip turns off');
+    // place: checked with OpenStreetMap, locked onto a map
+    await t.fill('.nt-locq', 'Nowhere at all'); await t.click('.nt-locf button'); await wait(300);
+    ok(/No place found/.test(await t.$eval('.nt-locres', e => e.textContent)), 'an address that is not found says so');
+    await t.fill('.nt-locq', '1 Infinite Loop'); await t.click('.nt-locf button'); await wait(300);
+    ok(await t.$$eval('.nt-lr', e => e.length) === 2, 'matching places are listed to pick from');
+    await t.click('.nt-lr >> nth=0'); await wait(400);
+    c1 = await one('Pick up the cake');
+    ok(c1.loc && Math.abs(c1.loc.lat - 37.3318) < 1e-6 && /Cupertino/.test(c1.loc.label) && /Locked/.test(await t.$eval('.nt-lock', e => e.textContent)), 'the picked place is locked in with its coordinates');
+    ok(await t.$$eval('.nt-map .nt-tiles img', e => e.length >= 2 && e.every(x => /^https:\/\/tile\.openstreetmap\.org\/16\//.test(x.src))) && !!(await t.$('.nt-map .nt-pin')) && /OpenStreetMap/.test(await t.$eval('.nt-attr', e => e.textContent)), 'the place shows on a map (OpenStreetMap tiles, a pin, credit)');
+    await t.click('.nt-zoom [data-z="1"]'); await wait(100);
+    ok(await t.$eval('.nt-map .nt-tiles img', e => /\/17\//.test(e.src)), 'the map zooms');
+    ok(/maps\.apple\.com\/\?ll=37\.3318,-122\.0312/.test(await t.$eval('.nt-maplinks a', e => e.href)), 'Open in Apple Maps / Google Maps links');
+    // picture, files, notes
+    await t.setInputFiles('.nt-picin', path.join(R, 'app/brand/np-mark-128.png')); await wait(500);
+    ok(!!(await one('Pick up the cake')).pic && await t.$eval('.nt-pic', e => /blob:/.test(e.style.backgroundImage)) && await t.$eval('.nt-it[aria-selected=true] .nt-thumb', e => /blob:/.test(e.style.backgroundImage)), 'the task picture shows in the overview and the list');
+    await t.setInputFiles('.nt-fin', [path.join(R, 'app/brand/np-mark-64.png'), path.join(R, 'README.md')]); await wait(600);
+    c1 = await one('Pick up the cake');
+    ok(c1.files.length === 2 && await t.$$eval('.nt-gal .nt-gi', e => e.length) === 1 && /README\.md/.test(await t.$eval('.nt-docs', e => e.textContent)), 'files: a photo in the gallery, a document in the list');
+    ok(await t.evaluate(async id => !!(await InquireNotes.imageURL(id)), c1.files[1].id), 'attached files are stored on this computer');
+    await t.click('.nt-gi'); await wait(300);
+    ok(!!(await t.$('.nt-lb img')), 'a photo opens large'); await t.keyboard.press('Escape'); await wait(150);
+    ok(!(await t.$('.nt-lb')) && !!(await t.$('.nt')), 'Esc closes the photo, not My Tasks');
+    await t.click('.nt-docs [data-rmf]'); await wait(200);
+    ok((await one('Pick up the cake')).files.length === 1, 'a file can be removed');
+    await t.fill('.nt-notes', 'Chocolate, please.'); await wait(700);
+    ok((await one('Pick up the cake')).notes === 'Chocolate, please.', 'notes are saved');
+    // .ics for any calendar app
+    const [dl] = await Promise.all([t.waitForEvent('download'), t.click('[data-a=ics]')]);
+    const icsF = path.join(dir, 'task.ics'); await dl.saveAs(icsF); const icsT = fs.readFileSync(icsF, 'utf8');
+    ok(/SUMMARY:Pick up the cake/.test(icsT) && /LOCATION:1 Infinite Loop\\, Cupertino/.test(icsT) && /TRIGGER:-PT60M/.test(icsT) && /BEGIN:VEVENT/.test(icsT), '⤓ Calendar saves an .ics with the time, place and reminders');
+    // repeat weekly: done moves it to next week
+    await t.click('[data-rep=weekly]'); await wait(150);
+    await t.click('[data-a=done]'); await wait(200);
+    c1 = await one('Pick up the cake');
+    ok(c1.dueDate === '2030-06-21' && !c1.done && !!c1.last, 'a weekly task ticked done moves to the next week and stays open', c1.dueDate);
+    // more tasks: done, sort, search, show done
+    await t.click('.np-newb'); await wait(200); await t.click('.ask-kind[data-k=low]'); await t.keyboard.type('Water the plants'); await t.keyboard.press('Enter'); await wait(250);
+    await t.click('.np-newb'); await wait(200); await t.keyboard.type('Call the bank'); await t.keyboard.press('Enter'); await wait(250);
+    await t.fill('.nt-in[data-k=dueDate]', '2020-01-02'); await t.dispatchEvent('.nt-in[data-k=dueDate]', 'change'); await wait(200);
+    ok(/Overdue/.test(await t.$eval('.nt-it[aria-selected=true] .nt-due', e => e.textContent)) && /1 overdue/.test(await t.$eval('.nt-sum', e => e.textContent)), 'a task past its date is marked Overdue');
+    ok(JSON.stringify(await t.$$eval('.nt-it .nb-t', e => e.map(x => x.textContent.slice(1)))) === '["Call the bank","Pick up the cake","Water the plants"]', 'By due date: soonest first, no date last');
+    await t.selectOption('.nt-sort', 'pri'); await wait(150);
+    ok(JSON.stringify(await t.$$eval('.nt-it .nb-t', e => e.map(x => x.textContent.slice(1)))) === '["Pick up the cake","Call the bank","Water the plants"]', 'By priority: High, Medium, Low');
+    await t.click('.nt-it[data-pri=low] .nt-ck'); await wait(200);
+    ok((await one('Water the plants')).done && await t.$eval('.nt-it[data-pri=low]', e => e.classList.contains('done')) && await t.$eval('.nt-it:last-child', e => e.dataset.pri) === 'low', 'ticking a task in the list marks it done (struck through, at the bottom)');
+    await t.click('.nt-showdone'); await wait(150);
+    ok(await t.$$eval('.nt-it', e => e.length) === 2, '✓ Done hides finished tasks'); await t.click('.nt-showdone'); await wait(100);
+    await t.fill('.nt-tools input, .nt-list input[type=search]', 'bank'); await wait(150);
+    ok(await t.$$eval('.nt-it', e => e.length) === 1, 'search finds tasks'); await t.fill('.nt-list input[type=search]', ''); await wait(100);
+    // a reminder comes up: a message with Open, shown once
+    await t.locator('.nt-it', { hasText: 'Call the bank' }).click(); await wait(200);
+    await t.evaluate(() => { const d = new Date(Date.now() + 30 * 60000), p2 = n => String(n).padStart(2, '0'); const x = NPTasks.all().find(k => k.title === 'Call the bank');
+      NPTasks.update(x.id, { dueDate: d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()), dueTime: p2(d.getHours()) + ':' + p2(d.getMinutes()), rem: [60] }); });
+    await t.waitForFunction(() => /Coming up/.test((document.querySelector('.tm-toast') || {}).textContent || ''), null, { timeout: 5000 }).catch(() => {});
+    ok(/Coming up: Call the bank/.test(await t.$eval('.tm-toast', e => e.textContent).catch(() => '')), 'a reminder that comes up shows a message (and a notification)');
+    ok(await t.evaluate(() => NPTasks.upcoming().filter(r => /bank/.test(r.title)).length) === 0, 'each reminder shows once');
+    // delete with Undo
+    const n0 = (await T()).length;
+    await t.click('[data-a=del]'); await wait(200);
+    ok((await T()).length === n0 - 1, 'Delete removes the task'); await t.click('.tm-toast button'); await wait(200);
+    ok((await T()).length === n0, 'Undo brings it back');
+    // menu count, shortcut
+    await t.click('#brand'); await wait(300);
+    ok(await t.$eval('[data-n=tasks]', e => e.textContent) === '2', 'the My Tasks button shows the open tasks');
+    await t.click('.hello h1'); await t.keyboard.press('Alt+KeyT'); await wait(300);
+    ok(!!(await t.$('.nt')), 'Alt+T opens My Tasks');
+    await t.close();
+  }
+
+  /* ---------- Settings → Usage: keep running in the tray / start at sign-in (fake Windows desktop bridge) ---------- */
+  {
+    const w = await page(() => { window.__prefs = { tray: true, login: false }; window.inquireDesktop = { platform: 'win32', onUpdate: () => {}, checkForUpdates: async () => {}, updateState: async () => ({ status: 'idle' }), installUpdate: async () => {}, revealUpdate: async () => {}, version: async () => '0.3.0', lookupWord: async () => ({ status: 0 }),
+      prefs: async () => Object.assign({ trayAvailable: true, loginAvailable: true }, window.__prefs), setPrefs: async p => Object.assign(window.__prefs, p), onRoute: f => { window.__route = f; } }; });
+    await w.goto(URL0 + '#menu'); await wait(400);
+    await w.evaluate(() => InquireSettings.open('usage')); await wait(300);
+    ok(/Keep running in the system tray/.test(await w.$eval('.set-pane', e => e.textContent)) && /Start NotePath when I sign in/.test(await w.$eval('.set-pane', e => e.textContent)), 'Settings → Usage offers the system tray and start at sign-in (Windows)');
+    await w.click('.set-pane [data-p=login] + span'); await w.click('.set-pane [data-p=tray] + span'); await wait(150);
+    ok(await w.evaluate(() => window.__prefs.login === true && window.__prefs.tray === false), 'the switches tell the app');
+    await w.evaluate(() => InquireSettings.close());
+    await w.evaluate(() => window.__route({ view: 'tasks' })); await wait(300);
+    ok(!!(await w.$('.nt')), 'the tray menu can open My Tasks');
+    await w.close();
+  }
+
+  /* ---------- My notes › ⇅ Import / Export (io.js) ---------- */
+  {
+    const x = await page();
+    await x.goto(URL0 + '#menu'); await wait(300);
+    await x.evaluate(async () => { const N = InquireNotes, png = await N.mediaBlob ? await (await fetch('brand/np-mark-64.png')).blob() : null, img = await N.putImage(png);
+      const w = N.addFolder('Work'), pr = N.addFolder('Projects', w.id), other = N.create({ title: 'Other note', body: 'linked one', folder: w.id });
+      N.create({ title: 'Big note', folder: pr.id, fav: true, html: `<div>Plain <b>bold</b> <i>it</i> <s>gone</s> <span data-c="#e5675b">red</span></div><h3>A heading</h3><ul><li>one<ul><li>nested</li></ul></li></ul><ol><li>first</li></ol><ul data-ck="1"><li data-done="1">done item</li><li>todo item</li></ul><blockquote>A quote</blockquote><div>See <a class="nlink" data-note="${other.id}">Other note</a></div><div><img data-img="${img}" alt="logo"></div><div class="nw" data-w="code" data-src="${JSON.stringify({ lang: 'python', title: 'hi.py', src: 'print(1)' }).replace(/"/g, '&quot;')}"></div>` }); });
+    await x.click('[data-a=open]'); await wait(300);
+    await x.locator('.nb-it', { hasText: 'Big note' }).click(); await wait(300);
+    await x.click('.nb-bar [data-a=exp]'); await wait(300);
+    ok(!!(await x.$('.mw-ov[data-mw=io] .io')) && await x.$eval('.io-scope [data-s=note]', e => e.getAttribute('aria-checked')) === 'true' && /Big note/.test(await x.$eval('.io-scope [data-s=note]', e => e.textContent)), 'Export… on the note bar opens Import & Export with This note chosen');
+    ok(JSON.stringify(await x.$$eval('.io-fmt b', e => e.map(y => y.textContent))) === '["Markdown","Word","Evernote / Apple Notes","Web page","PDF","Plain text"]', 'export formats: Markdown (Obsidian), Word, Evernote / Apple Notes, web page, PDF, text');
+    const exp = async (scope, fmt) => { await x.click(`.io-scope [data-s=${scope}]`); await x.click(`.io-fmt[data-f=${fmt}]`);
+      const [dl] = await Promise.all([x.waitForEvent('download'), x.click('[data-a=export]')]); const f = path.join(dir, scope + '-' + fmt + '-' + dl.suggestedFilename()); await dl.saveAs(f); return f; };
+    const unz = async f => x.evaluate(async b64 => { const bin = atob(b64), a = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); const es = await NPIO.unzip(new Blob([a])); const o = {}; for (const e of es) o[e.name] = /\.(md|xml|enex|html|txt|rels)$/.test(e.name) ? await e.text() : e.size; return o; }, fs.readFileSync(f).toString('base64'));
+    const fmd = await exp('note', 'md'), zmd = await unz(fmd), md = zmd['Big note.md'] || '';
+    ok(/\.zip$/.test(fmd) && /\*\*bold\*\*/.test(md) && /## A heading/.test(md) && /- \[x\] done item/.test(md) && /\[\[Other note\]\]/.test(md) && /```python/.test(md) && /!\[logo\]\(attachments\/\w+\.png\)/.test(md) && Object.keys(zmd).some(k => /^attachments\/.+\.png$/.test(k)), 'Markdown: Obsidian links, checklists, code, and the photo in attachments/', Object.keys(zmd));
+    const fdx = await exp('note', 'docx'), zdx = await unz(fdx);
+    ok(/\.docx$/.test(fdx) && /<w:t xml:space="preserve">bold<\/w:t>/.test(zdx['word/document.xml']) && /Heading2/.test(zdx['word/document.xml']) && /☒/.test(zdx['word/document.xml']) && Object.keys(zdx).some(k => /^word\/media\//.test(k)) && !!zdx['word/numbering.xml'], 'Word: a .docx with headings, lists, checkboxes and the photo');
+    const fen = await exp('note', 'enex'), en = fs.readFileSync(fen, 'utf8');
+    ok(/<en-export/.test(en) && /<en-todo checked="true"\/>done item/.test(en) && /<en-media type="image\/png" hash="[0-9a-f]{32}"\/>/.test(en) && /<resource><data encoding="base64">/.test(en), 'Evernote / Apple Notes: an .enex with checkboxes and the photo (md5)');
+    const fht = await exp('note', 'html'), ht = fs.readFileSync(fht, 'utf8');
+    ok(/<h1>Big note<\/h1>/.test(ht) && /src="data:image\/png;base64,/.test(ht) && /<ol><li>first<\/li><\/ol>/.test(ht), 'Web page: one .html with the photo inside');
+    const ftx = await exp('note', 'txt');
+    ok(/^Big note\n\nPlain bold it gone red/.test(fs.readFileSync(ftx, 'utf8')), 'Plain text');
+    const fall = await exp('all', 'md'), zall = await unz(fall);
+    ok(Object.keys(zall).includes('NotePath notes/Work/Projects/Big note.md') && Object.keys(zall).includes('NotePath notes/Work/Other note.md'), 'Everything keeps the folders (Work/Projects/…)', Object.keys(zall));
+    const fallx = await exp('all', 'docx');
+    ok(/\.zip$/.test(fallx) && Object.keys(await unz(fallx)).includes('NotePath notes/Work/Projects/Big note.docx'), 'several Word files go in a .zip with the folders');
+    await x.click('.mw-ov[data-mw=io] .set-x'); await wait(300);
+    // the folder scope
+    await x.locator('.nb-fd.user', { hasText: 'Projects' }).locator('.nb-fdb').click(); await wait(200);
+    await x.click('[data-a=io]'); await wait(300);
+    ok(/Projects · 1 note/.test(await x.$eval('.io-scope [data-s=folder]', e => e.textContent)), 'This folder: the folder being viewed, with its subfolders');
+    // import: an Obsidian vault folder, Google Keep, a .docx, an .enex, a web page; the folders are kept
+    const v = path.join(dir, 'vault'); fs.mkdirSync(path.join(v, 'Projects'), { recursive: true }); fs.mkdirSync(path.join(v, 'attachments'), { recursive: true }); fs.mkdirSync(path.join(v, '.obsidian'), { recursive: true });
+    fs.writeFileSync(path.join(v, '.obsidian', 'app.json'), '{}'); fs.copyFileSync(path.join(R, 'app/brand/np-mark-64.png'), path.join(v, 'attachments', 'pic.png'));
+    fs.writeFileSync(path.join(v, 'Home.md'), '---\ncreated: 2025-01-02\n---\n# Home\n\nSee [[Idea|the idea]] and [[Missing]].\n\n- [ ] milk\n- [x] code\n  - nested\n\n![[pic.png]]\n\n```js\nconsole.log(1)\n```\n');
+    fs.writeFileSync(path.join(v, 'Projects', 'Idea.md'), 'An idea with ~~old~~ and `code`.\n\n> quoted\n');
+    await x.selectOption('.io-sel', '');
+    await x.setInputFiles('.io-din', v);
+    await x.waitForFunction(() => /Imported|Nothing|not/.test(document.querySelector('.io-log').textContent), null, { timeout: 10000 });
+    ok(/Imported 2 notes, 2 folders, 1 photo/.test(await x.$eval('.io-log', e => e.textContent)), 'an Obsidian vault (a folder) imports with its folders and photos', await x.$eval('.io-log', e => e.textContent));
+    const home = await x.evaluate(() => { const n = InquireNotes.list().find(y => y.title === 'Home'), f = InquireNotes.folders(); return { html: n.html, folder: (f.find(z => z.id === n.folder) || {}).name, created: n.created, idea: (f.find(z => z.id === InquireNotes.list().find(y => y.title === 'Idea').folder) || {}).name }; });
+    ok(home.folder === 'vault' && home.idea === 'Projects' && new Date(home.created).getUTCFullYear() === 2025, 'the vault folder and its Projects folder are kept; dates come along', home);
+    ok(/<a[^>]*data-note="[a-z0-9]+"[^>]*>the idea<\/a>/.test(home.html) && /Missing/.test(home.html) && /<ul data-ck="1"><li>milk<\/li><li data-done="1">code<ul><li>nested<\/li><\/ul><\/li><\/ul>/.test(home.html) && /data-img="/.test(home.html) && /data-w="code"/.test(home.html), '[[links]] become note links; checklists, nesting, photos and code come in', home.html);
+    fs.writeFileSync(path.join(dir, 'Shopping.json'), JSON.stringify({ title: 'Shopping', isPinned: true, isTrashed: false, listContent: [{ text: 'Eggs', isChecked: false }, { text: 'Bread', isChecked: true }], labels: [{ name: 'Home' }], userEditedTimestampUsec: 1.7e15 }));
+    const enex = fen, docx = fdx;
+    await x.setInputFiles('.io-fin', [path.join(dir, 'Shopping.json'), enex, docx, fht]);
+    await x.waitForFunction(() => /Imported 4/.test(document.querySelector('.io-log').textContent), null, { timeout: 10000 }).catch(() => {});
+    ok(/Imported 4 notes/.test(await x.$eval('.io-log', e => e.textContent)), 'Google Keep, .enex, .docx and .html import together', await x.$eval('.io-log', e => e.textContent));
+    const back = await x.evaluate(() => InquireNotes.list().filter(n => n.title === 'Big note').map(n => n.html));
+    ok(back.length === 4 && back.every(h => /done item/.test(h) && /<h3>A heading<\/h3>/.test(h)) && back.filter(h => /<li data-done="1">done item<\/li>/.test(h)).length >= 3, 'what NotePath exports comes back in (Word, Evernote, web page)');
+    ok(await x.evaluate(() => { const n = InquireNotes.list().find(y => y.title === 'Shopping'), f = InquireNotes.folders().find(z => z.id === n.folder); return n.fav && f && f.name === 'Home' && /<li data-done="1">Bread<\/li>/.test(n.html); }), 'a Google Keep note: pinned → ★, its label → a folder, its checklist');
+    await x.setInputFiles('.io-fin', [path.join(R, 'README.md').replace('README.md', 'package.json')]); await wait(500);
+    ok(/Nothing to import/.test(await x.$eval('.io-log', e => e.textContent)), 'a file that is not notes is left out');
+    await x.close();
+  }
   ok(!errs.length, 'no page errors', errs);
-  await b.close();
+  await b.close(); srv.close();
   console.log(pass.map(x => '  ✓ ' + x).join('\n'));
   if (fails.length) { console.error('\nINTERACT FAILED\n' + fails.map(x => '  ✗ ' + x).join('\n')); process.exit(1); }
   console.log(`Interaction test passed (${pass.length} checks).`);

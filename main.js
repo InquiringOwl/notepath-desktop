@@ -1,6 +1,6 @@
 // NotePath desktop shell: serves the app from a private notepath:// scheme and keeps itself up to date.
 // Source code, installers and update files all live in the public repo InquiringOwl/notepath-desktop.
-const { app, BrowserWindow, protocol, net, ipcMain, shell, Menu, dialog, session } = require('electron');
+const { app, BrowserWindow, protocol, net, ipcMain, shell, Menu, dialog, session, Notification, Tray, nativeImage } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { pathToFileURL } = require('url');
@@ -12,6 +12,7 @@ const RELEASES_REPO = 'notepath-desktop';
 const APP_DIR = path.join(__dirname, 'app');
 const CHECK_EVERY_MS = 4 * 60 * 60 * 1000; // every 4 hours while NotePath is open
 const IS_MAC = process.platform === 'darwin';
+const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.ttf': 'font/ttf', '.mp4': 'video/mp4' };
 
 // NotePath keeps its own data folder (named after productName "NotePath"), separate from Inquire's.
 
@@ -32,8 +33,41 @@ function tell(message, detail, buttons) {
   return dialog.showMessageBox(win, { type: 'info', message, detail, buttons: buttons || ['OK'], defaultId: 0, cancelId: buttons ? buttons.length - 1 : 0 });
 }
 
+/* ---------------- staying in the tray (Windows and Linux) ----------------
+   So My Tasks reminders still arrive, closing the window hides it and NotePath stays in the system tray (notification area)
+   until Quit NotePath (tray menu or File → Quit). macOS already keeps NotePath running in the Dock when its window closes.
+   prefs.json in the userData folder (Settings → Usage): { tray: true, login: false }. "Start when I sign in" opens NotePath
+   hidden in the tray on Windows (--hidden), normally on macOS. */
+const PREFS_FILE = () => path.join(app.getPath('userData'), 'prefs.json');
+function readPrefs() { let p = {}; try { p = JSON.parse(fs.readFileSync(PREFS_FILE(), 'utf8')) || {}; } catch (e) {} return { tray: p.tray !== false, login: !!p.login, hinted: !!p.hinted }; }
+function writePrefs(p) { try { fs.writeFileSync(PREFS_FILE(), JSON.stringify(p)); } catch (e) { log.warn('prefs', e); } }
+const USE_TRAY = () => !IS_MAC && readPrefs().tray;
+let tray = null, quitting = false, nextRem = [];
+const startHidden = process.argv.includes('--hidden');
+function showWin() { if (!win || win.isDestroyed()) createWindow(); if (win.isMinimized()) win.restore(); win.show(); win.focus(); }
+function openIn(route) { showWin(); const go = () => win.webContents.send('app:route', route); if (win.webContents.isLoading()) win.webContents.once('did-finish-load', go); else go(); }
+function trayIcon() { const img = nativeImage.createFromPath(path.join(APP_DIR, 'brand', 'np-mark-64.png')); return img.isEmpty() ? img : img.resize({ width: 16, height: 16, quality: 'best' }); }
+function updateTray() {
+  if (!USE_TRAY()) { if (tray) { tray.destroy(); tray = null; } return; }
+  if (!tray) {
+    try { tray = new Tray(trayIcon()); } catch (e) { log.warn('tray', e); tray = null; return; }
+    tray.on('click', showWin); tray.on('double-click', showWin);
+  }
+  const soon = nextRem.filter(r => r.at > Date.now()).sort((a, b) => a.at - b.at), first = soon[0];
+  const when = r => new Date(r.at).toLocaleString([], { weekday: 'short', hour: 'numeric', minute: '2-digit' });
+  tray.setToolTip(soon.length ? `NotePath · ${soon.length} reminder${soon.length === 1 ? '' : 's'} coming up` : 'NotePath');
+  tray.setContextMenu(Menu.buildFromTemplate([
+    { label: 'Open NotePath', click: showWin },
+    { label: 'My Tasks', click: () => openIn({ view: 'tasks' }) },
+    { type: 'separator' },
+    { label: first ? `Next: ${String(first.title).replace(/^(Coming up|Due now): /, '').slice(0, 50)} · ${when(first)}` : 'No reminders coming up', enabled: !!first, click: () => first && openIn({ view: 'tasks', sel: first.id }) },
+    { type: 'separator' },
+    { label: 'Quit NotePath', click: () => { quitting = true; app.quit(); } }
+  ]));
+}
+
 function createWindow() {
-  win = new BrowserWindow({
+  win = new BrowserWindow({ show: false,
     width: 1480, height: 940, minWidth: 900, minHeight: 620,
     backgroundColor: "#070A10", title: 'NotePath',
     titleBarStyle: IS_MAC ? 'hiddenInset' : 'default',
@@ -44,6 +78,14 @@ function createWindow() {
   win.webContents.on('will-navigate', (e, url) => { if (!url.startsWith('notepath://')) { e.preventDefault(); if (/^https?:/.test(url)) shell.openExternal(url); } });
   win.webContents.on('did-finish-load', () => send({}));
   win.on('close', flushStorage); // write localStorage (remembered username, progress, settings) to disk before the window goes
+  // Windows / Linux: the ✕ hides NotePath to the tray instead of quitting (Settings → Usage can turn this off)
+  win.on('close', e => {
+    if (quitting || !USE_TRAY() || !tray) return;
+    e.preventDefault(); win.hide();
+    const p = readPrefs();
+    if (!p.hinted && Notification.isSupported()) { writePrefs(Object.assign(p, { hinted: true })); new Notification({ title: 'NotePath is still running', body: 'It stays in the notification area so task reminders still arrive. Right-click its icon to quit.' }).show(); }
+  });
+  win.once('ready-to-show', () => { if (!(startHidden && USE_TRAY())) win.show(); });
 }
 
 /* ---------------- automatic updates ---------------- */
@@ -90,19 +132,28 @@ app.whenReady().then(() => {
     const rel = decodeURIComponent(u.pathname).replace(/^\/+/, '') || 'index.html';
     const file = path.normalize(path.join(APP_DIR, rel));
     if (!file.startsWith(APP_DIR)) return new Response('Not found', { status: 404 });
-    return net.fetch(pathToFileURL(file).toString(), { headers: req.headers }); // headers carry Range requests, which the intro video needs
+    // a folder or a missing file is a plain 404 (Chromium's file loader answers a folder with ERR_ACCESS_DENIED, which
+    // would surface as an unhandled error in the terminal); a file the loader cannot open is read directly instead
+    let st = null; try { st = fs.statSync(file); } catch (e) { /* missing */ }
+    if (!st || !st.isFile()) { log.info('notepath:// not found', rel); return new Response('Not found', { status: 404 }); }
+    return net.fetch(pathToFileURL(file).toString(), { headers: req.headers }) // headers carry Range requests (video)
+      .catch(err => {
+        log.warn('notepath:// could not load', rel, String(err && err.message || err));
+        try { return new Response(fs.readFileSync(file), { headers: { 'Content-Type': MIME[path.extname(file).toLowerCase()] || 'application/octet-stream' } }); }
+        catch (e) { return new Response('Not readable', { status: 403 }); }
+      });
   });
   const check = setupUpdates();
   ipcMain.handle('update:check', () => { check(true); return updateState; });
   ipcMain.handle('update:install', () => {
     if (updateState.status !== 'ready') return false;
     if (mac) return mac.install();
-    autoUpdater.quitAndInstall(); return true;
+    quitting = true; autoUpdater.quitAndInstall(); return true;
   });
   ipcMain.handle('update:state', () => updateState);
   // Right-click → dictionary: textmenu.js decides what to ask (Wiktionary, then Wikipedia, then dictionaryapi.dev); this only
   // fetches, here in the main process (no CORS, no CSP), and only from those hosts. No keys or setup needed.
-  const DICT_HOSTS = ['en.wiktionary.org', 'en.wikipedia.org', 'api.dictionaryapi.dev', 'api.mymemory.translated.net']; // + Translate (textmenu.js)
+  const DICT_HOSTS = ['en.wiktionary.org', 'en.wikipedia.org', 'api.dictionaryapi.dev', 'api.mymemory.translated.net', 'nominatim.openstreetmap.org']; // + Translate (textmenu.js), + My Tasks places (OpenStreetMap)
   ipcMain.handle('dict:lookup', async (_e, q) => {
     let u; try { u = new URL(String(q && q.url || '')); } catch (err) { return { status: 0 }; }
     if (u.protocol !== 'https:' || !DICT_HOSTS.includes(u.hostname)) return { status: 0 };
@@ -110,6 +161,86 @@ app.whenReady().then(() => {
       const r = await net.fetch(u.href, { headers: { Accept: 'application/json', 'User-Agent': `NotePath/${app.getVersion()} (https://github.com/InquiringOwl/notepath-desktop)` } });
       return { status: r.status, body: r.status === 200 ? await r.json() : null };
     } catch (err) { return { status: 0 }; }
+  });
+  // Code tab ▶ Run (web/src/code.js): one HTTPS request to the run service chosen in Settings → Code (Judge0, Piston…), made
+  // here so the page's CSP stays closed. HTTPS only, GET or POST, small bodies.
+  ipcMain.handle('code:http', async (_e, q) => {
+    let u; try { u = new URL(String(q && q.url || '')); } catch (err) { return { status: 0 }; }
+    const method = q.method === 'POST' ? 'POST' : 'GET', body = typeof q.body === 'string' ? q.body : undefined;
+    if (u.protocol !== 'https:' || (body && body.length > 1_000_000)) return { status: 0 };
+    const headers = {}; Object.entries(q.headers || {}).forEach(([k, v]) => { if (/^[\w-]{1,40}$/.test(k) && typeof v === 'string' && v.length < 500) headers[k] = v; });
+    headers['User-Agent'] = `NotePath/${app.getVersion()} (https://github.com/${OWNER}/${RELEASES_REPO})`;
+    try {
+      const r = await net.fetch(u.href, { method, headers, body });
+      let json = null; try { json = await r.json(); } catch (err) {}
+      return { status: r.status, body: json };
+    } catch (err) { return { status: 0 }; }
+  });
+  // AI (Code tab ⇄ Translate, and later features): the key never reaches the page. It comes from the environment
+  // (NOTEPATH_AI_KEY, NOTEPATH_AI_PROVIDER, NOTEPATH_AI_MODEL) or from ai.config.json beside main.js (not in git; see ai.config.example.json).
+  ipcMain.handle('ai:status', () => { const c = aiConfig(); return { configured: !!c.key, provider: c.provider, model: c.model }; });
+  ipcMain.handle('ai:ask', async (_e, q) => {
+    const c = aiConfig(); if (!c.key) return { error: 'AI is not set up in this copy of NotePath.' };
+    const system = String(q && q.system || '').slice(0, 4000), prompt = String(q && q.prompt || '').slice(0, 120000);
+    try {
+      if (c.provider === 'openai') {
+        const r = await net.fetch(c.url || 'https://api.openai.com/v1/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + c.key },
+          body: JSON.stringify({ model: c.model, messages: [{ role: 'system', content: system }, { role: 'user', content: prompt }] }) });
+        const j = await r.json().catch(() => null);
+        if (r.status !== 200 || !j) return { error: `The AI service answered ${r.status}.` };
+        return { text: j.choices && j.choices[0] && j.choices[0].message ? j.choices[0].message.content : '' };
+      }
+      const r = await net.fetch(c.url || 'https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': c.key, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({ model: c.model, max_tokens: c.maxTokens || 8000, system, messages: [{ role: 'user', content: prompt }] }) });
+      const j = await r.json().catch(() => null);
+      if (r.status !== 200 || !j) return { error: `The AI service answered ${r.status}${j && j.error && j.error.message ? ': ' + j.error.message : ''}.` };
+      return { text: (j.content || []).filter(b => b.type === 'text').map(b => b.text).join('') };
+    } catch (err) { return { error: 'Could not reach the AI service. Check your internet connection.' }; }
+  });
+  // My Tasks reminders (web/src/tasks.js): the page sends every reminder still to come; they show as system notifications
+  // here, so they still appear while the window is closed (macOS keeps NotePath running). A click opens the task.
+  const remTimers = new Map(), remFired = new Set();
+  ipcMain.handle('tasks:schedule', (_e, list) => {
+    remTimers.forEach(t => clearTimeout(t)); remTimers.clear();
+    (Array.isArray(list) ? list : []).slice(0, 500).forEach(r => {
+      if (!r || typeof r.key !== 'string' || remFired.has(r.key)) return;
+      const wait = Math.max(0, Number(r.at) - Date.now()); if (!Number.isFinite(wait) || wait > 24 * 24 * 3600e3) return; // setTimeout's limit; nearer the time the page sends it again
+      remTimers.set(r.key, setTimeout(() => fireReminder(r), wait));
+    });
+    nextRem = (Array.isArray(list) ? list : []).filter(r => r && typeof r.key === 'string' && !remFired.has(r.key)).map(r => ({ id: String(r.id), title: String(r.title || ''), at: Number(r.at) }));
+    updateTray();
+    return true;
+  });
+  ipcMain.handle('tasks:fired', () => [...remFired]);
+  function fireReminder(r) {
+    remTimers.delete(r.key); remFired.add(r.key);
+    try {
+      if (Notification.isSupported()) {
+        const n = new Notification({ title: String(r.title || 'Task').slice(0, 200), body: String(r.body || '').slice(0, 300), silent: false });
+        n.on('click', () => { showWin(); const go = () => win.webContents.send('tasks:open', r.id); if (win.webContents.isLoading()) win.webContents.once('did-finish-load', go); else go(); });
+        n.show();
+      }
+    } catch (err) { log.warn('reminder', err); }
+    if (win && !win.isDestroyed()) win.webContents.send('tasks:fired', { key: r.key, id: r.id, title: r.title, body: r.body });
+  }
+  // Settings → Usage: keep running in the tray (Windows/Linux), start when you sign in (Windows/macOS)
+  ipcMain.handle('app:prefs', () => { const p = readPrefs(); return { tray: p.tray, login: p.login, trayAvailable: !IS_MAC, loginAvailable: IS_MAC || process.platform === 'win32' }; });
+  ipcMain.handle('app:setPrefs', (_e, q) => {
+    const p = readPrefs();
+    if (q && typeof q.tray === 'boolean') p.tray = q.tray;
+    if (q && typeof q.login === 'boolean') { p.login = q.login; try { app.setLoginItemSettings(Object.assign({ openAtLogin: p.login }, IS_MAC ? {} : { args: ['--hidden'] })); } catch (e) { log.warn('login item', e); } }
+    writePrefs(p); updateTray(); return { tray: p.tray, login: p.login };
+  });
+  // My notes › Import & Export › PDF: the page (HTML with its photos inside) is printed to a PDF by a hidden window
+  ipcMain.handle('export:pdf', async (_e, html) => {
+    if (typeof html !== 'string' || html.length > 200e6) return null;
+    const tmp = path.join(app.getPath('temp'), `notepath-export-${process.pid}-${Date.now()}.html`);
+    const pw = new BrowserWindow({ show: false, webPreferences: { javascript: false, sandbox: true, offscreen: false } });
+    try {
+      fs.writeFileSync(tmp, html); await pw.loadFile(tmp);
+      return await pw.webContents.printToPDF({ printBackground: true, pageSize: 'Letter', margins: { marginType: 'default' } });
+    } catch (err) { log.warn('pdf', err); return null; }
+    finally { pw.destroy(); try { fs.unlinkSync(tmp); } catch (e) {} }
   });
   ipcMain.handle('update:reveal', () => { if (updateState.fallback) shell.showItemInFolder(updateState.fallback); });
   ipcMain.handle('app:version', () => app.getVersion());
@@ -129,14 +260,25 @@ app.whenReady().then(() => {
     ] }
   ]));
   // Video embeds in notes: the page runs on notepath://, which sends no Referer, and YouTube refuses embeds without one (error 153). Name the app instead.
-  session.defaultSession.webRequest.onBeforeSendHeaders({ urls: ['https://www.youtube-nocookie.com/*', 'https://www.youtube.com/*', 'https://player.vimeo.com/*'] }, (d, cb) => {
+  // My Tasks maps: OpenStreetMap's tile servers ask every app to say who it is (Referer + User-Agent).
+  session.defaultSession.webRequest.onBeforeSendHeaders({ urls: ['https://www.youtube-nocookie.com/*', 'https://www.youtube.com/*', 'https://player.vimeo.com/*', 'https://tile.openstreetmap.org/*'] }, (d, cb) => {
+    if (/^https:\/\/tile\.openstreetmap\.org\//.test(d.url)) { d.requestHeaders.Referer = `https://github.com/${OWNER}/${RELEASES_REPO}`; d.requestHeaders['User-Agent'] = `NotePath/${app.getVersion()} (https://github.com/${OWNER}/${RELEASES_REPO})`; cb({ requestHeaders: d.requestHeaders }); return; }
     if (d.resourceType === 'subFrame' && !d.requestHeaders.Referer) d.requestHeaders.Referer = `https://github.com/${OWNER}/${RELEASES_REPO}`;
     cb({ requestHeaders: d.requestHeaders });
   });
-  createWindow();
-  app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
+  createWindow(); updateTray();
+  app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); else showWin(); });
 });
+// one NotePath at a time: opening it again (Start menu, desktop icon) brings the hidden window back instead of a second copy
+if (!app.requestSingleInstanceLock()) app.quit();
+else app.on('second-instance', () => { if (app.isReady()) showWin(); });
+/* AI settings: environment first, then ai.config.json beside main.js (packaged with the app; keep it out of git). */
+function aiConfig() {
+  let f = {}; try { f = JSON.parse(fs.readFileSync(path.join(__dirname, 'ai.config.json'), 'utf8')) || {}; } catch (e) { /* not set up */ }
+  return { provider: process.env.NOTEPATH_AI_PROVIDER || f.provider || 'anthropic', model: process.env.NOTEPATH_AI_MODEL || f.model || '',
+    key: process.env.NOTEPATH_AI_KEY || f.key || '', url: f.url || '', maxTokens: f.maxTokens };
+}
 /* Chromium writes localStorage to disk lazily; flush it so nothing set just before quitting is lost. */
 function flushStorage() { try { session.defaultSession.flushStorageData(); } catch (e) { /* not ready yet */ } }
-app.on('before-quit', flushStorage);
-app.on('window-all-closed', () => { if (!IS_MAC) app.quit(); });
+app.on('before-quit', () => { quitting = true; flushStorage(); });
+app.on('window-all-closed', () => { if (!IS_MAC && !(USE_TRAY() && tray)) app.quit(); });

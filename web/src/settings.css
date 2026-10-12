@@ -238,3 +238,18 @@ body.ask-open .ask-win{transform:none}
 .ask-kind[aria-checked="true"]{border-color:var(--frame);background:color-mix(in srgb,var(--frame) 14%,transparent);box-shadow:0 0 14px color-mix(in srgb,var(--frame) 30%,transparent)}
 .ask-kind:focus-visible{outline:2px solid var(--frame);outline-offset:2px}
 @media (max-width:520px){ .ask-kinds{grid-template-columns:minmax(0,1fr)} .ask-kind{flex-direction:row;flex-wrap:wrap;align-items:center} .ask-kind small{flex-basis:100%} }
+
+/* Appearance → My notes tabs */
+.set-tabc{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.set-tabcl{display:flex;align-items:center;gap:7px;padding:5px 9px 5px 5px;border:1px solid color-mix(in srgb,var(--c) 55%,var(--line-2));border-radius:3px;cursor:pointer;font:600 10.5px/1 var(--ui);letter-spacing:.16em;text-transform:uppercase;color:var(--text)}
+.set-tabcl input{width:26px;height:22px;padding:0;border:0;background:none;cursor:pointer}
+/* Code */
+.set-svcs{display:flex;flex-direction:column;gap:6px;margin:4px 0 8px}
+.set-svc{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line-2);border-radius:3px;cursor:pointer}
+.set-svc:has(input:checked){border-color:var(--frame);background:color-mix(in srgb,var(--frame) 10%,transparent)}
+.set-svc span{display:flex;flex-direction:column;gap:4px}
+.set-svc b{font:600 13px/1.2 var(--sans);color:var(--text)}
+.set-svc small{font:400 12px/1.4 var(--sans);color:var(--muted)}
+.set-svc input{margin-top:2px;accent-color:var(--frame)}
+.set-in{width:min(320px,100%);box-sizing:border-box;background:var(--ink);color:var(--text);border:1px solid var(--line-2);border-radius:2px;padding:7px 9px;font:400 12.5px/1.2 var(--mono)}
+.set-in:focus{outline:none;border-color:var(--frame)}

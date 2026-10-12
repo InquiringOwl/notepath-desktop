@@ -9,13 +9,11 @@ catch (e) {
   process.exit(1);
 }
 const path = require('path'), fs = require('fs'), os = require('os');
-const { desktop, R } = require('./build-web.js');
+const { desktop, R, copyMonaco } = require('./build-web.js');
 
 (async () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'notepath-smoke-'));
-  const file = path.join(dir, 'index.html');
-  fs.writeFileSync(file, desktop.replace('href="fonts/fonts.css"', `href="file://${path.join(R, 'app/fonts/fonts.css')}"`).replace(/<meta http-equiv="Content-Security-Policy"[^>]*>/, ''));
-  const URL0 = 'file://' + file;
+  copyMonaco(); // the Code tab's editor (app/vendor/monaco)
+  const srv = await require('./serve.js')(R, desktop), URL0 = srv.url;
   const browser = await chromium.launch();
   const failures = [];
   for (const [label, viewport] of [['desktop', { width: 1440, height: 900 }], ['phone', { width: 400, height: 860 }]]) {
@@ -36,22 +34,29 @@ const { desktop, R } = require('./build-web.js');
     await p.goto(URL0 + '#menu'); await p.waitForTimeout(400);
     await step('start menu', async () => {
       if (!(await p.$('.npn-acts .slot[data-a=open]'))) throw new Error('the My notes button is missing');
-      if (await p.$$eval('.slot.npn-soon', e => e.filter(x => /Coming soon/.test(x.textContent)).length) !== 2) throw new Error('two Coming soon buttons expected');
+      if (await p.$$eval('.slot.npn-soon', e => e.filter(x => /Coming soon/.test(x.textContent)).length) !== 1) throw new Error('one Coming soon button expected');
+      if (!(await p.$('.npn-acts .slot[data-a=tasks]'))) throw new Error('the My Tasks button is missing');
     });
     await step('My notes', async () => { await p.click('[data-a=open]'); await p.waitForSelector('.npage .nb'); await p.waitForTimeout(300); });
     await step('New note dialog + new note', async () => { await p.click('.np-newb'); await p.waitForSelector('.ask-in:focus'); await p.keyboard.type('Smoke'); await p.keyboard.press('Enter'); await p.waitForSelector('.nb-rich'); await p.click('.nb-rich'); await p.keyboard.type('Hello'); await p.waitForTimeout(500); });
+    await step('Import / Export window', async () => { await p.click('[data-a=io]'); await p.waitForSelector('.mw-ov[data-mw=io] .io-fmt'); await p.waitForTimeout(300); await p.keyboard.press('Escape'); await p.waitForTimeout(400); if (await p.$('.mw-ov[data-mw=io]:not(.out)')) throw new Error('Esc did not close it'); if (!(await p.$('.npage'))) throw new Error('Esc closed My notes too'); });
+    await step('My notes → Code tab + new code file', async () => { await p.click('.np-thumb[data-sp=code]'); await p.waitForSelector('.nb.nb-code'); await p.click('.np-newb'); await p.waitForSelector('.ask-in:focus'); await p.keyboard.type('Smoke code'); await p.keyboard.press('Enter'); await p.waitForSelector('.p1 .nc-edhost[data-ready]', { timeout: 15000 }); await p.waitForTimeout(400); });
+    await step('back to the Notes tab', async () => { await p.click('.np-thumb[data-sp=notes]'); await p.waitForSelector('.nb-codeh'); await p.waitForTimeout(200); });
     await step('back to the menu', async () => { await p.click('#brand'); await p.waitForTimeout(400); if (await p.$('.npage')) throw new Error('My notes did not close'); });
     await step('Favourites', async () => { await p.goto(URL0 + '#favourites'); await p.waitForSelector('.nb-fd.sel[data-f=fav]'); await p.click('#brand'); await p.waitForTimeout(300); });
+    await step('My Tasks + new task', async () => { await p.click('#brand'); await p.waitForTimeout(200); await p.click('[data-a=tasks]'); await p.waitForSelector('.nt'); await p.click('.np-newb'); await p.waitForSelector('.ask-in:focus'); await p.keyboard.type('Smoke task'); await p.keyboard.press('Enter'); await p.waitForSelector('.nt-head'); await p.fill('.nt-in[data-k=dueDate]', '2030-01-02'); await p.dispatchEvent('.nt-in[data-k=dueDate]', 'change'); await p.waitForTimeout(300); });
+    await step('route #tasks', async () => { await p.goto(URL0 + '#tasks'); await p.waitForSelector('.nt-it'); });
     await step('Note Office', async () => { await p.click('#brand'); await p.waitForTimeout(200); await p.click('[data-a=office]'); await p.waitForSelector('.mw-ov[data-mw=office] canvas'); await p.waitForTimeout(1500); await p.keyboard.press('Escape'); await p.waitForTimeout(400); });
-    for (const t of ['look', 'display', 'keys', 'usage', 'data', 'about'])
+    for (const t of ['look', 'display', 'keys', 'usage', 'code', 'data', 'about'])
       await step('Settings · ' + t, async () => { await p.evaluate(t => InquireSettings.open(t), t); await p.waitForTimeout(120); });
     await step('close Settings', async () => { await p.evaluate(() => InquireSettings.close()); });
     await step('route #notes', async () => { await p.goto(URL0 + '#notes'); await p.waitForSelector('.npage .nb'); });
+    await step('route #code', async () => { await p.goto(URL0 + '#code'); await p.waitForSelector('.nb.nb-code'); });
     await step('route #favourites', async () => { await p.goto(URL0 + '#favourites'); await p.waitForSelector('.nb-fd.sel[data-f=fav]'); });
     console.log(' done');
     await p.close();
   }
-  await browser.close();
+  await browser.close(); srv.close();
   if (failures.length) { console.error('\nSMOKE FAILED\n' + failures.map(f => '  ✗ ' + f).join('\n')); process.exit(1); }
   console.log('Smoke test passed.');
 })().catch(e => { console.error(e); process.exit(1); });
