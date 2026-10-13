@@ -18,6 +18,7 @@ const { desktop, R, copyMonaco } = require('./build-web.js');
   const failures = [];
   for (const [label, viewport] of [['desktop', { width: 1440, height: 900 }], ['phone', { width: 400, height: 860 }]]) {
     const p = await browser.newPage({ viewport });
+    await p.addInitScript(() => { try { localStorage.setItem('notepath.seen056', 'true'); } catch (e) {} }); // (v0.5.6) the What's new card has its own check in interact.js
     p.setDefaultTimeout(6000);
     const errs = [];
     p.on('pageerror', e => errs.push('page error: ' + e.message));

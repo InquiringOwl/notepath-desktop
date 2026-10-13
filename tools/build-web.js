@@ -12,7 +12,7 @@ const css = ['web/src/style.css', 'web/src/settings.css', 'web/src/menu.css', 'w
 // Top-bar mark, inlined so the page works anywhere.
 const markUri = 'data:image/png;base64,' + fs.readFileSync(path.join(R, 'app/brand/np-mark-64.png')).toString('base64');
 // Order matters: helper rules (Python highlighting, music theory) → notes engine → widgets → app → right-click menu → documents → settings.
-const files = ['web/lib/python-tokens.js', 'web/lib/music-theory.js', 'web/src/notes.js', 'web/src/notes-widgets.js', 'web/src/notes-graph.js', 'web/src/notes-sheet.js', 'web/src/code.js', 'web/src/tasks.js', 'web/src/io.js', 'web/src/app.js', 'web/src/office.js', 'web/src/textmenu.js', 'web/src/eula.js', 'web/src/settings.js'];
+const files = ['web/lib/python-tokens.js', 'web/lib/music-theory.js', 'web/src/notes.js', 'web/src/notes-widgets.js', 'web/src/notes-graph.js', 'web/src/notes-sheet.js', 'web/src/notes-map.js', 'web/src/code.js', 'web/src/tasks.js', 'web/src/io.js', 'web/src/assist.js', 'web/src/app.js', 'web/src/office.js', 'web/src/textmenu.js', 'web/src/eula.js', 'web/src/settings.js'];
 const scripts = files.map(f => {
   const src = read(f);
   if (/<\/script/i.test(src)) throw new Error(f + ' contains </script>, which would break the page.');
@@ -65,7 +65,7 @@ const desktop = `<!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' notepath:; script-src 'self' 'unsafe-inline'; worker-src 'self' blob: notepath:; style-src 'self' 'unsafe-inline'; font-src 'self' notepath:; img-src 'self' data: blob: https: notepath:; media-src 'self' blob: https: notepath:; connect-src 'self' notepath: https://en.wiktionary.org https://en.wikipedia.org https://api.dictionaryapi.dev https://api.mymemory.translated.net; frame-src https://www.youtube-nocookie.com https://player.vimeo.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' notepath:; script-src 'self' 'unsafe-inline'; worker-src 'self' blob: notepath:; style-src 'self' 'unsafe-inline'; font-src 'self' notepath:; img-src 'self' data: blob: https: notepath:; media-src 'self' blob: https: notepath:; connect-src 'self' notepath: https://en.wiktionary.org https://en.wikipedia.org https://api.dictionaryapi.dev https://api.mymemory.translated.net https://api.languagetool.org; frame-src https://www.youtube-nocookie.com https://player.vimeo.com">
 <title>NotePath</title>
 <link rel="stylesheet" href="fonts/fonts.css">
 <style>

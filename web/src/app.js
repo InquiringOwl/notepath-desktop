@@ -7,7 +7,13 @@
 const $ = (s, r=document) => r.querySelector(s);
 const h = (tag, attrs={}, html) => { const e = document.createElement(tag); for (const k in attrs) { if (k === "class") e.className = attrs[k]; else if (k.startsWith("on")) e.addEventListener(k.slice(2), attrs[k]); else e.setAttribute(k, attrs[k]); } if (html != null) e.innerHTML = html; return e; };
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const when = ms => { const d = new Date(ms), now = new Date(); return d.toDateString() === now.toDateString() ? d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : d.toLocaleDateString([], { month: "short", day: "numeric", year: d.getFullYear() === now.getFullYear() ? undefined : "numeric" }); };
+// dates on rows (v0.5.6: the formatters are made once and the text is kept per minute: making them for every row of a long
+// list was the slowest part of drawing it)
+const FMT = { t: new Intl.DateTimeFormat([], { hour: "numeric", minute: "2-digit" }), d: new Intl.DateTimeFormat([], { month: "short", day: "numeric" }), dy: new Intl.DateTimeFormat([], { month: "short", day: "numeric", year: "numeric" }),
+  s: new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }), sy: new Intl.DateTimeFormat(undefined, { year: "numeric", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) };
+const WHEN = new Map();
+const when = ms => { const now = new Date(), k = Math.floor(ms / 60000) + "|" + now.toDateString(); let v = WHEN.get(k); if (v) return v; const d = new Date(ms);
+  v = d.toDateString() === now.toDateString() ? FMT.t.format(d) : (d.getFullYear() === now.getFullYear() ? FMT.d : FMT.dy).format(d); if (WHEN.size > 20000) WHEN.clear(); WHEN.set(k, v); return v; };
 
 /* ---------- persistence (per-computer conveniences) ---------- */
 const store = {
@@ -140,6 +146,25 @@ function modalWin(id, o = {}){
 let NPAGE = null;
 const TITLES = { notes: "My notes", code: "My Code" };
 const SUBS = { notes: "All notes are saved on this computer.", code: "Code files are saved on this computer. ▶ Run sends them to the run service in Settings → Code (JavaScript runs here)." };
+/* "What's new in 0.5.6" (Devon): a small card the first time My notes opens after the update; Got it (or Esc) and it never
+   comes back (store "seen056") */
+function whatsNew(pg){
+  if (document.querySelector(".np-new")) return;
+  const c = h("div", { class: "np-new win", role: "dialog", "aria-label": "What's new in NotePath 0.5.6" });
+  c.innerHTML = `<div class="np-new-h">What's new in NotePath 0.5.6</div><ul>
+    <li><b>Safe and quick with any number of notes.</b> “Saved ✓” beside the star shows when your note is on this computer.</li>
+    <li><b>All notes · Favourites · Unfiled</b> now filter the Folders &amp; Files bar, and folders follow Show as.</li>
+    <li><b>◀ Hide</b> folds a side bar into a strip; click the strip to bring it back.</li>
+    <li><b>✦ AI Chat</b> and <b>A✓ Grammar check</b> at the bottom right; right-click words → <b>Ask AI…</b></li>
+    <li><b>Map</b> widget; the <b>Code box</b> highlights lines, compares before / after, presents ⤢ and copies as a picture.</li>
+    <li><b>Share</b> → Email, Email with a PDF and Print.</li></ul>
+    <div class="np-new-f"><button type="button" class="np-newb np-new-ok">Got it</button></div>`;
+  pg.appendChild(c);
+  const done = () => { store.set("seen056", true); c.remove(); window.removeEventListener("keydown", key, true); };
+  const key = e => { if (e.key === "Escape" && c.isConnected) { e.preventDefault(); e.stopImmediatePropagation(); done(); } };
+  $(".np-new-ok", c).onclick = done; window.addEventListener("keydown", key, true);
+  $(".np-new-ok", c).focus({ preventScroll: true });
+}
 function renderNotesPage(o = {}){
   if (o.space === "notes" || o.space === "code") { SPACE = o.space; store.set("nspace", SPACE); }
   const ST = SPACES[SPACE];
@@ -153,6 +178,7 @@ function renderNotesPage(o = {}){
   viewEl.appendChild(pg);
   $(".np-back", pg).onclick = () => goBack();
   const m = { body: $(".mw-body", pg), head: $(".mw-hx", pg), info: $(".nb-info", pg), cleanup: [] };
+  if (SPACE === "notes" && !store.get("seen056", false)) setTimeout(() => { if (pg.isConnected) whatsNew(pg); }, 350);
   const paint = () => { const w = pg.querySelector(".np-win"); w.dataset.space = SPACE; $("#np-t", pg).textContent = TITLES[SPACE]; $(".mw-sub", pg).textContent = SUBS[SPACE]; };
   const draw = focusBody => { m.cleanup.forEach(f => { try { f(); } catch(e){} }); m.cleanup = []; paint(); renderNotes(m, focusBody, SPACE); };
   const switchTo = (sp, x = {}) => {
@@ -211,6 +237,12 @@ function shareMenu(btn, o){
       <button type="button" role="menuitem" data-s="link"${dis}><span class="np-shi" aria-hidden="true">🔗</span><span><b>Copy link</b><small>Opens this note in NotePath on this computer. Paste it in another file, a calendar or an email to yourself.</small></span></button>
       <button type="button" role="menuitem" data-s="text"${dis}><span class="np-shi" aria-hidden="true">⧉</span><span><b>Copy the words</b><small>The title and text, to paste into a message.</small></span></button>
     </div>
+    <div class="np-pop-sub">Email &amp; print</div>
+    <div class="np-shs np-shmail">
+      <button type="button" role="menuitem" data-s="mail"${dis}><span class="np-shi" aria-hidden="true">✉</span><span><b>Email</b><small>Opens your mail app with a new message: the title as the subject, the note's words in it.</small></span></button>
+      <button type="button" role="menuitem" data-s="mailpdf"${dis}><span class="np-shi" aria-hidden="true">✉</span><span><b>Email with a PDF</b><small>Also makes a PDF of the note and shows it, ready to drag into the message.</small></span></button>
+      <button type="button" role="menuitem" data-s="print"${dis}><span class="np-shi" aria-hidden="true">⎙</span><span><b>Print…</b><small>The note as a clean page, on paper or as a PDF.</small></span></button>
+    </div>
     <div class="np-pop-sub">Send a copy <span class="np-shnote">for an associate: a file anyone can open, no NotePath needed</span></div>
     <div class="np-shf">${[["txt", "Text", ".txt"], ["html", "Web page", ".html"], ["docx", "Word", ".docx"], ["pdf", "PDF", ".pdf"]].map(([k, nm, ext]) => `<button type="button" role="menuitem" data-f="${k}"${dis}><b>${nm}</b><small>${ext}</small></button>`).join("")}</div>
     <div class="np-shs np-shio"><button type="button" role="menuitem" data-s="io"><span class="np-shi" aria-hidden="true">⇅</span><span><b>Import &amp; Export…</b><small>Word, Markdown (Obsidian), Apple Notes / Evernote, web page, PDF, text; a note, a folder or everything.</small></span></button></div>`;
@@ -224,6 +256,14 @@ function shareMenu(btn, o){
     const cur = NS.get(o.id); if (!cur) return;
     if (s === "link") { toastMsg(await copyText(noteLink(cur.id)) ? `Link copied. It opens “${cur.title}” in NotePath on this computer.` : "The link could not be copied."); return; }
     if (s === "text") { toastMsg(await copyText(cur.title + "\n\n" + (cur.body || "")) ? "The words are copied." : "They could not be copied."); return; }
+    if ((s === "mail" || s === "mailpdf" || s === "print") && window.NPIO) { // v0.5.6 (Devon): Email and Print
+      try {
+        if (s === "print") { await NPIO.printNote(cur.id); toastMsg("The print window is open."); return; }
+        const r = await NPIO.email(cur.id, { pdf: s === "mailpdf" });
+        toastMsg(r.printed ? "The print window is open: choose Save as PDF, then attach the file to your email." : r.file ? `A new email is open, and “${r.file}” is ${r.where ? "in Downloads › NotePath (the folder is open)" : "in your downloads"}: drag it into the message.` : "A new email is open in your mail app.", 6000);
+      } catch (err) { toastMsg(String(err && err.message || err)); }
+      return;
+    }
     if (f && window.NPIO) { try { const res = await NPIO.exportNotes("note", f, { note: cur.id }); toastMsg(res && res.printed ? "The print window is open: choose Save as PDF." : `Saved “${res.file}”. Attach it to an email or a message.`, 5000); } catch (err) { toastMsg(String(err && err.message || err)); } }
   });
   setTimeout(() => { const f0 = shareEl && shareEl.querySelector("button:not([disabled])"); if (f0) f0.focus({ preventScroll: true }); }, 30);
@@ -328,15 +368,19 @@ function notesLayout(nb){
   const fold = store.get("nbfold", { f: false, l: false }), W0 = () => store.get("nbw", 0);
   const paint = () => {
     nb.classList.toggle("ffold", !!fold.f); nb.classList.toggle("lfold", !!fold.l);
+    /* v0.5.6 (Devon): big, labelled and never in the way. Folded, a bar becomes a full-height strip (.nb-fold) that is one
+       big "show" button with the bar's name down it; open, the bar has its own labelled ◀ Hide button (.nb-hide) */
     nb.querySelectorAll(".nb-fold").forEach(b => {
-      const shut = !!fold[b.dataset.p], what = b.dataset.p === "f" ? "folders and files" : "tool bar";
-      b.innerHTML = `<span aria-hidden="true">${shut ? "▶" : "◀"}</span>`; b.title = (shut ? "Show the " : "Hide the ") + what; b.setAttribute("aria-label", b.title); b.setAttribute("aria-expanded", String(!shut));
+      const shut = !!fold[b.dataset.p], what = b.dataset.p === "f" ? "Folders & Files" : "Tool bar";
+      b.innerHTML = `<span class="nb-foldi" aria-hidden="true">▶</span><span class="nb-foldl">${b.dataset.p === "f" ? "Folders &amp; Files" : "Tools"}</span>`; b.title = "Show the " + what; b.setAttribute("aria-label", b.title); b.setAttribute("aria-expanded", String(!shut)); b.hidden = !shut;
     });
+    nb.querySelectorAll(".nb-hide").forEach(b => { b.setAttribute("aria-expanded", String(!fold[b.dataset.p])); });
     const w = W0(); if (w) nb.style.setProperty("--nb-lw-user", w + "px"); else nb.style.removeProperty("--nb-lw-user");
     const fw = store.get("nbfw", 0); if (fw) nb.style.setProperty("--nb-fw-user", fw + "px"); else nb.style.removeProperty("--nb-fw-user");
     if (matchMedia("(min-width:861px)").matches) { $(".nb-folders", nb).inert = !!fold.f; $(".nb-rail", nb).inert = !!fold.l; }
   };
-  nb.querySelectorAll(".nb-fold").forEach(b => b.onclick = () => { fold[b.dataset.p] = !fold[b.dataset.p]; store.set("nbfold", fold); paint(); });
+  nb.querySelectorAll(".nb-fold, .nb-hide").forEach(b => b.onclick = () => { const had = b === document.activeElement; fold[b.dataset.p] = !fold[b.dataset.p]; store.set("nbfold", fold); paint();
+    const back = $(fold[b.dataset.p] ? `.nb-fold[data-p="${b.dataset.p}"]` : `.nb-hide[data-p="${b.dataset.p}"]`, nb); if (back && had) back.focus({ preventScroll: true }); }); // the focus follows to the control that undoes it
   // two resizers: .nb-rzf after the folders (store "nbfw", 140–420 px), .nb-rz after the notes list (store "nbw", 180–620 px); the editor keeps ≥ 340 px
   const sizer = (rz, col, key, cssVar, lo, hi, other) => {
     const lim = w => Math.round(Math.max(lo, Math.min(w, hi, nb.offsetWidth - other().offsetWidth - 340)));
@@ -404,7 +448,7 @@ const VIEWS = [["icons", "Icons", '<svg viewBox="0 0 16 16" width="14" height="1
   ["details", "Details: created, modified and kind", '<svg viewBox="0 0 16 16" width="14" height="14"><path d="M2 3.5h12M2 8h12M2 12.5h12M9 2v12"/></svg>']];
 const viewOf = k => { const v = store.get(k, "list"); return VIEWS.some(x => x[0] === v) ? v : "list"; };
 const viewSwitch = (cur, label, views = VIEWS) => `<div class="np-views" role="radiogroup" aria-label="${esc(label || "Show as")}">${views.map(([k, n, ic]) => `<button type="button" role="radio" data-view="${k}" aria-checked="${k === cur}" title="Show as ${n}" aria-label="${n.split(":")[0]}">${ic}</button>`).join("")}</div>`;
-const stampShort = t => { if (!t) return "—"; const d = new Date(t); return d.toLocaleString(undefined, { year: d.getFullYear() === new Date().getFullYear() ? undefined : "numeric", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }); };
+const stampShort = t => { if (!t) return "—"; const d = new Date(t); return (d.getFullYear() === new Date().getFullYear() ? FMT.s : FMT.sy).format(d); };
 function noteKind(n){
   if (n.space === "code") { const l = window.NPCode ? NPCode.lang(n.code.lang) : null; return (l ? l.name : "Code") + " file"; }
   const h = String(n.html || "");
@@ -415,14 +459,14 @@ function noteKind(n){
 const NOTE_IC = '<svg viewBox="0 0 24 28" width="30" height="34" aria-hidden="true"><path d="M3 2h12l6 6v18H3z" class="pg"/><path d="M15 2v6h6" class="fd"/><path d="M7 13h10M7 17h10M7 21h6" class="ln"/></svg>';
 /* the Tool bar (v0.5.5, Devon; where the notes list was): tools that change what the note area is for. Note and Code now;
    Canvas, Note Trees and Spreadsheets come later (Coming soon). Fold it with its ◀ tab. */
-const TOOLS = [["note", "✎", "Note", "Write: text, lists, photos and widgets"], ["code", "&lt;/&gt;", "Code", "Code files you can run (My Code)"],
+const TOOLS = [["note", "✎", "Note", "Write: text, lists, photos and widgets"], // v0.5.6 (Devon): the Code tool is gone (My Code is on the Main Menu)
   ["canvas", '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2" y="2.5" width="12" height="11" rx="1"/><path d="M4.5 10.5l2.5-3 2 2 1.5-1.5 1.5 2.5"/></svg>', "Canvas", ""],
   ["trees", '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="3.5" r="1.6"/><circle cx="3.5" cy="12.5" r="1.6"/><circle cx="12.5" cy="12.5" r="1.6"/><path d="M8 5.1v3.4M8 8.5L3.5 10.9M8 8.5l4.5 2.4"/></svg>', "Note Trees", ""],
   ["sheets", '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2" y="2.5" width="12" height="11" rx="1"/><path d="M2 6h12M2 9.5h12M6 2.5v11M10 2.5v11"/></svg>', "Spreadsheets", ""]];
 /* v0.5.5 (Devon): the ▦ Widgets menu moved out of the note's formatting bar into the Tool bar, in its own section above the
    tools: a click puts the widget into the note you were writing in (after the line you were on). Widgets that connect to
    other apps and services (APIs) will join this section. */
-const WIDGET_SHORT = { code: "Code box", music: "Music", sheet: "Lead sheet", graph: "Graph" };
+const WIDGET_SHORT = { code: "Code box", music: "Music", sheet: "Lead sheet", graph: "Graph", map: "Map" };
 const railHTML = code => `<div class="nb-railh">Widgets</div>` + ((window.InquireWidgets && InquireWidgets.WIDGETS) || []).map(([w, g, n, d]) =>
     `<button type="button" class="nb-tool nb-wtool${code ? " soon" : ""}" data-widget="${w}" data-name="${n}"${code ? ' aria-disabled="true"' : ""} title="${code ? `${n}: widgets go into notes (My notes)` : `${n}: ${d}. Goes in after the line you are on`}"><span class="nb-tooli" aria-hidden="true">${g}</span><span class="nb-tooln">${WIDGET_SHORT[w] || n}</span></button>`).join("")
   + `<button type="button" class="nb-tool nb-wtool nb-wmore soon" data-widget="more" aria-disabled="true" data-name="App widgets" title="Widgets that connect to other apps and services: coming soon"><span class="nb-tooli" aria-hidden="true">＋</span><span class="nb-tooln">More</span><small>Soon</small></button>`
@@ -434,8 +478,8 @@ function renderNotes(m, focusBody, space = "notes"){
   const ALLNS = window.InquireNotes, CS = window.InquireNotes.scope("code");
   const s = m.body;
   s.innerHTML = `    <div class="nb-sbar"><label class="search nb-search"><span aria-hidden="true">⌕</span><input type="search" placeholder="Search" aria-label="${CODE ? "Search every code file" : "Search every note"}"></label></div>
-    <div class="nb"><nav class="nb-folders" aria-label="${CODE ? "Folders and code files" : "Folders and files"}"><div class="nb-tools nb-ftools">${viewSwitch(viewOf(CODE ? "codeview" : "noteview"), CODE ? "Show the code files as" : "Show the notes as")}<select class="nb-sort" aria-label="${CODE ? "Order of code files" : "Order of notes"}"><option value="mine">My order</option><option value="recent">Recently edited</option></select><button type="button" class="nb-favtop" aria-pressed="false" title="Keep favourites at the top of the list">★ first</button></div><div class="nb-ftree" role="tree" aria-label="${CODE ? "Code folders and files" : "Folders and files"}"></div></nav>
-    <aside class="nb-rail" role="toolbar" aria-orientation="vertical" aria-label="Tools">${railHTML(CODE)}</aside>
+    <div class="nb"><nav class="nb-folders" aria-label="${CODE ? "Folders and code files" : "Folders and files"}"><div class="nb-tools nb-ftools">${viewSwitch(viewOf(CODE ? "codeview" : "noteview"), CODE ? "Show the code files as" : "Show the notes as")}<select class="nb-sort" aria-label="${CODE ? "Order of code files" : "Order of notes"}"><option value="mine">My order</option><option value="recent">Recently edited</option></select><button type="button" class="nb-favtop" aria-pressed="false" title="Keep favourites at the top of the list">★ first</button><button type="button" class="nb-hide" data-p="f" title="Hide the Folders &amp; Files bar (a strip on the left brings it back)" aria-label="Hide the Folders and Files bar"><span aria-hidden="true">◀</span> Hide</button></div><div class="nb-ftree" role="tree" aria-label="${CODE ? "Code folders and files" : "Folders and files"}"></div></nav>
+    <aside class="nb-rail" role="toolbar" aria-orientation="vertical" aria-label="Tools"><button type="button" class="nb-hide nb-hidel" data-p="l" title="Hide the Tool bar (a strip brings it back)" aria-label="Hide the Tool bar"><span class="nb-tooli" aria-hidden="true">◀</span><span class="nb-tooln">Hide</span></button>${railHTML(CODE)}</aside>
     <section class="nb-ed"><div class="nb-tabs" hidden></div><div class="nb-panes"><div class="nb-pane p1"></div><div class="nb-pane p2" hidden></div></div></section>
     <button type="button" class="nb-fold" data-p="f"></button><button type="button" class="nb-fold" data-p="l"></button>
     <div class="nb-rzf" role="separator" aria-orientation="vertical" tabindex="0" aria-label="Resize the folders column (drag, or ←/→; double-click resets)" title="Drag to resize the folders · double-click resets"></div>
@@ -443,7 +487,7 @@ function renderNotes(m, focusBody, space = "notes"){
   notesLayout($(".nb", s)); $(".nb", s).classList.toggle("nb-code", CODE);
   const mac = /Mac/.test(navigator.platform);
   m.head.innerHTML = CODE ? `<span class="mw-tip" tabindex="0" title="Code files have their own folders: drag files into folders and folders into each other, or up and down to put them in your own order. Drag a file onto ⧉ beside the name to open two side by side. ▶ Run (${mac ? "⌘" : "Ctrl+"}Enter) runs the file; type what it reads in the Input tab. ⇄ Translate turns it into another language (AI). In My notes, the Code section of the folders lets you drop a copy of a code file into a note." aria-label="Tips">?</span><span class="np-hist" role="group" aria-label="Undo and redo"><button type="button" class="np-hb" data-a="undo" title="Undo: new, renamed, moved or deleted files and folders (inside the editor, ${mac ? "⌘" : "Ctrl+"}Z undoes typing)" aria-label="Undo">↶ Undo</button><button type="button" class="np-hb" data-a="redo" title="Redo" aria-label="Redo">↷ Redo</button></span><button type="button" class="np-newb" data-a="newnote" title="Choose a language and name a new code file (Alt+Shift+N)">＋ New File</button>`
-  : `<span class="mw-tip" tabindex="0" title="Drag notes into folders and folders into other folders, drag either up or down to put them in your own order, star the ones you use most, and paste or drop photos and videos in. Click a folder icon to fold its notes away. Drag a note or a folder into the open note to link to it (right-click a link to open it in a new note tab), or onto ⧉ beside the title to open the two side by side. Drag a file from the Code section into a note for a copy of its code, or onto a folder to file a copy there; drag the line above Code to share the column. The buttons at the top of the Folders & Files bar show the notes as icons, a list, a compact list or details; Search finds folders too. The Tool bar beside it switches between Note and Code (Canvas, Note Trees and Spreadsheets are coming). H in the note's toolbar makes a line a Title, Subtitle or Heading 1, 2 or 3. The align and spacing menus change the whole note when nothing is selected, or only the words you select. ‹ Back goes to the window you had open before. ◈ at the bottom right lists the note's links; ↳ beside it adds your own paranotes under words or code. The ◀ tabs hide the folders or the list; drag the lines beside them to resize. Select words and right-click to define them or link them to another note." aria-label="Tips">?</span><span class="np-hist" role="group" aria-label="Undo and redo"><button type="button" class="np-hb" data-a="undo" title="Undo (${/Mac/.test(navigator.platform) ? "⌘" : "Ctrl+"}+Z): writing, folders, new or deleted notes, widgets…" aria-label="Undo">↶ Undo</button><button type="button" class="np-hb" data-a="redo" title="Redo (⇧${/Mac/.test(navigator.platform) ? "⌘" : "Ctrl+"}+Z)" aria-label="Redo">↷ Redo</button></span><button type="button" class="np-hb np-io np-share" data-a="share" aria-haspopup="menu" aria-expanded="false" title="Share: copy a link to this note, send a copy to someone, import or export notes">⇪ Share</button><button type="button" class="np-newb" data-a="newnote" title="Name a new note and start writing (Alt+Shift+N)">＋ New Note</button>`;
+  : `<span class="mw-tip" tabindex="0" title="Drag notes into folders and folders into other folders, drag either up or down to put them in your own order, star the ones you use most, and paste or drop photos and videos in. Click a folder icon to fold its notes away. Drag a note or a folder into the open note to link to it (right-click a link to open it in a new note tab), or onto ⧉ beside the title to open the two side by side. Drag a file from the Code section into a note for a copy of its code, or onto a folder to file a copy there; drag the line above Code to share the column. The buttons at the top of the Folders & Files bar show the notes and folders as icons, a list, a compact list or details; All notes, Favourites and Unfiled filter the bar; Search finds folders too. The Tool bar beside it switches between Note and Code (Canvas, Note Trees and Spreadsheets are coming). H in the note's toolbar makes a line a Title, Subtitle or Heading 1, 2 or 3. The align and spacing menus change the whole note when nothing is selected, or only the words you select. ‹ Back goes to the window you had open before. ◈ at the bottom right lists the note's links; ↳ beside it adds your own paranotes under words or code; ✦ opens AI Chat and A✓ checks the grammar for the kind of note you are writing. ◀ Hide folds the Folders & Files bar or the Tool bar into a strip; click the strip to bring it back. Drag the line beside the folders to resize them. The Map widget in the Tool bar finds an address and keeps it in the note. Select words and right-click to define them, link them to another note, or Ask AI to rewrite, shorten or explain them." aria-label="Tips">?</span><span class="np-hist" role="group" aria-label="Undo and redo"><button type="button" class="np-hb" data-a="undo" title="Undo (${/Mac/.test(navigator.platform) ? "⌘" : "Ctrl+"}+Z): writing, folders, new or deleted notes, widgets…" aria-label="Undo">↶ Undo</button><button type="button" class="np-hb" data-a="redo" title="Redo (⇧${/Mac/.test(navigator.platform) ? "⌘" : "Ctrl+"}+Z)" aria-label="Redo">↷ Redo</button></span><button type="button" class="np-hb np-io np-share" data-a="share" aria-haspopup="menu" aria-expanded="false" title="Share: copy a link to this note, send a copy to someone, import or export notes">⇪ Share</button><button type="button" class="np-newb" data-a="newnote" title="Name a new note and start writing (Alt+Shift+N)">＋ New Note</button>`;
   const fold = $(".nb-ftree", s), items = fold, edSec = $(".nb-ed", s), ed = $(".nb-pane.p1", s), ed2 = $(".nb-pane.p2", s), tabs = $(".nb-tabs", s), nbEl = $(".nb", s), q = $('input[type="search"]', s), sortSel = $(".nb-sort", s);
   const VK = CODE ? "codeview" : "noteview";
   $(".nb-tools .np-views", s).addEventListener("click", e => { const b = e.target.closest("[data-view]"); if (!b) return; store.set(VK, b.dataset.view); $(".nb-tools .np-views", s).querySelectorAll("[data-view]").forEach(x => x.setAttribute("aria-checked", String(x === b)));
@@ -521,7 +565,21 @@ function renderNotes(m, focusBody, space = "notes"){
     box.innerHTML = `<span class="nb-ib"><span class="nb-ik">${CODE ? "File" : "Note"}</span>${n ? `<b class="nb-iname" title="${esc(n.title)}">${esc(n.title)}</b>${infoRow("Last edited", n.updated)}${infoRow("Created", n.created)}` : `<span class="nb-inone">No ${CODE ? "file" : "note"} selected</span>`}</span>`
       + `<span class="nb-ib"><span class="nb-ik">Folder</span><b class="nb-iname" title="${esc(fname)}">${esc(fname)}</b>${infoRow("Last change", last > 0 ? last : 0, "Nothing in it yet")}${f ? infoRow("Created", f.created, "Folders made before NotePath 0.5.2 have no creation date") : ""}</span>`;
   }
+  /* "Saved ✓" beside the star (v0.5.6, Devon): Saving… while typing and until the notes are on disk, Saved ✓, or, when the
+     computer refuses, "Couldn't save" with Try again (the changes are kept and tried again by themselves every few seconds) */
+  let saveErrSaid = false, saveFade = 0;
+  function saveLine(st){
+    const el = $(".nb-save", ed); if (!el) return; const S0 = window.InquireNotes.saveState ? InquireNotes.saveState() : { state: "saved" }, state = st || S0.state;
+    clearTimeout(saveFade); el.className = "nb-save is-" + state;
+    if (state === "error") { el.innerHTML = `<span>⚠ Couldn't save</span><button type="button" class="nb-save-retry" title="${esc(S0.error || "")} Your changes are kept and tried again by themselves.">Try again</button>`; $(".nb-save-retry", el).onclick = () => { if (InquireNotes.flushSaves) InquireNotes.flushSaves(); };
+      if (!saveErrSaid) { saveErrSaid = true; if (NS.toast) NS.toast(esc("NotePath could not save your notes: " + (S0.error || "the computer refused.") + " Your changes are kept while NotePath is open and it keeps trying. Don't close it until it says Saved."), null, 12000); } return; }
+    saveErrSaid = false;
+    el.textContent = state === "saved" ? "Saved ✓" : "Saving…";
+    if (state === "saved") saveFade = setTimeout(() => el.classList.add("quiet"), 2500);
+  }
+  const onSave = () => saveLine(); window.addEventListener("inquire:notes-save", onSave); m.cleanup.push(() => window.removeEventListener("inquire:notes-save", onSave));
   const onInfo = () => drawInfo(); window.addEventListener("inquire:notes-changed", onInfo); m.cleanup.push(() => window.removeEventListener("inquire:notes-changed", onInfo));
+  const ROWCAP = 100, SHOWALL = NOTES.showall || (NOTES.showall = new Set()); let ROWFN = null;
   function drawFolders(){
     const all = NS.list(), fs = NS.folders(), shut = closed();
     if (!["all", "fav", "none"].includes(NOTES.folder) && !fs.some(f => f.id === NOTES.folder)) NOTES.folder = "all";
@@ -529,11 +587,20 @@ function renderNotes(m, focusBody, space = "notes"){
     if (!NOTES.sel || !NS.get(NOTES.sel)) { const first = all.filter(inView).sort((a, b) => (NOTES.favTop ? b.fav - a.fav : 0) || (NOTES.sort !== "recent" ? NS.byOrder(a, b) : b.updated - a.updated))[0] || all[0]; NOTES.sel = first ? first.id : null; }
     const count = id => { const sub = NS.subtree(id); return all.filter(n => sub.has(n.folder)).length; };
     const LIBK = CODE ? "codelibopen" : "libopen", libOpen = new Set(store.get(LIBK, ["none"])); // library groups that are open (Unfiled by default)
+    /* v0.5.6 (Devon): All notes / Favourites / Unfiled are filters. Favourites shows only the starred notes and Unfiled only the
+       notes in no folder (no folders, here or in the Code section); All notes (or any folder) shows everything as before */
+    const FILTER = NOTES.folder === "fav" || NOTES.folder === "none" ? NOTES.folder : null;
+    const libShown = id => FILTER ? FILTER === id : libOpen.has(id);
     const mine = NOTES.sort !== "recent", view = viewOf(VK), qq = NOTES.q.trim().toLowerCase();
+    // a folder's last change = the folder itself or any note in it (as in the info line)
+    const lastOf = f => { const sub = NS.subtree(f.id); return Math.max(f.updated || 0, ...all.filter(n => sub.has(n.folder)).map(n => n.updated || 0)); };
     fold.dataset.view = view;
     const order = arr => arr.slice().sort((a, b) => (NOTES.favTop ? b.fav - a.fav : 0) || (mine ? NS.byOrder(a, b) : b.updated - a.updated));
-    const row = (id, ic, name, n, f) => `<div class="nb-fd${NOTES.folder === id ? " sel" : ""}${f ? " user" : " lib"}" data-f="${id}"${f ? ` draggable="true" style="--d:${f.depth}"` : ""}>${f ? `<button type="button" class="nb-fcar" data-car="${id}" aria-expanded="${!shut.has(id)}" title="${shut.has(id) ? "Show" : "Hide"} what is in ${esc(name)}" aria-label="${shut.has(id) ? "Show" : "Hide"} the notes and folders in ${esc(name)}">${folderIcon(!shut.has(id))}</button>`
-        : `<button type="button" class="nb-fcar nb-lcar" data-lcar="${id}" aria-expanded="${libOpen.has(id)}" title="${libOpen.has(id) ? "Hide" : "Show"} the ${CODE ? "files" : "notes"} in ${esc(name)}" aria-label="${libOpen.has(id) ? "Hide" : "Show"} the ${CODE ? "files" : "notes"} in ${esc(name)}"><span class="nb-lic" aria-hidden="true">${ic}</span></button>`}<button type="button" class="nb-fdb" data-f="${id}" aria-pressed="${NOTES.folder === id}"${f ? ` title="Drag onto another folder to put it inside; drag above or below a folder to reorder. Alt+↑/↓ also reorders."` : ""}><span class="nb-fnm">${esc(name)}</span><span class="nb-fn num">${n}</span></button>${f ? `<button type="button" class="nb-fx nb-ffav${f.fav ? " on" : ""}" data-ffav="${id}" aria-pressed="${!!f.fav}" title="${f.fav ? "Unstar: back to its own place" : "Star: keep this folder at the top"}" aria-label="${f.fav ? "Unstar" : "Star"} ${esc(name)}">${f.fav ? "★" : "☆"}</button><button type="button" class="nb-fx" data-sub="${id}" title="New folder inside" aria-label="New folder inside ${esc(name)}">＋</button><button type="button" class="nb-fx" data-ren="${id}" title="Rename folder" aria-label="Rename ${esc(name)}">✎</button><button type="button" class="nb-fx" data-del="${id}" title="Delete folder (its notes and folders move up a level)" aria-label="Delete ${esc(name)}">✕</button>` : ""}</div>`;
+    const row = (id, ic, name, n, f) => { const fv = f ? ` fv-${view}` : "", det = f && view === "details", lc = f ? lastOf(f) : 0;
+      const meta = f && (view === "list" || view === "icons") ? `<span class="nb-fmeta num">${n} ${CODE ? (n === 1 ? "file" : "files") : (n === 1 ? "note" : "notes")}${lc ? " · " + esc(when(lc)) : ""}</span>` : "";
+      const r = `<div class="nb-fd${NOTES.folder === id ? " sel" : ""}${f ? " user" + fv : " lib"}" data-f="${id}"${f ? ` draggable="true" style="--d:${f.depth}"` : ""}>${det ? '<span class="nb-dname">' : ""}${f ? `<button type="button" class="nb-fcar" data-car="${id}" aria-expanded="${!shut.has(id)}" title="${shut.has(id) ? "Show" : "Hide"} what is in ${esc(name)}" aria-label="${shut.has(id) ? "Show" : "Hide"} the notes and folders in ${esc(name)}">${folderIcon(!shut.has(id))}</button>`
+        : `<button type="button" class="nb-fcar nb-lcar" data-lcar="${id}" aria-expanded="${libShown(id)}" title="${FILTER ? (FILTER === id ? `Showing only ${esc(name)}` : `Show only ${esc(name)}`) : (libOpen.has(id) ? "Hide" : "Show") + ` the ${CODE ? "files" : "notes"} in ${esc(name)}`}" aria-label="${FILTER ? (FILTER === id ? `Showing only ${esc(name)}` : `Show only ${esc(name)}`) : (libOpen.has(id) ? "Hide" : "Show") + ` the ${CODE ? "files" : "notes"} in ${esc(name)}`}"><span class="nb-lic" aria-hidden="true">${ic}</span></button>`}<button type="button" class="nb-fdb" data-f="${id}" aria-pressed="${NOTES.folder === id}"${f ? ` title="Drag onto another folder to put it inside; drag above or below a folder to reorder. Alt+↑/↓ also reorders."` : ""}>${meta ? `<span class="nb-ftx"><span class="nb-fnm">${esc(name)}</span>${meta}</span>` : `<span class="nb-fnm">${esc(name)}</span>`}<span class="nb-fn num">${n}</span></button>${f ? `<button type="button" class="nb-fx nb-ffav${f.fav ? " on" : ""}" data-ffav="${id}" aria-pressed="${!!f.fav}" title="${f.fav ? "Unstar: back to its own place" : "Star: keep this folder at the top"}" aria-label="${f.fav ? "Unstar" : "Star"} ${esc(name)}">${f.fav ? "★" : "☆"}</button><button type="button" class="nb-fx" data-sub="${id}" title="New folder inside" aria-label="New folder inside ${esc(name)}">＋</button><button type="button" class="nb-fx" data-ren="${id}" title="Rename folder" aria-label="Rename ${esc(name)}">✎</button><button type="button" class="nb-fx" data-del="${id}" title="Delete folder (its notes and folders move up a level)" aria-label="Delete ${esc(name)}">✕</button>` : ""}${det ? `</span><span class="nb-dc num">${esc(stampShort(lc))}</span><span class="nb-dc num">${esc(stampShort(f.created))}</span><span class="nb-dc">Folder</span>` : ""}</div>`;
+      return r; };
     // a file row in the Folders & Files bar (v0.5.5): its look follows Show as (List, Compact, Details, Icons); g = the group it is listed in
     const fname = Object.fromEntries(fs.map(f => [f.id, f.name]));
     const star = n => n.fav ? '<i class="nb-star" aria-label="Favourite">★</i>' : "";
@@ -546,16 +613,26 @@ function renderNotes(m, focusBody, space = "notes"){
       if (view === "compact") return `<div ${a(" nb-row nb-crow")} title="${esc(n.title)} · made ${esc(stampShort(n.created))}"><span class="nb-t">${fic(n)}${star(n)}${esc(n.title)}</span><span class="nb-dc num">${esc(when(n.created))}</span></div>`;
       return `<div ${a(cov ? " nb-hascov" : " nb-lrow")}>${cov ? `<img class="nb-cov nb-lcov" data-cov="${cov}" alt="">` : fic(n)}<span class="nb-ltx"><span class="nb-t">${star(n)}${esc(n.title)}</span><span class="nb-m">${inF}${when(n.updated)}</span></span></div>`;
     };
-    const files = (arr, d, g) => { if (!arr.length) return ""; const rows = order(arr).map(n => fileRow(n, d, g)).join(""); return view === "icons" ? `<div class="nb-tiles" style="--d:${d}">${rows}</div>` : rows; };
+    /* v0.5.6 (Devon): a long group shows its first 100 notes and a "Show n more" row (the open note is always listed), so a
+       redraw with thousands of notes stays quick; "Show all" is remembered for the session */
+    const files = (arr, d, g) => { if (!arr.length) return ""; let list = order(arr), more = 0;
+      if (list.length > ROWCAP && !SHOWALL.has(g) && !qq) { const head = list.slice(0, ROWCAP), sel = list.find(n => n.id === NOTES.sel); more = list.length - ROWCAP; if (sel && !head.includes(sel)) { head.push(sel); more--; } list = head; }
+      const rows = list.map(n => fileRow(n, d, g)).join(""), tail = more > 0 ? `<button type="button" class="nb-more" data-more="${esc(g)}" style="--d:${d}">Show ${more.toLocaleString()} more</button>` : "";
+      return (view === "icons" ? `<div class="nb-tiles" style="--d:${d}">${rows}</div>` : rows) + tail; };
+    ROWFN = (n, el) => fileRow(n, +getComputedStyle(el).getPropertyValue("--d") || 0, el.dataset.g);
     const dhead = view === "details" ? `<div class="nb-dhead" aria-hidden="true">${["Name", "Modified", "Created", "Kind"].map((t, i) => `<span>${t}${i < 3 ? `<i class="nb-dcrz" data-c="${i}" title="Drag to resize this column · double-click to reset all"></i>` : ""}</span>`).join("")}</div>` : "";
     const byFolder = {}; all.forEach(n => { if (n.folder) (byFolder[n.folder] = byFolder[n.folder] || []).push(n); });
     const tree = parent => fs.filter(f => (f.parent || null) === parent).map(f => row(f.id, "", f.name, count(f.id), f)
       + (shut.has(f.id) ? "" : tree(f.id) + files(byFolder[f.id] || [], f.depth + 1, f.id))).join("");
     const empty = (txt) => `<p class="nb-gempty" style="--d:1">${txt}</p>`;
-    const lib = (id, ic, name, arr, none) => row(id, ic, name, arr.length) + (libOpen.has(id) ? (files(arr, 1, id) || empty(none)) : "");
+    const lib = (id, ic, name, arr, none) => row(id, ic, name, arr.length) + (libShown(id) ? (files(arr, 1, id) || empty(none)) : "");
     const libHTML = (all.length ? "" : `<p class="nb-gempty nb-none0" style="--d:0">${CODE ? "No code files yet. Start one with ＋ New File." : "No notes yet. Start one with ＋ New Note."}</p>`) + lib("all", CODE ? "&lt;/&gt;" : "▤", CODE ? "All code" : "All notes", all, CODE ? "No code files yet. Start one with ＋ New File." : "No notes yet. Start one with ＋ New Note.")
       + lib("fav", "★", "Favourites", all.filter(n => n.fav), CODE ? "No favourites yet. Star a file with ☆." : "No favourites yet. Star a note with ☆.")
       + lib("none", "◌", "Unfiled", all.filter(n => !n.folder), "Nothing unfiled.");
+    const libRows = () => { // under a filter (v0.5.6): the three selectors stay together at the top, the filtered notes under them
+      const g = { all: [CODE ? "&lt;/&gt;" : "▤", CODE ? "All code" : "All notes", all], fav: ["★", "Favourites", all.filter(n => n.fav)], none: ["◌", "Unfiled", all.filter(n => !n.folder)] };
+      return Object.keys(g).map(k => row(k, g[k][0], g[k][1], g[k][2].length)).join("") + `<div class="nb-fres" data-for="${FILTER}">`
+        + (files(g[FILTER][2], 1, FILTER) || empty(FILTER === "fav" ? (CODE ? "No favourites yet. Star a file with ☆." : "No favourites yet. Star a note with ☆.") : "Nothing unfiled.")) + `</div>`; };
     if (qq) { // Search (v0.5.5): folders as well as notes; in My notes also My Code's folders and files
       const path = (f, list) => { const out = []; let x = f; while (x && x.parent) { x = list.find(y => y.id === x.parent); if (x) out.unshift(x.name); } return out.join(" › "); };
       const fl = fs.filter(f => f.name.toLowerCase().includes(qq)), nl = NS.list(NOTES.q);
@@ -569,31 +646,21 @@ function renderNotes(m, focusBody, space = "notes"){
         + sec("files", CODE ? "is-code" : "is-notes", CODE ? "Code files" : "Notes", files(nl, 0, "q"), nl.length)
         + sec("code", "is-code", "My Code", cfl.map(f => frow(f, "code", cf)).join("") + cnl.map(crowS).join(""), cfl.length + cnl.length) + `</div>`;
     } else {
-      fold.innerHTML = (CODE ? "" : `<div class="nb-fmain">`) + dhead + `<div class="nb-sech ${CODE ? "is-code" : "is-notes"}">${CODE ? "Code" : "Notes"}</div>` + libHTML
-        + `<div class="nb-fh nb-ftop" data-top>${CODE ? "Code folders" : "Folders"}</div>` + tree(null)
-        + `<button type="button" class="nb-fadd" data-a="addf">＋ New folder</button>` + (CODE ? "" : `</div><div class="nb-fsplit" role="separator" aria-orientation="horizontal" tabindex="0" aria-label="Share the bar between notes and code (drag, or ↑/↓; double-click resets)" title="Drag to give the Code section more or less room · double-click resets"></div><div class="nb-fcode">${codeSection(shut)}<div class="nb-sech is-music nb-music" title="My Music is coming soon">Music <span class="nb-soon">Coming soon</span></div></div>`);
+      fold.innerHTML = (CODE ? "" : `<div class="nb-fmain">`) + dhead + `<div class="nb-sech ${CODE ? "is-code" : "is-notes"}">${CODE ? "Code" : "Notes"}</div>` + (FILTER ? libRows() : libHTML)
+        + (FILTER ? "" : `<div class="nb-fh nb-ftop" data-top>${CODE ? "Code folders" : "Folders"}</div>` + tree(null)
+        + `<button type="button" class="nb-fadd" data-a="addf">＋ New folder</button>`) + (CODE ? "" : `</div><div class="nb-fsplit" role="separator" aria-orientation="horizontal" tabindex="0" aria-label="Share the bar between notes and code (drag, or ↑/↓; double-click resets)" title="Drag to give the Code section more or less room · double-click resets"></div><div class="nb-fcode">${codeSection(shut, FILTER)}<div class="nb-sech is-music nb-music" title="My Music is coming soon">Music <span class="nb-soon">Coming soon</span></div></div>`);
     }
     fold.classList.toggle("is-search", !!qq); if (qq) fold.classList.remove("has-fsplit", "code-shut");
+    fold.dataset.filter = FILTER && !qq ? FILTER : "";
     if (!CODE && !qq) wireFsplit();
     drawInfo();
     if (!CODE) wireCodeSection();
     fold.querySelectorAll("img[data-cov]").forEach(im => window.InquireNotes.imageURL(im.dataset.cov).then(u => { if (u) im.src = u; else im.classList.add("missing"); }));
     if (view === "details") wireDcols();
     fold.title = mine ? "Drag notes onto folders to file them, or up and down among notes to put them in your own order" : "Choose My order to arrange notes by dragging";
-    fold.querySelectorAll(".nb-fnote:not(.nb-cfile)").forEach(r => {
-      const open = () => { if (NOTES.sel === r.dataset.id) return; flushEd(); NOTES.sel = r.dataset.id; const n = NS.get(r.dataset.id); if (n && !inView(n)) NOTES.folder = n.folder || "all"; drawAll(); };
-      r.onclick = open;
-      r.onkeydown = e => {
-        if ((e.key === "Enter" || e.key === " ") && e.target === r) { e.preventDefault(); open(); return; }
-        // Alt+↑/↓ moves the note among the notes listed with it (My order)
-        if (!mine || !e.altKey || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return; e.preventDefault();
-        const ids = [...fold.querySelectorAll(`.nb-fnote[data-g="${r.dataset.g}"]`)].map(x => x.dataset.id), i = ids.indexOf(r.dataset.id), j = i + (e.key === "ArrowUp" ? -1 : 1); if (j < 0 || j >= ids.length) return;
-        ids.splice(i, 1); ids.splice(j, 0, r.dataset.id); reorder(ids); const nb = fold.querySelector(`.nb-fnote[data-g="${r.dataset.g}"][data-id="${r.dataset.id}"]`); if (nb) nb.focus();
-      };
-      r.addEventListener("dragstart", e => noteDragStart(e, r.dataset.id, r));
-      r.addEventListener("dragend", () => noteDragEnd(r));
-    });
-    fold.querySelectorAll("[data-lcar]").forEach(b => b.onclick = e => { e.stopPropagation(); const o = new Set(store.get(LIBK, ["none"])), id = b.dataset.lcar; o.has(id) ? o.delete(id) : o.add(id); store.set(LIBK, [...o]); drawFolders(); });
+    fold.querySelectorAll("[data-more]").forEach(b => b.onclick = () => { SHOWALL.add(b.dataset.more); drawFolders(); });
+    fold.querySelectorAll(".nb-fnote:not(.nb-cfile)").forEach(wireRow);
+    fold.querySelectorAll("[data-lcar]").forEach(b => b.onclick = e => { e.stopPropagation(); if (FILTER) { if (b.dataset.lcar !== FILTER) { NOTES.folder = b.dataset.lcar; drawFolders(); } return; } const o = new Set(store.get(LIBK, ["none"])), id = b.dataset.lcar; o.has(id) ? o.delete(id) : o.add(id); store.set(LIBK, [...o]); drawFolders(); });
     fold.querySelectorAll(".nb-sfd").forEach(b => b.onclick = () => { // a folder found by Search: show it in the bar (opened, its parents too)
       if (b.dataset.sp !== space) { flushEd(); go({ view: "notes", space: b.dataset.sp, folder: b.dataset.sf }); return; }
       const c = closed(); let x = fs.find(f => f.id === b.dataset.sf); while (x) { c.delete(x.id); x = x.parent && fs.find(f => f.id === x.parent); } store.set("notefold", [...c]);
@@ -601,6 +668,7 @@ function renderNotes(m, focusBody, space = "notes"){
       const rowEl = fold.querySelector(`.nb-fd[data-f="${b.dataset.sf}"]`); if (rowEl) { rowEl.scrollIntoView({ block: "nearest" }); const fb = rowEl.querySelector(".nb-fdb"); if (fb) fb.focus({ preventScroll: true }); } });
     // pick, open/close, rename, delete
     fold.querySelectorAll(".nb-fdb").forEach(b => b.onclick = () => { NOTES.folder = b.dataset.f; drawFolders(); });
+    fold.querySelectorAll(".nb-fd.user").forEach(d => d.addEventListener("click", e => { if (e.target.closest("button,input,form")) return; const b = d.querySelector(".nb-fdb"); if (b) b.click(); }));
     fold.querySelectorAll("[data-car]").forEach(b => b.onclick = e => { e.stopPropagation(); const c = closed(), id = b.dataset.car; c.has(id) ? c.delete(id) : c.add(id); store.set("notefold", [...c]); drawFolders(); });
     fold.querySelectorAll("[data-sub]").forEach(b => b.onclick = () => { const id = b.dataset.sub, c = closed(); c.delete(id); store.set("notefold", [...c]);
       const at = h("div", { class: "nb-fd user", style: `--d:${(fs.find(f => f.id === id) || {}).depth + 1 || 1}` }); b.closest(".nb-fd").after(at);
@@ -623,19 +691,44 @@ function renderNotes(m, focusBody, space = "notes"){
     });
     const addf = $('[data-a="addf"]', fold); if (addf) addf.onclick = e => nameBox(e.target, "", v => { const f = NS.addFolder(v); NOTES.folder = f.id; drawAll(); });
   }
+  // one note row in the bar: open, keyboard, drag (v0.5.6: on its own, so a saved note's row can be redrawn alone)
+  function wireRow(r){
+      const mine = NOTES.sort !== "recent";
+      const open = () => { if (NOTES.sel === r.dataset.id) return; flushEd(); NOTES.sel = r.dataset.id; const n = NS.get(r.dataset.id); if (n && !inView(n)) NOTES.folder = n.folder || "all"; drawAll(); };
+      r.onclick = open;
+      r.onkeydown = e => {
+        if ((e.key === "Enter" || e.key === " ") && e.target === r) { e.preventDefault(); open(); return; }
+        // Alt+↑/↓ moves the note among the notes listed with it (My order)
+        if (!mine || !e.altKey || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return; e.preventDefault();
+        const ids = [...fold.querySelectorAll(`.nb-fnote[data-g="${r.dataset.g}"]`)].map(x => x.dataset.id), i = ids.indexOf(r.dataset.id), j = i + (e.key === "ArrowUp" ? -1 : 1); if (j < 0 || j >= ids.length) return;
+        ids.splice(i, 1); ids.splice(j, 0, r.dataset.id); reorder(ids); const nb = fold.querySelector(`.nb-fnote[data-g="${r.dataset.g}"][data-id="${r.dataset.id}"]`); if (nb) nb.focus();
+      };
+      r.addEventListener("dragstart", e => noteDragStart(e, r.dataset.id, r));
+      r.addEventListener("dragend", () => noteDragEnd(r));
+  }
+  // a saved note: redraw only its rows (its time, star, title); the order catches up on the next full redraw
+  function patchRows(id){
+    const n = NS.get(id); if (!n || !ROWFN) return;
+    fold.querySelectorAll(`.nb-fnote[data-id="${id}"]:not(.nb-cfile)`).forEach(el => {
+      const t = document.createElement("template"); t.innerHTML = ROWFN(n, el); const nr = t.content.firstElementChild; if (!nr) return;
+      el.replaceWith(nr); wireRow(nr);
+      const im = nr.querySelector("img[data-cov]"); if (im) window.InquireNotes.imageURL(im.dataset.cov).then(u => { if (u) im.src = u; });
+    });
+  }
   /* ----- Notes tab: the Code section under the folders (a divider, then the Code folders and files). A code file opens in
      My Code; dragged into a note it becomes a code box (a copy); dropped on a folder it is copied there as a new note.
      The original always stays in My Code (Devon, Oct 2026). ----- */
   const LG = k => (window.NPCode ? NPCode.lang(k) : { short: "&lt;/&gt;" });
-  function codeSection(shut){
-    const cf = CS.folders(), cn = CS.list(), open = !store.get("codesecfold", false);
+  function codeSection(shut, filter){
+    const cf = CS.folders(), cn = CS.list(), open = !store.get("codesecfold", false), fl = filter ? cn.slice().sort(ALLNS.byOrder).filter(n => filter === "fav" ? n.fav : !n.folder) : null;
     const byF = {}; cn.slice().sort(ALLNS.byOrder).forEach(n => { const k = n.folder || "_"; (byF[k] = byF[k] || []).push(n); });
     const crow = (n, d) => `<div class="nb-fnote nb-cfile" role="button" tabindex="0" draggable="true" data-cid="${n.id}" style="--d:${d}" title="${esc(n.title)}: click to open it in My Code; drag it into a note for a copy of its code, or onto a folder to file a copy there"><span class="nb-fni nb-cfi" data-lang="${esc(n.code.lang)}">${esc(LG(n.code.lang).short)}</span><span class="nb-fnt">${esc(n.title)}</span></div>`;
     const cnt = id => { const sub = ALLNS.subtree(id); return cn.filter(n => sub.has(n.folder)).length; };
     const cfrow = f => `<div class="nb-cfd" style="--d:${f.depth}"><button type="button" class="nb-fcar" data-ccar="${f.id}" aria-expanded="${!shut.has(f.id)}" title="${shut.has(f.id) ? "Show" : "Hide"} the files in ${esc(f.name)}" aria-label="${shut.has(f.id) ? "Show" : "Hide"} the files in ${esc(f.name)}">${folderIcon(!shut.has(f.id))}</button><span class="nb-cfdn">${esc(f.name)}</span><span class="nb-fn num">${cnt(f.id)}</span></div>`;
     const tree = parent => cf.filter(f => (f.parent || null) === parent).map(f => cfrow(f) + (shut.has(f.id) ? "" : tree(f.id) + (byF[f.id] || []).map(n => crow(n, f.depth + 1)).join(""))).join("");
-    return `<div class="nb-codeh" role="separator"><button type="button" class="nb-codet" aria-expanded="${open}" title="${open ? "Hide" : "Show"} your code files">${folderIcon(open)} Code</button><span class="nb-fn num">${cn.length}</span><button type="button" class="nb-codego" data-a="gocode" title="Open My Code" aria-label="Open My Code">↗</button></div>`
-      + (open ? `<div class="nb-codetree">${cn.length || cf.length ? tree(null) + (byF._ || []).map(n => crow(n, 0)).join("") : `<p class="nb-codeempty">No code files yet. Make one in <b>My Code</b> on the Main Menu.</p>`}</div>` : "");
+    return `<div class="nb-codeh" role="separator"><button type="button" class="nb-codet" aria-expanded="${open}" title="${open ? "Hide" : "Show"} your code files">${folderIcon(open)} Code</button><span class="nb-fn num">${fl ? fl.length : cn.length}</span><button type="button" class="nb-codego" data-a="gocode" title="Open My Code" aria-label="Open My Code">↗</button></div>`
+      + (open ? `<div class="nb-codetree">${fl ? (fl.length ? fl.map(n => crow(n, 0)).join("") : `<p class="nb-codeempty">${filter === "fav" ? "No favourite code files." : "No unfiled code files."}</p>`) // v0.5.6: the filter reaches the Code section (files only, no folders)
+        : cn.length || cf.length ? tree(null) + (byF._ || []).map(n => crow(n, 0)).join("") : `<p class="nb-codeempty">No code files yet. Make one in <b>My Code</b> on the Main Menu.</p>`}</div>` : "");
   }
   /* the line between the notes folders and the Code section: drag it (or ↑/↓) to share the column; the Code part's height
      is kept (store "codesech"); folded, the Code section takes only its header (Devon, Oct 12 2026) */
@@ -762,7 +855,8 @@ function renderNotes(m, focusBody, space = "notes"){
   const msg = t => { if (NS.toast) NS.toast(esc(t), null, 3000); };
   function drawEd(focusBody){
     if (rich) { rich.destroy(); rich = null; }
-    holoEl = null; indEl = null; // the pane is redrawn; ◈ / ↳ put their panels back if they were open
+    holoEl = null; indEl = null; asEl = null; // the pane is redrawn; ◈ / ↳ / ✦ / A✓ put their panels back if they were open
+    if (asKey) { window.removeEventListener("keydown", asKey, true); asKey = null; }
     if (holoKey) { window.removeEventListener("keydown", holoKey, true); holoKey = null; } if (indKey) { window.removeEventListener("keydown", indKey, true); indKey = null; }
     drawInfo();
     ed.classList.remove("nc-pane");
@@ -780,17 +874,18 @@ function renderNotes(m, focusBody, space = "notes"){
         openSide: id => { drawFolders(); openSplit(id); } });
       return;
     }
-    ed.innerHTML = `<div class="nb-bar"><button type="button" class="nb-favb${n.fav ? " on" : ""}" data-a="fav" aria-pressed="${n.fav}" title="${n.fav ? "Remove from favourites" : "Add to favourites"}">${n.fav ? "★" : "☆"}</button>
+    ed.innerHTML = `<div class="nb-bar"><button type="button" class="nb-favb${n.fav ? " on" : ""}" data-a="fav" aria-pressed="${n.fav}" title="${n.fav ? "Remove from favourites" : "Add to favourites"}">${n.fav ? "★" : "☆"}</button><span class="nb-save" role="status" aria-live="polite"></span>
         <button type="button" class="btn-s nb-bar-r" data-a="photo" title="Add photos from this computer (or paste / drop them into the note)">＋ Photo</button><button type="button" class="btn-s" data-a="purl" title="Show a photo from a web address">Photo link</button>
         <button type="button" class="btn-s nr-vid" data-a="video" title="Add a video: a file from this computer, or a YouTube, Vimeo or video link" aria-haspopup="dialog">▶ Video</button>
-        <button type="button" class="btn-s" data-a="exp" title="Save this note as Word, Markdown (Obsidian), Apple Notes / Evernote, PDF, a web page or text">Export…</button><button type="button" class="btn-s set-warn" data-a="del">Delete</button></div>
+        <button type="button" class="btn-s set-warn" data-a="del">Delete</button></div>
       <form class="nb-urlrow" hidden><input type="url" placeholder="https://… address of a photo" aria-label="Photo address"><button type="submit" class="btn-s">Insert</button><button type="button" class="btn-s" data-a="purlx">Cancel</button><span class="nb-urlmsg"></span></form>
       <div class="nb-trow"><input class="nb-title" value="${esc(n.title)}" aria-label="Title" maxlength="140"><div class="nb-split" aria-hidden="true" title="Drop a note here to open it beside this one"><span class="nb-split-ic">⧉</span><span>Drop to open side by side</span></div></div>
       <div class="nb-host"></div><input type="file" accept="image/*" multiple hidden>`;
     const ti = $(".nb-title", ed), file = $('input[type="file"]', ed);
     $(".nb-trow", ed).prepend(coverButton(NS, n.id, () => drawList())); // cover photo by the title (v0.5.4)
     rich = NS.mountEditor($(".nb-host", ed), n.id, {
-      onSaved: () => { const it = items.querySelector(`[data-id="${n.id}"]`); if (it) drawList(); },
+      onSaved: () => patchRows(n.id), // v0.5.6: only this note's rows, not the whole bar
+      onEditing: () => saveLine("editing"),
       openNote: id => openLinked(id),
       openSide: id => openFromLink(id), peek: id => peekOpen(id), openFolder: fid => openFolderLink(fid),
       annotations: indShown(), onAnnotation: aid => { IND.open = true; IND.edit = aid; indOpen(n.id); },
@@ -805,8 +900,7 @@ function renderNotes(m, focusBody, space = "notes"){
     $('[data-a="purl"]', ed).onclick = () => { urlRow.hidden = !urlRow.hidden; if (!urlRow.hidden) urlIn.focus(); };
     $('[data-a="purlx"]', ed).onclick = () => { urlRow.hidden = true; };
     urlRow.onsubmit = e => { e.preventDefault(); if (rich.addURL(urlIn.value)) { urlIn.value = ""; urlRow.hidden = true; } else $(".nb-urlmsg", urlRow).textContent = "Use an https:// address of an image."; };
-    $('[data-a="exp"]', ed).onclick = () => openIO("note");
-    holoButton(n);
+    holoButton(n); saveLine(); { const sl = $(".nb-save", ed); if (sl && !sl.classList.contains("is-error")) sl.classList.add("quiet"); }
     // delete at once, with Undo in a message for 8 s (photos and videos are only removed once that time is up)
     $('[data-a="del"]', ed).onclick = () => { flushEd(); if (rich) { rich.destroy(); rich = null; } NOTES.sel = null; NS.deleteWithUndo(n.id, id => { if (s.isConnected) { NOTES.sel = id; drawAll(); } }); drawAll(); };
     if (focusBody) setTimeout(() => {
@@ -836,9 +930,11 @@ function renderNotes(m, focusBody, space = "notes"){
   function holoButton(n){
     const b = h("button", { type: "button", class: "nb-holob", "aria-label": "Tags, links and source of this note", title: "Tags · Links · Source", "aria-expanded": "false" }, `<span aria-hidden="true">◈</span>`);
     ed.appendChild(b);
-    b.onclick = () => { HOLO.open = !HOLO.open; if (HOLO.open) holoOpen(n.id); else holoClose(); };
+    b.onclick = () => { HOLO.open = !HOLO.open; if (HOLO.open) { if (AS.open) asClose(); holoOpen(n.id); } else holoClose(); };
     if (HOLO.open) holoOpen(n.id);
-    indButton(n);
+    indButton(n); asButtons(n);
+    // short names that show on hover and keyboard focus (v0.5.6, Devon: the symbols alone were not enough)
+    [[".nb-holob:not(.nb-indb):not(.nb-aib):not(.nb-gramb)", "Links"], [".nb-indb", "Paranotes"], [".nb-aib", "AI Chat"], [".nb-gramb", "Grammar"]].forEach(([q, l]) => { const x = $(q, ed); if (x) x.dataset.label = l; });
   }
   /* ----- ↳ Paranotes (Devon, Oct 12 2026): the button above ◈ opens a box above the Links box. "Show paranotes"
      draws your own notes under the words they explain (notes.js does the drawing; store "indshow"); ＋ adds one on the
@@ -849,7 +945,7 @@ function renderNotes(m, focusBody, space = "notes"){
   function indButton(n){
     const b = h("button", { type: "button", class: "nb-holob nb-indb", "aria-label": "Paranotes", title: "Paranotes: your own notes under the words they explain", "aria-expanded": "false" }, `<span aria-hidden="true">↳</span>`);
     ed.appendChild(b);
-    b.onclick = () => { IND.open = !IND.open; if (IND.open) indOpen(n.id); else indClose(); };
+    b.onclick = () => { IND.open = !IND.open; if (IND.open) { if (AS.open) asClose(); indOpen(n.id); } else indClose(); };
     if (IND.open) indOpen(n.id);
   }
   function indClose(){ IND.open = false; IND.edit = null; if (indEl) { indEl.remove(); indEl = null; } if (indKey) { window.removeEventListener("keydown", indKey, true); indKey = null; } const b = $(".nb-indb", ed); if (b) b.setAttribute("aria-expanded", "false"); }
@@ -898,6 +994,118 @@ function renderNotes(m, focusBody, space = "notes"){
       $('[data-a="cancel"]', f).onclick = () => { clearTimeout(t); rich.setAnnotation(cur.id, ta.value); IND.edit = null; indDraw(NOTES.sel); };
       $('[data-a="del"]', f).onclick = () => { clearTimeout(t); rich.removeAnnotation(cur.id); IND.edit = null; indDraw(NOTES.sel); };
       setTimeout(() => { ta.focus({ preventScroll: true }); ta.setSelectionRange(ta.value.length, ta.value.length); }, 0); }
+  }
+  /* ----- v0.5.6 (Devon): ✦ AI Chat and Aa✓ Grammar check, two more round buttons beside ↳ and ◈. Each opens a box in the same
+     corner (one of them at a time; opening one closes the Links and Paranotes boxes, and the other way round). The work
+     (requests, LanguageTool, the text map) is in assist.js (NPAssist). ----- */
+  const AS = NOTES.as || (NOTES.as = { open: null, box: Object.assign({ r: 16, b: 70, w: 400, h: 460 }, store.get("asbox", {})), chats: {}, g: null });
+  let asEl = null, asKey = null;
+  const GST = () => Object.assign({ def: "school", lang: "en-US", notes: {} }, store.get("grammar", {}));
+  function asButtons(n){
+    [["ai", "nb-aib", "AI Chat", "AI Chat: ask about this note, or have it write, sum up or explain", `<span aria-hidden="true">✦</span>`],
+     ["gram", "nb-gramb", "Grammar check", "Grammar check: spelling, grammar and style, set to the kind of note you are writing", `<span aria-hidden="true" class="nb-gramg">A<small>✓</small></span>`]].forEach(([k, cls, label, title, ic]) => {
+      const b = h("button", { type: "button", class: "nb-holob " + cls, "aria-label": label, title, "aria-expanded": String(AS.open === k) }, ic);
+      ed.appendChild(b); b.onclick = () => { if (AS.open === k) asClose(); else asOpen(k, n.id); };
+    });
+    if (AS.open) asOpen(AS.open, n.id);
+  }
+  function asClose(){ AS.open = null; if (asEl) { asEl.remove(); asEl = null; } if (asKey) { window.removeEventListener("keydown", asKey, true); asKey = null; } ed.querySelectorAll(".nb-aib, .nb-gramb").forEach(b => b.setAttribute("aria-expanded", "false")); }
+  function asFit(){
+    if (!asEl) return; const W = ed.clientWidth, H = ed.clientHeight, x = AS.box;
+    x.w = Math.max(280, Math.min(x.w, W - 8)); x.h = Math.max(240, Math.min(x.h, H - 8));
+    x.r = Math.max(4, Math.min(x.r, W - x.w - 4)); x.b = Math.max(4, Math.min(x.b, H - x.h - 4));
+    Object.assign(asEl.style, { right: x.r + "px", bottom: x.b + "px", width: x.w + "px", height: x.h + "px" });
+  }
+  function asOpen(k, id){
+    if (HOLO.open) holoClose(); if (IND.open) indClose();
+    if (asEl) asEl.remove(); if (asKey) { window.removeEventListener("keydown", asKey, true); asKey = null; }
+    AS.open = k; ed.querySelectorAll(".nb-aib, .nb-gramb").forEach(b => b.setAttribute("aria-expanded", String(b.classList.contains(k === "ai" ? "nb-aib" : "nb-gramb"))));
+    asEl = h("div", { class: "np-holo np-as np-as-" + k, role: "dialog", "aria-label": k === "ai" ? "AI Chat" : "Grammar check" });
+    ed.appendChild(asEl); asFit();
+    if (k === "ai") aiPanel(id); else gramPanel(id);
+    panelResize(asEl, AS.box, asFit, "asbox");
+    asKey = e => { if (e.key === "Escape" && asEl && !document.querySelector(".tm-menu, .np-pop, .ask-ov")) { e.preventDefault(); e.stopPropagation(); asClose(); } };
+    window.addEventListener("keydown", asKey, true);
+  }
+  const asHead = (t, extra) => `<div class="np-holo-h"><div class="np-holo-tabs"><span class="np-as-t">${t}</span></div>${extra || ""}<button type="button" class="np-holo-x" aria-label="Close">✕</button></div>`;
+  const noteText = id => { const n = NS.get(id); if (!n) return null; const t = rich && rich.el ? NPAssist.textMap(rich.el).text : n.body || ""; return { title: n.title, text: t }; };
+  // ✦ AI Chat: a conversation per note for this session (not saved); "Read this note" sends the note with each question
+  function aiPanel(id){
+    const chat = AS.chats[id] || (AS.chats[id] = []);
+    asEl.innerHTML = asHead("✦ AI Chat", `<button type="button" class="np-as-new" title="Start a new chat about this note">New chat</button>`)
+      + `<div class="np-holo-bar"><label class="np-ind-show"><input type="checkbox" class="np-ai-read"${store.get("airead", true) !== false ? " checked" : ""}><span>Read this note</span></label><span class="np-as-st"></span></div>
+      <div class="np-holo-b np-ai-b" aria-live="polite"></div>
+      <form class="np-ai-f"><textarea rows="2" maxlength="8000" placeholder="Ask anything… e.g. Sum up this note · Give me 5 ideas · Explain the second paragraph" aria-label="Message to the AI"></textarea><button type="submit" class="np-ai-send" title="Send (Enter; Shift+Enter for a new line)">Send</button></form>
+      <div class="np-holo-rzs">${RZ}</div>`;
+    const body = $(".np-ai-b", asEl), f = $(".np-ai-f", asEl), ta = $("textarea", f), st = $(".np-as-st", asEl);
+    $(".np-holo-x", asEl).onclick = () => asClose();
+    $(".np-ai-read", asEl).onchange = e => store.set("airead", e.target.checked);
+    $(".np-as-new", asEl).onclick = () => { chat.length = 0; draw(); ta.focus(); };
+    let busy = false, ready = null;
+    const draw = () => {
+      body.innerHTML = (ready === false ? `<div class="np-ai-off"><b>AI Chat is not set up in this copy of NotePath.</b><p>It uses the same AI key as My Code's ⇄ Translate: put the key in <code>ai.config.json</code> beside NotePath (copy <code>ai.config.example.json</code>), then open NotePath again. Settings → Code shows whether it is ready.</p></div>` : "")
+        + (chat.length ? chat.map((m, i) => `<div class="np-ai-m ${m.role === "user" ? "me" : m.err ? "err" : "ai"}"><div class="np-ai-tx">${m.role === "user" || m.err ? esc(m.content).replace(/\n/g, "<br>") : NPAssist.toHTML(m.content)}</div>${m.role === "assistant" && !m.err ? `<div class="np-ai-acts"><button type="button" data-copy="${i}">Copy</button><button type="button" data-ins="${i}" title="Add this answer to the note, after the line you were on">＋ Add to note</button></div>` : ""}</div>`).join("")
+          : ready !== false ? `<p class="np-hl-none">Ask about this note, or ask it to write something for you: a summary, a list of ideas, a clearer version, an explanation. Tip: select words in the note and right-click → <b>Ask AI…</b> to work on just those words.</p>` : "")
+        + (busy ? `<div class="np-ai-m ai busy"><div class="np-ai-tx">Thinking…</div></div>` : "");
+      body.scrollTop = body.scrollHeight;
+      f.querySelector("button").disabled = busy || ready === false; ta.disabled = ready === false;
+      body.querySelectorAll("[data-copy]").forEach(b => b.onclick = () => { const t = chat[+b.dataset.copy].content; if (navigator.clipboard) navigator.clipboard.writeText(t).then(() => msg("Copied"), () => msg("Could not copy")); });
+      body.querySelectorAll("[data-ins]").forEach(b => b.onclick = () => { if (rich && rich.insertBlock && rich.insertBlock(NPAssist.toHTML(chat[+b.dataset.ins].content))) msg("Added to the note"); });
+    };
+    const send = async () => {
+      const q = ta.value.trim(); if (!q || busy || ready === false) return;
+      chat.push({ role: "user", content: q }); ta.value = ""; busy = true; draw();
+      try { const a = await NPAssist.ask(NPAssist.chatRequest(chat.filter(m => !m.err), $(".np-ai-read", asEl) && $(".np-ai-read", asEl).checked ? noteText(id) : null)); chat.push({ role: "assistant", content: a || "(no answer)" }); }
+      catch (e) { chat.push({ role: "assistant", err: true, content: e && e.message ? e.message : "The AI did not answer." }); }
+      busy = false; if (asEl && asEl.isConnected && AS.open === "ai") draw();
+    };
+    f.onsubmit = e => { e.preventDefault(); send(); };
+    ta.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(); } });
+    draw();
+    NPAssist.aiStatus().then(s => { ready = !!(s && s.configured); if (!asEl || AS.open !== "ai") return; st.textContent = ready ? (s.model ? "Ready · " + s.model : "Ready") : "Not set up"; st.classList.toggle("off", !ready); draw(); if (ready) ta.focus({ preventScroll: true }); });
+  }
+  // Aa✓ Grammar check: pick the kind of note (how strict), check, then take a suggestion or ignore it; click one to see it in the note
+  function gramPanel(id){
+    const G = GST(), type = G.notes[id] || G.def;
+    if (!AS.g || AS.g.id !== id) AS.g = { id, list: null, err: "", busy: false, cut: false };
+    const S = AS.g;
+    asEl.innerHTML = asHead("A✓ Grammar check")
+      + `<div class="np-gr-set"><label><span>This note is</span><select class="np-gr-type" aria-label="Kind of note">${NPAssist.GTYPES.map(t => `<option value="${t[0]}"${t[0] === type ? " selected" : ""}>${t[1]}</option>`).join("")}</select></label>
+        <label><span>Language</span><select class="np-gr-lang" aria-label="Language">${NPAssist.GLANGS.map(l => `<option value="${l[0]}"${l[0] === G.lang ? " selected" : ""}>${l[1]}</option>`).join("")}</select></label>
+        <p class="np-gr-what"></p><button type="button" class="np-gr-go">Check this note</button></div>
+      <div class="np-holo-b np-gr-b" aria-live="polite"></div><p class="np-gr-foot">Checked by LanguageTool (free): the note's words are sent to languagetool.org when you press Check.</p><div class="np-holo-rzs">${RZ}</div>`;
+    const tSel = $(".np-gr-type", asEl), lSel = $(".np-gr-lang", asEl), what = $(".np-gr-what", asEl), body = $(".np-gr-b", asEl), go = $(".np-gr-go", asEl);
+    $(".np-holo-x", asEl).onclick = () => asClose();
+    const say = () => { what.textContent = NPAssist.gtype(tSel.value)[2]; };
+    tSel.onchange = () => { const g = GST(); g.notes[id] = tSel.value; g.def = tSel.value; store.set("grammar", g); say(); if (S.list) { S.list = null; draw(); } };
+    lSel.onchange = () => { const g = GST(); g.lang = lSel.value; store.set("grammar", g); };
+    const draw = () => {
+      go.disabled = S.busy; go.textContent = S.busy ? "Checking…" : S.list ? "Check again" : "Check this note";
+      if (S.err) { body.innerHTML = `<p class="np-gr-msg bad">${esc(S.err)}</p>`; return; }
+      if (!S.list) { body.innerHTML = S.busy ? "" : `<p class="np-hl-none">Choose the kind of note you are writing, then press <b>Check this note</b>. A quick note only gets spelling and clear mistakes; formal writing gets every rule.</p>`; return; }
+      if (!S.list.length) { body.innerHTML = `<p class="np-gr-ok">${S.fixed ? "✓ All done. Press Check again to look once more." : `✓ No problems found (checked as ${esc(NPAssist.gtype(tSel.value)[1])}).`}</p>` + (S.cut ? `<p class="np-gr-msg">Only the first ${NPAssist.GT_MAX.toLocaleString()} characters were checked.</p>` : ""); return; }
+      body.innerHTML = `<p class="np-gr-n">${S.list.length} ${S.list.length === 1 ? "thing" : "things"} to look at${S.cut ? ` (the first ${NPAssist.GT_MAX.toLocaleString()} characters)` : ""}</p>`
+        + S.list.map(m => `<div class="np-gr-m k-${m.kind}" data-g="${m.id}"><button type="button" class="np-gr-w" data-show="${m.id}" title="Show it in the note"><s>${esc(m.bad)}</s><span class="np-gr-cat">${esc(m.kind === "spelling" ? "Spelling" : m.cat || "Grammar")}</span></button><p>${esc(m.message)}</p>
+          <div class="np-gr-reps">${m.reps.map((r, j) => `<button type="button" class="np-gr-rep" data-fix="${m.id}" data-r="${j}">${r === "" ? "<i>remove it</i>" : esc(r)}</button>`).join("")}<button type="button" class="np-gr-ign" data-ign="${m.id}">Ignore</button></div></div>`).join("");
+      body.querySelectorAll("[data-show]").forEach(b => b.onclick = () => show(S.list.find(m => m.id === b.dataset.show)));
+      body.querySelectorAll("[data-fix]").forEach(b => b.onclick = () => fix(S.list.find(m => m.id === b.dataset.fix), +b.dataset.r));
+      body.querySelectorAll("[data-ign]").forEach(b => b.onclick = () => { S.fixed = true; S.list = S.list.filter(m => m.id !== b.dataset.ign); draw(); });
+    };
+    const where = m => { if (!rich || !rich.el) return null; const map = NPAssist.textMap(rich.el), at = NPAssist.locate(map, m); return at < 0 ? null : { at, r: NPAssist.rangeAt(map, at, m.length) }; };
+    const show = m => { const w = m && where(m); if (!w || !w.r) { msg("That part of the note has changed. Check again."); return; }
+      rich.el.focus({ preventScroll: true }); const s = getSelection(); s.removeAllRanges(); s.addRange(w.r); const el = w.r.startContainer.parentElement; if (el) el.scrollIntoView({ block: "nearest" }); };
+    const fix = (m, j) => { const w = m && where(m); if (!w || !w.r) { msg("That part of the note has changed. Check again."); return; }
+      const rep = m.reps[j]; rich.el.focus({ preventScroll: true }); const s = getSelection(); s.removeAllRanges(); s.addRange(w.r);
+      if (rep === "") document.execCommand("delete"); else document.execCommand("insertText", false, rep);
+      if (rich.changed) rich.changed();
+      S.fixed = true; S.list = NPAssist.shiftMatches(S.list.filter(x => x.id !== m.id), w.at, m.length, rep.length); draw(); };
+    go.onclick = async () => {
+      const t = noteText(id); if (!t || !t.text.trim()) { S.err = ""; S.list = []; draw(); return; }
+      S.busy = true; S.err = ""; S.fixed = false; draw();
+      try { const r = await NPAssist.grammarCheck(t.text, tSel.value, lSel.value); S.list = r.matches; S.cut = r.cut; } catch (e) { S.err = e && e.message ? e.message : "The check did not work."; S.list = null; }
+      S.busy = false; if (asEl && AS.open === "gram" && AS.g === S) draw();
+    };
+    say(); draw();
   }
   const linksOf = html => { const out = []; String(html || "").replace(/data-note="([a-z0-9]+)"/gi, (x, id) => { if (!out.includes(id)) out.push(id); return x; }); return out; };
   function holoClose(){ HOLO.open = false; if (holoEl) { holoEl.remove(); holoEl = null; } if (holoKey) { window.removeEventListener("keydown", holoKey, true); holoKey = null; } const b = $(".nb-holob", ed); if (b) b.setAttribute("aria-expanded", "false"); indFit(); }
@@ -1178,7 +1386,7 @@ window.InquireApp = {
 $("#brand").onclick = () => go({ view: "menu" });
 // NotePath opens on the start menu; #notes / #favourites open the My notes page.
 const initial = fromHash();
-render();
-try { history.replaceState({ view: "menu" }, "", "#menu"); } catch(e){}
-if (initial && initial.view === "notes") go(initial, false);
+// v0.5.6: the notes load from IndexedDB first (a few ms; on the first start of 0.5.6 they are moved there from localStorage)
+const startUp = () => { render(); try { history.replaceState({ view: "menu" }, "", "#menu"); } catch(e){} if (initial && initial.view === "notes") go(initial, false); };
+if (window.InquireNotes && InquireNotes.ready && !InquireNotes.isReady()) InquireNotes.ready.then(startUp, startUp); else startUp();
 })();

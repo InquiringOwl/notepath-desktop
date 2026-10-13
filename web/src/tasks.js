@@ -119,8 +119,8 @@ async function geocode(q) {
   return (Array.isArray(body) ? body : []).map(x => ({ label: String(x.display_name || ""), lat: +x.lat, lon: +x.lon })).filter(x => x.label && isFinite(x.lat) && isFinite(x.lon));
 }
 // a small map: OpenStreetMap tiles around the place, a pin in the middle, − / ＋ zoom (no library needed)
-function mapView(host, loc) {
-  let z = 16;
+function mapView(host, loc, o = {}) { // o.zoom, o.onZoom(z): the Map widget in notes keeps its zoom (v0.5.6)
+  let z = Math.max(3, Math.min(19, +o.zoom || 16));
   host.innerHTML = `<div class="nt-tiles"></div><span class="nt-pin" aria-hidden="true"></span><div class="nt-zoom"><button type="button" data-z="1" aria-label="Zoom in">＋</button><button type="button" data-z="-1" aria-label="Zoom out">−</button></div><span class="nt-attr">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors</span>`;
   const tiles = $(".nt-tiles", host);
   const draw = () => {
@@ -134,7 +134,7 @@ function mapView(host, loc) {
     }
     tiles.innerHTML = html;
   };
-  host.querySelectorAll("[data-z]").forEach(b => b.onclick = () => { z = Math.max(3, Math.min(19, z + +b.dataset.z)); draw(); });
+  host.querySelectorAll("[data-z]").forEach(b => b.onclick = () => { z = Math.max(3, Math.min(19, z + +b.dataset.z)); draw(); if (o.onZoom) o.onZoom(z); });
   const ro = window.ResizeObserver ? new ResizeObserver(draw) : null; if (ro) ro.observe(host);
   draw();
   return { destroy: () => { if (ro) ro.disconnect(); } };
@@ -354,6 +354,6 @@ function render(m, o = {}) {
   drawAll();
 }
 
-window.NPTasks = { all, get, create, update, remove, setDone, render, upcoming, dueAt, dueLabel, overdue, nextDue, ics, PRI, REM, geocode,
+window.NPTasks = { all, get, create, update, remove, setDone, render, upcoming, dueAt, dueLabel, overdue, nextDue, ics, PRI, REM, geocode, mapView,
   media: () => read().flatMap(mediaOf), readRaw: read, writeRaw: write, openCount: () => read().filter(t => !t.done).length, overdueCount: () => read().filter(overdue).length };
 })();

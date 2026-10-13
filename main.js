@@ -193,21 +193,35 @@ app.whenReady().then(() => {
   ipcMain.handle('ai:status', () => { const c = aiConfig(); return { configured: !!c.key, provider: c.provider, model: c.model }; });
   ipcMain.handle('ai:ask', async (_e, q) => {
     const c = aiConfig(); if (!c.key) return { error: 'AI is not set up in this copy of NotePath.' };
-    const system = String(q && q.system || '').slice(0, 4000), prompt = String(q && q.prompt || '').slice(0, 120000);
+    const system = String(q && q.system || '').slice(0, 40000), prompt = String(q && q.prompt || '').slice(0, 120000);
+    // v0.5.6: AI Chat sends the whole conversation ({ role: user | assistant, content }); one-off asks send only the prompt
+    let msgs = Array.isArray(q && q.messages) ? q.messages.filter(m => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string' && m.content).slice(-40).map(m => ({ role: m.role, content: m.content.slice(0, 20000) })) : [];
+    while (msgs.length && msgs[0].role !== 'user') msgs.shift();
+    if (!msgs.length) msgs = [{ role: 'user', content: prompt }];
     try {
       if (c.provider === 'openai') {
         const r = await net.fetch(c.url || 'https://api.openai.com/v1/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + c.key },
-          body: JSON.stringify({ model: c.model, messages: [{ role: 'system', content: system }, { role: 'user', content: prompt }] }) });
+          body: JSON.stringify({ model: c.model, messages: [{ role: 'system', content: system }, ...msgs] }) });
         const j = await r.json().catch(() => null);
         if (r.status !== 200 || !j) return { error: `The AI service answered ${r.status}.` };
         return { text: j.choices && j.choices[0] && j.choices[0].message ? j.choices[0].message.content : '' };
       }
       const r = await net.fetch(c.url || 'https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': c.key, 'anthropic-version': '2023-06-01' },
-        body: JSON.stringify({ model: c.model, max_tokens: c.maxTokens || 8000, system, messages: [{ role: 'user', content: prompt }] }) });
+        body: JSON.stringify({ model: c.model, max_tokens: c.maxTokens || 8000, system, messages: msgs }) });
       const j = await r.json().catch(() => null);
       if (r.status !== 200 || !j) return { error: `The AI service answered ${r.status}${j && j.error && j.error.message ? ': ' + j.error.message : ''}.` };
       return { text: (j.content || []).filter(b => b.type === 'text').map(b => b.text).join('') };
     } catch (err) { return { error: 'Could not reach the AI service. Check your internet connection.' }; }
+  });
+  // My notes' Grammar check (v0.5.6, web/src/assist.js): one form POST to LanguageTool's free public service, made here so the
+  // page's CSP stays closed. Only that address; the page builds the form (text, language, level, categories left out).
+  ipcMain.handle('grammar:check', async (_e, q) => {
+    const body = String(q && q.body || ''); if (!body || body.length > 80000) return { status: 0 };
+    try {
+      const r = await net.fetch('https://api.languagetool.org/v2/check', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json', 'User-Agent': `NotePath/${app.getVersion()} (https://github.com/${OWNER}/${RELEASES_REPO})` }, body });
+      let json = null; try { json = await r.json(); } catch (err) {}
+      return { status: r.status, body: json };
+    } catch (err) { return { status: 0 }; }
   });
   // My Tasks reminders (web/src/tasks.js): the page sends every reminder still to come; they show as system notifications
   // here, so they still appear while the window is closed (macOS keeps NotePath running). A click opens the task.
@@ -252,6 +266,30 @@ app.whenReady().then(() => {
       fs.writeFileSync(tmp, html); await pw.loadFile(tmp);
       return await pw.webContents.printToPDF({ printBackground: true, pageSize: 'Letter', margins: { marginType: 'default' } });
     } catch (err) { log.warn('pdf', err); return null; }
+    finally { pw.destroy(); try { fs.unlinkSync(tmp); } catch (e) {} }
+  });
+  // Share → Email / Print (v0.5.6, Devon). mail: only mailto: links, opened in the person's mail app. file: a PDF kept in
+  // Downloads/NotePath (a new name if one is there) and shown in Finder / File Explorer, to drag into the message.
+  // print: the note as a page in a hidden window, then the system print window.
+  ipcMain.handle('share:mail', (_e, url) => { if (typeof url !== 'string' || !/^mailto:/i.test(url) || url.length > 8000) return false; shell.openExternal(url); return true; });
+  ipcMain.handle('share:file', (_e, q) => {
+    try {
+      const name = String(q && q.name || 'note.pdf').replace(/[\\/:*?"<>|\x00-\x1f]/g, '-').slice(0, 120) || 'note.pdf', bytes = q && q.bytes;
+      if (!bytes || !bytes.length || bytes.length > 300e6) return null;
+      const dir = path.join(app.getPath('downloads'), 'NotePath'); fs.mkdirSync(dir, { recursive: true });
+      const ext = path.extname(name), stem = name.slice(0, name.length - ext.length); let p = path.join(dir, name), i = 2;
+      while (fs.existsSync(p)) p = path.join(dir, `${stem} (${i++})${ext}`);
+      fs.writeFileSync(p, Buffer.from(bytes)); shell.showItemInFolder(p); return p;
+    } catch (err) { log.warn('share file', err); return null; }
+  });
+  ipcMain.handle('share:print', async (_e, html) => {
+    if (typeof html !== 'string' || html.length > 200e6) return false;
+    const tmp = path.join(app.getPath('temp'), `notepath-print-${process.pid}-${Date.now()}.html`);
+    const pw = new BrowserWindow({ show: false, webPreferences: { javascript: false, sandbox: true } });
+    try {
+      fs.writeFileSync(tmp, html); await pw.loadFile(tmp);
+      return await new Promise(res => pw.webContents.print({ silent: false, printBackground: true }, ok => res(!!ok)));
+    } catch (err) { log.warn('print', err); return false; }
     finally { pw.destroy(); try { fs.unlinkSync(tmp); } catch (e) {} }
   });
   ipcMain.handle('update:reveal', () => { if (updateState.fallback) shell.showItemInFolder(updateState.fallback); });

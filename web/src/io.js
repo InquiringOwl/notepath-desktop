@@ -361,8 +361,46 @@ async function exportNotes(scope, fmt, o = {}) {
     if (keys.length === 1) { blob = new Blob([await toENEX(groups[keys[0]], n => rel(n).join("/"))], { type: "application/enex+xml" }); file = (one ? stem : safeName(keys[0] || stem)) + ".enex"; }
     else { const entries = []; for (const k of keys) entries.push({ name: stem + "/" + safeName(k) + ".enex", data: await toENEX(groups[k], n => rel(n).join("/")) }); blob = await zip(entries); file = stem + ".zip"; }
   }
-  save(blob, file);
+  if (!o.noSave) save(blob, file);
   return { file, count: notes.length, bytes: blob.size, blob };
+}
+/* ---------- Share → Email and Print (v0.5.6, Devon) ----------
+   Email: a new message in the person's own mail app (a mailto: link: the title as the subject, the note's words as the text;
+   long notes are cut, as mail apps refuse very long links). "Email with a PDF" also makes the PDF, keeps it in
+   Downloads/NotePath (desktop: main.js share:file) and shows it in Finder / File Explorer so it can be dragged into the
+   message: a mailto: link cannot carry a file. Print: the note as a clean page (the web page export), sent to the printer
+   (desktop: main.js print:html opens the system print window; the browser build prints a hidden frame). The hooks can be
+   replaced by the tests. */
+const MAIL_MAX = 1800;
+const hooks = {
+  openMail: async url => { const D = window.inquireDesktop; if (D && D.share && D.share.mail) return D.share.mail(url); const a = document.createElement("a"); a.href = url; a.rel = "noopener"; document.body.appendChild(a); a.click(); a.remove(); return true; },
+  keepFile: async (name, blob) => { const D = window.inquireDesktop; if (D && D.share && D.share.file) return D.share.file({ name, bytes: new Uint8Array(await blob.arrayBuffer()) }); save(blob, name); return null; },
+  printPage: async html => { const D = window.inquireDesktop; if (D && D.share && D.share.print) return D.share.print(html);
+    const fr = document.createElement("iframe"); fr.style.cssText = "position:fixed;width:0;height:0;border:0;left:-10px"; fr.srcdoc = html; document.body.appendChild(fr);
+    await new Promise(r => fr.onload = r); try { fr.contentWindow.print(); } catch (e) {} setTimeout(() => fr.remove(), 60000); return true; }
+};
+function mailURL(n, extra) {
+  const N = window.InquireNotes, words = N.toText(n.html || "").replace(/\n{3,}/g, "\n\n").trim();
+  let body = words.length > MAIL_MAX ? words.slice(0, MAIL_MAX).replace(/\s+\S*$/, "") + "\n\n[…] The note goes on: " + (extra || "the full note is in NotePath.") : words;
+  if (extra && words.length <= MAIL_MAX) body += "\n\n" + extra;
+  return "mailto:?subject=" + encodeURIComponent(n.title || "Note") + "&body=" + encodeURIComponent(body + "\n\n— Sent from NotePath");
+}
+async function email(id, o = {}) {
+  const N = window.InquireNotes, n = N.get(id); if (!n) throw new Error("Pick a note first.");
+  let file = null, where = null;
+  if (o.pdf) {
+    const r = await exportNotes("note", "pdf", { note: id, noSave: true });
+    if (r.printed) return { printed: true }; // the browser build: the print window is open, Save as PDF there
+    file = r.file; where = await hooks.keepFile(r.file, r.blob);
+  }
+  await hooks.openMail(mailURL(n, file ? `see the PDF “${file}”, attached.` : ""));
+  return { file, where };
+}
+async function printNote(id) {
+  const N = window.InquireNotes; if (!N.get(id)) throw new Error("Pick a note first.");
+  const r = await exportNotes("note", "html", { note: id, noSave: true });
+  const page = (await r.blob.text()).replace("</head>", "<style>@media print{body{margin:0}}</style></head>");
+  await hooks.printPage(page); return true;
 }
 // PDF: the desktop app prints the page to a PDF file (main.js export:pdf); the browser preview opens the print dialog instead
 async function pdf(page) {
@@ -701,5 +739,5 @@ async function droppedFiles(dt) {
   return out;
 }
 
-window.NPIO = { open, exportNotes, importFiles, zip, unzip, md5, ir, toMD, toHTMLBody, toDOCX, toENEX, mdToHTML, htmlToNote, docxToNote, enexToNotes, keepToNote, FORMATS };
+window.NPIO = { open, exportNotes, email, printNote, mailURL, hooks, importFiles, zip, unzip, md5, ir, toMD, toHTMLBody, toDOCX, toENEX, mdToHTML, htmlToNote, docxToNote, enexToNotes, keepToNote, FORMATS };
 })();

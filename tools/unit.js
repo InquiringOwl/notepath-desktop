@@ -54,6 +54,43 @@ const ln = G.analyse({ pts: [[0, 0], [2, 2], [4, 0]], fit: 'lines' }).eqs.map(e 
 ok(JSON.stringify(ln) === '["y = x","y = −x + 4"]', 'graph: straight lines between neighbours', ln);
 ok(G.fmt(0.333333333) === '1/3' && G.fmt(-2.5) === '−5/2' && G.fmt(3.14159) === '3.142', 'graph: number formatting', [G.fmt(0.333333333), G.fmt(-2.5), G.fmt(3.14159)]);
 
+// 4b. AI Chat / Grammar check helpers (assist.js) and the Map widget's text (notes-map.js), v0.5.6
+ctx.URLSearchParams = URLSearchParams; vm.runInContext(read('web/src/assist.js'), ctx); vm.runInContext(read('web/src/notes-map.js'), ctx);
+{
+  const A = ctx.NPAssist, P = b => Object.fromEntries(new URLSearchParams(b));
+  const q = P(A.grammarBody('Hi there', 'quick', 'en-GB')), f = P(A.grammarBody('Hi', 'formal', 'xx')), sc = P(A.grammarBody('Hi', 'school', 'en-US'));
+  ok(q.language === 'en-GB' && !q.level && /STYLE/.test(q.disabledCategories) && /PUNCTUATION/.test(q.disabledCategories) && !/TYPOS/.test(q.disabledCategories), 'grammar: a quick note checks spelling and clear mistakes only', q);
+  ok(f.level === 'picky' && !f.disabledCategories && f.language === 'en-US', 'grammar: formal writing is picky with every rule (an unknown language falls back to US English)', f);
+  ok(/STYLE/.test(sc.disabledCategories) && !/PUNCTUATION/.test(sc.disabledCategories), 'grammar: school checks punctuation but not style', sc);
+  const body = { matches: [{ offset: 7, length: 3, message: 'Typo', replacements: [{ value: 'the' }, { value: 'the' }, { value: 'tea' }], rule: { issueType: 'misspelling', category: { id: 'TYPOS', name: 'Possible Typo' } } },
+    { offset: 0, length: 2, message: 'Style', replacements: [], rule: { issueType: 'style', category: { id: 'STYLE', name: 'Style' } } }, { offset: 3, length: 0, message: 'empty' }] };
+  const ms = A.grammarMatches(body, 'We ate teh cake', 'school');
+  ok(ms.length === 1 && ms[0].bad === 'teh' && JSON.stringify(ms[0].reps) === '["the","tea"]' && ms[0].kind === 'spelling', 'grammar: matches are filtered by the kind of note, with their words and suggestions (no repeats)', ms);
+  ok(A.grammarMatches(body, 'We ate teh cake', 'formal').length === 2, 'grammar: formal keeps the style match too');
+  const sh = A.shiftMatches([{ offset: 2 }, { offset: 20 }], 5, 3, 5);
+  ok(sh[0].offset === 2 && sh[1].offset === 22, 'grammar: matches after a fix move with the text', sh);
+  const cr = A.chatRequest([{ role: 'assistant', content: 'hi' }, { role: 'user', content: 'Sum up' }], { title: 'T', text: 'body words' });
+  ok(cr.messages.length === 1 && cr.messages[0].role === 'user' && /body words/.test(cr.system) && /User: Sum up/.test(cr.prompt), 'AI: a chat starts with the user and carries the note', cr);
+  ok(!/<note>/.test(A.chatRequest([{ role: 'user', content: 'x' }], null).system), 'AI: without “Read this note”, the note is not sent');
+  ok(A.cleanEdit('```\nNew text\n```') === 'New text' && A.cleanEdit('"Short."') === 'Short.' && A.cleanEdit('Plain') === 'Plain', 'AI: wrappers around a rewritten text are taken off');
+  ok(A.toHTML('Intro **bold**\n- one\n- two\nEnd') === '<div>Intro <b>bold</b></div><ul><li>one</li><li>two</li></ul><div>End</div>' && A.toHTML('<x>') === '<div>&lt;x&gt;</div>', 'AI: answers become safe note lines, lists and bold', A.toHTML('Intro **bold**\n- one\n- two\nEnd'));
+  const M = ctx.NPMap;
+  ok(/⌖ Home: 1 Main St \(51\.50000, -0\.12000\) https:\/\/www\.openstreetmap\.org\/\?mlat=51\.5&mlon=-0\.12/.test(M.text({ title: 'Home', label: '1 Main St', lat: 51.5, lon: -0.12 })) && /no place yet/.test(M.text({})), 'map: its words for search and exports', M.text({ title: 'Home', label: '1 Main St', lat: 51.5, lon: -0.12 }));
+}
+
+// 4c. the Code box's helpers (notes-widgets.js, v0.5.6): highlighted lines and the before / after diff
+try { vm.runInContext(read('web/src/notes-widgets.js'), ctx); } catch (e) { ok(false, 'notes-widgets.js loads without a page', e.message); }
+if (ctx.InquireWidgets && ctx.InquireWidgets.codeKit) {
+  const K = ctx.InquireWidgets.codeKit, L = (s2, m) => [...K.parseLines(s2, m)].join(',');
+  ok(L('3-5, 9') === '3,4,5,9' && L('9 - 7') === '7,8,9' && L('2,x,4') === '2,4' && L('1-50', 3) === '1,2,3' && L('') === '', 'code box: “3-5, 9” style line lists', [L('3-5, 9'), L('9 - 7'), L('2,x,4'), L('1-50', 3)]);
+  ok(K.formatLines(new Set([9, 3, 4, 5])) === '3-5, 9' && JSON.stringify(K.lineGroups(new Set([1, 2, 4]))) === '[[1,2],[4,4]]', 'code box: highlighted lines written back as ranges');
+  const ops = K.lineDiff('a\nb\nc', 'a\nB\nc\nd').map(o => o.t).join('');
+  ok(ops === '=-+=+', 'code box: before / after line diff (a changed line, an added line)', ops);
+  const rows = K.diffRows(K.lineDiff('a\nb\nc', 'a\nB\nc\nd'));
+  ok(rows.length === 4 && rows[1].a === 1 && rows[1].b === 1 && rows[3].a === null && rows[3].b === 3, 'code box: side-by-side rows pair a changed line with its new version', rows);
+  ok(K.lineDiff('same', 'same').every(o => o.t === '='), 'code box: no changes, no marks');
+}
+
 // 5. Note Office layout (office.js): one sheet per note, ≤ 75 on the furniture, floor stacks of ≤ 100, one box per folder holding its notes
 vm.runInContext(read('web/src/office.js'), ctx);
 {

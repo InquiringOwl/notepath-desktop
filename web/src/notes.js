@@ -63,7 +63,7 @@ function fontToSpan(f, over) {
   const sp = document.createElement("span"); if (k) { sp.setAttribute("data-c", k); if (HEX.test(k)) sp.style.color = k; } if (s) sp.setAttribute("data-s", s); if (fv) sp.setAttribute("data-f", fv);
   sp.append(...f.childNodes); f.replaceWith(sp); return sp;
 }
-const WIDGETS = new Set(["code", "music", "video", "graph", "sheet"]);
+const WIDGETS = new Set(["code", "music", "video", "graph", "sheet", "map"]);
 const DROP = new Set(["SCRIPT", "STYLE", "IFRAME", "OBJECT", "EMBED", "LINK", "META", "TEMPLATE", "SVG", "MATH", "NOSCRIPT", "TITLE", "HEAD", "FORM", "INPUT", "BUTTON", "TEXTAREA", "SELECT", "VIDEO", "AUDIO", "CANVAS"]);
 function clean(node) {
   [...node.childNodes].forEach(c => {
@@ -145,34 +145,142 @@ function normalize(n) {
   n.fav = !!n.fav;
   return n;
 }
-const read = () => { try { const v = JSON.parse(localStorage.getItem(key()) || "[]"); return Array.isArray(v) ? v.map(normalize) : []; } catch (e) { return []; } };
-const write = all => { try { localStorage.setItem(key(), JSON.stringify(all)); } catch (e) { console.warn("Notes could not be saved", e); } touched(); changed(); };
+/* ---------- the store (v0.5.6, Devon) ----------
+   Notes and folders live in IndexedDB ("notepath-notes": "notes" = one record per note, "kv" = the folders), and the whole
+   store sits in memory while NotePath runs (MEM), so reading a note costs nothing. Until 0.5.5 they were one JSON string in
+   localStorage, which refuses every save once it holds ~5 MB (about 1,500 notes): saving silently stopped.
+   - read() / readF() hand out shallow copies (callers change a copy, then write() the list back, as before).
+   - write() works out which notes changed (a field that is not ===), keeps their old versions for undo, and queues only those
+     for IndexedDB (a write ~300 ms later, one transaction). Until IndexedDB says it is done, the queued notes are also in a
+     small localStorage journal ("<key>.journal"), so quitting mid-save loses nothing: the next start applies it.
+   - The first start moves the old localStorage notes into IndexedDB, checks the count, then frees localStorage.
+   - Saving state ("saving" / "saved" / "error") goes out as "inquire:notes-save" (the "Saved ✓" line in a note).
+   - Without IndexedDB (very old browsers) it falls back to localStorage, as before, but a failed save is reported. */
+const MEM = { notes: [], folders: [], ready: false, legacy: false, state: "saved", error: "" };
+const shallow = o => Object.assign({}, o);
+const read = () => MEM.notes.map(shallow);
+const readF = () => MEM.folders.map(shallow);
+const same = (a, b) => { if (a === b) return true; for (const k in a) if (a[k] !== b[k]) return false; for (const k in b) if (!(k in a)) return false; return true; };
+const jkey = () => key() + ".journal";
+const saveState = (state, error) => { MEM.state = state; MEM.error = error || ""; window.dispatchEvent(new CustomEvent("inquire:notes-save", { detail: { state, error: MEM.error } })); };
+function write(all) {
+  all = all.map(normalize);
+  const prev = new Map(MEM.notes.map(n => [n.id, n])), seen = new Set(), ch = [], del = [];
+  all.forEach(n => { seen.add(n.id); const p = prev.get(n.id); if (!p || !same(p, n)) ch.push(n); });
+  prev.forEach((p, id) => { if (!seen.has(id)) del.push(id); });
+  if (ch.length || del.length) { record(ch.map(n => n.id).concat(del), prev); MEM.notes = all; queue(ch, del, false); } else MEM.notes = all;
+  touched(); changed();
+}
+function writeF(f) {
+  recordF(MEM.folders); MEM.folders = f.map(shallow); queue([], [], true); touched(); changed();
+}
+/* the queue → IndexedDB (only what changed) */
+const Q = { notes: new Map(), del: new Set(), folders: false, fly: null, t: 0, busy: false };
+function queue(notes, del, folders) {
+  notes.forEach(n => { Q.notes.set(n.id, n); Q.del.delete(n.id); }); del.forEach(id => { Q.del.add(id); Q.notes.delete(id); }); if (folders) Q.folders = true;
+  if (!MEM.ready) return; // changes made while loading are saved once it is loaded
+  journal(); clearTimeout(Q.t); Q.t = setTimeout(flush, 300); if (MEM.state !== "saving") saveState("saving");
+}
+function journal() {
+  if (MEM.legacy) return;
+  const n = new Map(Q.fly ? Q.fly.notes : []), d = new Set(Q.fly ? Q.fly.del : []);
+  Q.notes.forEach((v, k) => { n.set(k, v); d.delete(k); }); Q.del.forEach(k => { d.add(k); n.delete(k); });
+  const f = Q.folders || (Q.fly && Q.fly.folders);
+  try { if (!n.size && !d.size && !f) localStorage.removeItem(jkey()); else localStorage.setItem(jkey(), JSON.stringify({ n: [...n.values()], d: [...d], f: f ? MEM.folders : null })); }
+  catch (e) { clearTimeout(Q.t); Q.t = setTimeout(flush, 0); } // a note too big for the journal: save it to IndexedDB at once
+}
+async function flush() {
+  clearTimeout(Q.t);
+  if (Q.busy) { Q.t = setTimeout(flush, 120); return; }
+  if (!Q.notes.size && !Q.del.size && !Q.folders) return;
+  const job = { notes: [...Q.notes.entries()], del: [...Q.del], folders: Q.folders };
+  Q.fly = job; Q.notes = new Map(); Q.del = new Set(); Q.folders = false; Q.busy = true;
+  try {
+    if (MEM.legacy) { localStorage.setItem(key(), JSON.stringify(MEM.notes)); localStorage.setItem(fkey(), JSON.stringify(MEM.folders)); }
+    else await stx(["notes", "kv"], "readwrite", t => { const ns = t.objectStore("notes"); job.notes.forEach(([, n]) => ns.put(n)); job.del.forEach(id => ns.delete(id)); if (job.folders) t.objectStore("kv").put(MEM.folders, fkey()); });
+    Q.fly = null; Q.busy = false;
+    if (Q.notes.size || Q.del.size || Q.folders) { journal(); Q.t = setTimeout(flush, 60); } else { journal(); saveState("saved"); }
+  } catch (e) {
+    // put it back (newer changes to the same notes win) and say so; the journal still has it
+    job.notes.forEach(([id, n]) => { if (!Q.notes.has(id) && !Q.del.has(id)) Q.notes.set(id, n); }); job.del.forEach(id => { if (!Q.notes.has(id)) Q.del.add(id); }); if (job.folders) Q.folders = true;
+    Q.fly = null; Q.busy = false; journal();
+    console.warn("Notes could not be saved", e);
+    saveState("error", e && e.name === "QuotaExceededError" ? "This computer's disk is full." : "NotePath could not save to this computer's storage.");
+    Q.t = setTimeout(flush, 5000); // try again by itself
+  }
+}
+window.addEventListener("pagehide", () => { if (Q.notes.size || Q.del.size || Q.folders) flush(); });
+window.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden" && (Q.notes.size || Q.del.size || Q.folders)) flush(); });
+/* the IndexedDB database (shared with photos and videos) */
+let dbP = null;
+const db = () => dbP || (dbP = new Promise((res, rej) => {
+  if (!window.indexedDB) return rej(new Error("no IndexedDB"));
+  const r = indexedDB.open("notepath-notes", 2); // 1 = photos only; 2 (v0.5.6) adds the notes and folders
+  r.onupgradeneeded = () => { const d = r.result; ["images", "notes", "kv"].forEach(s => { if (!d.objectStoreNames.contains(s)) d.createObjectStore(s, s === "notes" ? { keyPath: "id" } : undefined); }); };
+  r.onsuccess = () => { const d = r.result; d.onversionchange = () => d.close(); res(d); }; r.onerror = () => rej(r.error); r.onblocked = () => rej(new Error("blocked"));
+}));
+const stx = (stores, mode, fn) => db().then(d => new Promise((res, rej) => {
+  const t = d.transaction(stores, mode); let out; const r = fn(t); t.oncomplete = () => res(r && "result" in r ? r.result : out); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error || new Error("aborted"));
+}));
+const lsJSON = k => { try { const v = JSON.parse(localStorage.getItem(k) || "null"); return Array.isArray(v) ? v : null; } catch (e) { return null; } };
+async function load() {
+  let d = null; try { d = await db(); } catch (e) { d = null; }
+  if (!d) { MEM.legacy = true; MEM.notes = (lsJSON(key()) || []).map(normalize); MEM.folders = lsJSON(fkey()) || []; return; }
+  const got = await stx(["notes", "kv"], "readonly", t => { const o = {}; t.objectStore("notes").getAll().onsuccess = e => { o.notes = e.target.result; }; const kv = t.objectStore("kv");
+    kv.get(fkey()).onsuccess = e => { o.folders = e.target.result; }; kv.get("moved:" + key()).onsuccess = e => { o.moved = e.target.result; }; return { get result() { return o; } }; });
+  let notes = got.notes || [], folders = Array.isArray(got.folders) ? got.folders : [];
+  if (!got.moved) { // first start with 0.5.6: move the notes out of localStorage
+    const ln = lsJSON(key()), lf = lsJSON(fkey());
+    if (ln || lf) {
+      const byId = new Map(notes.map(n => [n.id, n])); (ln || []).forEach(n => { if (n && n.id) byId.set(n.id, n); }); notes = [...byId.values()]; if (lf) folders = lf;
+      await stx(["notes", "kv"], "readwrite", t => { const ns = t.objectStore("notes"); notes.forEach(n => ns.put(n)); t.objectStore("kv").put(folders, fkey()); });
+      const count = await stx(["notes"], "readonly", t => t.objectStore("notes").count());
+      if (count >= notes.length) { await stx(["kv"], "readwrite", t => t.objectStore("kv").put(Date.now(), "moved:" + key())); try { localStorage.removeItem(key()); localStorage.removeItem(fkey()); } catch (e) {} }
+    } else await stx(["kv"], "readwrite", t => t.objectStore("kv").put(Date.now(), "moved:" + key()));
+  }
+  MEM.notes = notes.map(normalize); MEM.folders = folders;
+  let j = null; try { j = JSON.parse(localStorage.getItem(jkey()) || "null"); } catch (e) {}
+  if (j) { // saves that had not reached IndexedDB when NotePath last closed
+    const m = new Map(MEM.notes.map(n => [n.id, n])); (j.n || []).forEach(n => { if (n && n.id) { m.set(n.id, normalize(n)); Q.notes.set(n.id, n); } }); (j.d || []).forEach(id => { m.delete(id); Q.del.add(id); });
+    MEM.notes = [...m.values()]; if (Array.isArray(j.f)) { MEM.folders = j.f; Q.folders = true; }
+  }
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {} // ask the browser never to clear it
+}
+const ready = load().catch(e => { console.warn("Notes could not be loaded", e); MEM.legacy = true; MEM.notes = (lsJSON(key()) || []).map(normalize); MEM.folders = lsJSON(fkey()) || []; })
+  .then(() => {
+    // changes made while it was loading (rare: they are merged over what was loaded)
+    if (Q.notes.size || Q.del.size) { const m = new Map(MEM.notes.map(n => [n.id, n])); Q.notes.forEach((n, id) => m.set(id, n)); Q.del.forEach(id => m.delete(id)); MEM.notes = [...m.values()]; }
+    MEM.ready = true; if (Q.notes.size || Q.del.size || Q.folders) { journal(); flush(); }
+    changed(); return true;
+  });
 
 /* ---------- undo / redo (My notes ↶ ↷, ⌘Z / Ctrl+Z, ⇧⌘Z / Ctrl+Y) ----------
    Every change to the notes or folders is one step: writing (each pause in typing), new / renamed / moved / starred /
-   deleted folders, new or deleted notes, widgets, order. A burst of writes within 700 ms counts as one step. Steps are
-   whole snapshots of the two stores, kept for this session (up to 100). Photos and videos stay in IndexedDB until the
-   app closes, so undoing a delete brings them back too. */
-const H = { undo: [], redo: [], base: null, open: false, t: 0, lock: false };
-const snap = () => ({ n: localStorage.getItem(key()) || "[]", f: localStorage.getItem(fkey()) || "[]" });
+   deleted folders, new or deleted notes, widgets, order. A burst of writes within 700 ms counts as one step. Since 0.5.6 a
+   step keeps only the notes it changed (their versions before it) and the folders if they changed, not a copy of every note:
+   a long session no longer piles up copies of the whole store. Up to 100 steps. Photos and videos stay in IndexedDB until
+   the app closes, so undoing a delete brings them back too. */
+const H = { undo: [], redo: [], cur: null, t: 0, lock: false };
 const hfire = () => window.dispatchEvent(new CustomEvent("inquire:notes-history", { detail: { undo: H.undo.length, redo: H.redo.length } }));
-function touched() {
-  if (H.lock) return;
-  if (!H.base) H.base = { n: "[]", f: "[]" };
-  if (!H.open) { H.open = true; H.undo.push(H.base); if (H.undo.length > 100) H.undo.shift(); H.redo = []; }
-  clearTimeout(H.t); H.t = setTimeout(settle, 700); hfire();
+function hstep() {
+  if (!H.cur) { H.cur = { n: new Map(), f: null }; H.undo.push(H.cur); if (H.undo.length > 100) H.undo.shift(); H.redo = []; }
+  clearTimeout(H.t); H.t = setTimeout(settle, 700); return H.cur;
 }
-function settle() { clearTimeout(H.t); if (H.open) { H.open = false; H.base = snap(); } }
+function record(ids, prev) { if (H.lock || !MEM.ready) return; const s = hstep(); ids.forEach(id => { if (!s.n.has(id)) s.n.set(id, prev.get(id) || null); }); }
+function recordF(prevF) { if (H.lock || !MEM.ready) return; const s = hstep(); if (!s.f) s.f = prevF; }
+function touched() { if (!H.lock) hfire(); }
+function settle() { clearTimeout(H.t); H.cur = null; }
 const live = new Set(); // mounted editors: their unsaved typing is saved before an undo
 function histStep(from, to) {
   live.forEach(a => a.flush()); settle();
   if (!from.length) return false;
-  const prev = from.pop(); to.push(snap());
-  H.lock = true; try { localStorage.setItem(key(), prev.n); localStorage.setItem(fkey(), prev.f); } catch (e) {} H.lock = false;
-  H.base = prev; changed(); hfire(); return true;
+  const s = from.pop(), cur = new Map(MEM.notes.map(n => [n.id, n])), inv = { n: new Map(), f: s.f ? MEM.folders : null };
+  s.n.forEach((n, id) => { inv.n.set(id, cur.get(id) || null); if (n) cur.set(id, n); else cur.delete(id); });
+  H.lock = true; try { write([...cur.values()].map(shallow)); if (s.f) writeF(s.f); } finally { H.lock = false; }
+  to.push(inv); changed(); hfire(); return true;
 }
 const undo = () => histStep(H.undo, H.redo), redo = () => histStep(H.redo, H.undo);
-const history = () => ({ undo: H.undo.length, redo: H.redo.length });
+const history = () => ({ undo: H.undo.length, redo: H.redo.length, kept: H.undo.concat(H.redo).reduce((k, st) => k + st.n.size, 0) }); // kept = note versions held for undo
 function list(q, sp) {
   sp = sp || "notes";
   const all = read().filter(n => spaceOf(n) === sp).sort(byUpdated);
@@ -180,7 +288,7 @@ function list(q, sp) {
   const s = q.toLowerCase();
   return all.filter(n => (n.title + "\n" + n.body + "\n" + (n.src ? n.src.title : "")).toLowerCase().includes(s));
 }
-const get = id => read().find(n => n.id === id) || null;
+const get = id => { const n = MEM.notes.find(x => x.id === id); return n ? shallow(n) : null; }; // v0.5.6: no copy of the whole store
 function create(o = {}) {
   const now = Date.now(), html = o.html != null ? sanitize(o.html) : textToHtml(o.body || "");
   const n = { id: uid(), title: o.title || "Untitled note", html, body: toText(html), created: now, updated: now, src: o.src || null,
@@ -257,8 +365,6 @@ function appendQuote(id, text, topic, title) {
 }
 
 /* ---------- folders ---------- */
-const readF = () => { try { const v = JSON.parse(localStorage.getItem(fkey()) || "[]"); return Array.isArray(v) ? v : []; } catch (e) { return []; } };
-const writeF = f => { try { localStorage.setItem(fkey(), JSON.stringify(f)); } catch (e) {} touched(); changed(); };
 // Folders nest (parent id) and keep the order the user drags them into (order); older folders without order fall back to A–Z.
 const fnorm = f => { if (f.parent === undefined) f.parent = null; return f; };
 // starred folders (fav) come first among their sibling folders, so starred top-level folders lead the folders column
@@ -308,14 +414,7 @@ function setOrder(ids) { // ids = every note id in the new order
   const all = read(), pos = new Map(ids.map((id, i) => [id, i])); all.forEach(n => { if (pos.has(n.id)) n.order = pos.get(n.id); }); write(all);
 }
 
-/* ---------- photos (IndexedDB) ---------- */
-let dbP = null;
-const db = () => dbP || (dbP = new Promise((res, rej) => {
-  if (!window.indexedDB) return rej(new Error("no IndexedDB"));
-  const r = indexedDB.open("notepath-notes", 1);
-  r.onupgradeneeded = () => r.result.createObjectStore("images");
-  r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
-}));
+/* ---------- photos (IndexedDB; the same database as the notes, see db() above) ---------- */
 const tx = (mode, fn) => db().then(d => new Promise((res, rej) => {
   const t = d.transaction("images", mode), req = fn(t.objectStore("images"));
   t.oncomplete = () => res(req && "result" in req ? req.result : undefined); t.onerror = () => rej(t.error);
@@ -656,7 +755,7 @@ function mountEditor(host, id, o = {}) {
     if (block) block.after(w, after); else ed.append(w, after);
     const s = getSelection(), r = document.createRange(); r.setStart(after, 0); r.collapse(true); s.removeAllRanges(); s.addRange(r); last = r.cloneRange();
     hydrate(ed); save();
-    const f = type === "video" || type === "graph" || type === "sheet" ? null : w.querySelector(type === "code" ? ".nw-ta" : ".nw-piano button"); if (f) f.focus({ preventScroll: true });
+    const f = type === "video" || type === "graph" || type === "sheet" ? null : w.querySelector(type === "code" ? ".nw-ta" : type === "map" ? ".nm-q" : ".nw-piano button"); if (f) f.focus({ preventScroll: true });
     w.scrollIntoView({ block: "nearest" });
   }
   // a block (definition, quote) placed after the line that holds `range` (or the caret), never inside it
@@ -1005,7 +1104,6 @@ function mountEditor(host, id, o = {}) {
 }
 const editorFor = el => { const ed = el && el.closest ? el.closest(".nb-rich") : null; return ed ? editors.get(ed) || null : null; };
 
-H.base = snap(); // the state the first undo step goes back to
 // the same store seen from one tab of My notes: list / folders / new folders / new notes stay in that space
 function scope(sp) {
   sp = sp === "code" ? "code" : "notes";
@@ -1017,5 +1115,7 @@ async function putFile(blob) { if (blob.size > VIDEO_MAX) throw new Error("too b
 async function mediaBlob(id) { const rec = await tx("readonly", st => st.get(id)).catch(() => null); return rec && rec.blob ? rec.blob : null; } // (import / export: no fetch of blob: URLs, which the CSP refuses)
 window.InquireNotes = { scope, spaceOf, putImage, putFile, delMedia: delImages, mediaBlob, list, get, create, update, remove, trash, restore, purge, deleteWithUndo, toast, appendBlock, exportMedia, key, link, unlink, appendQuote,
   undo, redo, history, NSIZES, NFONTS, folders, addFolder, renameFolder, setFolderFav, removeFolder, moveFolder, subtree, setOrder, byOrder, sanitize, toText, mountEditor, editorFor, hydrate, pick, pickNote, imageURL, exportImages, importImages,
-  readFolders: readF, writeFolders: writeF };
+  readFolders: readF, writeFolders: writeF,
+  // v0.5.6: the store is in IndexedDB and in memory; the page waits for `ready` before it draws
+  ready, isReady: () => MEM.ready, saveState: () => ({ state: MEM.state, error: MEM.error }), flushSaves: () => flush(), readAll: () => read(), writeAll: all => write(all) };
 })();

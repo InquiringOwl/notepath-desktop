@@ -22,6 +22,7 @@ const out = e => { if (menu && !menu.contains(e.target)) close(); };
 const onScroll = e => { if (menu && e.target instanceof Node && menu.contains(e.target)) return; close(); }; // scrolling a definition keeps the menu
 function key(e) {
   if (!menu) return;
+  if (e.target && e.target.closest && e.target.closest(".tm-ai textarea") && e.key !== "Escape") { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); const b = menu.querySelector('[data-a="ai-go"]'); if (b) b.click(); } return; } // typing a request to the AI
   if (e.target && e.target.closest && e.target.closest(".tm-pn textarea") && e.key !== "Escape") { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); const b = menu.querySelector('[data-a="pn-save"]'); if (b) b.click(); } return; } // typing a paranote
   const bs = [...menu.querySelectorAll("button:not([disabled])")], i = bs.indexOf(document.activeElement);
   if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); close(); }
@@ -52,17 +53,23 @@ function open(x, y, c) {
     <button type="button" role="menuitem" data-a="dict"${words > 5 ? " disabled" : ""}><span class="tm-ic">W</span><span>Define “${esc(short)}” · Dictionary<small>${words > 5 ? "Select a word or short phrase" : "Wiktionary and Wikipedia, online"}</small></span></button>
     <button type="button" role="menuitem" data-a="link"><span class="tm-ic">↗</span><span>Link to a note…<small>These words open the note you pick</small></span></button>
     ${c.zone && c.zone.closest && c.zone.closest(".nb-rich") ? `<button type="button" role="menuitem" data-a="pn" aria-haspopup="true"><span class="tm-ic">↳</span><span>Add a paranote…<small>Your own note under these words</small></span></button>` : ""}
+    ${c.zone && c.zone.closest && c.zone.closest(".nb-rich") ? `<button type="button" role="menuitem" data-a="ai" aria-haspopup="true"><span class="tm-ic">✦</span><span>Ask AI…<small>Rewrite, shorten, explain or fix these words</small></span></button>` : ""}
     <button type="button" role="menuitem" data-a="tr"${c.text.length > TR_MAX ? " disabled" : ""} aria-haspopup="true"><span class="tm-ic">文</span><span>Translate…<small>${c.text.length > TR_MAX ? `Select up to ${TR_MAX} characters` : "Spanish, German or French"}</small></span><kbd>▾</kbd></button>`;
   document.body.appendChild(menu);
   const W = menu.offsetWidth, H = menu.offsetHeight;
   const place = () => { const W2 = menu.offsetWidth, H2 = menu.offsetHeight; menu.style.left = Math.max(6, Math.min(innerWidth - W2 - 6, x)) + "px"; menu.style.top = Math.max(6, Math.min(innerHeight - H2 - 6, y)) + "px"; };
   menu.style.left = Math.max(6, Math.min(innerWidth - W - 6, x)) + "px";
   menu.style.top = Math.max(6, Math.min(innerHeight - H - 6, y)) + "px";
-  menu.addEventListener("mousedown", e => { if (!e.target.closest("textarea")) e.preventDefault(); }); // keep the selection while clicking (the paranote box takes the focus)
+  menu.addEventListener("mousedown", e => { if (!e.target.closest("textarea")) e.preventDefault(); }); // (Ask AI's box has a textarea too) // keep the selection while clicking (the paranote box takes the focus)
   menu.addEventListener("click", e => {
     const b = e.target.closest("button[data-a], button[data-lang]"); if (!b || b.disabled) return;
     const a = b.dataset.a;
     if (a === "pn") { pnBox(place); return; }
+    if (a === "ai") { aiBox(place); return; }
+    if (a === "ai-chip") { const t = menu.querySelector(".tm-ai textarea"); if (t) t.value = b.dataset.q; askAI(c, place); return; }
+    if (a === "ai-go") { askAI(c, place); return; }
+    if (a === "ai-copy") { const t = menu._ai; close(); if (t) copyText(t, "Copied the answer"); return; }
+    if (a === "ai-rep" || a === "ai-ins") { const t = menu._ai; close(); if (t) useAI(t, c, a === "ai-rep"); return; }
     if (a === "pn-save") { addParanote(c); return; }
     if (a === "save") { saveDef(x, y, c); return; }
     if (a === "dict") { showDict(c.text, place); return; }
@@ -95,6 +102,36 @@ function addParanote(c) {
   if (api.showAnnotations) api.showAnnotations(true);
   toast("Paranote added under “" + esc(c.text.length > 24 ? c.text.slice(0, 22).trim() + "…" : c.text) + "”");
 }
+/* ---------- Ask AI (v0.5.6, Devon): a request about the selected words, answered in the menu: Replace, ＋ Insert below or Copy.
+   The AI is the one set up for My Code's Translate (NPAssist → NPCode.ai → main.js "ai:ask"). ---------- */
+const AI_CHIPS = ["Improve the writing", "Make it shorter", "Fix spelling and grammar", "Explain it simply", "Turn it into a list"];
+function aiBox(place, html) {
+  let b = menu.querySelector(".tm-ai");
+  if (!b) { b = document.createElement("div"); b.className = "tm-ai"; b.innerHTML = `<div class="tm-trh">Ask AI about these words</div><div class="tm-aichips">${AI_CHIPS.map(q => `<button type="button" class="tm-aichip" data-a="ai-chip" data-q="${esc(q)}">${esc(q)}</button>`).join("")}</div><div class="tm-aiq"><textarea rows="2" maxlength="2000" placeholder="Or say what you want… e.g. Make it friendlier" aria-label="What should the AI do with these words?"></textarea><button type="button" class="tm-dgo" data-a="ai-go">Ask</button></div><div class="tm-aiout" aria-live="polite"></div>`; menu.appendChild(b);
+    menu.querySelector('[data-a="ai"]').setAttribute("aria-expanded", "true"); }
+  if (html != null) b.querySelector(".tm-aiout").innerHTML = html;
+  place(); if (html == null) setTimeout(() => { const t = b.querySelector("textarea"); if (t) t.focus({ preventScroll: true }); }, 0);
+  return b;
+}
+async function askAI(c, place) {
+  const A = window.NPAssist, t = menu && menu.querySelector(".tm-ai textarea"); if (!A || !t) return;
+  const q = t.value.trim(); if (!q) { aiBox(place, `<p class="tm-dn">Pick one of the requests above or write your own.</p>`); t.focus(); return; }
+  const m0 = menu; m0._ai = null;
+  const st = await A.aiStatus();
+  if (!st || !st.configured) { if (menu === m0) aiBox(place, `<p class="tm-dn">AI is not set up in this copy of NotePath. It uses the AI key in <code>ai.config.json</code> (the same as My Code's Translate); Settings → Code shows whether it is ready.</p>`); return; }
+  aiBox(place, `<p class="tm-dn tm-busy">Asking the AI…</p>`);
+  let out = "", err = "";
+  try { out = A.cleanEdit(await A.ask(A.selRequest(q, c.text))); } catch (e) { err = e && e.message ? e.message : "The AI did not answer."; }
+  if (menu !== m0) return;
+  if (err || !out) { aiBox(place, `<p class="tm-dn">${esc(err || "The AI gave no answer.")}</p>`); return; }
+  menu._ai = out;
+  aiBox(place, `<div class="tm-aitext">${esc(out).replace(/\n/g, "<br>")}</div><div class="tm-dacts"><button type="button" class="tm-dgo" data-a="ai-rep" title="Put the answer in place of the selected words">Replace</button><button type="button" class="tm-dgo" data-a="ai-ins">＋ Insert below</button><button type="button" class="tm-dgo" data-a="ai-copy">Copy</button></div><p class="tm-dfoot">AI answers can be wrong: read it before you keep it.</p>`);
+}
+function useAI(text, c, replace) {
+  const N = NS(), api = N && N.editorFor(c.zone); if (!api) return;
+  if (replace) { c.zone.focus({ preventScroll: true }); const s = getSelection(); s.removeAllRanges(); s.addRange(c.range); document.execCommand("insertText", false, text); api.changed(); toast("Replaced with the AI's answer"); }
+  else if (api.insertBlock(window.NPAssist ? NPAssist.toHTML(text) : `<div>${esc(text)}</div>`, c.range)) toast("Added the AI's answer below");
+}
 /* ---------- translate: a language box right under the menu ---------- */
 const TR_MAX = 480, LANGS = [["es", "Spanish", "Español"], ["de", "German", "Deutsch"], ["fr", "French", "Français"]], trCache = {};
 const TR_URL = "https://api.mymemory.translated.net/get";
@@ -126,11 +163,11 @@ async function translate(text, lang, place) {
   menu._tr = { text: r.text, lang: L[1] };
   trBox(place, `<p class="tm-trtext" lang="${lang}">${esc(r.text)}</p><div class="tm-dacts"><button type="button" class="tm-dgo" data-a="tr-copy">Copy</button><button type="button" class="tm-dgo" data-a="tr-rep">Replace</button><button type="button" class="tm-dgo" data-a="tr-ins">＋ Insert below</button></div><p class="tm-dfoot">${L[1]} · free, from MyMemory (machine translation).</p>`);
 }
-function copyText(t) {
+function copyText(t, said) {
   const ta = document.createElement("textarea"); ta.value = t; ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.appendChild(ta); ta.select();
   let ok = false; try { ok = document.execCommand("copy"); } catch (e) {} ta.remove();
   if (!ok && navigator.clipboard) navigator.clipboard.writeText(t).then(() => {}, () => {});
-  toast("Copied the translation");
+  toast(said || "Copied the translation");
 }
 function useTranslation(t, c, replace) {
   const N = NS(), api = N && N.editorFor(c.zone); if (!api) return;

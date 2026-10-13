@@ -2,7 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' notepath:; script-src 'self' 'unsafe-inline'; worker-src 'self' blob: notepath:; style-src 'self' 'unsafe-inline'; font-src 'self' notepath:; img-src 'self' data: blob: https: notepath:; media-src 'self' blob: https: notepath:; connect-src 'self' notepath: https://en.wiktionary.org https://en.wikipedia.org https://api.dictionaryapi.dev https://api.mymemory.translated.net; frame-src https://www.youtube-nocookie.com https://player.vimeo.com">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' notepath:; script-src 'self' 'unsafe-inline'; worker-src 'self' blob: notepath:; style-src 'self' 'unsafe-inline'; font-src 'self' notepath:; img-src 'self' data: blob: https: notepath:; media-src 'self' blob: https: notepath:; connect-src 'self' notepath: https://en.wiktionary.org https://en.wikipedia.org https://api.dictionaryapi.dev https://api.mymemory.translated.net https://api.languagetool.org; frame-src https://www.youtube-nocookie.com https://player.vimeo.com">
 <title>NotePath</title>
 <link rel="stylesheet" href="fonts/fonts.css">
 <style>
@@ -1729,6 +1729,247 @@ div.nb{--nb-lw:64px}
 .nb-wtool:hover .nb-tooli{color:var(--text)}
 .nb-wmore .nb-tooli{color:var(--muted)}
 @media (max-width:860px){ .nb-railh{display:none} }
+/* ---------- v0.5.6 (Devon): folders follow Show as (List · Compact · Details · Icons) like the files under them ---------- */
+.nb-fd .nb-ftx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.nb-fd .nb-fmeta{font:500 9.5px/1.2 var(--mono);color:var(--faint);letter-spacing:.02em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nb-fd.fv-list .nb-fdb{padding-top:6px;padding-bottom:6px}
+.nb-fd.fv-list .nb-fold-ic svg{width:18px;height:18px}
+.nb-fd.fv-compact .nb-fdb{padding-top:3px;padding-bottom:3px;font-size:13px}
+.nb-fd.fv-compact .nb-fold-ic svg{width:13px;height:13px}
+.nb-fd.fv-compact .nb-fx{padding-top:1px;padding-bottom:1px}
+.nb-fd.fv-icons{min-height:52px}
+.nb-fd.fv-icons .nb-fcar{width:40px!important}
+.nb-fd.fv-icons .nb-fold-ic svg{width:32px;height:32px}
+.nb-fd.fv-icons .nb-fold-ic path{stroke-width:.9}
+.nb-fd.fv-icons .nb-fdb{padding-top:8px;padding-bottom:8px;font-size:13.5px}
+.nb-fd.fv-icons .nb-ftx{gap:4px}
+/* Details: the same columns as the notes (Name · Modified · Created · Kind), indented inside the Name column */
+.nb-ftree .nb-fd.fv-details{display:grid;grid-template-columns:var(--dcols,minmax(130px,1.5fr) minmax(96px,1fr) minmax(96px,1fr) minmax(70px,.8fr));gap:8px;padding-left:0;min-width:var(--dmin,430px);cursor:default}
+.nb-fd.fv-details .nb-dname{display:flex;align-items:center;min-width:0;padding-left:calc(var(--d,0) * 14px)}
+.nb-fd.fv-details .nb-fdb{padding-top:5px;padding-bottom:5px}
+.nb-fd.fv-details .nb-dc{font:500 10.5px/1.2 var(--mono);color:var(--faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+.nb-fd.fv-details .nb-dc:last-child{font-family:var(--sans)}
+@media (max-width:760px){ .nb-fd.fv-details{display:flex;min-width:0} .nb-fd.fv-details .nb-dc{display:none} }
+/* ---------- v0.5.6 (Devon): fold controls big enough to see and hit, and never on top of anything. Folded, a bar keeps a
+   30 px strip that is itself the "show" button (▶ in a ring, the bar's name down it); open, the bar has a labelled ◀ Hide ---------- */
+.nb-fold[hidden]{display:none!important}
+@media (min-width:861px){
+  .nb.ffold{--nb-fw:30px} .nb.lfold{--nb-lw:30px}
+  .nb .nb-fold{top:0;bottom:0;height:auto;width:30px;transform:none;display:flex;flex-direction:column;align-items:center;gap:12px;padding:14px 0;
+    border:0;border-right:1px solid var(--line);border-radius:0;background:rgba(0,0,0,.16);box-shadow:none;color:var(--muted);transition:background .15s,color .15s}
+  .nb .nb-fold[data-p="f"]{left:0}
+  .nb .nb-fold[data-p="l"]{left:var(--nb-fw)}
+  .nb .nb-fold:hover{background:color-mix(in srgb,var(--frame) 14%,rgba(0,0,0,.16));color:var(--text);box-shadow:none}
+  .nb .nb-fold:focus-visible{outline:2px solid var(--frame);outline-offset:-2px}
+  .nb-foldi{flex:none;width:22px;height:22px;display:grid;place-items:center;border:1px solid color-mix(in srgb,var(--frame) 70%,transparent);border-radius:50%;color:var(--frame);font-size:10px;line-height:1}
+  .nb .nb-fold:hover .nb-foldi{background:var(--frame);color:var(--ink,#0b0f16)}
+  .nb-foldl{writing-mode:vertical-rl;font:600 11px/1 var(--ui);letter-spacing:.18em;text-transform:uppercase;white-space:nowrap}
+}
+.nb-hide{all:unset;box-sizing:border-box;cursor:pointer;display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 10px;border:1px solid var(--line-2);border-radius:2px;
+  font:600 10.5px/1 var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.nb-hide:hover{color:var(--text);border-color:var(--frame)}
+.nb-hide:focus-visible{outline:2px solid var(--frame);outline-offset:1px}
+.nb-ftools .nb-hide{margin-left:auto}
+.nb-rail .nb-hide.nb-hidel{display:flex;flex-direction:column;justify-content:center;gap:2px;height:auto;padding:6px 2px;margin-bottom:4px;text-align:center}
+.nb-hidel .nb-tooli{font-size:11px}
+.nb-hidel .nb-tooln{font:600 8.5px/1 var(--ui);letter-spacing:.14em}
+@media (max-width:860px){ .nb-hide{display:none!important} }
+}
+.nb-fd.fv-list .nb-fdb{padding-left:6px}
+.nb-fd.fv-icons .nb-fdb{padding-left:10px}
+.nb-fres{display:flex;flex-direction:column;gap:1px;margin-top:4px;padding-top:4px;border-top:1px solid var(--line)}
+/* ---------- v0.5.6 (Devon): the Map widget (notes-map.js) ---------- */
+.nw[data-w="map"]{padding:10px 12px 12px}
+.nm-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.nm-ic{color:var(--frame);font-size:16px}
+.nm-title{flex:1;min-width:0;background:transparent;border:0;border-bottom:1px solid transparent;color:var(--text);font:600 14px/1.3 var(--sans);padding:2px 0}
+.nm-title:focus{outline:none;border-bottom-color:var(--frame)}
+.nm-search{display:flex;gap:6px;flex-wrap:wrap}
+.nm-q{flex:1 1 220px;min-width:0;height:34px;padding:0 10px;background:rgba(0,0,0,.2);border:1px solid var(--line-2);border-radius:2px;color:var(--text);font:400 14px/1 var(--sans)}
+.nm-q:focus{outline:2px solid var(--frame);outline-offset:-1px}
+.nm-msg{margin:8px 0 0;font:400 12.5px/1.4 var(--sans);color:var(--muted)} .nm-msg.bad{color:var(--red)}
+.nm-res{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:3px}
+.nm-res button{all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;padding:8px 10px;border:1px solid var(--line-2);border-radius:2px;font:400 13px/1.35 var(--sans);color:var(--text)}
+.nm-res button:hover,.nm-res button:focus-visible{border-color:var(--frame);background:color-mix(in srgb,var(--frame) 10%,transparent)}
+.nm-rec{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:10px}
+.nm-rec>span{width:100%;font:600 9.5px/1 var(--ui);letter-spacing:.16em;text-transform:uppercase;color:var(--faint)}
+.nm-chip{all:unset;cursor:pointer;padding:5px 9px;border:1px solid var(--line-2);border-radius:12px;font:500 12px/1 var(--sans);color:var(--muted);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nm-chip:hover,.nm-chip:focus-visible{color:var(--text);border-color:var(--frame)}
+.nm-place{margin:0 0 8px;font:500 13px/1.4 var(--sans);color:var(--text)}
+.nm-map{height:220px}
+.nm-links{margin:8px 0 0;font:500 12px/1 var(--sans)} .nm-links a{color:var(--frame)}
+.nm-placer{display:flex;align-items:flex-start;gap:8px;margin-bottom:8px} .nm-placer .nm-place{flex:1;margin:0}
+.nm-head .nw-del{margin-left:auto}
+/* ---------- v0.5.6 (Devon): ✦ AI Chat and A✓ Grammar check (buttons beside ↳ and ◈, their boxes; app.js asButtons / aiPanel / gramPanel) ---------- */
+.nb-holob.nb-aib{right:118px;font-size:18px}
+.nb-holob.nb-gramb{right:168px}
+.nb-gramg{font:700 17px/1 var(--serif,Georgia);position:relative}
+.nb-gramg small{position:absolute;right:-9px;bottom:-3px;font:700 11px/1 var(--sans);color:var(--green,#7BD88F)}
+.nb-holob[aria-expanded="true"] .nb-gramg small{color:var(--ink)}
+.np-as-t{font:600 10.5px/1 var(--ui);letter-spacing:.18em;text-transform:uppercase;color:var(--frame);padding:7px 2px 9px}
+.np-as-new{all:unset;cursor:pointer;margin:0 4px 4px auto;padding:5px 9px;border:1px solid var(--line-2);border-radius:2px;font:600 10px/1 var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.np-as-new:hover{color:var(--text);border-color:var(--frame)}
+.np-as-st{font:500 10.5px/1 var(--mono);color:var(--green,#7BD88F)} .np-as-st.off{color:var(--faint)}
+.np-ai-b{display:flex;flex-direction:column;gap:8px}
+.np-ai-m{max-width:88%;padding:8px 11px;border-radius:10px;font:400 13.5px/1.5 var(--sans);user-select:text;position:relative}
+.np-ai-m.me{align-self:flex-end;background:color-mix(in srgb,var(--frame) 22%,transparent);border:1px solid color-mix(in srgb,var(--frame) 40%,transparent);border-bottom-right-radius:2px}
+.np-ai-m.ai{align-self:flex-start;background:rgba(255,255,255,.04);border:1px solid var(--line-2);border-bottom-left-radius:2px}
+.np-ai-m.err{align-self:flex-start;color:var(--red);border:1px dashed color-mix(in srgb,var(--red) 50%,transparent)}
+.np-ai-m.busy .np-ai-tx{color:var(--muted);font-style:italic}
+.np-ai-tx ul{margin:4px 0;padding-left:20px}
+.np-ai-acts{display:flex;gap:10px;margin-top:6px}
+.np-ai-acts button{all:unset;cursor:pointer;font:600 10px/1 var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--frame)}
+.np-ai-acts button:hover{text-decoration:underline}
+.np-ai-off{padding:10px;border:1px dashed var(--line-2);border-radius:3px;font:400 12.5px/1.5 var(--sans);color:var(--muted)} .np-ai-off b{color:var(--text)} .np-ai-off p{margin:6px 0 0}
+.np-ai-f{position:relative;display:flex;gap:6px;padding:8px 10px 10px;border-top:1px solid color-mix(in srgb,var(--frame) 25%,transparent)}
+.np-ai-f textarea{flex:1;min-width:0;resize:none;background:rgba(0,0,0,.3);color:var(--text);border:1px solid var(--line-2);border-radius:3px;padding:8px 10px;font:400 14px/1.4 var(--sans);outline:none}
+.np-ai-f textarea:focus{border-color:var(--frame)}
+.np-ai-send{all:unset;cursor:pointer;align-self:stretch;padding:0 14px;display:grid;place-items:center;border-radius:3px;background:var(--frame);color:var(--ink,#0b0f16);font:700 11px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase}
+.np-ai-send:disabled{opacity:.45;cursor:default}
+.np-gr-set{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:9px 10px;border-bottom:1px solid color-mix(in srgb,var(--frame) 18%,transparent)}
+.np-gr-set label{display:flex;flex-direction:column;gap:4px;font:600 9.5px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.np-gr-set select{height:32px;background:var(--panel-2);color:var(--text);border:1px solid var(--line-2);border-radius:2px;font:500 13px/1 var(--sans);padding:0 6px}
+.np-gr-what{grid-column:1 / -1;margin:0;font:400 12px/1.4 var(--sans);color:var(--muted)}
+.np-gr-go{all:unset;grid-column:1 / -1;cursor:pointer;text-align:center;padding:9px;border-radius:3px;background:var(--frame);color:var(--ink,#0b0f16);font:700 11px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase}
+.np-gr-go:disabled{opacity:.55;cursor:default}
+.np-gr-n{margin:0 0 8px;font:600 10px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.np-gr-ok{margin:4px 0;font:500 14px/1.4 var(--sans);color:var(--green,#7BD88F)}
+.np-gr-msg{margin:4px 0;font:400 12.5px/1.4 var(--sans);color:var(--muted)} .np-gr-msg.bad{color:var(--red)}
+.np-gr-m{position:relative;padding:8px 10px;margin-bottom:6px;border:1px solid var(--line-2);border-left:3px solid var(--amber);border-radius:2px;background:rgba(0,0,0,.18)}
+.np-gr-m.k-spelling{border-left-color:var(--red)} .np-gr-m.k-style{border-left-color:var(--cyan,#5CC8E0)}
+.np-gr-m p{margin:4px 0 6px;font:400 12.5px/1.4 var(--sans);color:var(--text)}
+.np-gr-w{all:unset;cursor:pointer;display:flex;align-items:baseline;gap:8px;width:100%}
+.np-gr-w s{font:600 14px/1.3 var(--sans);color:var(--text);text-decoration-color:var(--red)}
+.np-gr-cat{margin-left:auto;font:600 9px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+.np-gr-reps{display:flex;flex-wrap:wrap;gap:5px}
+.np-gr-rep{all:unset;cursor:pointer;padding:5px 9px;border-radius:2px;background:color-mix(in srgb,var(--green,#7BD88F) 18%,transparent);border:1px solid color-mix(in srgb,var(--green,#7BD88F) 45%,transparent);font:600 12.5px/1 var(--sans);color:var(--text)}
+.np-gr-rep:hover{background:color-mix(in srgb,var(--green,#7BD88F) 32%,transparent)}
+.np-gr-ign{all:unset;cursor:pointer;padding:5px 6px;font:600 10px/1 var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)} .np-gr-ign:hover{color:var(--text)}
+.np-gr-foot{position:relative;margin:0;padding:6px 10px 8px;font:400 10.5px/1.35 var(--sans);color:var(--faint);border-top:1px solid color-mix(in srgb,var(--frame) 15%,transparent)}
+@media (max-width:760px){ .nb-holob.nb-aib{right:112px} .nb-holob.nb-gramb{right:158px} }
+/* right-click → Ask AI… */
+.tm-ai{border-top:1px solid var(--line);margin-top:4px;padding:8px 8px 6px;display:flex;flex-direction:column;gap:7px;max-width:340px}
+.tm-aichips{display:flex;flex-wrap:wrap;gap:4px}
+.tm-aichip{all:unset;cursor:pointer;padding:5px 8px;border:1px solid var(--line-2);border-radius:12px;font:500 12px/1 var(--sans);color:var(--muted)}
+.tm-aichip:hover,.tm-aichip:focus-visible{color:var(--text);border-color:var(--frame)}
+.tm-aiq{display:flex;gap:6px;align-items:stretch}
+.tm-aiq textarea{flex:1;box-sizing:border-box;min-width:220px;resize:vertical;background:var(--ink);color:var(--text);border:1px solid var(--line-2);border-radius:2px;padding:6px 8px;font:400 12.5px/1.4 var(--sans);outline:none}
+.tm-aiq textarea:focus{border-color:var(--frame)}
+.tm-aitext{max-height:200px;overflow:auto;font:400 13.5px/1.5 var(--sans);color:var(--text);user-select:text;padding:6px 8px;border:1px solid var(--line-2);border-radius:2px;background:rgba(0,0,0,.2)}
+.tm-menu .tm-ai .tm-aichip{display:inline-block;padding:6px 10px;border:1px solid var(--line-2);border-radius:14px;font:500 12.5px/1 var(--sans);color:var(--muted);white-space:nowrap}
+.tm-menu .tm-ai .tm-aichip:hover,.tm-menu .tm-ai .tm-aichip:focus-visible{color:var(--text);border-color:var(--frame)}
+.tm-menu .tm-ai .tm-aiq .tm-dgo{display:grid;place-items:center;align-self:stretch;padding:0 12px;border:1px solid var(--frame);border-radius:2px}
+.tm-menu .tm-ai .tm-dacts{display:flex;gap:14px}
+.tm-menu .tm-ai .tm-dacts .tm-dgo{display:inline-block;padding:4px 0}
+/* ---------- v0.5.6 (Devon): the Code box for showing code (highlighted lines, file tab, caption, looks, sizes, before / after, Present, Picture) ---------- */
+.nw[data-w="code"] .nw-code{font-size:var(--nw-fs,13.5px)}
+.nw[data-w="code"] .nw-h .nw-b{white-space:nowrap}
+.nw-optb[aria-expanded="true"]{color:var(--ink,#0b0f16);background:var(--frame);border-color:var(--frame)}
+.nw-opts{display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px 12px;padding:8px 10px;border-bottom:1px solid var(--line);background:rgba(0,0,0,.14)}
+.nw-o{display:flex;flex-direction:column;gap:4px;font:600 9.5px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.nw-o input,.nw-o select{height:28px;min-width:110px;box-sizing:border-box;background:var(--ink);color:var(--text);border:1px solid var(--line-2);border-radius:2px;padding:0 7px;font:400 12.5px/1 var(--sans);text-transform:none;letter-spacing:0}
+.nw-o input:focus,.nw-o select:focus{outline:2px solid var(--frame);outline-offset:-1px}
+.nw-ck{display:inline-flex;align-items:center;gap:6px;height:28px;font:500 12.5px/1 var(--sans);color:var(--text);cursor:pointer}
+.nw-ck input{accent-color:var(--frame);width:15px;height:15px;margin:0}
+.nw-opth{flex-basis:100%;margin:0;font:400 11.5px/1.3 var(--sans);color:var(--faint)}
+.nw-tabs{display:flex;align-items:center;gap:4px;padding:6px 8px;border-bottom:1px solid var(--line)}
+.nw-tabs [data-tab]{all:unset;cursor:pointer;padding:6px 12px;border:1px solid var(--line-2);border-radius:2px;font:600 10.5px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.nw-tabs [data-tab][aria-selected="true"]{color:var(--ink,#0b0f16);background:var(--frame);border-color:var(--frame)}
+.nw-tabs [data-tab]:focus-visible{outline:2px solid var(--frame);outline-offset:1px}
+.nw-cmpm{margin-left:6px;height:26px;background:var(--ink);color:var(--text);border:1px solid var(--line-2);border-radius:2px;font:400 12px/1 var(--sans)}
+.nw-dsum{margin-left:auto;font:500 11px/1 var(--mono);color:var(--muted)}
+.nw-ftab{display:inline-block;margin:6px 0 0 10px;padding:5px 12px;border:1px solid var(--line-2);border-bottom:0;border-radius:3px 3px 0 0;font:500 12px/1 var(--mono);color:var(--text);background:rgba(255,255,255,.04)}
+.nw-ftab[hidden]{display:none}
+.nw-isbefore .nw-edit{box-shadow:inset 3px 0 0 color-mix(in srgb,var(--red) 70%,transparent)}
+.nw-isbefore .nw-tabs [data-tab="before"]{background:var(--red);border-color:var(--red)}
+.nw-gut span{cursor:pointer;padding:0 2px;border-radius:2px}
+.nw-gut span:hover{color:var(--text);background:rgba(255,255,255,.06)}
+.nw-gut span.on{color:var(--ink,#0b0f16);background:var(--amber)}
+.nw-isbefore .nw-gut span{cursor:default}
+.nw-bands{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.nw-bands i{position:absolute;left:0;right:0;background:color-mix(in srgb,var(--amber) 16%,transparent);box-shadow:inset 3px 0 0 var(--amber)}
+.nw-al.on{background:color-mix(in srgb,var(--amber) 14%,transparent)}
+.nw-nonums .nw-gut{display:none}
+.nw-nonums .nw-code{grid-template-columns:minmax(0,1fr)}
+.nw.nw-cmpon .nw-code,.nw.nw-cmpon .nw-annv{display:none}
+.nw-cap{display:none;width:100%;box-sizing:border-box;background:transparent;border:0;border-top:1px solid var(--line);padding:7px 12px;font:italic 400 13px/1.4 var(--sans);color:var(--muted)}
+.nw.has-cap .nw-cap,.nw.nw-optson .nw-cap{display:block}
+.nw-cap:focus{outline:none;color:var(--text);box-shadow:inset 2px 0 0 var(--frame)}
+/* compare */
+.nw-cmp{font:400 var(--nw-fs,13.5px)/1.55 var(--mono);overflow:auto;max-height:640px}
+.nw-cs{display:grid;grid-template-columns:auto minmax(0,1fr) auto minmax(0,1fr);min-width:560px}
+.nw-cs .nw-cr,.nw-cs .nw-csh{display:contents}
+.nw-csh span{position:sticky;top:0;padding:5px 10px;background:var(--panel-2);border-bottom:1px solid var(--line);font:600 10px/1 var(--ui);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);z-index:1}
+.nw-cn{padding:0 8px;text-align:right;color:var(--faint);user-select:none;background:rgba(0,0,0,.12)}
+.nw-cc{padding:0 12px;white-space:pre;overflow:hidden;color:var(--text)}
+.nw-cc.del{background:color-mix(in srgb,var(--red) 18%,transparent)}
+.nw-cc.add{background:color-mix(in srgb,var(--green) 18%,transparent)}
+.nw-cc.gap{background:repeating-linear-gradient(135deg,transparent 0 6px,rgba(255,255,255,.03) 6px 12px)}
+.nw-cu{display:grid;grid-template-columns:auto auto 18px minmax(0,1fr)}
+.nw-cu .nw-cr{display:contents}
+.nw-cu .nw-cr.add>span{background:color-mix(in srgb,var(--green) 16%,transparent)}
+.nw-cu .nw-cr.del>span{background:color-mix(in srgb,var(--red) 16%,transparent)}
+.nw-cm{text-align:center;font-weight:700} .nw-cr.add .nw-cm{color:var(--green)} .nw-cr.del .nw-cm{color:var(--red)}
+.nw-cmp .kw{color:var(--violet)} .nw-cmp .bi{color:var(--cyan)} .nw-cmp .str{color:var(--green)} .nw-cmp .num{color:var(--amber)} .nw-cmp .com{color:var(--faint);font-style:italic}
+/* looks (the theme's own is the default) */
+.nw[data-look="dark"] .nw-code,.nw[data-look="dark"] .nw-cmp,.nw[data-look="dark"] .nw-annv,.nw-present[data-look="dark"]{--panel:#0d1117;--panel-2:#161b22;--text:#e6edf3;--violet:#d2a8ff;--cyan:#ffa657;--green:#a5d6ff;--amber:#79c0ff;--faint:#8b949e;background:#0d1117;color:#e6edf3}
+.nw[data-look="light"] .nw-code,.nw[data-look="light"] .nw-cmp,.nw[data-look="light"] .nw-annv,.nw-present[data-look="light"]{--panel:#fbfbfd;--panel-2:#eceef3;--ink:#ffffff;--text:#1d2330;--violet:#7a3fd1;--cyan:#0b6f8a;--green:#1f7a3a;--amber:#a35c00;--faint:#7d8592;--line:#dfe2ea;background:#fbfbfd;color:#1d2330}
+.nw[data-look="contrast"] .nw-code,.nw[data-look="contrast"] .nw-cmp,.nw[data-look="contrast"] .nw-annv,.nw-present[data-look="contrast"]{--panel:#000;--panel-2:#1a1a1a;--text:#fff;--violet:#ff9de2;--cyan:#7fdcff;--green:#9dff9d;--amber:#ffd166;--faint:#d0d0d0;background:#000;color:#fff}
+.nw[data-look="light"] .nw-ta{caret-color:#1d2330}
+.nw[data-look="light"] .nw-gut{background:#f0f1f5}
+.nw[data-look="contrast"] .nw-hl .com{font-style:normal}
+.nw[data-look] .nw-hl{color:var(--text)}
+.nw[data-look="light"] .nw-bands i,.nw[data-look="light"] .nw-al.on{background:rgba(255,196,0,.22);box-shadow:inset 3px 0 0 #e0a800}
+/* ⤢ Present */
+.nw-present{position:fixed;inset:0;z-index:2000;display:flex;flex-direction:column;background:var(--panel,#0c121b);color:var(--text);-webkit-app-region:no-drag;outline:none}
+.nwp-bar{display:flex;align-items:center;gap:10px;padding:12px 18px;border-bottom:1px solid var(--line-2);background:var(--panel-2,#121a26)}
+.nwp-t{font:600 18px/1.2 var(--sans)} .nwp-f,.nwp-l{font:500 13px/1 var(--mono);color:var(--faint);padding:4px 8px;border:1px solid var(--line-2);border-radius:2px}
+.nwp-sp{flex:1}
+.nwp-bar button{all:unset;cursor:pointer;padding:9px 14px;border:1px solid var(--line-2);border-radius:3px;font:600 13px/1 var(--sans);color:var(--text)}
+.nwp-bar button:hover,.nwp-bar button:focus-visible{border-color:var(--frame,#5CC8E0);outline:none}
+.nwp-step{font:500 13px/1 var(--mono);color:var(--muted,#9aa)}
+.nwp-body{flex:1;overflow:auto;padding:28px 36px}
+.nwp-code{font:400 var(--nwp-fs,24px)/1.6 var(--mono)}
+.nwp-ln{display:grid;grid-template-columns:3.2em minmax(0,1fr);gap:18px;border-radius:3px;transition:opacity .2s}
+.nwp-code.nonums .nwp-ln{grid-template-columns:minmax(0,1fr)} .nwp-code.nonums .nwp-n{display:none}
+.nwp-n{text-align:right;color:var(--faint);user-select:none}
+.nwp-c{white-space:pre}
+.nwp-ln.on{background:color-mix(in srgb,var(--amber) 18%,transparent);box-shadow:inset 4px 0 0 var(--amber)}
+.nwp-ln.dim{opacity:.28}
+.nwp-ln.focus{opacity:1}
+.nwp-code .kw{color:var(--violet)} .nwp-code .bi{color:var(--cyan)} .nwp-code .str{color:var(--green)} .nwp-code .num{color:var(--amber)} .nwp-code .com{color:var(--faint);font-style:italic}
+.nwp-cmp{font-size:calc(var(--nwp-fs,24px) * .75);max-height:none}
+.nwp-cap{padding:12px 36px 18px;font:italic 400 18px/1.4 var(--sans);color:var(--muted,#aab);border-top:1px solid var(--line-2)}
+@media (prefers-reduced-motion:reduce){ .nwp-ln{transition:none} }
+@media (max-width:760px){ .nwp-body{padding:16px} .nwp-bar{flex-wrap:wrap} }
+.np-share-pop{max-height:calc(100vh - 90px);overflow:auto} /* v0.5.6: Email & print made it taller */
+/* v0.5.6: long groups in the Folders & Files bar show 100 notes, then this */
+.nb-more{all:unset;box-sizing:border-box;cursor:pointer;display:block;margin:2px 8px 6px calc(10px + var(--d,1) * 14px);padding:7px 10px;border:1px dashed var(--line-2);border-radius:2px;font:600 10.5px/1 var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-align:center}
+.nb-more:hover,.nb-more:focus-visible{color:var(--text);border-color:var(--frame);outline:none}
+/* v0.5.6: rows out of sight are not laid out or painted (long lists stay quick) */
+.nb-ftree .nb-fnote.nb-lrow,.nb-ftree .nb-fnote.nb-hascov{content-visibility:auto;contain-intrinsic-size:auto 40px}
+.nb-ftree .nb-fnote.nb-crow{content-visibility:auto;contain-intrinsic-size:auto 24px}
+.nb-ftree .nb-fnote.nb-row:not(.nb-crow){content-visibility:auto;contain-intrinsic-size:auto 32px}
+/* v0.5.6: the save line beside the star */
+.nb-save{display:inline-flex;align-items:center;gap:8px;font:500 11.5px/1 var(--sans);color:var(--muted);transition:color .4s}
+.nb-save.is-saved{color:var(--green,#7BD88F)} .nb-save.is-saved.quiet{color:var(--faint)}
+.nb-save.is-editing,.nb-save.is-saving{color:var(--muted)}
+.nb-save.is-error{color:var(--red);font-weight:600}
+.nb-save-retry{all:unset;cursor:pointer;padding:4px 8px;border:1px solid var(--red);border-radius:2px;font:600 10px/1 var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--red)}
+.nb-save-retry:hover,.nb-save-retry:focus-visible{background:color-mix(in srgb,var(--red) 18%,transparent);outline:none}
+/* v0.5.6: names on the round corner buttons (hover / keyboard focus) */
+.nb-holob[data-label]::after{content:attr(data-label);position:absolute;bottom:calc(100% + 8px);left:50%;transform:translate(-50%,4px);padding:5px 9px;border-radius:3px;white-space:nowrap;pointer-events:none;
+  background:var(--panel-2);border:1px solid color-mix(in srgb,var(--frame) 55%,transparent);color:var(--text);font:600 12px/1 var(--sans);letter-spacing:0;opacity:0;transition:opacity .15s,transform .15s;box-shadow:0 4px 12px rgba(0,0,0,.35)}
+.nb-holob[data-label]:hover::after,.nb-holob[data-label]:focus-visible::after{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){ .nb-holob[data-label]::after{transition:none} }
+/* v0.5.6: What's new card */
+.np-new{position:absolute;z-index:40;right:28px;top:300px;width:min(420px,calc(100% - 32px));padding:16px 18px 14px;animation:vt-in .2s ease}
+.np-new-h{font:600 11px/1 var(--ui);letter-spacing:.18em;text-transform:uppercase;color:var(--frame);margin-bottom:10px}
+.np-new ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:7px;font:400 13.5px/1.45 var(--sans);color:var(--text)}
+.np-new-f{display:flex;justify-content:flex-end;margin-top:12px}
+.npage{position:relative}
+@media (prefers-reduced-motion:reduce){ .np-new{animation:none} }
+@media (max-width:760px){ .np-new{position:fixed;top:auto;left:12px;right:12px;bottom:12px;width:auto;max-height:60vh;overflow:auto} }
 
 </style>
 </head><body>
@@ -2018,7 +2259,7 @@ function fontToSpan(f, over) {
   const sp = document.createElement("span"); if (k) { sp.setAttribute("data-c", k); if (HEX.test(k)) sp.style.color = k; } if (s) sp.setAttribute("data-s", s); if (fv) sp.setAttribute("data-f", fv);
   sp.append(...f.childNodes); f.replaceWith(sp); return sp;
 }
-const WIDGETS = new Set(["code", "music", "video", "graph", "sheet"]);
+const WIDGETS = new Set(["code", "music", "video", "graph", "sheet", "map"]);
 const DROP = new Set(["SCRIPT", "STYLE", "IFRAME", "OBJECT", "EMBED", "LINK", "META", "TEMPLATE", "SVG", "MATH", "NOSCRIPT", "TITLE", "HEAD", "FORM", "INPUT", "BUTTON", "TEXTAREA", "SELECT", "VIDEO", "AUDIO", "CANVAS"]);
 function clean(node) {
   [...node.childNodes].forEach(c => {
@@ -2100,34 +2341,142 @@ function normalize(n) {
   n.fav = !!n.fav;
   return n;
 }
-const read = () => { try { const v = JSON.parse(localStorage.getItem(key()) || "[]"); return Array.isArray(v) ? v.map(normalize) : []; } catch (e) { return []; } };
-const write = all => { try { localStorage.setItem(key(), JSON.stringify(all)); } catch (e) { console.warn("Notes could not be saved", e); } touched(); changed(); };
+/* ---------- the store (v0.5.6, Devon) ----------
+   Notes and folders live in IndexedDB ("notepath-notes": "notes" = one record per note, "kv" = the folders), and the whole
+   store sits in memory while NotePath runs (MEM), so reading a note costs nothing. Until 0.5.5 they were one JSON string in
+   localStorage, which refuses every save once it holds ~5 MB (about 1,500 notes): saving silently stopped.
+   - read() / readF() hand out shallow copies (callers change a copy, then write() the list back, as before).
+   - write() works out which notes changed (a field that is not ===), keeps their old versions for undo, and queues only those
+     for IndexedDB (a write ~300 ms later, one transaction). Until IndexedDB says it is done, the queued notes are also in a
+     small localStorage journal ("<key>.journal"), so quitting mid-save loses nothing: the next start applies it.
+   - The first start moves the old localStorage notes into IndexedDB, checks the count, then frees localStorage.
+   - Saving state ("saving" / "saved" / "error") goes out as "inquire:notes-save" (the "Saved ✓" line in a note).
+   - Without IndexedDB (very old browsers) it falls back to localStorage, as before, but a failed save is reported. */
+const MEM = { notes: [], folders: [], ready: false, legacy: false, state: "saved", error: "" };
+const shallow = o => Object.assign({}, o);
+const read = () => MEM.notes.map(shallow);
+const readF = () => MEM.folders.map(shallow);
+const same = (a, b) => { if (a === b) return true; for (const k in a) if (a[k] !== b[k]) return false; for (const k in b) if (!(k in a)) return false; return true; };
+const jkey = () => key() + ".journal";
+const saveState = (state, error) => { MEM.state = state; MEM.error = error || ""; window.dispatchEvent(new CustomEvent("inquire:notes-save", { detail: { state, error: MEM.error } })); };
+function write(all) {
+  all = all.map(normalize);
+  const prev = new Map(MEM.notes.map(n => [n.id, n])), seen = new Set(), ch = [], del = [];
+  all.forEach(n => { seen.add(n.id); const p = prev.get(n.id); if (!p || !same(p, n)) ch.push(n); });
+  prev.forEach((p, id) => { if (!seen.has(id)) del.push(id); });
+  if (ch.length || del.length) { record(ch.map(n => n.id).concat(del), prev); MEM.notes = all; queue(ch, del, false); } else MEM.notes = all;
+  touched(); changed();
+}
+function writeF(f) {
+  recordF(MEM.folders); MEM.folders = f.map(shallow); queue([], [], true); touched(); changed();
+}
+/* the queue → IndexedDB (only what changed) */
+const Q = { notes: new Map(), del: new Set(), folders: false, fly: null, t: 0, busy: false };
+function queue(notes, del, folders) {
+  notes.forEach(n => { Q.notes.set(n.id, n); Q.del.delete(n.id); }); del.forEach(id => { Q.del.add(id); Q.notes.delete(id); }); if (folders) Q.folders = true;
+  if (!MEM.ready) return; // changes made while loading are saved once it is loaded
+  journal(); clearTimeout(Q.t); Q.t = setTimeout(flush, 300); if (MEM.state !== "saving") saveState("saving");
+}
+function journal() {
+  if (MEM.legacy) return;
+  const n = new Map(Q.fly ? Q.fly.notes : []), d = new Set(Q.fly ? Q.fly.del : []);
+  Q.notes.forEach((v, k) => { n.set(k, v); d.delete(k); }); Q.del.forEach(k => { d.add(k); n.delete(k); });
+  const f = Q.folders || (Q.fly && Q.fly.folders);
+  try { if (!n.size && !d.size && !f) localStorage.removeItem(jkey()); else localStorage.setItem(jkey(), JSON.stringify({ n: [...n.values()], d: [...d], f: f ? MEM.folders : null })); }
+  catch (e) { clearTimeout(Q.t); Q.t = setTimeout(flush, 0); } // a note too big for the journal: save it to IndexedDB at once
+}
+async function flush() {
+  clearTimeout(Q.t);
+  if (Q.busy) { Q.t = setTimeout(flush, 120); return; }
+  if (!Q.notes.size && !Q.del.size && !Q.folders) return;
+  const job = { notes: [...Q.notes.entries()], del: [...Q.del], folders: Q.folders };
+  Q.fly = job; Q.notes = new Map(); Q.del = new Set(); Q.folders = false; Q.busy = true;
+  try {
+    if (MEM.legacy) { localStorage.setItem(key(), JSON.stringify(MEM.notes)); localStorage.setItem(fkey(), JSON.stringify(MEM.folders)); }
+    else await stx(["notes", "kv"], "readwrite", t => { const ns = t.objectStore("notes"); job.notes.forEach(([, n]) => ns.put(n)); job.del.forEach(id => ns.delete(id)); if (job.folders) t.objectStore("kv").put(MEM.folders, fkey()); });
+    Q.fly = null; Q.busy = false;
+    if (Q.notes.size || Q.del.size || Q.folders) { journal(); Q.t = setTimeout(flush, 60); } else { journal(); saveState("saved"); }
+  } catch (e) {
+    // put it back (newer changes to the same notes win) and say so; the journal still has it
+    job.notes.forEach(([id, n]) => { if (!Q.notes.has(id) && !Q.del.has(id)) Q.notes.set(id, n); }); job.del.forEach(id => { if (!Q.notes.has(id)) Q.del.add(id); }); if (job.folders) Q.folders = true;
+    Q.fly = null; Q.busy = false; journal();
+    console.warn("Notes could not be saved", e);
+    saveState("error", e && e.name === "QuotaExceededError" ? "This computer's disk is full." : "NotePath could not save to this computer's storage.");
+    Q.t = setTimeout(flush, 5000); // try again by itself
+  }
+}
+window.addEventListener("pagehide", () => { if (Q.notes.size || Q.del.size || Q.folders) flush(); });
+window.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden" && (Q.notes.size || Q.del.size || Q.folders)) flush(); });
+/* the IndexedDB database (shared with photos and videos) */
+let dbP = null;
+const db = () => dbP || (dbP = new Promise((res, rej) => {
+  if (!window.indexedDB) return rej(new Error("no IndexedDB"));
+  const r = indexedDB.open("notepath-notes", 2); // 1 = photos only; 2 (v0.5.6) adds the notes and folders
+  r.onupgradeneeded = () => { const d = r.result; ["images", "notes", "kv"].forEach(s => { if (!d.objectStoreNames.contains(s)) d.createObjectStore(s, s === "notes" ? { keyPath: "id" } : undefined); }); };
+  r.onsuccess = () => { const d = r.result; d.onversionchange = () => d.close(); res(d); }; r.onerror = () => rej(r.error); r.onblocked = () => rej(new Error("blocked"));
+}));
+const stx = (stores, mode, fn) => db().then(d => new Promise((res, rej) => {
+  const t = d.transaction(stores, mode); let out; const r = fn(t); t.oncomplete = () => res(r && "result" in r ? r.result : out); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error || new Error("aborted"));
+}));
+const lsJSON = k => { try { const v = JSON.parse(localStorage.getItem(k) || "null"); return Array.isArray(v) ? v : null; } catch (e) { return null; } };
+async function load() {
+  let d = null; try { d = await db(); } catch (e) { d = null; }
+  if (!d) { MEM.legacy = true; MEM.notes = (lsJSON(key()) || []).map(normalize); MEM.folders = lsJSON(fkey()) || []; return; }
+  const got = await stx(["notes", "kv"], "readonly", t => { const o = {}; t.objectStore("notes").getAll().onsuccess = e => { o.notes = e.target.result; }; const kv = t.objectStore("kv");
+    kv.get(fkey()).onsuccess = e => { o.folders = e.target.result; }; kv.get("moved:" + key()).onsuccess = e => { o.moved = e.target.result; }; return { get result() { return o; } }; });
+  let notes = got.notes || [], folders = Array.isArray(got.folders) ? got.folders : [];
+  if (!got.moved) { // first start with 0.5.6: move the notes out of localStorage
+    const ln = lsJSON(key()), lf = lsJSON(fkey());
+    if (ln || lf) {
+      const byId = new Map(notes.map(n => [n.id, n])); (ln || []).forEach(n => { if (n && n.id) byId.set(n.id, n); }); notes = [...byId.values()]; if (lf) folders = lf;
+      await stx(["notes", "kv"], "readwrite", t => { const ns = t.objectStore("notes"); notes.forEach(n => ns.put(n)); t.objectStore("kv").put(folders, fkey()); });
+      const count = await stx(["notes"], "readonly", t => t.objectStore("notes").count());
+      if (count >= notes.length) { await stx(["kv"], "readwrite", t => t.objectStore("kv").put(Date.now(), "moved:" + key())); try { localStorage.removeItem(key()); localStorage.removeItem(fkey()); } catch (e) {} }
+    } else await stx(["kv"], "readwrite", t => t.objectStore("kv").put(Date.now(), "moved:" + key()));
+  }
+  MEM.notes = notes.map(normalize); MEM.folders = folders;
+  let j = null; try { j = JSON.parse(localStorage.getItem(jkey()) || "null"); } catch (e) {}
+  if (j) { // saves that had not reached IndexedDB when NotePath last closed
+    const m = new Map(MEM.notes.map(n => [n.id, n])); (j.n || []).forEach(n => { if (n && n.id) { m.set(n.id, normalize(n)); Q.notes.set(n.id, n); } }); (j.d || []).forEach(id => { m.delete(id); Q.del.add(id); });
+    MEM.notes = [...m.values()]; if (Array.isArray(j.f)) { MEM.folders = j.f; Q.folders = true; }
+  }
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {} // ask the browser never to clear it
+}
+const ready = load().catch(e => { console.warn("Notes could not be loaded", e); MEM.legacy = true; MEM.notes = (lsJSON(key()) || []).map(normalize); MEM.folders = lsJSON(fkey()) || []; })
+  .then(() => {
+    // changes made while it was loading (rare: they are merged over what was loaded)
+    if (Q.notes.size || Q.del.size) { const m = new Map(MEM.notes.map(n => [n.id, n])); Q.notes.forEach((n, id) => m.set(id, n)); Q.del.forEach(id => m.delete(id)); MEM.notes = [...m.values()]; }
+    MEM.ready = true; if (Q.notes.size || Q.del.size || Q.folders) { journal(); flush(); }
+    changed(); return true;
+  });
 
 /* ---------- undo / redo (My notes ↶ ↷, ⌘Z / Ctrl+Z, ⇧⌘Z / Ctrl+Y) ----------
    Every change to the notes or folders is one step: writing (each pause in typing), new / renamed / moved / starred /
-   deleted folders, new or deleted notes, widgets, order. A burst of writes within 700 ms counts as one step. Steps are
-   whole snapshots of the two stores, kept for this session (up to 100). Photos and videos stay in IndexedDB until the
-   app closes, so undoing a delete brings them back too. */
-const H = { undo: [], redo: [], base: null, open: false, t: 0, lock: false };
-const snap = () => ({ n: localStorage.getItem(key()) || "[]", f: localStorage.getItem(fkey()) || "[]" });
+   deleted folders, new or deleted notes, widgets, order. A burst of writes within 700 ms counts as one step. Since 0.5.6 a
+   step keeps only the notes it changed (their versions before it) and the folders if they changed, not a copy of every note:
+   a long session no longer piles up copies of the whole store. Up to 100 steps. Photos and videos stay in IndexedDB until
+   the app closes, so undoing a delete brings them back too. */
+const H = { undo: [], redo: [], cur: null, t: 0, lock: false };
 const hfire = () => window.dispatchEvent(new CustomEvent("inquire:notes-history", { detail: { undo: H.undo.length, redo: H.redo.length } }));
-function touched() {
-  if (H.lock) return;
-  if (!H.base) H.base = { n: "[]", f: "[]" };
-  if (!H.open) { H.open = true; H.undo.push(H.base); if (H.undo.length > 100) H.undo.shift(); H.redo = []; }
-  clearTimeout(H.t); H.t = setTimeout(settle, 700); hfire();
+function hstep() {
+  if (!H.cur) { H.cur = { n: new Map(), f: null }; H.undo.push(H.cur); if (H.undo.length > 100) H.undo.shift(); H.redo = []; }
+  clearTimeout(H.t); H.t = setTimeout(settle, 700); return H.cur;
 }
-function settle() { clearTimeout(H.t); if (H.open) { H.open = false; H.base = snap(); } }
+function record(ids, prev) { if (H.lock || !MEM.ready) return; const s = hstep(); ids.forEach(id => { if (!s.n.has(id)) s.n.set(id, prev.get(id) || null); }); }
+function recordF(prevF) { if (H.lock || !MEM.ready) return; const s = hstep(); if (!s.f) s.f = prevF; }
+function touched() { if (!H.lock) hfire(); }
+function settle() { clearTimeout(H.t); H.cur = null; }
 const live = new Set(); // mounted editors: their unsaved typing is saved before an undo
 function histStep(from, to) {
   live.forEach(a => a.flush()); settle();
   if (!from.length) return false;
-  const prev = from.pop(); to.push(snap());
-  H.lock = true; try { localStorage.setItem(key(), prev.n); localStorage.setItem(fkey(), prev.f); } catch (e) {} H.lock = false;
-  H.base = prev; changed(); hfire(); return true;
+  const s = from.pop(), cur = new Map(MEM.notes.map(n => [n.id, n])), inv = { n: new Map(), f: s.f ? MEM.folders : null };
+  s.n.forEach((n, id) => { inv.n.set(id, cur.get(id) || null); if (n) cur.set(id, n); else cur.delete(id); });
+  H.lock = true; try { write([...cur.values()].map(shallow)); if (s.f) writeF(s.f); } finally { H.lock = false; }
+  to.push(inv); changed(); hfire(); return true;
 }
 const undo = () => histStep(H.undo, H.redo), redo = () => histStep(H.redo, H.undo);
-const history = () => ({ undo: H.undo.length, redo: H.redo.length });
+const history = () => ({ undo: H.undo.length, redo: H.redo.length, kept: H.undo.concat(H.redo).reduce((k, st) => k + st.n.size, 0) }); // kept = note versions held for undo
 function list(q, sp) {
   sp = sp || "notes";
   const all = read().filter(n => spaceOf(n) === sp).sort(byUpdated);
@@ -2135,7 +2484,7 @@ function list(q, sp) {
   const s = q.toLowerCase();
   return all.filter(n => (n.title + "\n" + n.body + "\n" + (n.src ? n.src.title : "")).toLowerCase().includes(s));
 }
-const get = id => read().find(n => n.id === id) || null;
+const get = id => { const n = MEM.notes.find(x => x.id === id); return n ? shallow(n) : null; }; // v0.5.6: no copy of the whole store
 function create(o = {}) {
   const now = Date.now(), html = o.html != null ? sanitize(o.html) : textToHtml(o.body || "");
   const n = { id: uid(), title: o.title || "Untitled note", html, body: toText(html), created: now, updated: now, src: o.src || null,
@@ -2212,8 +2561,6 @@ function appendQuote(id, text, topic, title) {
 }
 
 /* ---------- folders ---------- */
-const readF = () => { try { const v = JSON.parse(localStorage.getItem(fkey()) || "[]"); return Array.isArray(v) ? v : []; } catch (e) { return []; } };
-const writeF = f => { try { localStorage.setItem(fkey(), JSON.stringify(f)); } catch (e) {} touched(); changed(); };
 // Folders nest (parent id) and keep the order the user drags them into (order); older folders without order fall back to A–Z.
 const fnorm = f => { if (f.parent === undefined) f.parent = null; return f; };
 // starred folders (fav) come first among their sibling folders, so starred top-level folders lead the folders column
@@ -2263,14 +2610,7 @@ function setOrder(ids) { // ids = every note id in the new order
   const all = read(), pos = new Map(ids.map((id, i) => [id, i])); all.forEach(n => { if (pos.has(n.id)) n.order = pos.get(n.id); }); write(all);
 }
 
-/* ---------- photos (IndexedDB) ---------- */
-let dbP = null;
-const db = () => dbP || (dbP = new Promise((res, rej) => {
-  if (!window.indexedDB) return rej(new Error("no IndexedDB"));
-  const r = indexedDB.open("notepath-notes", 1);
-  r.onupgradeneeded = () => r.result.createObjectStore("images");
-  r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
-}));
+/* ---------- photos (IndexedDB; the same database as the notes, see db() above) ---------- */
 const tx = (mode, fn) => db().then(d => new Promise((res, rej) => {
   const t = d.transaction("images", mode), req = fn(t.objectStore("images"));
   t.oncomplete = () => res(req && "result" in req ? req.result : undefined); t.onerror = () => rej(t.error);
@@ -2611,7 +2951,7 @@ function mountEditor(host, id, o = {}) {
     if (block) block.after(w, after); else ed.append(w, after);
     const s = getSelection(), r = document.createRange(); r.setStart(after, 0); r.collapse(true); s.removeAllRanges(); s.addRange(r); last = r.cloneRange();
     hydrate(ed); save();
-    const f = type === "video" || type === "graph" || type === "sheet" ? null : w.querySelector(type === "code" ? ".nw-ta" : ".nw-piano button"); if (f) f.focus({ preventScroll: true });
+    const f = type === "video" || type === "graph" || type === "sheet" ? null : w.querySelector(type === "code" ? ".nw-ta" : type === "map" ? ".nm-q" : ".nw-piano button"); if (f) f.focus({ preventScroll: true });
     w.scrollIntoView({ block: "nearest" });
   }
   // a block (definition, quote) placed after the line that holds `range` (or the caret), never inside it
@@ -2960,7 +3300,6 @@ function mountEditor(host, id, o = {}) {
 }
 const editorFor = el => { const ed = el && el.closest ? el.closest(".nb-rich") : null; return ed ? editors.get(ed) || null : null; };
 
-H.base = snap(); // the state the first undo step goes back to
 // the same store seen from one tab of My notes: list / folders / new folders / new notes stay in that space
 function scope(sp) {
   sp = sp === "code" ? "code" : "notes";
@@ -2972,7 +3311,9 @@ async function putFile(blob) { if (blob.size > VIDEO_MAX) throw new Error("too b
 async function mediaBlob(id) { const rec = await tx("readonly", st => st.get(id)).catch(() => null); return rec && rec.blob ? rec.blob : null; } // (import / export: no fetch of blob: URLs, which the CSP refuses)
 window.InquireNotes = { scope, spaceOf, putImage, putFile, delMedia: delImages, mediaBlob, list, get, create, update, remove, trash, restore, purge, deleteWithUndo, toast, appendBlock, exportMedia, key, link, unlink, appendQuote,
   undo, redo, history, NSIZES, NFONTS, folders, addFolder, renameFolder, setFolderFav, removeFolder, moveFolder, subtree, setOrder, byOrder, sanitize, toText, mountEditor, editorFor, hydrate, pick, pickNote, imageURL, exportImages, importImages,
-  readFolders: readF, writeFolders: writeF };
+  readFolders: readF, writeFolders: writeF,
+  // v0.5.6: the store is in IndexedDB and in memory; the page waits for `ready` before it draws
+  ready, isReady: () => MEM.ready, saveState: () => ({ state: MEM.state, error: MEM.error }), flushSaves: () => flush(), readAll: () => read(), writeAll: all => write(all) };
 })();
 
 </script>
@@ -3193,8 +3534,9 @@ const HEADS = [["h1", "Title", "The biggest line, for the top of the note", "T"]
   ["h2", "Heading 1", "Starts a section", "H1"], ["h3", "Heading 2", "A part of a section", "H2"], ["h4", "Heading 3", "A smaller heading", "H3"]];
 const HTAGS = HEADS.map(x => x[0].toUpperCase()).join(",");
 function headAt(el) { const h = el && el.closest(HTAGS); return h ? HEADS.find(x => x[0] === h.tagName.toLowerCase()) : null; }
-const WIDGET_MENU = [["code", "&lt;/&gt;", "Code box", "Code with highlighting and line numbers"], ["music", "♪", "Music chart", "A staff, a keyboard, chords and playback"],
-  ["sheet", "𝄞", "Lead sheet", "Bars with chord symbols and melody"], ["graph", "∿", "Graph", "Click points on a grid and get their equations"]];
+/* v0.5.6 (Devon): the Music chart left the menu (the Lead sheet does more); Music charts already in notes still open and play */
+const WIDGET_MENU = [["code", "&lt;/&gt;", "Code box", "Code to show and explain: highlight lines, before / after, present it, copy it as a picture"],
+  ["sheet", "𝄞", "Lead sheet", "Bars with chord symbols and melody"], ["graph", "∿", "Graph", "Click points on a grid and get their equations"], ["map", "⌖", "Map", "Search an address and keep it on a map"]];
 function ddPanel(btn, kind, api, sync) {
   const was = dd && dd.dataset.kind; closeDD(); if (was === kind) return;
   const cur = fmtAt(fmtEl(api));
@@ -3346,23 +3688,126 @@ function annHTML(t) {
     out.push(`<a href="${esc(url)}" target="_blank" rel="noopener noreferrer" title="${esc(url)}">${esc(label)}</a>`); at = m.index + m[0].length; }
   out.push(esc(rest.slice(at))); return out.join("").replace(/\n/g, "<br>");
 }
+/* ---------- code box for showing code to people (v0.5.6, Devon): My Code is where code is written and run; the Code box is
+   for illustrating, giving examples and explaining code to business and personal associates. On top of highlighting, line
+   numbers, Copy and paranotes on code: highlighted lines (click a line number, or type "3-5, 9"), a file-name tab, a caption,
+   a look (like the app, dark, light, high contrast), a text size, line numbers on or off, Before / after with a Compare view
+   (side by side, or only the changes with + / −), ⤢ Present (full window, big text, ← / → step through the highlighted
+   lines), and Copy as a picture (a PNG for slides, email or chat). All of it is kept in the box's data-src. ---------- */
+const CODE_LOOKS = [["theme", "Like the app"], ["dark", "Dark"], ["light", "Light"], ["contrast", "High contrast"]];
+const CODE_SIZES = [["s", 12, "Small"], ["m", 13.5, "Normal"], ["l", 16, "Large"], ["xl", 19, "Extra large"]];
+// "3-5, 9" → Set {3, 4, 5, 9} (1-based line numbers; at most `max` when given)
+function parseLines(s, max) {
+  const out = new Set();
+  String(s || "").replace(/\s*[-–—]\s*/g, "-").split(/[\s,;]+/).forEach(p => { const m = p.match(/^(\d+)(?:-(\d+))?$/); if (!m) return;
+    let a = +m[1], b = m[2] ? +m[2] : a; if (a > b) [a, b] = [b, a]; for (let i = Math.max(1, a); i <= Math.min(b, a + 999); i++) if (!max || i <= max) out.add(i); });
+  return out;
+}
+// Set {3, 4, 5, 9} → [[3, 5], [9, 9]] and "3-5, 9"
+const lineGroups = set => { const g = []; [...set].sort((a, b) => a - b).forEach(n => { const l = g[g.length - 1]; if (l && n === l[1] + 1) l[1] = n; else g.push([n, n]); }); return g; };
+const formatLines = set => lineGroups(set).map(([a, b]) => a === b ? String(a) : a + "-" + b).join(", ");
+// line diff (longest common subsequence): [{ t: "=" | "-" | "+", a: line in before, b: line in after }] (0-based)
+function lineDiff(before, after) {
+  const A = String(before).split("\n"), B = String(after).split("\n");
+  let s = 0; while (s < A.length && s < B.length && A[s] === B[s]) s++;
+  let e = 0; while (e < A.length - s && e < B.length - s && A[A.length - 1 - e] === B[B.length - 1 - e]) e++;
+  const a = A.slice(s, A.length - e), b = B.slice(s, B.length - e), ops = [];
+  for (let i = 0; i < s; i++) ops.push({ t: "=", a: i, b: i });
+  if (a.length * b.length > 4e6) { a.forEach((_, i) => ops.push({ t: "-", a: s + i })); b.forEach((_, j) => ops.push({ t: "+", b: s + j })); }
+  else {
+    const L = Array.from({ length: a.length + 1 }, () => new Uint32Array(b.length + 1));
+    for (let i = a.length - 1; i >= 0; i--) for (let j = b.length - 1; j >= 0; j--) L[i][j] = a[i] === b[j] ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+    let i = 0, j = 0;
+    while (i < a.length || j < b.length) {
+      if (i < a.length && j < b.length && a[i] === b[j]) { ops.push({ t: "=", a: s + i, b: s + j }); i++; j++; }
+      else if (i < a.length && (j >= b.length || L[i + 1][j] >= L[i][j + 1])) { ops.push({ t: "-", a: s + i }); i++; } // removed lines before added ones
+      else { ops.push({ t: "+", b: s + j }); j++; }
+    }
+  }
+  for (let k = 0; k < e; k++) ops.push({ t: "=", a: A.length - e + k, b: B.length - e + k });
+  return ops;
+}
+// the diff as rows side by side: removed and added lines next to each other where they replace each other
+function diffRows(ops) {
+  const rows = []; let k = 0;
+  while (k < ops.length) {
+    if (ops[k].t === "=") { rows.push({ a: ops[k].a, b: ops[k].b, t: "=" }); k++; continue; }
+    const del = [], add = []; while (k < ops.length && ops[k].t !== "=") { (ops[k].t === "-" ? del : add).push(ops[k]); k++; }
+    for (let i = 0; i < Math.max(del.length, add.length); i++) rows.push({ a: del[i] ? del[i].a : null, b: add[i] ? add[i].b : null, t: "~" });
+  }
+  return rows;
+}
+const LOOK_COLORS = {
+  dark: { bg: "#0d1117", text: "#e6edf3", kw: "#d2a8ff", bi: "#ffa657", str: "#a5d6ff", num: "#79c0ff", com: "#8b949e", gut: "#6e7681", band: "rgba(255,214,102,.16)", bar: "#161b22" },
+  light: { bg: "#fbfbfd", text: "#1d2330", kw: "#7a3fd1", bi: "#0b6f8a", str: "#1f7a3a", num: "#a35c00", com: "#7d8592", gut: "#9aa1ad", band: "rgba(255,196,0,.22)", bar: "#eceef3" },
+  contrast: { bg: "#000000", text: "#ffffff", kw: "#ff9de2", bi: "#7fdcff", str: "#9dff9d", num: "#ffd166", com: "#c8c8c8", gut: "#c8c8c8", band: "rgba(255,255,0,.28)", bar: "#1a1a1a" } };
+function themeColors(el) {
+  const cs = getComputedStyle(el), v = k => cs.getPropertyValue(k).trim();
+  return { bg: v("--panel") || "#141b26", text: v("--text") || "#e8edf5", kw: v("--violet") || "#B49BFF", bi: v("--cyan") || "#5CC8E0", str: v("--green") || "#7BD88F", num: v("--amber") || "#F2B84B", com: v("--faint") || "#7d8798", gut: v("--faint") || "#7d8798", band: "rgba(242,184,75,.16)", bar: v("--panel-2") || "#1b2330" };
+}
 function mountCode(el) {
   const d = readSrc(el, { lang: "python", title: "", src: "" });
+  const sizeOf = k => (CODE_SIZES.find(x => x[0] === k) || CODE_SIZES[1]);
+  let srcText = String(d.src || ""), beforeText = String(d.before || ""), cur = d.diff ? (d.tab === "compare" ? "compare" : "after") : "after";
+  const opt = { hl: String(d.hl || ""), file: String(d.file || ""), cap: String(d.cap || ""), look: CODE_LOOKS.some(x => x[0] === d.look) ? d.look : "theme", size: sizeOf(d.size)[0], nums: d.nums !== false, diff: !!d.diff, cmp: d.cmp === "unified" ? "unified" : "split" };
   el.innerHTML = `<div class="nw-h"><span class="nw-tag">&lt;/&gt;</span><input class="nw-title" maxlength="80" placeholder="Code" aria-label="Code box title" value="${esc(d.title)}">
       <select class="nw-lang" aria-label="Language">${LANGS.map(([k, n]) => `<option value="${k}"${d.lang === k ? " selected" : ""}>${n}</option>`).join("")}</select>
-      <button type="button" class="nw-b" data-a="copy" title="Copy the code">Copy</button><button type="button" class="nw-b nw-del" data-a="del" title="Remove this code box" aria-label="Remove code box">✕</button></div>
-    <div class="nw-code"><div class="nw-gut" aria-hidden="true"></div><div class="nw-edit"><pre class="nw-hl" aria-hidden="true"></pre><textarea class="nw-ta" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code"></textarea></div></div>`;
-  const ta = el.querySelector(".nw-ta"), hl = el.querySelector(".nw-hl"), gut = el.querySelector(".nw-gut"), lang = el.querySelector(".nw-lang"), title = el.querySelector(".nw-title");
-  ta.value = d.src;
+      <button type="button" class="nw-b" data-a="copy" title="Copy the code">Copy</button><button type="button" class="nw-b" data-a="img" title="Copy the code as a picture, to paste into slides, an email or a chat">Picture</button><button type="button" class="nw-b" data-a="present" title="Present the code: full window, big text; ← / → step through the highlighted lines">⤢ Present</button><button type="button" class="nw-b nw-optb" data-a="opts" aria-expanded="false" title="File name, highlighted lines, look, size, line numbers, before / after">⚙ Options</button><button type="button" class="nw-b nw-del" data-a="del" title="Remove this code box" aria-label="Remove code box">✕</button></div>
+    <div class="nw-opts" hidden>
+      <label class="nw-o"><span>File name</span><input class="nw-file" maxlength="80" placeholder="e.g. app.py" value="${esc(opt.file)}"></label>
+      <label class="nw-o"><span>Highlight lines</span><input class="nw-hlin" maxlength="120" placeholder="e.g. 3-5, 9" value="${esc(opt.hl)}"></label>
+      <label class="nw-o"><span>Look</span><select class="nw-look">${CODE_LOOKS.map(([k, n]) => `<option value="${k}"${opt.look === k ? " selected" : ""}>${n}</option>`).join("")}</select></label>
+      <label class="nw-o"><span>Text size</span><select class="nw-size">${CODE_SIZES.map(([k, , n]) => `<option value="${k}"${opt.size === k ? " selected" : ""}>${n}</option>`).join("")}</select></label>
+      <label class="nw-ck"><input type="checkbox" class="nw-nums"${opt.nums ? " checked" : ""}> Line numbers</label>
+      <label class="nw-ck"><input type="checkbox" class="nw-diffon"${opt.diff ? " checked" : ""}> Before / after</label>
+      <p class="nw-opth">Tip: click a line number to highlight that line. A caption goes under the code.</p></div>
+    <div class="nw-tabs" role="tablist" aria-label="Before and after" hidden><button type="button" role="tab" data-tab="before">Before</button><button type="button" role="tab" data-tab="after">After</button><button type="button" role="tab" data-tab="compare">Compare</button>
+      <select class="nw-cmpm" aria-label="How to compare"><option value="split">Side by side</option><option value="unified">Changes only (+ / −)</option></select><span class="nw-dsum num"></span></div>
+    <div class="nw-ftab" hidden></div>
+    <div class="nw-code"><div class="nw-gut" aria-label="Line numbers: click one to highlight the line"></div><div class="nw-edit"><div class="nw-bands" aria-hidden="true"></div><pre class="nw-hl" aria-hidden="true"></pre><textarea class="nw-ta" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code"></textarea></div></div>
+    <div class="nw-cmp" hidden></div>
+    <input class="nw-cap" maxlength="200" placeholder="Add a caption under the code…" aria-label="Caption" value="${esc(opt.cap)}">`;
+  const $q = s => el.querySelector(s);
+  const ta = $q(".nw-ta"), hl = $q(".nw-hl"), gut = $q(".nw-gut"), lang = $q(".nw-lang"), title = $q(".nw-title"), bands = $q(".nw-bands"), cmp = $q(".nw-cmp"), tabs = $q(".nw-tabs"), ftab = $q(".nw-ftab"), cap = $q(".nw-cap"), opts = $q(".nw-opts");
+  ta.value = cur === "before" ? beforeText : srcText;
   let anns = Array.isArray(d.anns) ? d.anns.filter(a => a && /^[a-z0-9]{4,24}$/i.test(a.id) && a.end > a.start).map(a => ({ id: a.id, start: +a.start, end: +a.end, text: String(a.text || "").slice(0, 4000) })) : [];
-  const draw = () => { const ls = ta.value.split("\n"); hl.innerHTML = ls.map(l => hlLine(l, lang.value) || " ").join("\n") + "\n"; gut.innerHTML = ls.map((_, i) => `<span>${i + 1}</span>`).join(""); ta.rows = Math.max(3, Math.min(24, ls.length + 1)); annView(); };
-  const save = () => writeSrc(el, Object.assign({ lang: lang.value, title: title.value.trim(), src: ta.value }, anns.length ? { anns } : {}));
-  /* paranotes on code (Devon, Oct 12 2026): { id, start, end, text } over the source; they follow edits (shifted, or
-     dropped when their code is deleted). While shown and the box is not being typed in, a view replaces the editor: each
-     line with its number, the noted code marked, and the note under its line with a right-angled line from the middle of
-     the code. Click the code to type again; the notes come back when you leave the box. */
-  let prev = ta.value, showAnn = (() => { try { return localStorage.getItem("notepath.indshow") !== "false"; } catch (e) { return true; } })();
-  const view = document.createElement("div"); view.className = "nw-annv"; view.hidden = true; el.querySelector(".nw-code").after(view);
+  const marked = () => parseLines(opt.hl, srcText.split("\n").length);
+  const look = () => { el.dataset.look = opt.look; el.style.setProperty("--nw-fs", sizeOf(opt.size)[1] + "px"); el.classList.toggle("nw-nonums", !opt.nums); el.classList.toggle("has-cap", !!opt.cap); ftab.hidden = !opt.file; ftab.textContent = opt.file; };
+  const drawBands = () => {
+    if (cur === "before") { bands.innerHTML = ""; return; }
+    const cs = getComputedStyle(hl), lh = parseFloat(cs.lineHeight) || 21, pt = parseFloat(cs.paddingTop) || 10;
+    bands.innerHTML = lineGroups(marked()).map(([a, b]) => `<i style="top:${pt + (a - 1) * lh - ta.scrollTop}px;height:${(b - a + 1) * lh}px"></i>`).join("");
+  };
+  const diffHTML = () => {
+    const A = beforeText.split("\n"), B = srcText.split("\n"), ops = lineDiff(beforeText, srcText), L = lang.value;
+    const add = ops.filter(o => o.t === "+").length, del = ops.filter(o => o.t === "-").length;
+    $q(".nw-dsum").textContent = add || del ? `+${add} −${del} line${add + del === 1 ? "" : "s"}` : "No changes yet";
+    if (opt.cmp === "unified") return `<div class="nw-cu">${ops.map(o => `<div class="nw-cr ${o.t === "+" ? "add" : o.t === "-" ? "del" : ""}"><span class="nw-cn">${o.a != null ? o.a + 1 : ""}</span><span class="nw-cn">${o.b != null ? o.b + 1 : ""}</span><span class="nw-cm">${o.t === "+" ? "+" : o.t === "-" ? "−" : ""}</span><span class="nw-cc">${hlLine(o.t === "+" ? B[o.b] : A[o.a], L) || " "}</span></div>`).join("")}</div>`;
+    return `<div class="nw-cs"><div class="nw-csh"><span></span><span>Before</span><span></span><span>After</span></div>${diffRows(ops).map(r => `<div class="nw-cr ${r.t === "~" ? "chg" : ""}"><span class="nw-cn">${r.a != null ? r.a + 1 : ""}</span><span class="nw-cc ${r.t === "~" && r.a != null ? "del" : r.t === "~" ? "gap" : ""}">${r.a != null ? hlLine(A[r.a], L) || " " : ""}</span><span class="nw-cn">${r.b != null ? r.b + 1 : ""}</span><span class="nw-cc ${r.t === "~" && r.b != null ? "add" : r.t === "~" ? "gap" : ""}">${r.b != null ? hlLine(B[r.b], L) || " " : ""}</span></div>`).join("")}</div>`;
+  };
+  const draw = () => {
+    look();
+    tabs.hidden = !opt.diff; tabs.querySelectorAll("[data-tab]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.tab === cur))); $q(".nw-cmpm").value = opt.cmp; $q(".nw-cmpm").hidden = cur !== "compare";
+    el.classList.toggle("nw-cmpon", cur === "compare"); cmp.hidden = cur !== "compare";
+    if (cur === "compare") { cmp.innerHTML = diffHTML(); el.classList.remove("nw-annon"); return; }
+    if (opt.diff) diffHTML(); // keeps the +/− count in the tabs up to date
+    const ls = ta.value.split("\n"), mk = cur === "before" ? new Set() : marked();
+    hl.innerHTML = ls.map(l => hlLine(l, lang.value) || " ").join("\n") + "\n";
+    gut.innerHTML = ls.map((_, i) => `<span data-ln="${i + 1}"${mk.has(i + 1) ? ' class="on"' : ""}>${i + 1}</span>`).join("");
+    ta.rows = Math.max(3, Math.min(24, ls.length + 1)); el.classList.toggle("nw-isbefore", cur === "before");
+    requestAnimationFrame(drawBands); annView();
+  };
+  const save = () => { const o = { lang: lang.value, title: title.value.trim(), src: srcText };
+    if (anns.length) o.anns = anns; if (opt.hl.trim()) o.hl = opt.hl.trim(); if (opt.file.trim()) o.file = opt.file.trim(); if (opt.cap.trim()) o.cap = opt.cap.trim();
+    if (opt.look !== "theme") o.look = opt.look; if (opt.size !== "m") o.size = opt.size; if (!opt.nums) o.nums = false;
+    if (opt.diff) { o.diff = true; o.before = beforeText; if (opt.cmp !== "split") o.cmp = opt.cmp; if (cur === "compare") o.tab = "compare"; }
+    writeSrc(el, o); };
+  /* paranotes on code (Devon, Oct 12 2026): { id, start, end, text } over the source (the After code); they follow edits
+     (shifted, or dropped when their code is deleted). While shown and the box is not being typed in, a view replaces the
+     editor: each line with its number, the noted code marked, and the note under its line with a right-angled line from the
+     middle of the code. Click the code to type again; the notes come back when you leave the box. */
+  let prev = srcText, showAnn = (() => { try { return localStorage.getItem("notepath.indshow") !== "false"; } catch (e) { return true; } })();
+  const view = document.createElement("div"); view.className = "nw-annv"; view.hidden = true; $q(".nw-code").after(view);
   const track = () => { const v = ta.value; if (v === prev) return; let a = 0; while (a < prev.length && a < v.length && prev[a] === v[a]) a++;
     let b = 0; while (b < prev.length - a && b < v.length - a && prev[prev.length - 1 - b] === v[v.length - 1 - b]) b++;
     const oldEnd = prev.length - b, newEnd = v.length - b, delta = v.length - prev.length;
@@ -3371,17 +3816,17 @@ function mountCode(el) {
       .filter(x => x.end > x.start && v.slice(x.start, x.end).trim());
     prev = v; };
   function annView() {
-    const on = showAnn && anns.length && document.activeElement !== ta;
+    const on = showAnn && anns.length && document.activeElement !== ta && cur === "after";
     const was = el.classList.contains("nw-annon");
     el.classList.toggle("nw-annon", !!on); view.hidden = !on; if (!on) { view.innerHTML = ""; if (was) el.dispatchEvent(new Event("np:ann-layout", { bubbles: true })); return; }
-    const v = ta.value, ls = v.split("\n"), starts = []; let p = 0; ls.forEach(l => { starts.push(p); p += l.length + 1; });
-    const byLine = {}; anns.forEach(x => { const i = starts.findIndex((s0, k) => x.start >= s0 && x.start <= s0 + ls[k].length); if (i >= 0) (byLine[i] = byLine[i] || []).push(x); });
+    const v = srcText, ls = v.split("\n"), starts = []; let p = 0; ls.forEach(l => { starts.push(p); p += l.length + 1; });
+    const mk = marked(), byLine = {}; anns.forEach(x => { const i = starts.findIndex((s0, k) => x.start >= s0 && x.start <= s0 + ls[k].length); if (i >= 0) (byLine[i] = byLine[i] || []).push(x); });
     view.innerHTML = ls.map((l, i) => {
       const here = (byLine[i] || []).sort((x, y) => x.start - y.start); let html = "", at = 0;
       here.forEach(x => { const a0 = Math.max(at, x.start - starts[i]), b0 = Math.min(l.length, x.end - starts[i]); if (b0 <= a0) return;
         html += hlLine(l.slice(at, a0), lang.value) + `<span class="nann-cw" data-cann="${x.id}">${hlLine(l.slice(a0, b0), lang.value)}</span>`; at = b0; });
       html += hlLine(l.slice(at), lang.value);
-      return `<div class="nw-al" data-line="${i}"><span class="nw-an">${i + 1}</span><span class="nw-ac">${html || " "}</span></div>`
+      return `<div class="nw-al${mk.has(i + 1) ? " on" : ""}" data-line="${i}"><span class="nw-an">${i + 1}</span><span class="nw-ac">${html || " "}</span></div>`
         + here.map(x => `<div class="nann-cblk" data-cann="${x.id}"><div class="nann-card nann-ccard" data-cann="${x.id}" title="Click to edit this paranote">${x.text ? annHTML(x.text) : '<i class="nann-empty">Empty paranote</i>'}</div></div>`).join("");
     }).join("");
     requestAnimationFrame(() => view.querySelectorAll(".nann-cblk").forEach(blk => { // the line from the middle of the noted code
@@ -3400,9 +3845,10 @@ function mountCode(el) {
   });
   ta.addEventListener("blur", () => setTimeout(annView, 0));
   el._ann = {
-    list: () => anns.map(x => ({ id: x.id, words: ta.value.slice(x.start, x.end), text: x.text, code: true })),
+    list: () => anns.map(x => ({ id: x.id, words: srcText.slice(x.start, x.end), text: x.text, code: true })),
     has: id => anns.some(x => x.id === id),
-    add(text) { const a = ta.selectionStart, b = ta.selectionEnd, v = ta.value;
+    add(text) { if (cur !== "after") return { error: "Paranotes go on the After code: open the After tab first." };
+      const a = ta.selectionStart, b = ta.selectionEnd, v = ta.value;
       if (document.activeElement !== ta && !el.contains(document.activeElement)) return { error: "Select the code first." };
       if (b <= a || !v.slice(a, b).trim()) return { error: "Select the code first." };
       if (v.slice(a, b).includes("\n")) return { error: "Select code on one line." };
@@ -3414,22 +3860,107 @@ function mountCode(el) {
     focus(id) { const w = view.querySelector(`.nann-cw[data-cann="${id}"]`) || el; w.scrollIntoView({ block: "nearest" }); if (w !== el) { w.classList.add("nann-hi"); setTimeout(() => w.classList.remove("nann-hi"), 900); } },
     relayout: () => annView()
   };
-  ta.addEventListener("input", e => { e.stopPropagation(); track(); draw(); save(); });
+  const edited = () => { if (cur === "before") beforeText = ta.value; else { track(); srcText = ta.value; } draw(); save(); };
+  const stop = e => e.stopPropagation();
+  ta.addEventListener("input", e => { e.stopPropagation(); edited(); });
   title.addEventListener("input", e => { e.stopPropagation(); save(); });
   lang.addEventListener("change", () => { draw(); save(); });
-  ta.addEventListener("scroll", () => { hl.scrollLeft = ta.scrollLeft; });
+  ta.addEventListener("scroll", () => { hl.scrollLeft = ta.scrollLeft; drawBands(); });
   ta.addEventListener("keydown", e => {
     if (e.key !== "Tab") return;
     e.preventDefault();
     const s = ta.selectionStart, en = ta.selectionEnd, v = ta.value, ls = v.lastIndexOf("\n", s - 1) + 1;
     if (e.shiftKey) { const cut = v.slice(ls).match(/^ {1,4}/); if (cut) { ta.value = v.slice(0, ls) + v.slice(ls + cut[0].length); ta.selectionStart = ta.selectionEnd = Math.max(ls, s - cut[0].length); } }
     else { ta.value = v.slice(0, s) + "    " + v.slice(en); ta.selectionStart = ta.selectionEnd = s + 4; }
-    track(); draw(); save();
+    edited();
   });
-  el.querySelector('[data-a="copy"]').onclick = e => { const b = e.currentTarget; ta.select(); let ok = false; try { ok = document.execCommand("copy"); } catch (err) {} if (!ok && navigator.clipboard) navigator.clipboard.writeText(ta.value); b.textContent = "Copied"; setTimeout(() => b.textContent = "Copy", 1400); };
+  // options
+  $q('[data-a="opts"]').onclick = e => { const open = opts.hidden; opts.hidden = !open; el.classList.toggle("nw-optson", open); e.currentTarget.setAttribute("aria-expanded", String(open)); };
+  [".nw-file", ".nw-hlin", ".nw-cap"].forEach(s => { const i = $q(s); i.addEventListener("keydown", stop); i.addEventListener("input", e => { e.stopPropagation();
+    if (s === ".nw-file") opt.file = i.value; else if (s === ".nw-hlin") opt.hl = i.value; else opt.cap = i.value; draw(); save(); }); });
+  $q(".nw-look").onchange = e => { opt.look = e.target.value; draw(); save(); };
+  $q(".nw-size").onchange = e => { opt.size = e.target.value; draw(); save(); };
+  $q(".nw-nums").onchange = e => { opt.nums = e.target.checked; draw(); save(); };
+  $q(".nw-diffon").onchange = e => { opt.diff = e.target.checked;
+    if (opt.diff && !beforeText) beforeText = srcText; // start with the same code: change the After tab to show what changed
+    if (!opt.diff && cur !== "after") { cur = "after"; ta.value = srcText; prev = srcText; }
+    draw(); save(); };
+  gut.addEventListener("mousedown", e => e.preventDefault());
+  gut.addEventListener("click", e => { const s = e.target.closest("[data-ln]"); if (!s || cur === "before") return; const set = marked(), n = +s.dataset.ln; set.has(n) ? set.delete(n) : set.add(n);
+    opt.hl = formatLines(set); $q(".nw-hlin").value = opt.hl; draw(); save(); });
+  tabs.addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b || b.dataset.tab === cur) return;
+    cur = b.dataset.tab; if (cur !== "compare") { ta.value = cur === "before" ? beforeText : srcText; prev = srcText; } draw(); save(); });
+  $q(".nw-cmpm").onchange = e => { opt.cmp = e.target.value; draw(); save(); };
+  $q('[data-a="copy"]').onclick = e => { const b = e.currentTarget, t = cur === "before" ? beforeText : srcText; let ok = false;
+    if (cur !== "compare") { ta.select(); try { ok = document.execCommand("copy"); } catch (err) {} }
+    if (!ok && navigator.clipboard) navigator.clipboard.writeText(t); b.textContent = "Copied"; setTimeout(() => b.textContent = "Copy", 1400); };
+  $q('[data-a="img"]').onclick = async e => { const b = e.currentTarget; b.disabled = true; try { b.textContent = (await copyPicture()) ? "Copied" : "Saved"; } catch (err) { b.textContent = "Not copied"; } setTimeout(() => { b.textContent = "Picture"; b.disabled = false; }, 1600); };
+  $q('[data-a="present"]').onclick = () => present();
+  const colors = () => opt.look === "theme" ? themeColors(el) : LOOK_COLORS[opt.look];
+  // Copy as a picture: the code drawn on a canvas (title bar with the file name, highlighted lines, caption), as a PNG
+  async function copyPicture() {
+    const C = colors(), S = 2, fs = Math.max(13, sizeOf(opt.size)[1] + 1), lh = Math.round(fs * 1.6), pad = 22;
+    const lines = srcText.replace(/\t/g, "    ").split("\n"), mk = marked(), font = `${fs}px "IBM Plex Mono", Menlo, Consolas, monospace`;
+    const cv = document.createElement("canvas"), g = cv.getContext("2d"); g.font = font;
+    const cw = g.measureText("M").width, gutW = opt.nums ? Math.ceil(String(lines.length).length * cw + 22) : 0;
+    const head = 34, capH = opt.cap.trim() ? Math.round(fs * 2.4) : 0;
+    const W = Math.min(2400, Math.max(420, Math.ceil(gutW + pad * 2 + Math.max(...lines.map(l => l.length)) * cw))), H = head + pad + lines.length * lh + pad + capH;
+    cv.width = W * S; cv.height = H * S; g.scale(S, S);
+    g.fillStyle = C.bg; g.fillRect(0, 0, W, H); g.fillStyle = C.bar; g.fillRect(0, 0, W, head);
+    ["#ff5f57", "#febc2e", "#28c840"].forEach((c, i) => { g.fillStyle = c; g.beginPath(); g.arc(18 + i * 18, head / 2, 5.5, 0, Math.PI * 2); g.fill(); });
+    g.font = `600 ${Math.round(fs * .9)}px "IBM Plex Sans", system-ui, sans-serif`; g.fillStyle = C.com; g.textBaseline = "middle";
+    const label = [opt.file.trim(), title.value.trim()].filter(Boolean).join("  ·  "); if (label) g.fillText(label, 80, head / 2);
+    g.font = font; g.textBaseline = "alphabetic";
+    lineGroups(mk).forEach(([a, b]) => { g.fillStyle = C.band; g.fillRect(0, head + pad + (a - 1) * lh, W, (b - a + 1) * lh); });
+    const tpl = document.createElement("template");
+    lines.forEach((l, i) => {
+      const y = head + pad + i * lh + Math.round(lh * .72);
+      if (opt.nums) { g.fillStyle = C.gut; g.textAlign = "right"; g.fillText(String(i + 1), gutW - 10, y); g.textAlign = "left"; }
+      tpl.innerHTML = hlLine(l, lang.value); let x = gutW + pad;
+      tpl.content.childNodes.forEach(nd => { const t = nd.textContent; if (!t) return; const k = nd.nodeType === 1 ? nd.className : ""; g.fillStyle = C[k] || C.text; g.fillText(t, x, y); x += g.measureText(t).width; });
+    });
+    if (capH) { g.font = `italic ${Math.round(fs * .95)}px "IBM Plex Sans", system-ui, sans-serif`; g.fillStyle = C.com; g.fillText(opt.cap.trim(), pad, H - capH / 2 + fs * .3); }
+    const blob = await new Promise(r => cv.toBlob(r, "image/png"));
+    el._picture = blob; // for the tests
+    try { if (navigator.clipboard && window.ClipboardItem) { await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]); toastW("The code is copied as a picture: paste it into slides, an email or a chat."); return true; } } catch (err) {}
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = (opt.file.trim() || title.value.trim() || "code").replace(/[\\/:*?"<>|]/g, "-") + ".png"; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+    toastW("The picture of the code is saved in your downloads."); return false;
+  }
+  // ⤢ Present: the code over the whole window, big; ← / → step through the highlighted lines (the rest dims); Esc closes
+  function present() {
+    const groups = lineGroups(marked()), ov = document.createElement("div"); let step = -1, fs = 24, show = cur === "compare" ? "compare" : "code";
+    ov.className = "nw-present"; ov.dataset.look = opt.look; ov.setAttribute("role", "dialog"); ov.setAttribute("aria-label", "Present the code"); ov.tabIndex = -1;
+    const name = title.value.trim() || opt.file.trim() || "Code", lname = (LANGS.find(x => x[0] === lang.value) || ["", ""])[1];
+    ov.innerHTML = `<div class="nwp-bar"><span class="nwp-t">${esc(name)}</span>${opt.file.trim() && title.value.trim() ? `<span class="nwp-f">${esc(opt.file.trim())}</span>` : ""}<span class="nwp-l">${esc(lname)}</span><span class="nwp-sp"></span>
+      ${groups.length ? `<button type="button" data-p="prev" title="Previous highlighted lines (←)">←</button><span class="nwp-step num"></span><button type="button" data-p="next" title="Next highlighted lines (→)">→</button>` : ""}
+      ${opt.diff ? `<button type="button" data-p="view">${show === "compare" ? "Show the code" : "Compare before / after"}</button>` : ""}
+      <button type="button" data-p="smaller" title="Smaller text (−)" aria-label="Smaller text">A−</button><button type="button" data-p="bigger" title="Bigger text (+)" aria-label="Bigger text">A+</button><button type="button" data-p="close" title="Close (Esc)">✕ Close</button></div>
+      <div class="nwp-body"></div>${opt.cap.trim() ? `<div class="nwp-cap">${esc(opt.cap.trim())}</div>` : ""}`;
+    const body = ov.querySelector(".nwp-body");
+    const render = () => {
+      ov.style.setProperty("--nwp-fs", fs + "px"); const st = ov.querySelector(".nwp-step"); if (st) st.textContent = step < 0 ? `All · ${groups.length} highlighted` : `${step + 1} / ${groups.length}`;
+      if (show === "compare") { body.innerHTML = `<div class="nw-cmp nwp-cmp">${diffHTML()}</div>`; return; }
+      const ls = srcText.split("\n"), mk = marked(), g = step >= 0 ? groups[step] : null;
+      body.innerHTML = `<div class="nwp-code${opt.nums ? "" : " nonums"}">${ls.map((l, i) => { const n = i + 1, inG = g && n >= g[0] && n <= g[1];
+        return `<div class="nwp-ln${mk.has(n) ? " on" : ""}${g ? (inG ? " focus" : " dim") : ""}" data-ln="${n}"><span class="nwp-n">${n}</span><span class="nwp-c">${hlLine(l, lang.value) || " "}</span></div>`; }).join("")}</div>`;
+      if (g) { const t = body.querySelector(`[data-ln="${g[0]}"]`); if (t) t.scrollIntoView({ block: "center", behavior: "smooth" }); }
+    };
+    const close = () => { ov.remove(); window.removeEventListener("keydown", key, true); const b = $q('[data-a="present"]'); if (b) b.focus({ preventScroll: true }); };
+    const go = d2 => { if (!groups.length) return; step = step + d2; if (step >= groups.length) step = -1; else if (step < -1) step = groups.length - 1; render(); };
+    const key = e => { if (e.key === "Escape") { e.preventDefault(); e.stopImmediatePropagation(); setTimeout(close, 0); return; } // after Settings' own Esc check has seen the box
+      if (e.target && e.target.closest && e.target.closest("select,input")) return;
+      if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") { e.preventDefault(); go(1); } else if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); go(-1); }
+      else if (e.key === "+" || e.key === "=") { fs = Math.min(48, fs + 2); render(); } else if (e.key === "-") { fs = Math.max(14, fs - 2); render(); } };
+    ov.addEventListener("click", e => { const b = e.target.closest("[data-p]"); if (!b) return; const p = b.dataset.p;
+      if (p === "close") close(); else if (p === "next") go(1); else if (p === "prev") go(-1); else if (p === "bigger") { fs = Math.min(48, fs + 2); render(); } else if (p === "smaller") { fs = Math.max(14, fs - 2); render(); }
+      else if (p === "view") { show = show === "compare" ? "code" : "compare"; b.textContent = show === "compare" ? "Show the code" : "Compare before / after"; render(); } });
+    document.body.appendChild(ov); window.addEventListener("keydown", key, true); render(); ov.focus({ preventScroll: true });
+  }
+  [title, cap].forEach(i => i.addEventListener("keydown", stop));
   delButton(el);
   draw();
 }
+const toastW = t => { if (window.InquireNotes && InquireNotes.toast) InquireNotes.toast(esc(t), null, 3500); };
 function delButton(el) {
   const b = el.querySelector('[data-a="del"]'); let armed = 0;
   b.onclick = () => {
@@ -3636,23 +4167,25 @@ function mount(el) {
   if (el.dataset.w === "code") mountCode(el); else if (el.dataset.w === "music") mountMusic(el); else if (el.dataset.w === "video") mountVideo(el);
   else if (el.dataset.w === "graph" && window.NPGraph) { NPGraph.mount(el); delButton(el); }
   else if (el.dataset.w === "sheet" && window.NPSheet) NPSheet.mount(el);
+  else if (el.dataset.w === "map" && window.NPMap) { NPMap.mount(el); delButton(el); }
 }
 function create(type, data) {
   const el = document.createElement("div"); el.className = "nw"; el.dataset.w = type;
-  el.dataset.src = JSON.stringify(type === "sheet" ? Object.assign({}, window.NPSheet ? NPSheet.DEF : {}, data || {}) : type === "graph" ? Object.assign({}, window.NPGraph ? NPGraph.DEF : {}, data || {}) : type === "video" ? Object.assign({ title: "" }, data || {}) : type === "code" ? Object.assign({ lang: "python", title: "", src: "" }, data || {}) : { title: "", clef: "treble", time: "4/4", tempo: 90, seq: "" });
+  el.dataset.src = JSON.stringify(type === "sheet" ? Object.assign({}, window.NPSheet ? NPSheet.DEF : {}, data || {}) : type === "graph" ? Object.assign({}, window.NPGraph ? NPGraph.DEF : {}, data || {}) : type === "video" ? Object.assign({ title: "" }, data || {}) : type === "map" ? Object.assign({}, window.NPMap ? NPMap.DEF : {}, data || {}) : type === "code" ? Object.assign({ lang: "python", title: "", src: "" }, data || {}) : { title: "", clef: "treble", time: "4/4", tempo: 90, seq: "" });
   return el;
 }
 // plain-text version for search, previews and .md export
 function text(el) {
   const d = readSrc(el, {});
-  if (el.dataset.w === "code") return "\n```" + (d.lang && d.lang !== "text" ? d.lang : "") + (d.title ? " " + d.title : "") + "\n" + (d.src || "") + "\n```\n";
+  if (el.dataset.w === "code") return "\n```" + (d.lang && d.lang !== "text" ? d.lang : "") + (d.title || d.file ? " " + (d.title || d.file) : "") + "\n" + (d.src || "") + "\n```\n" + (d.cap ? d.cap + "\n" : "");
   if (el.dataset.w === "graph") return window.NPGraph ? NPGraph.text(d) : "";
+  if (el.dataset.w === "map") return window.NPMap ? NPMap.text(d) : "";
   if (el.dataset.w === "sheet") return window.NPSheet ? NPSheet.text(el) : "";
   if (el.dataset.w === "video") { const l = videoLink(d); return "\n▶ " + (d.title || "Video") + (l ? " (" + l + ")" : "") + "\n"; }
   if (el.dataset.w === "music") return "\n♪ " + (d.title ? d.title + ": " : "") + (d.seq || "(empty)") + (d.time ? " [" + d.time + ", " + (d.clef || "treble") + " clef]" : "") + "\n";
   return "";
 }
-window.InquireWidgets = { WIDGETS: WIDGET_MENU, toolbar, mount, create, text, colorKey, COLORS, parseSeq, chordNotes, videoFrom, videoPanel,
+window.InquireWidgets = { WIDGETS: WIDGET_MENU, codeKit: { parseLines, formatLines, lineGroups, lineDiff, diffRows }, toolbar, mount, create, text, colorKey, COLORS, parseSeq, chordNotes, videoFrom, videoPanel,
   kit: { splinePath, G_CLEF, F_CLEF, delButton, len, UNITS } }; // shared with notes-sheet.js
 })();
 
@@ -4079,6 +4612,89 @@ function text(el) {
   return "\n𝄞 " + (d.title || "Lead sheet") + (d.composer ? " (" + d.composer + ")" : "") + ` [${d.key}, ${d.time}]` + (last ? "\n| " + cs.slice(0, last).join(" | ") + " |" : "") + "\n";
 }
 window.NPSheet = { mount, text, DEF, read, playable, keyMap };
+})();
+
+</script>
+<script>/* web/src/notes-map.js */
+/* Map widget (NotePath v0.5.6, Devon): <div class="nw" data-w="map" data-src='{"title","q","label","lat","lon","zoom"}'>.
+   Search an address or place (OpenStreetMap Nominatim: the same lookup as My Tasks' Place, through main.js "dict:lookup"),
+   pick one of the answers and the widget keeps it: the place, a small map (OpenStreetMap tiles, ＋ / −, the zoom is kept)
+   and links to Apple Maps, Google Maps and OpenStreetMap. "Change" searches again. Places picked before are offered as
+   chips (store notepath.places, the last 8) so a place used once is one click away. Uses NPTasks.geocode / mapView at
+   run time (tasks.js loads later). Loaded after notes-widgets.js. */
+(function () {
+"use strict";
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const DEF = { title: "", q: "", label: "", lat: null, lon: null, zoom: 16 };
+const RECENT = "notepath.places", MAXR = 8;
+const recent = () => { try { const a = JSON.parse(localStorage.getItem(RECENT) || "[]"); return Array.isArray(a) ? a.filter(p => p && p.label && isFinite(p.lat) && isFinite(p.lon)).slice(0, MAXR) : []; } catch (e) { return []; } };
+function remember(p) {
+  try { const a = recent().filter(x => x.label !== p.label); a.unshift({ label: p.label, lat: p.lat, lon: p.lon }); localStorage.setItem(RECENT, JSON.stringify(a.slice(0, MAXR))); } catch (e) {}
+}
+const has = d => d && d.label && isFinite(d.lat) && isFinite(d.lon) && d.lat !== null;
+const short = label => String(label || "").split(",")[0].trim();
+const links = d => ({
+  apple: `https://maps.apple.com/?ll=${d.lat},${d.lon}&q=${encodeURIComponent(short(d.label))}`,
+  google: `https://www.google.com/maps/search/?api=1&query=${d.lat},${d.lon}`,
+  osm: `https://www.openstreetmap.org/?mlat=${d.lat}&mlon=${d.lon}#map=${d.zoom || 16}/${d.lat}/${d.lon}`
+});
+function text(d) {
+  d = Object.assign({}, DEF, d || {});
+  if (!has(d)) return "\n⌖ " + (d.title ? d.title + ": " : "") + "(no place yet)\n";
+  return "\n⌖ " + (d.title ? d.title + ": " : "") + d.label + " (" + (+d.lat).toFixed(5) + ", " + (+d.lon).toFixed(5) + ") " + links(d).osm + "\n";
+}
+function mount(el) {
+  const read = () => { try { return Object.assign({}, DEF, JSON.parse(el.dataset.src || "{}")); } catch (e) { return Object.assign({}, DEF); } };
+  let d = read(), view = null, results = null, busy = false, err = "";
+  const save = () => { el.dataset.src = JSON.stringify({ title: d.title, q: d.q, label: d.label, lat: d.lat, lon: d.lon, zoom: d.zoom }); el.dispatchEvent(new Event("input", { bubbles: true })); };
+  const T = () => window.NPTasks;
+  el.classList.add("nm");
+  // the head (title, ✕) is drawn once; only the body below it is redrawn
+  el.innerHTML = `<div class="nm-head"><span class="nm-ic" aria-hidden="true">⌖</span><input class="nm-title" maxlength="80" placeholder="Map" aria-label="Map title" value="${esc(d.title)}"><button type="button" class="nw-b nw-del" data-a="del" title="Remove this map" aria-label="Remove map">✕</button></div><div class="nm-body"></div>`;
+  const body = el.querySelector(".nm-body"), title = el.querySelector(".nm-title");
+  title.addEventListener("input", e => { e.stopPropagation(); d.title = title.value.trim(); save(); });
+  title.addEventListener("keydown", e => e.stopPropagation());
+  function draw(focus) {
+    if (view) { view.destroy(); view = null; }
+    const picking = !has(d) || results || busy || err || el._change;
+    const rec = recent().filter(p => !has(d) || p.label !== d.label);
+    body.innerHTML = (picking ? `<form class="nm-search"><input class="nm-q" type="search" maxlength="200" placeholder="Search for an address or a place…" aria-label="Address or place" value="${esc(d.q)}"><button type="submit" class="btn-s">Search</button>${has(d) ? `<button type="button" class="btn-s" data-a="keep">Cancel</button>` : ""}</form>`
+        + (busy ? `<p class="nm-msg">Looking for it…</p>` : err ? `<p class="nm-msg bad">${esc(err)}</p>` : "")
+        + (results ? (results.length ? `<ul class="nm-res" role="listbox" aria-label="Places found">${results.map((r, i) => `<li><button type="button" data-pick="${i}">${esc(r.label)}</button></li>`).join("")}</ul>` : `<p class="nm-msg">Nothing found. Try the street and the town, or a postcode.</p>`) : "")
+        + (rec.length && !results ? `<div class="nm-rec"><span>Places you used before</span>${rec.map((p, i) => `<button type="button" class="nm-chip" data-rec="${i}" title="${esc(p.label)}">⌖ ${esc(short(p.label))}</button>`).join("")}</div>` : "")
+      : "")
+      + (has(d) && !picking ? `<div class="nm-placer"><p class="nm-place" title="${esc(d.label)}">${esc(d.label)}</p><button type="button" class="btn-s nm-change" data-a="change">Change</button></div><div class="nt-map nm-map"></div>
+        <p class="nm-links"><a href="${links(d).apple}" target="_blank" rel="noopener">Apple Maps</a> · <a href="${links(d).google}" target="_blank" rel="noopener">Google Maps</a> · <a href="${links(d).osm}" target="_blank" rel="noopener">OpenStreetMap</a></p>` : "");
+    const f = body.querySelector(".nm-search");
+    if (f) {
+      const q = f.querySelector(".nm-q");
+      q.addEventListener("input", e => e.stopPropagation());
+      q.addEventListener("keydown", e => { e.stopPropagation(); if (e.key === "Escape" && has(d)) { e.preventDefault(); el._change = false; results = null; err = ""; draw(); } });
+      f.onsubmit = async e => {
+        e.preventDefault(); const v = q.value.trim(); if (!v || busy) return;
+        if (!T()) { err = "Maps are not available here."; draw(); return; }
+        d.q = v; busy = true; err = ""; results = null; draw();
+        try { results = (await T().geocode(v)).slice(0, 5); } catch (x) { err = x && x.message ? x.message : "Could not reach the map service."; }
+        busy = false; if (el.isConnected) draw(true);
+      };
+      if (focus) setTimeout(() => { const b = body.querySelector("[data-pick]") || q; b.focus({ preventScroll: true }); }, 0);
+    }
+    body.querySelectorAll("[data-pick]").forEach(b => b.onclick = () => pick(results[+b.dataset.pick]));
+    body.querySelectorAll("[data-rec]").forEach(b => b.onclick = () => pick(rec[+b.dataset.rec]));
+    const keep = body.querySelector('[data-a="keep"]'); if (keep) keep.onclick = () => { el._change = false; results = null; err = ""; draw(); };
+    const ch = body.querySelector('[data-a="change"]'); if (ch) ch.onclick = () => { el._change = true; draw(true); };
+    const host = body.querySelector(".nm-map");
+    if (host && T() && T().mapView) view = T().mapView(host, d, { zoom: d.zoom, onZoom: z => { d.zoom = z; save(); } });
+  }
+  function pick(p) {
+    if (!p) return;
+    d.label = p.label; d.lat = +p.lat; d.lon = +p.lon; d.zoom = d.zoom || 16; results = null; err = ""; el._change = false;
+    remember(p); save(); draw();
+  }
+  el.addEventListener("mousedown", e => e.stopPropagation());
+  draw();
+}
+window.NPMap = { mount, text, DEF, recent };
 })();
 
 </script>
@@ -4556,8 +5172,8 @@ async function geocode(q) {
   return (Array.isArray(body) ? body : []).map(x => ({ label: String(x.display_name || ""), lat: +x.lat, lon: +x.lon })).filter(x => x.label && isFinite(x.lat) && isFinite(x.lon));
 }
 // a small map: OpenStreetMap tiles around the place, a pin in the middle, − / ＋ zoom (no library needed)
-function mapView(host, loc) {
-  let z = 16;
+function mapView(host, loc, o = {}) { // o.zoom, o.onZoom(z): the Map widget in notes keeps its zoom (v0.5.6)
+  let z = Math.max(3, Math.min(19, +o.zoom || 16));
   host.innerHTML = `<div class="nt-tiles"></div><span class="nt-pin" aria-hidden="true"></span><div class="nt-zoom"><button type="button" data-z="1" aria-label="Zoom in">＋</button><button type="button" data-z="-1" aria-label="Zoom out">−</button></div><span class="nt-attr">© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors</span>`;
   const tiles = $(".nt-tiles", host);
   const draw = () => {
@@ -4571,7 +5187,7 @@ function mapView(host, loc) {
     }
     tiles.innerHTML = html;
   };
-  host.querySelectorAll("[data-z]").forEach(b => b.onclick = () => { z = Math.max(3, Math.min(19, z + +b.dataset.z)); draw(); });
+  host.querySelectorAll("[data-z]").forEach(b => b.onclick = () => { z = Math.max(3, Math.min(19, z + +b.dataset.z)); draw(); if (o.onZoom) o.onZoom(z); });
   const ro = window.ResizeObserver ? new ResizeObserver(draw) : null; if (ro) ro.observe(host);
   draw();
   return { destroy: () => { if (ro) ro.disconnect(); } };
@@ -4791,7 +5407,7 @@ function render(m, o = {}) {
   drawAll();
 }
 
-window.NPTasks = { all, get, create, update, remove, setDone, render, upcoming, dueAt, dueLabel, overdue, nextDue, ics, PRI, REM, geocode,
+window.NPTasks = { all, get, create, update, remove, setDone, render, upcoming, dueAt, dueLabel, overdue, nextDue, ics, PRI, REM, geocode, mapView,
   media: () => read().flatMap(mediaOf), readRaw: read, writeRaw: write, openCount: () => read().filter(t => !t.done).length, overdueCount: () => read().filter(overdue).length };
 })();
 
@@ -5160,8 +5776,46 @@ async function exportNotes(scope, fmt, o = {}) {
     if (keys.length === 1) { blob = new Blob([await toENEX(groups[keys[0]], n => rel(n).join("/"))], { type: "application/enex+xml" }); file = (one ? stem : safeName(keys[0] || stem)) + ".enex"; }
     else { const entries = []; for (const k of keys) entries.push({ name: stem + "/" + safeName(k) + ".enex", data: await toENEX(groups[k], n => rel(n).join("/")) }); blob = await zip(entries); file = stem + ".zip"; }
   }
-  save(blob, file);
+  if (!o.noSave) save(blob, file);
   return { file, count: notes.length, bytes: blob.size, blob };
+}
+/* ---------- Share → Email and Print (v0.5.6, Devon) ----------
+   Email: a new message in the person's own mail app (a mailto: link: the title as the subject, the note's words as the text;
+   long notes are cut, as mail apps refuse very long links). "Email with a PDF" also makes the PDF, keeps it in
+   Downloads/NotePath (desktop: main.js share:file) and shows it in Finder / File Explorer so it can be dragged into the
+   message: a mailto: link cannot carry a file. Print: the note as a clean page (the web page export), sent to the printer
+   (desktop: main.js print:html opens the system print window; the browser build prints a hidden frame). The hooks can be
+   replaced by the tests. */
+const MAIL_MAX = 1800;
+const hooks = {
+  openMail: async url => { const D = window.inquireDesktop; if (D && D.share && D.share.mail) return D.share.mail(url); const a = document.createElement("a"); a.href = url; a.rel = "noopener"; document.body.appendChild(a); a.click(); a.remove(); return true; },
+  keepFile: async (name, blob) => { const D = window.inquireDesktop; if (D && D.share && D.share.file) return D.share.file({ name, bytes: new Uint8Array(await blob.arrayBuffer()) }); save(blob, name); return null; },
+  printPage: async html => { const D = window.inquireDesktop; if (D && D.share && D.share.print) return D.share.print(html);
+    const fr = document.createElement("iframe"); fr.style.cssText = "position:fixed;width:0;height:0;border:0;left:-10px"; fr.srcdoc = html; document.body.appendChild(fr);
+    await new Promise(r => fr.onload = r); try { fr.contentWindow.print(); } catch (e) {} setTimeout(() => fr.remove(), 60000); return true; }
+};
+function mailURL(n, extra) {
+  const N = window.InquireNotes, words = N.toText(n.html || "").replace(/\n{3,}/g, "\n\n").trim();
+  let body = words.length > MAIL_MAX ? words.slice(0, MAIL_MAX).replace(/\s+\S*$/, "") + "\n\n[…] The note goes on: " + (extra || "the full note is in NotePath.") : words;
+  if (extra && words.length <= MAIL_MAX) body += "\n\n" + extra;
+  return "mailto:?subject=" + encodeURIComponent(n.title || "Note") + "&body=" + encodeURIComponent(body + "\n\n— Sent from NotePath");
+}
+async function email(id, o = {}) {
+  const N = window.InquireNotes, n = N.get(id); if (!n) throw new Error("Pick a note first.");
+  let file = null, where = null;
+  if (o.pdf) {
+    const r = await exportNotes("note", "pdf", { note: id, noSave: true });
+    if (r.printed) return { printed: true }; // the browser build: the print window is open, Save as PDF there
+    file = r.file; where = await hooks.keepFile(r.file, r.blob);
+  }
+  await hooks.openMail(mailURL(n, file ? `see the PDF “${file}”, attached.` : ""));
+  return { file, where };
+}
+async function printNote(id) {
+  const N = window.InquireNotes; if (!N.get(id)) throw new Error("Pick a note first.");
+  const r = await exportNotes("note", "html", { note: id, noSave: true });
+  const page = (await r.blob.text()).replace("</head>", "<style>@media print{body{margin:0}}</style></head>");
+  await hooks.printPage(page); return true;
 }
 // PDF: the desktop app prints the page to a PDF file (main.js export:pdf); the browser preview opens the print dialog instead
 async function pdf(page) {
@@ -5500,7 +6154,129 @@ async function droppedFiles(dt) {
   return out;
 }
 
-window.NPIO = { open, exportNotes, importFiles, zip, unzip, md5, ir, toMD, toHTMLBody, toDOCX, toENEX, mdToHTML, htmlToNote, docxToNote, enexToNotes, keepToNote, FORMATS };
+window.NPIO = { open, exportNotes, email, printNote, mailURL, hooks, importFiles, zip, unzip, md5, ir, toMD, toHTMLBody, toDOCX, toENEX, mdToHTML, htmlToNote, docxToNote, enexToNotes, keepToNote, FORMATS };
+})();
+
+</script>
+<script>/* web/src/assist.js */
+/* AI Chat and Grammar check (NotePath v0.5.6, Devon). window.NPAssist: the parts with no page layout, so tools/unit.js can
+   check them; the two boxes at the bottom right of a note are drawn by renderNotes in app.js, and the right-click
+   "Ask AI…" box by textmenu.js.
+   - AI: the same key and provider as My Code's ⇄ Translate (main.js "ai:ask"; the key never reaches the page). ask() goes
+     through NPCode.ai so the tests can stand in for it. A chat sends the whole conversation (messages), and the note when
+     "Read this note" is ticked.
+   - Grammar: LanguageTool's free public service (api.languagetool.org, no key; the desktop app posts through main.js
+     "grammar:check"). The kind of note sets how strict the check is (GTYPES: which rule categories are left out, and
+     "picky" for formal writing). textMap() turns the editor into plain text with a map back to its text nodes, so a
+     suggestion can be put straight into the note. */
+(function () {
+"use strict";
+/* ---------- AI ---------- */
+const AI_SYS = "You are the assistant inside NotePath, a notes app. Be clear, friendly and brief. Reply in plain text; short lists with '- ' are fine. Do not use Markdown headings or tables.";
+const SEL_SYS = "You help with a piece of text the user selected in a note in NotePath. Follow the request. When the request changes the text (rewrite, shorten, fix, translate, turn into a list…), reply with ONLY the new text: no introduction, no quotes, no notes. When it asks a question about the text, answer briefly in plain text.";
+const NOTE_MAX = 30000, TURNS = 30;
+function aiApi() { return window.NPCode && NPCode.ai ? NPCode.ai : { status: async () => ({ configured: false }), ask: async () => { throw new Error("AI is not available here."); } }; }
+async function aiStatus() { try { return (await aiApi().status()) || { configured: false }; } catch (e) { return { configured: false }; } }
+// a chat turn: msgs = [{ role: "user" | "assistant", content }], note = { title, text } or null
+function chatRequest(msgs, note) {
+  const keep = msgs.filter(m => m && (m.role === "user" || m.role === "assistant") && m.content).slice(-TURNS).map(m => ({ role: m.role, content: String(m.content).slice(0, 20000) }));
+  while (keep.length && keep[0].role !== "user") keep.shift();
+  const system = AI_SYS + (note ? `\n\nThe user has this note open. Use it when the question is about it.\nTitle: ${note.title || "Untitled note"}\n<note>\n${String(note.text || "").slice(0, NOTE_MAX)}\n</note>` : "");
+  const prompt = keep.map(m => (m.role === "user" ? "User: " : "Assistant: ") + m.content).join("\n\n"); // for a main process without messages support
+  return { system, messages: keep, prompt };
+}
+function selRequest(request, text) {
+  return { system: SEL_SYS, prompt: `Request: ${String(request).trim()}\n\nSelected text:\n"""\n${String(text).slice(0, NOTE_MAX)}\n"""` };
+}
+async function ask(req) { return String(await aiApi().ask(req) || "").trim(); }
+// strip a wrapper the model sometimes adds around a rewritten text
+const cleanEdit = t => String(t || "").trim().replace(/^```[a-z]*\n([\s\S]*?)\n```$/i, "$1").replace(/^"""\n?([\s\S]*?)\n?"""$/, "$1").replace(/^"([^"\n]+)"$/, "$1").trim();
+// AI text → note html: one line per line, "- " lines as a bulleted list, **bold**
+function toHTML(t) {
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const inline = s => esc(s).replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>");
+  const out = []; let ul = null;
+  String(t || "").replace(/\r/g, "").split("\n").forEach(line => {
+    const m = line.match(/^\s*[-*•]\s+(.*)$/);
+    if (m) { (ul = ul || []).push(`<li>${inline(m[1])}</li>`); return; }
+    if (ul) { out.push(`<ul>${ul.join("")}</ul>`); ul = null; }
+    out.push(line.trim() ? `<div>${inline(line)}</div>` : "<div><br></div>");
+  });
+  if (ul) out.push(`<ul>${ul.join("")}</ul>`);
+  return out.join("");
+}
+
+/* ---------- Grammar (LanguageTool) ---------- */
+const GT_URL = "https://api.languagetool.org/v2/check", GT_MAX = 18000;
+// [key, name, what it checks, LanguageTool categories left out, picky]
+const GTYPES = [
+  ["quick", "Quick note", "Spelling and clear grammar mistakes only", ["PUNCTUATION", "CASING", "STYLE", "TYPOGRAPHY", "REDUNDANCY", "PLAIN_ENGLISH", "WIKIPEDIA", "MISC", "SEMANTICS", "GENDER_NEUTRALITY", "COLLOCATIONS"], false],
+  ["school", "School & study", "Spelling, grammar, punctuation, capitals and mixed-up words", ["STYLE", "PLAIN_ENGLISH", "WIKIPEDIA", "GENDER_NEUTRALITY", "TYPOGRAPHY"], false],
+  ["work", "Work & business", "Everything for school, plus clear and professional style", ["WIKIPEDIA", "TYPOGRAPHY"], false],
+  ["creative", "Creative writing", "Spelling and grammar, but your style is left alone (fragments, repetition, capitals)", ["STYLE", "PLAIN_ENGLISH", "WIKIPEDIA", "REDUNDANCY", "TYPOGRAPHY", "GENDER_NEUTRALITY", "CASING", "SEMANTICS"], false],
+  ["formal", "Formal & academic", "The strictest check: every rule, including picky style rules", [], true]];
+const GLANGS = [["en-US", "English (US)"], ["en-GB", "English (UK)"], ["en-CA", "English (Canada)"], ["en-AU", "English (Australia)"], ["auto", "Detect the language"]];
+const gtype = k => GTYPES.find(t => t[0] === k) || GTYPES[1];
+function grammarBody(text, type, lang) {
+  const t = gtype(type), p = new URLSearchParams();
+  p.set("text", String(text).slice(0, GT_MAX)); p.set("language", GLANGS.some(l => l[0] === lang) ? lang : "en-US");
+  if (t[4]) p.set("level", "picky");
+  if (t[3].length) p.set("disabledCategories", t[3].join(","));
+  return p.toString();
+}
+// LanguageTool's matches → the ones this kind of note wants, in order, each { id, offset, length, bad, message, cat, reps }
+function grammarMatches(body, text, type) {
+  const t = gtype(type), off = new Set(t[3]);
+  const ms = body && Array.isArray(body.matches) ? body.matches : [];
+  return ms.filter(m => m && Number.isFinite(m.offset) && Number.isFinite(m.length) && m.length > 0 && !(m.rule && m.rule.category && off.has(m.rule.category.id)))
+    .map((m, i) => ({ id: "g" + i, offset: m.offset, length: m.length, bad: String(text).substr(m.offset, m.length), message: String(m.message || m.shortMessage || "Check this"),
+      cat: m.rule && m.rule.category ? String(m.rule.category.name || m.rule.category.id || "") : "", kind: m.rule && m.rule.issueType === "misspelling" ? "spelling" : m.rule && /style|typographical/.test(m.rule.issueType || "") ? "style" : "grammar",
+      reps: (m.replacements || []).map(r => String(r && r.value != null ? r.value : "")).filter((v, j, a) => a.indexOf(v) === j).slice(0, 4) }))
+    .sort((a, b) => a.offset - b.offset);
+}
+async function grammarCheck(text, type, lang) {
+  const body = grammarBody(text, type, lang), D = window.inquireDesktop;
+  let res;
+  if (D && D.grammar) { try { res = await D.grammar({ body }); } catch (e) { res = { status: 0 }; } }
+  else { try { const r = await fetch(GT_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" }, body }); res = { status: r.status, body: r.ok ? await r.json() : null }; } catch (e) { res = { status: 0 }; } }
+  if (!res || res.status !== 200 || !res.body) throw new Error(!res || !res.status ? "Could not reach the grammar service. Check your internet connection." : res.status === 429 ? "The free grammar service is busy. Wait a minute and check again." : `The grammar service answered ${res.status}.`);
+  return { matches: grammarMatches(res.body, text, type), cut: String(text).length > GT_MAX };
+}
+// shift the matches after an edit at `at` that turned `was` characters into `now`
+function shiftMatches(list, at, was, now) { const d = now - was; return list.map(m => m.offset > at ? Object.assign({}, m, { offset: m.offset + d }) : m); }
+
+/* the editor as plain text, with where each piece came from (widgets and the paranotes layer are left out) */
+const BLOCK = /^(DIV|P|LI|UL|OL|H[1-6]|BLOCKQUOTE|PRE|TR|TABLE)$/;
+function textMap(root) {
+  let text = ""; const segs = [];
+  const nl = () => { if (text && !text.endsWith("\n")) text += "\n"; };
+  (function walk(n) {
+    for (let c = n.firstChild; c; c = c.nextSibling) {
+      if (c.nodeType === 3) { if (c.data) { segs.push({ node: c, start: text.length }); text += c.data; } continue; }
+      if (c.nodeType !== 1) continue;
+      if (c.classList.contains("nw") || c.classList.contains("nann-layer") || c.getAttribute("contenteditable") === "false" || /^(SCRIPT|STYLE)$/.test(c.tagName)) { nl(); continue; }
+      if (c.tagName === "BR") { text += "\n"; continue; }
+      const b = BLOCK.test(c.tagName); if (b) nl();
+      walk(c);
+      if (b) nl();
+    }
+  })(root);
+  return { text, segs };
+}
+function rangeAt(map, offset, length) {
+  const at = pos => { for (let i = map.segs.length - 1; i >= 0; i--) { const s = map.segs[i]; if (pos >= s.start && pos <= s.start + s.node.data.length) return [s.node, pos - s.start]; } return null; };
+  const a = at(offset), b = at(offset + length); if (!a || !b) return null;
+  const r = document.createRange(); r.setStart(a[0], a[1]); r.setEnd(b[0], b[1]); return r;
+}
+// find a match again after other edits: at its offset, or the nearest place with the same words
+function locate(map, m) {
+  if (map.text.substr(m.offset, m.length) === m.bad) return m.offset;
+  let best = -1, from = 0, i;
+  while ((i = map.text.indexOf(m.bad, from)) !== -1) { if (best < 0 || Math.abs(i - m.offset) < Math.abs(best - m.offset)) best = i; from = i + 1; }
+  return best;
+}
+
+window.NPAssist = { aiStatus, ask, chatRequest, selRequest, cleanEdit, toHTML, GTYPES, GLANGS, gtype, grammarBody, grammarMatches, grammarCheck, shiftMatches, textMap, rangeAt, locate, GT_URL, GT_MAX };
 })();
 
 </script>
@@ -5514,7 +6290,13 @@ window.NPIO = { open, exportNotes, importFiles, zip, unzip, md5, ir, toMD, toHTM
 const $ = (s, r=document) => r.querySelector(s);
 const h = (tag, attrs={}, html) => { const e = document.createElement(tag); for (const k in attrs) { if (k === "class") e.className = attrs[k]; else if (k.startsWith("on")) e.addEventListener(k.slice(2), attrs[k]); else e.setAttribute(k, attrs[k]); } if (html != null) e.innerHTML = html; return e; };
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const when = ms => { const d = new Date(ms), now = new Date(); return d.toDateString() === now.toDateString() ? d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : d.toLocaleDateString([], { month: "short", day: "numeric", year: d.getFullYear() === now.getFullYear() ? undefined : "numeric" }); };
+// dates on rows (v0.5.6: the formatters are made once and the text is kept per minute: making them for every row of a long
+// list was the slowest part of drawing it)
+const FMT = { t: new Intl.DateTimeFormat([], { hour: "numeric", minute: "2-digit" }), d: new Intl.DateTimeFormat([], { month: "short", day: "numeric" }), dy: new Intl.DateTimeFormat([], { month: "short", day: "numeric", year: "numeric" }),
+  s: new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }), sy: new Intl.DateTimeFormat(undefined, { year: "numeric", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) };
+const WHEN = new Map();
+const when = ms => { const now = new Date(), k = Math.floor(ms / 60000) + "|" + now.toDateString(); let v = WHEN.get(k); if (v) return v; const d = new Date(ms);
+  v = d.toDateString() === now.toDateString() ? FMT.t.format(d) : (d.getFullYear() === now.getFullYear() ? FMT.d : FMT.dy).format(d); if (WHEN.size > 20000) WHEN.clear(); WHEN.set(k, v); return v; };
 
 /* ---------- persistence (per-computer conveniences) ---------- */
 const store = {
@@ -5647,6 +6429,25 @@ function modalWin(id, o = {}){
 let NPAGE = null;
 const TITLES = { notes: "My notes", code: "My Code" };
 const SUBS = { notes: "All notes are saved on this computer.", code: "Code files are saved on this computer. ▶ Run sends them to the run service in Settings → Code (JavaScript runs here)." };
+/* "What's new in 0.5.6" (Devon): a small card the first time My notes opens after the update; Got it (or Esc) and it never
+   comes back (store "seen056") */
+function whatsNew(pg){
+  if (document.querySelector(".np-new")) return;
+  const c = h("div", { class: "np-new win", role: "dialog", "aria-label": "What's new in NotePath 0.5.6" });
+  c.innerHTML = `<div class="np-new-h">What's new in NotePath 0.5.6</div><ul>
+    <li><b>Safe and quick with any number of notes.</b> “Saved ✓” beside the star shows when your note is on this computer.</li>
+    <li><b>All notes · Favourites · Unfiled</b> now filter the Folders &amp; Files bar, and folders follow Show as.</li>
+    <li><b>◀ Hide</b> folds a side bar into a strip; click the strip to bring it back.</li>
+    <li><b>✦ AI Chat</b> and <b>A✓ Grammar check</b> at the bottom right; right-click words → <b>Ask AI…</b></li>
+    <li><b>Map</b> widget; the <b>Code box</b> highlights lines, compares before / after, presents ⤢ and copies as a picture.</li>
+    <li><b>Share</b> → Email, Email with a PDF and Print.</li></ul>
+    <div class="np-new-f"><button type="button" class="np-newb np-new-ok">Got it</button></div>`;
+  pg.appendChild(c);
+  const done = () => { store.set("seen056", true); c.remove(); window.removeEventListener("keydown", key, true); };
+  const key = e => { if (e.key === "Escape" && c.isConnected) { e.preventDefault(); e.stopImmediatePropagation(); done(); } };
+  $(".np-new-ok", c).onclick = done; window.addEventListener("keydown", key, true);
+  $(".np-new-ok", c).focus({ preventScroll: true });
+}
 function renderNotesPage(o = {}){
   if (o.space === "notes" || o.space === "code") { SPACE = o.space; store.set("nspace", SPACE); }
   const ST = SPACES[SPACE];
@@ -5660,6 +6461,7 @@ function renderNotesPage(o = {}){
   viewEl.appendChild(pg);
   $(".np-back", pg).onclick = () => goBack();
   const m = { body: $(".mw-body", pg), head: $(".mw-hx", pg), info: $(".nb-info", pg), cleanup: [] };
+  if (SPACE === "notes" && !store.get("seen056", false)) setTimeout(() => { if (pg.isConnected) whatsNew(pg); }, 350);
   const paint = () => { const w = pg.querySelector(".np-win"); w.dataset.space = SPACE; $("#np-t", pg).textContent = TITLES[SPACE]; $(".mw-sub", pg).textContent = SUBS[SPACE]; };
   const draw = focusBody => { m.cleanup.forEach(f => { try { f(); } catch(e){} }); m.cleanup = []; paint(); renderNotes(m, focusBody, SPACE); };
   const switchTo = (sp, x = {}) => {
@@ -5718,6 +6520,12 @@ function shareMenu(btn, o){
       <button type="button" role="menuitem" data-s="link"${dis}><span class="np-shi" aria-hidden="true">🔗</span><span><b>Copy link</b><small>Opens this note in NotePath on this computer. Paste it in another file, a calendar or an email to yourself.</small></span></button>
       <button type="button" role="menuitem" data-s="text"${dis}><span class="np-shi" aria-hidden="true">⧉</span><span><b>Copy the words</b><small>The title and text, to paste into a message.</small></span></button>
     </div>
+    <div class="np-pop-sub">Email &amp; print</div>
+    <div class="np-shs np-shmail">
+      <button type="button" role="menuitem" data-s="mail"${dis}><span class="np-shi" aria-hidden="true">✉</span><span><b>Email</b><small>Opens your mail app with a new message: the title as the subject, the note's words in it.</small></span></button>
+      <button type="button" role="menuitem" data-s="mailpdf"${dis}><span class="np-shi" aria-hidden="true">✉</span><span><b>Email with a PDF</b><small>Also makes a PDF of the note and shows it, ready to drag into the message.</small></span></button>
+      <button type="button" role="menuitem" data-s="print"${dis}><span class="np-shi" aria-hidden="true">⎙</span><span><b>Print…</b><small>The note as a clean page, on paper or as a PDF.</small></span></button>
+    </div>
     <div class="np-pop-sub">Send a copy <span class="np-shnote">for an associate: a file anyone can open, no NotePath needed</span></div>
     <div class="np-shf">${[["txt", "Text", ".txt"], ["html", "Web page", ".html"], ["docx", "Word", ".docx"], ["pdf", "PDF", ".pdf"]].map(([k, nm, ext]) => `<button type="button" role="menuitem" data-f="${k}"${dis}><b>${nm}</b><small>${ext}</small></button>`).join("")}</div>
     <div class="np-shs np-shio"><button type="button" role="menuitem" data-s="io"><span class="np-shi" aria-hidden="true">⇅</span><span><b>Import &amp; Export…</b><small>Word, Markdown (Obsidian), Apple Notes / Evernote, web page, PDF, text; a note, a folder or everything.</small></span></button></div>`;
@@ -5731,6 +6539,14 @@ function shareMenu(btn, o){
     const cur = NS.get(o.id); if (!cur) return;
     if (s === "link") { toastMsg(await copyText(noteLink(cur.id)) ? `Link copied. It opens “${cur.title}” in NotePath on this computer.` : "The link could not be copied."); return; }
     if (s === "text") { toastMsg(await copyText(cur.title + "\n\n" + (cur.body || "")) ? "The words are copied." : "They could not be copied."); return; }
+    if ((s === "mail" || s === "mailpdf" || s === "print") && window.NPIO) { // v0.5.6 (Devon): Email and Print
+      try {
+        if (s === "print") { await NPIO.printNote(cur.id); toastMsg("The print window is open."); return; }
+        const r = await NPIO.email(cur.id, { pdf: s === "mailpdf" });
+        toastMsg(r.printed ? "The print window is open: choose Save as PDF, then attach the file to your email." : r.file ? `A new email is open, and “${r.file}” is ${r.where ? "in Downloads › NotePath (the folder is open)" : "in your downloads"}: drag it into the message.` : "A new email is open in your mail app.", 6000);
+      } catch (err) { toastMsg(String(err && err.message || err)); }
+      return;
+    }
     if (f && window.NPIO) { try { const res = await NPIO.exportNotes("note", f, { note: cur.id }); toastMsg(res && res.printed ? "The print window is open: choose Save as PDF." : `Saved “${res.file}”. Attach it to an email or a message.`, 5000); } catch (err) { toastMsg(String(err && err.message || err)); } }
   });
   setTimeout(() => { const f0 = shareEl && shareEl.querySelector("button:not([disabled])"); if (f0) f0.focus({ preventScroll: true }); }, 30);
@@ -5835,15 +6651,19 @@ function notesLayout(nb){
   const fold = store.get("nbfold", { f: false, l: false }), W0 = () => store.get("nbw", 0);
   const paint = () => {
     nb.classList.toggle("ffold", !!fold.f); nb.classList.toggle("lfold", !!fold.l);
+    /* v0.5.6 (Devon): big, labelled and never in the way. Folded, a bar becomes a full-height strip (.nb-fold) that is one
+       big "show" button with the bar's name down it; open, the bar has its own labelled ◀ Hide button (.nb-hide) */
     nb.querySelectorAll(".nb-fold").forEach(b => {
-      const shut = !!fold[b.dataset.p], what = b.dataset.p === "f" ? "folders and files" : "tool bar";
-      b.innerHTML = `<span aria-hidden="true">${shut ? "▶" : "◀"}</span>`; b.title = (shut ? "Show the " : "Hide the ") + what; b.setAttribute("aria-label", b.title); b.setAttribute("aria-expanded", String(!shut));
+      const shut = !!fold[b.dataset.p], what = b.dataset.p === "f" ? "Folders & Files" : "Tool bar";
+      b.innerHTML = `<span class="nb-foldi" aria-hidden="true">▶</span><span class="nb-foldl">${b.dataset.p === "f" ? "Folders &amp; Files" : "Tools"}</span>`; b.title = "Show the " + what; b.setAttribute("aria-label", b.title); b.setAttribute("aria-expanded", String(!shut)); b.hidden = !shut;
     });
+    nb.querySelectorAll(".nb-hide").forEach(b => { b.setAttribute("aria-expanded", String(!fold[b.dataset.p])); });
     const w = W0(); if (w) nb.style.setProperty("--nb-lw-user", w + "px"); else nb.style.removeProperty("--nb-lw-user");
     const fw = store.get("nbfw", 0); if (fw) nb.style.setProperty("--nb-fw-user", fw + "px"); else nb.style.removeProperty("--nb-fw-user");
     if (matchMedia("(min-width:861px)").matches) { $(".nb-folders", nb).inert = !!fold.f; $(".nb-rail", nb).inert = !!fold.l; }
   };
-  nb.querySelectorAll(".nb-fold").forEach(b => b.onclick = () => { fold[b.dataset.p] = !fold[b.dataset.p]; store.set("nbfold", fold); paint(); });
+  nb.querySelectorAll(".nb-fold, .nb-hide").forEach(b => b.onclick = () => { const had = b === document.activeElement; fold[b.dataset.p] = !fold[b.dataset.p]; store.set("nbfold", fold); paint();
+    const back = $(fold[b.dataset.p] ? `.nb-fold[data-p="${b.dataset.p}"]` : `.nb-hide[data-p="${b.dataset.p}"]`, nb); if (back && had) back.focus({ preventScroll: true }); }); // the focus follows to the control that undoes it
   // two resizers: .nb-rzf after the folders (store "nbfw", 140–420 px), .nb-rz after the notes list (store "nbw", 180–620 px); the editor keeps ≥ 340 px
   const sizer = (rz, col, key, cssVar, lo, hi, other) => {
     const lim = w => Math.round(Math.max(lo, Math.min(w, hi, nb.offsetWidth - other().offsetWidth - 340)));
@@ -5911,7 +6731,7 @@ const VIEWS = [["icons", "Icons", '<svg viewBox="0 0 16 16" width="14" height="1
   ["details", "Details: created, modified and kind", '<svg viewBox="0 0 16 16" width="14" height="14"><path d="M2 3.5h12M2 8h12M2 12.5h12M9 2v12"/></svg>']];
 const viewOf = k => { const v = store.get(k, "list"); return VIEWS.some(x => x[0] === v) ? v : "list"; };
 const viewSwitch = (cur, label, views = VIEWS) => `<div class="np-views" role="radiogroup" aria-label="${esc(label || "Show as")}">${views.map(([k, n, ic]) => `<button type="button" role="radio" data-view="${k}" aria-checked="${k === cur}" title="Show as ${n}" aria-label="${n.split(":")[0]}">${ic}</button>`).join("")}</div>`;
-const stampShort = t => { if (!t) return "—"; const d = new Date(t); return d.toLocaleString(undefined, { year: d.getFullYear() === new Date().getFullYear() ? undefined : "numeric", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }); };
+const stampShort = t => { if (!t) return "—"; const d = new Date(t); return (d.getFullYear() === new Date().getFullYear() ? FMT.s : FMT.sy).format(d); };
 function noteKind(n){
   if (n.space === "code") { const l = window.NPCode ? NPCode.lang(n.code.lang) : null; return (l ? l.name : "Code") + " file"; }
   const h = String(n.html || "");
@@ -5922,14 +6742,14 @@ function noteKind(n){
 const NOTE_IC = '<svg viewBox="0 0 24 28" width="30" height="34" aria-hidden="true"><path d="M3 2h12l6 6v18H3z" class="pg"/><path d="M15 2v6h6" class="fd"/><path d="M7 13h10M7 17h10M7 21h6" class="ln"/></svg>';
 /* the Tool bar (v0.5.5, Devon; where the notes list was): tools that change what the note area is for. Note and Code now;
    Canvas, Note Trees and Spreadsheets come later (Coming soon). Fold it with its ◀ tab. */
-const TOOLS = [["note", "✎", "Note", "Write: text, lists, photos and widgets"], ["code", "&lt;/&gt;", "Code", "Code files you can run (My Code)"],
+const TOOLS = [["note", "✎", "Note", "Write: text, lists, photos and widgets"], // v0.5.6 (Devon): the Code tool is gone (My Code is on the Main Menu)
   ["canvas", '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2" y="2.5" width="12" height="11" rx="1"/><path d="M4.5 10.5l2.5-3 2 2 1.5-1.5 1.5 2.5"/></svg>', "Canvas", ""],
   ["trees", '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="3.5" r="1.6"/><circle cx="3.5" cy="12.5" r="1.6"/><circle cx="12.5" cy="12.5" r="1.6"/><path d="M8 5.1v3.4M8 8.5L3.5 10.9M8 8.5l4.5 2.4"/></svg>', "Note Trees", ""],
   ["sheets", '<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2" y="2.5" width="12" height="11" rx="1"/><path d="M2 6h12M2 9.5h12M6 2.5v11M10 2.5v11"/></svg>', "Spreadsheets", ""]];
 /* v0.5.5 (Devon): the ▦ Widgets menu moved out of the note's formatting bar into the Tool bar, in its own section above the
    tools: a click puts the widget into the note you were writing in (after the line you were on). Widgets that connect to
    other apps and services (APIs) will join this section. */
-const WIDGET_SHORT = { code: "Code box", music: "Music", sheet: "Lead sheet", graph: "Graph" };
+const WIDGET_SHORT = { code: "Code box", music: "Music", sheet: "Lead sheet", graph: "Graph", map: "Map" };
 const railHTML = code => `<div class="nb-railh">Widgets</div>` + ((window.InquireWidgets && InquireWidgets.WIDGETS) || []).map(([w, g, n, d]) =>
     `<button type="button" class="nb-tool nb-wtool${code ? " soon" : ""}" data-widget="${w}" data-name="${n}"${code ? ' aria-disabled="true"' : ""} title="${code ? `${n}: widgets go into notes (My notes)` : `${n}: ${d}. Goes in after the line you are on`}"><span class="nb-tooli" aria-hidden="true">${g}</span><span class="nb-tooln">${WIDGET_SHORT[w] || n}</span></button>`).join("")
   + `<button type="button" class="nb-tool nb-wtool nb-wmore soon" data-widget="more" aria-disabled="true" data-name="App widgets" title="Widgets that connect to other apps and services: coming soon"><span class="nb-tooli" aria-hidden="true">＋</span><span class="nb-tooln">More</span><small>Soon</small></button>`
@@ -5941,8 +6761,8 @@ function renderNotes(m, focusBody, space = "notes"){
   const ALLNS = window.InquireNotes, CS = window.InquireNotes.scope("code");
   const s = m.body;
   s.innerHTML = `    <div class="nb-sbar"><label class="search nb-search"><span aria-hidden="true">⌕</span><input type="search" placeholder="Search" aria-label="${CODE ? "Search every code file" : "Search every note"}"></label></div>
-    <div class="nb"><nav class="nb-folders" aria-label="${CODE ? "Folders and code files" : "Folders and files"}"><div class="nb-tools nb-ftools">${viewSwitch(viewOf(CODE ? "codeview" : "noteview"), CODE ? "Show the code files as" : "Show the notes as")}<select class="nb-sort" aria-label="${CODE ? "Order of code files" : "Order of notes"}"><option value="mine">My order</option><option value="recent">Recently edited</option></select><button type="button" class="nb-favtop" aria-pressed="false" title="Keep favourites at the top of the list">★ first</button></div><div class="nb-ftree" role="tree" aria-label="${CODE ? "Code folders and files" : "Folders and files"}"></div></nav>
-    <aside class="nb-rail" role="toolbar" aria-orientation="vertical" aria-label="Tools">${railHTML(CODE)}</aside>
+    <div class="nb"><nav class="nb-folders" aria-label="${CODE ? "Folders and code files" : "Folders and files"}"><div class="nb-tools nb-ftools">${viewSwitch(viewOf(CODE ? "codeview" : "noteview"), CODE ? "Show the code files as" : "Show the notes as")}<select class="nb-sort" aria-label="${CODE ? "Order of code files" : "Order of notes"}"><option value="mine">My order</option><option value="recent">Recently edited</option></select><button type="button" class="nb-favtop" aria-pressed="false" title="Keep favourites at the top of the list">★ first</button><button type="button" class="nb-hide" data-p="f" title="Hide the Folders &amp; Files bar (a strip on the left brings it back)" aria-label="Hide the Folders and Files bar"><span aria-hidden="true">◀</span> Hide</button></div><div class="nb-ftree" role="tree" aria-label="${CODE ? "Code folders and files" : "Folders and files"}"></div></nav>
+    <aside class="nb-rail" role="toolbar" aria-orientation="vertical" aria-label="Tools"><button type="button" class="nb-hide nb-hidel" data-p="l" title="Hide the Tool bar (a strip brings it back)" aria-label="Hide the Tool bar"><span class="nb-tooli" aria-hidden="true">◀</span><span class="nb-tooln">Hide</span></button>${railHTML(CODE)}</aside>
     <section class="nb-ed"><div class="nb-tabs" hidden></div><div class="nb-panes"><div class="nb-pane p1"></div><div class="nb-pane p2" hidden></div></div></section>
     <button type="button" class="nb-fold" data-p="f"></button><button type="button" class="nb-fold" data-p="l"></button>
     <div class="nb-rzf" role="separator" aria-orientation="vertical" tabindex="0" aria-label="Resize the folders column (drag, or ←/→; double-click resets)" title="Drag to resize the folders · double-click resets"></div>
@@ -5950,7 +6770,7 @@ function renderNotes(m, focusBody, space = "notes"){
   notesLayout($(".nb", s)); $(".nb", s).classList.toggle("nb-code", CODE);
   const mac = /Mac/.test(navigator.platform);
   m.head.innerHTML = CODE ? `<span class="mw-tip" tabindex="0" title="Code files have their own folders: drag files into folders and folders into each other, or up and down to put them in your own order. Drag a file onto ⧉ beside the name to open two side by side. ▶ Run (${mac ? "⌘" : "Ctrl+"}Enter) runs the file; type what it reads in the Input tab. ⇄ Translate turns it into another language (AI). In My notes, the Code section of the folders lets you drop a copy of a code file into a note." aria-label="Tips">?</span><span class="np-hist" role="group" aria-label="Undo and redo"><button type="button" class="np-hb" data-a="undo" title="Undo: new, renamed, moved or deleted files and folders (inside the editor, ${mac ? "⌘" : "Ctrl+"}Z undoes typing)" aria-label="Undo">↶ Undo</button><button type="button" class="np-hb" data-a="redo" title="Redo" aria-label="Redo">↷ Redo</button></span><button type="button" class="np-newb" data-a="newnote" title="Choose a language and name a new code file (Alt+Shift+N)">＋ New File</button>`
-  : `<span class="mw-tip" tabindex="0" title="Drag notes into folders and folders into other folders, drag either up or down to put them in your own order, star the ones you use most, and paste or drop photos and videos in. Click a folder icon to fold its notes away. Drag a note or a folder into the open note to link to it (right-click a link to open it in a new note tab), or onto ⧉ beside the title to open the two side by side. Drag a file from the Code section into a note for a copy of its code, or onto a folder to file a copy there; drag the line above Code to share the column. The buttons at the top of the Folders & Files bar show the notes as icons, a list, a compact list or details; Search finds folders too. The Tool bar beside it switches between Note and Code (Canvas, Note Trees and Spreadsheets are coming). H in the note's toolbar makes a line a Title, Subtitle or Heading 1, 2 or 3. The align and spacing menus change the whole note when nothing is selected, or only the words you select. ‹ Back goes to the window you had open before. ◈ at the bottom right lists the note's links; ↳ beside it adds your own paranotes under words or code. The ◀ tabs hide the folders or the list; drag the lines beside them to resize. Select words and right-click to define them or link them to another note." aria-label="Tips">?</span><span class="np-hist" role="group" aria-label="Undo and redo"><button type="button" class="np-hb" data-a="undo" title="Undo (${/Mac/.test(navigator.platform) ? "⌘" : "Ctrl+"}+Z): writing, folders, new or deleted notes, widgets…" aria-label="Undo">↶ Undo</button><button type="button" class="np-hb" data-a="redo" title="Redo (⇧${/Mac/.test(navigator.platform) ? "⌘" : "Ctrl+"}+Z)" aria-label="Redo">↷ Redo</button></span><button type="button" class="np-hb np-io np-share" data-a="share" aria-haspopup="menu" aria-expanded="false" title="Share: copy a link to this note, send a copy to someone, import or export notes">⇪ Share</button><button type="button" class="np-newb" data-a="newnote" title="Name a new note and start writing (Alt+Shift+N)">＋ New Note</button>`;
+  : `<span class="mw-tip" tabindex="0" title="Drag notes into folders and folders into other folders, drag either up or down to put them in your own order, star the ones you use most, and paste or drop photos and videos in. Click a folder icon to fold its notes away. Drag a note or a folder into the open note to link to it (right-click a link to open it in a new note tab), or onto ⧉ beside the title to open the two side by side. Drag a file from the Code section into a note for a copy of its code, or onto a folder to file a copy there; drag the line above Code to share the column. The buttons at the top of the Folders & Files bar show the notes and folders as icons, a list, a compact list or details; All notes, Favourites and Unfiled filter the bar; Search finds folders too. The Tool bar beside it switches between Note and Code (Canvas, Note Trees and Spreadsheets are coming). H in the note's toolbar makes a line a Title, Subtitle or Heading 1, 2 or 3. The align and spacing menus change the whole note when nothing is selected, or only the words you select. ‹ Back goes to the window you had open before. ◈ at the bottom right lists the note's links; ↳ beside it adds your own paranotes under words or code; ✦ opens AI Chat and A✓ checks the grammar for the kind of note you are writing. ◀ Hide folds the Folders & Files bar or the Tool bar into a strip; click the strip to bring it back. Drag the line beside the folders to resize them. The Map widget in the Tool bar finds an address and keeps it in the note. Select words and right-click to define them, link them to another note, or Ask AI to rewrite, shorten or explain them." aria-label="Tips">?</span><span class="np-hist" role="group" aria-label="Undo and redo"><button type="button" class="np-hb" data-a="undo" title="Undo (${/Mac/.test(navigator.platform) ? "⌘" : "Ctrl+"}+Z): writing, folders, new or deleted notes, widgets…" aria-label="Undo">↶ Undo</button><button type="button" class="np-hb" data-a="redo" title="Redo (⇧${/Mac/.test(navigator.platform) ? "⌘" : "Ctrl+"}+Z)" aria-label="Redo">↷ Redo</button></span><button type="button" class="np-hb np-io np-share" data-a="share" aria-haspopup="menu" aria-expanded="false" title="Share: copy a link to this note, send a copy to someone, import or export notes">⇪ Share</button><button type="button" class="np-newb" data-a="newnote" title="Name a new note and start writing (Alt+Shift+N)">＋ New Note</button>`;
   const fold = $(".nb-ftree", s), items = fold, edSec = $(".nb-ed", s), ed = $(".nb-pane.p1", s), ed2 = $(".nb-pane.p2", s), tabs = $(".nb-tabs", s), nbEl = $(".nb", s), q = $('input[type="search"]', s), sortSel = $(".nb-sort", s);
   const VK = CODE ? "codeview" : "noteview";
   $(".nb-tools .np-views", s).addEventListener("click", e => { const b = e.target.closest("[data-view]"); if (!b) return; store.set(VK, b.dataset.view); $(".nb-tools .np-views", s).querySelectorAll("[data-view]").forEach(x => x.setAttribute("aria-checked", String(x === b)));
@@ -6028,7 +6848,21 @@ function renderNotes(m, focusBody, space = "notes"){
     box.innerHTML = `<span class="nb-ib"><span class="nb-ik">${CODE ? "File" : "Note"}</span>${n ? `<b class="nb-iname" title="${esc(n.title)}">${esc(n.title)}</b>${infoRow("Last edited", n.updated)}${infoRow("Created", n.created)}` : `<span class="nb-inone">No ${CODE ? "file" : "note"} selected</span>`}</span>`
       + `<span class="nb-ib"><span class="nb-ik">Folder</span><b class="nb-iname" title="${esc(fname)}">${esc(fname)}</b>${infoRow("Last change", last > 0 ? last : 0, "Nothing in it yet")}${f ? infoRow("Created", f.created, "Folders made before NotePath 0.5.2 have no creation date") : ""}</span>`;
   }
+  /* "Saved ✓" beside the star (v0.5.6, Devon): Saving… while typing and until the notes are on disk, Saved ✓, or, when the
+     computer refuses, "Couldn't save" with Try again (the changes are kept and tried again by themselves every few seconds) */
+  let saveErrSaid = false, saveFade = 0;
+  function saveLine(st){
+    const el = $(".nb-save", ed); if (!el) return; const S0 = window.InquireNotes.saveState ? InquireNotes.saveState() : { state: "saved" }, state = st || S0.state;
+    clearTimeout(saveFade); el.className = "nb-save is-" + state;
+    if (state === "error") { el.innerHTML = `<span>⚠ Couldn't save</span><button type="button" class="nb-save-retry" title="${esc(S0.error || "")} Your changes are kept and tried again by themselves.">Try again</button>`; $(".nb-save-retry", el).onclick = () => { if (InquireNotes.flushSaves) InquireNotes.flushSaves(); };
+      if (!saveErrSaid) { saveErrSaid = true; if (NS.toast) NS.toast(esc("NotePath could not save your notes: " + (S0.error || "the computer refused.") + " Your changes are kept while NotePath is open and it keeps trying. Don't close it until it says Saved."), null, 12000); } return; }
+    saveErrSaid = false;
+    el.textContent = state === "saved" ? "Saved ✓" : "Saving…";
+    if (state === "saved") saveFade = setTimeout(() => el.classList.add("quiet"), 2500);
+  }
+  const onSave = () => saveLine(); window.addEventListener("inquire:notes-save", onSave); m.cleanup.push(() => window.removeEventListener("inquire:notes-save", onSave));
   const onInfo = () => drawInfo(); window.addEventListener("inquire:notes-changed", onInfo); m.cleanup.push(() => window.removeEventListener("inquire:notes-changed", onInfo));
+  const ROWCAP = 100, SHOWALL = NOTES.showall || (NOTES.showall = new Set()); let ROWFN = null;
   function drawFolders(){
     const all = NS.list(), fs = NS.folders(), shut = closed();
     if (!["all", "fav", "none"].includes(NOTES.folder) && !fs.some(f => f.id === NOTES.folder)) NOTES.folder = "all";
@@ -6036,11 +6870,20 @@ function renderNotes(m, focusBody, space = "notes"){
     if (!NOTES.sel || !NS.get(NOTES.sel)) { const first = all.filter(inView).sort((a, b) => (NOTES.favTop ? b.fav - a.fav : 0) || (NOTES.sort !== "recent" ? NS.byOrder(a, b) : b.updated - a.updated))[0] || all[0]; NOTES.sel = first ? first.id : null; }
     const count = id => { const sub = NS.subtree(id); return all.filter(n => sub.has(n.folder)).length; };
     const LIBK = CODE ? "codelibopen" : "libopen", libOpen = new Set(store.get(LIBK, ["none"])); // library groups that are open (Unfiled by default)
+    /* v0.5.6 (Devon): All notes / Favourites / Unfiled are filters. Favourites shows only the starred notes and Unfiled only the
+       notes in no folder (no folders, here or in the Code section); All notes (or any folder) shows everything as before */
+    const FILTER = NOTES.folder === "fav" || NOTES.folder === "none" ? NOTES.folder : null;
+    const libShown = id => FILTER ? FILTER === id : libOpen.has(id);
     const mine = NOTES.sort !== "recent", view = viewOf(VK), qq = NOTES.q.trim().toLowerCase();
+    // a folder's last change = the folder itself or any note in it (as in the info line)
+    const lastOf = f => { const sub = NS.subtree(f.id); return Math.max(f.updated || 0, ...all.filter(n => sub.has(n.folder)).map(n => n.updated || 0)); };
     fold.dataset.view = view;
     const order = arr => arr.slice().sort((a, b) => (NOTES.favTop ? b.fav - a.fav : 0) || (mine ? NS.byOrder(a, b) : b.updated - a.updated));
-    const row = (id, ic, name, n, f) => `<div class="nb-fd${NOTES.folder === id ? " sel" : ""}${f ? " user" : " lib"}" data-f="${id}"${f ? ` draggable="true" style="--d:${f.depth}"` : ""}>${f ? `<button type="button" class="nb-fcar" data-car="${id}" aria-expanded="${!shut.has(id)}" title="${shut.has(id) ? "Show" : "Hide"} what is in ${esc(name)}" aria-label="${shut.has(id) ? "Show" : "Hide"} the notes and folders in ${esc(name)}">${folderIcon(!shut.has(id))}</button>`
-        : `<button type="button" class="nb-fcar nb-lcar" data-lcar="${id}" aria-expanded="${libOpen.has(id)}" title="${libOpen.has(id) ? "Hide" : "Show"} the ${CODE ? "files" : "notes"} in ${esc(name)}" aria-label="${libOpen.has(id) ? "Hide" : "Show"} the ${CODE ? "files" : "notes"} in ${esc(name)}"><span class="nb-lic" aria-hidden="true">${ic}</span></button>`}<button type="button" class="nb-fdb" data-f="${id}" aria-pressed="${NOTES.folder === id}"${f ? ` title="Drag onto another folder to put it inside; drag above or below a folder to reorder. Alt+↑/↓ also reorders."` : ""}><span class="nb-fnm">${esc(name)}</span><span class="nb-fn num">${n}</span></button>${f ? `<button type="button" class="nb-fx nb-ffav${f.fav ? " on" : ""}" data-ffav="${id}" aria-pressed="${!!f.fav}" title="${f.fav ? "Unstar: back to its own place" : "Star: keep this folder at the top"}" aria-label="${f.fav ? "Unstar" : "Star"} ${esc(name)}">${f.fav ? "★" : "☆"}</button><button type="button" class="nb-fx" data-sub="${id}" title="New folder inside" aria-label="New folder inside ${esc(name)}">＋</button><button type="button" class="nb-fx" data-ren="${id}" title="Rename folder" aria-label="Rename ${esc(name)}">✎</button><button type="button" class="nb-fx" data-del="${id}" title="Delete folder (its notes and folders move up a level)" aria-label="Delete ${esc(name)}">✕</button>` : ""}</div>`;
+    const row = (id, ic, name, n, f) => { const fv = f ? ` fv-${view}` : "", det = f && view === "details", lc = f ? lastOf(f) : 0;
+      const meta = f && (view === "list" || view === "icons") ? `<span class="nb-fmeta num">${n} ${CODE ? (n === 1 ? "file" : "files") : (n === 1 ? "note" : "notes")}${lc ? " · " + esc(when(lc)) : ""}</span>` : "";
+      const r = `<div class="nb-fd${NOTES.folder === id ? " sel" : ""}${f ? " user" + fv : " lib"}" data-f="${id}"${f ? ` draggable="true" style="--d:${f.depth}"` : ""}>${det ? '<span class="nb-dname">' : ""}${f ? `<button type="button" class="nb-fcar" data-car="${id}" aria-expanded="${!shut.has(id)}" title="${shut.has(id) ? "Show" : "Hide"} what is in ${esc(name)}" aria-label="${shut.has(id) ? "Show" : "Hide"} the notes and folders in ${esc(name)}">${folderIcon(!shut.has(id))}</button>`
+        : `<button type="button" class="nb-fcar nb-lcar" data-lcar="${id}" aria-expanded="${libShown(id)}" title="${FILTER ? (FILTER === id ? `Showing only ${esc(name)}` : `Show only ${esc(name)}`) : (libOpen.has(id) ? "Hide" : "Show") + ` the ${CODE ? "files" : "notes"} in ${esc(name)}`}" aria-label="${FILTER ? (FILTER === id ? `Showing only ${esc(name)}` : `Show only ${esc(name)}`) : (libOpen.has(id) ? "Hide" : "Show") + ` the ${CODE ? "files" : "notes"} in ${esc(name)}`}"><span class="nb-lic" aria-hidden="true">${ic}</span></button>`}<button type="button" class="nb-fdb" data-f="${id}" aria-pressed="${NOTES.folder === id}"${f ? ` title="Drag onto another folder to put it inside; drag above or below a folder to reorder. Alt+↑/↓ also reorders."` : ""}>${meta ? `<span class="nb-ftx"><span class="nb-fnm">${esc(name)}</span>${meta}</span>` : `<span class="nb-fnm">${esc(name)}</span>`}<span class="nb-fn num">${n}</span></button>${f ? `<button type="button" class="nb-fx nb-ffav${f.fav ? " on" : ""}" data-ffav="${id}" aria-pressed="${!!f.fav}" title="${f.fav ? "Unstar: back to its own place" : "Star: keep this folder at the top"}" aria-label="${f.fav ? "Unstar" : "Star"} ${esc(name)}">${f.fav ? "★" : "☆"}</button><button type="button" class="nb-fx" data-sub="${id}" title="New folder inside" aria-label="New folder inside ${esc(name)}">＋</button><button type="button" class="nb-fx" data-ren="${id}" title="Rename folder" aria-label="Rename ${esc(name)}">✎</button><button type="button" class="nb-fx" data-del="${id}" title="Delete folder (its notes and folders move up a level)" aria-label="Delete ${esc(name)}">✕</button>` : ""}${det ? `</span><span class="nb-dc num">${esc(stampShort(lc))}</span><span class="nb-dc num">${esc(stampShort(f.created))}</span><span class="nb-dc">Folder</span>` : ""}</div>`;
+      return r; };
     // a file row in the Folders & Files bar (v0.5.5): its look follows Show as (List, Compact, Details, Icons); g = the group it is listed in
     const fname = Object.fromEntries(fs.map(f => [f.id, f.name]));
     const star = n => n.fav ? '<i class="nb-star" aria-label="Favourite">★</i>' : "";
@@ -6053,16 +6896,26 @@ function renderNotes(m, focusBody, space = "notes"){
       if (view === "compact") return `<div ${a(" nb-row nb-crow")} title="${esc(n.title)} · made ${esc(stampShort(n.created))}"><span class="nb-t">${fic(n)}${star(n)}${esc(n.title)}</span><span class="nb-dc num">${esc(when(n.created))}</span></div>`;
       return `<div ${a(cov ? " nb-hascov" : " nb-lrow")}>${cov ? `<img class="nb-cov nb-lcov" data-cov="${cov}" alt="">` : fic(n)}<span class="nb-ltx"><span class="nb-t">${star(n)}${esc(n.title)}</span><span class="nb-m">${inF}${when(n.updated)}</span></span></div>`;
     };
-    const files = (arr, d, g) => { if (!arr.length) return ""; const rows = order(arr).map(n => fileRow(n, d, g)).join(""); return view === "icons" ? `<div class="nb-tiles" style="--d:${d}">${rows}</div>` : rows; };
+    /* v0.5.6 (Devon): a long group shows its first 100 notes and a "Show n more" row (the open note is always listed), so a
+       redraw with thousands of notes stays quick; "Show all" is remembered for the session */
+    const files = (arr, d, g) => { if (!arr.length) return ""; let list = order(arr), more = 0;
+      if (list.length > ROWCAP && !SHOWALL.has(g) && !qq) { const head = list.slice(0, ROWCAP), sel = list.find(n => n.id === NOTES.sel); more = list.length - ROWCAP; if (sel && !head.includes(sel)) { head.push(sel); more--; } list = head; }
+      const rows = list.map(n => fileRow(n, d, g)).join(""), tail = more > 0 ? `<button type="button" class="nb-more" data-more="${esc(g)}" style="--d:${d}">Show ${more.toLocaleString()} more</button>` : "";
+      return (view === "icons" ? `<div class="nb-tiles" style="--d:${d}">${rows}</div>` : rows) + tail; };
+    ROWFN = (n, el) => fileRow(n, +getComputedStyle(el).getPropertyValue("--d") || 0, el.dataset.g);
     const dhead = view === "details" ? `<div class="nb-dhead" aria-hidden="true">${["Name", "Modified", "Created", "Kind"].map((t, i) => `<span>${t}${i < 3 ? `<i class="nb-dcrz" data-c="${i}" title="Drag to resize this column · double-click to reset all"></i>` : ""}</span>`).join("")}</div>` : "";
     const byFolder = {}; all.forEach(n => { if (n.folder) (byFolder[n.folder] = byFolder[n.folder] || []).push(n); });
     const tree = parent => fs.filter(f => (f.parent || null) === parent).map(f => row(f.id, "", f.name, count(f.id), f)
       + (shut.has(f.id) ? "" : tree(f.id) + files(byFolder[f.id] || [], f.depth + 1, f.id))).join("");
     const empty = (txt) => `<p class="nb-gempty" style="--d:1">${txt}</p>`;
-    const lib = (id, ic, name, arr, none) => row(id, ic, name, arr.length) + (libOpen.has(id) ? (files(arr, 1, id) || empty(none)) : "");
+    const lib = (id, ic, name, arr, none) => row(id, ic, name, arr.length) + (libShown(id) ? (files(arr, 1, id) || empty(none)) : "");
     const libHTML = (all.length ? "" : `<p class="nb-gempty nb-none0" style="--d:0">${CODE ? "No code files yet. Start one with ＋ New File." : "No notes yet. Start one with ＋ New Note."}</p>`) + lib("all", CODE ? "&lt;/&gt;" : "▤", CODE ? "All code" : "All notes", all, CODE ? "No code files yet. Start one with ＋ New File." : "No notes yet. Start one with ＋ New Note.")
       + lib("fav", "★", "Favourites", all.filter(n => n.fav), CODE ? "No favourites yet. Star a file with ☆." : "No favourites yet. Star a note with ☆.")
       + lib("none", "◌", "Unfiled", all.filter(n => !n.folder), "Nothing unfiled.");
+    const libRows = () => { // under a filter (v0.5.6): the three selectors stay together at the top, the filtered notes under them
+      const g = { all: [CODE ? "&lt;/&gt;" : "▤", CODE ? "All code" : "All notes", all], fav: ["★", "Favourites", all.filter(n => n.fav)], none: ["◌", "Unfiled", all.filter(n => !n.folder)] };
+      return Object.keys(g).map(k => row(k, g[k][0], g[k][1], g[k][2].length)).join("") + `<div class="nb-fres" data-for="${FILTER}">`
+        + (files(g[FILTER][2], 1, FILTER) || empty(FILTER === "fav" ? (CODE ? "No favourites yet. Star a file with ☆." : "No favourites yet. Star a note with ☆.") : "Nothing unfiled.")) + `</div>`; };
     if (qq) { // Search (v0.5.5): folders as well as notes; in My notes also My Code's folders and files
       const path = (f, list) => { const out = []; let x = f; while (x && x.parent) { x = list.find(y => y.id === x.parent); if (x) out.unshift(x.name); } return out.join(" › "); };
       const fl = fs.filter(f => f.name.toLowerCase().includes(qq)), nl = NS.list(NOTES.q);
@@ -6076,31 +6929,21 @@ function renderNotes(m, focusBody, space = "notes"){
         + sec("files", CODE ? "is-code" : "is-notes", CODE ? "Code files" : "Notes", files(nl, 0, "q"), nl.length)
         + sec("code", "is-code", "My Code", cfl.map(f => frow(f, "code", cf)).join("") + cnl.map(crowS).join(""), cfl.length + cnl.length) + `</div>`;
     } else {
-      fold.innerHTML = (CODE ? "" : `<div class="nb-fmain">`) + dhead + `<div class="nb-sech ${CODE ? "is-code" : "is-notes"}">${CODE ? "Code" : "Notes"}</div>` + libHTML
-        + `<div class="nb-fh nb-ftop" data-top>${CODE ? "Code folders" : "Folders"}</div>` + tree(null)
-        + `<button type="button" class="nb-fadd" data-a="addf">＋ New folder</button>` + (CODE ? "" : `</div><div class="nb-fsplit" role="separator" aria-orientation="horizontal" tabindex="0" aria-label="Share the bar between notes and code (drag, or ↑/↓; double-click resets)" title="Drag to give the Code section more or less room · double-click resets"></div><div class="nb-fcode">${codeSection(shut)}<div class="nb-sech is-music nb-music" title="My Music is coming soon">Music <span class="nb-soon">Coming soon</span></div></div>`);
+      fold.innerHTML = (CODE ? "" : `<div class="nb-fmain">`) + dhead + `<div class="nb-sech ${CODE ? "is-code" : "is-notes"}">${CODE ? "Code" : "Notes"}</div>` + (FILTER ? libRows() : libHTML)
+        + (FILTER ? "" : `<div class="nb-fh nb-ftop" data-top>${CODE ? "Code folders" : "Folders"}</div>` + tree(null)
+        + `<button type="button" class="nb-fadd" data-a="addf">＋ New folder</button>`) + (CODE ? "" : `</div><div class="nb-fsplit" role="separator" aria-orientation="horizontal" tabindex="0" aria-label="Share the bar between notes and code (drag, or ↑/↓; double-click resets)" title="Drag to give the Code section more or less room · double-click resets"></div><div class="nb-fcode">${codeSection(shut, FILTER)}<div class="nb-sech is-music nb-music" title="My Music is coming soon">Music <span class="nb-soon">Coming soon</span></div></div>`);
     }
     fold.classList.toggle("is-search", !!qq); if (qq) fold.classList.remove("has-fsplit", "code-shut");
+    fold.dataset.filter = FILTER && !qq ? FILTER : "";
     if (!CODE && !qq) wireFsplit();
     drawInfo();
     if (!CODE) wireCodeSection();
     fold.querySelectorAll("img[data-cov]").forEach(im => window.InquireNotes.imageURL(im.dataset.cov).then(u => { if (u) im.src = u; else im.classList.add("missing"); }));
     if (view === "details") wireDcols();
     fold.title = mine ? "Drag notes onto folders to file them, or up and down among notes to put them in your own order" : "Choose My order to arrange notes by dragging";
-    fold.querySelectorAll(".nb-fnote:not(.nb-cfile)").forEach(r => {
-      const open = () => { if (NOTES.sel === r.dataset.id) return; flushEd(); NOTES.sel = r.dataset.id; const n = NS.get(r.dataset.id); if (n && !inView(n)) NOTES.folder = n.folder || "all"; drawAll(); };
-      r.onclick = open;
-      r.onkeydown = e => {
-        if ((e.key === "Enter" || e.key === " ") && e.target === r) { e.preventDefault(); open(); return; }
-        // Alt+↑/↓ moves the note among the notes listed with it (My order)
-        if (!mine || !e.altKey || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return; e.preventDefault();
-        const ids = [...fold.querySelectorAll(`.nb-fnote[data-g="${r.dataset.g}"]`)].map(x => x.dataset.id), i = ids.indexOf(r.dataset.id), j = i + (e.key === "ArrowUp" ? -1 : 1); if (j < 0 || j >= ids.length) return;
-        ids.splice(i, 1); ids.splice(j, 0, r.dataset.id); reorder(ids); const nb = fold.querySelector(`.nb-fnote[data-g="${r.dataset.g}"][data-id="${r.dataset.id}"]`); if (nb) nb.focus();
-      };
-      r.addEventListener("dragstart", e => noteDragStart(e, r.dataset.id, r));
-      r.addEventListener("dragend", () => noteDragEnd(r));
-    });
-    fold.querySelectorAll("[data-lcar]").forEach(b => b.onclick = e => { e.stopPropagation(); const o = new Set(store.get(LIBK, ["none"])), id = b.dataset.lcar; o.has(id) ? o.delete(id) : o.add(id); store.set(LIBK, [...o]); drawFolders(); });
+    fold.querySelectorAll("[data-more]").forEach(b => b.onclick = () => { SHOWALL.add(b.dataset.more); drawFolders(); });
+    fold.querySelectorAll(".nb-fnote:not(.nb-cfile)").forEach(wireRow);
+    fold.querySelectorAll("[data-lcar]").forEach(b => b.onclick = e => { e.stopPropagation(); if (FILTER) { if (b.dataset.lcar !== FILTER) { NOTES.folder = b.dataset.lcar; drawFolders(); } return; } const o = new Set(store.get(LIBK, ["none"])), id = b.dataset.lcar; o.has(id) ? o.delete(id) : o.add(id); store.set(LIBK, [...o]); drawFolders(); });
     fold.querySelectorAll(".nb-sfd").forEach(b => b.onclick = () => { // a folder found by Search: show it in the bar (opened, its parents too)
       if (b.dataset.sp !== space) { flushEd(); go({ view: "notes", space: b.dataset.sp, folder: b.dataset.sf }); return; }
       const c = closed(); let x = fs.find(f => f.id === b.dataset.sf); while (x) { c.delete(x.id); x = x.parent && fs.find(f => f.id === x.parent); } store.set("notefold", [...c]);
@@ -6108,6 +6951,7 @@ function renderNotes(m, focusBody, space = "notes"){
       const rowEl = fold.querySelector(`.nb-fd[data-f="${b.dataset.sf}"]`); if (rowEl) { rowEl.scrollIntoView({ block: "nearest" }); const fb = rowEl.querySelector(".nb-fdb"); if (fb) fb.focus({ preventScroll: true }); } });
     // pick, open/close, rename, delete
     fold.querySelectorAll(".nb-fdb").forEach(b => b.onclick = () => { NOTES.folder = b.dataset.f; drawFolders(); });
+    fold.querySelectorAll(".nb-fd.user").forEach(d => d.addEventListener("click", e => { if (e.target.closest("button,input,form")) return; const b = d.querySelector(".nb-fdb"); if (b) b.click(); }));
     fold.querySelectorAll("[data-car]").forEach(b => b.onclick = e => { e.stopPropagation(); const c = closed(), id = b.dataset.car; c.has(id) ? c.delete(id) : c.add(id); store.set("notefold", [...c]); drawFolders(); });
     fold.querySelectorAll("[data-sub]").forEach(b => b.onclick = () => { const id = b.dataset.sub, c = closed(); c.delete(id); store.set("notefold", [...c]);
       const at = h("div", { class: "nb-fd user", style: `--d:${(fs.find(f => f.id === id) || {}).depth + 1 || 1}` }); b.closest(".nb-fd").after(at);
@@ -6130,19 +6974,44 @@ function renderNotes(m, focusBody, space = "notes"){
     });
     const addf = $('[data-a="addf"]', fold); if (addf) addf.onclick = e => nameBox(e.target, "", v => { const f = NS.addFolder(v); NOTES.folder = f.id; drawAll(); });
   }
+  // one note row in the bar: open, keyboard, drag (v0.5.6: on its own, so a saved note's row can be redrawn alone)
+  function wireRow(r){
+      const mine = NOTES.sort !== "recent";
+      const open = () => { if (NOTES.sel === r.dataset.id) return; flushEd(); NOTES.sel = r.dataset.id; const n = NS.get(r.dataset.id); if (n && !inView(n)) NOTES.folder = n.folder || "all"; drawAll(); };
+      r.onclick = open;
+      r.onkeydown = e => {
+        if ((e.key === "Enter" || e.key === " ") && e.target === r) { e.preventDefault(); open(); return; }
+        // Alt+↑/↓ moves the note among the notes listed with it (My order)
+        if (!mine || !e.altKey || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return; e.preventDefault();
+        const ids = [...fold.querySelectorAll(`.nb-fnote[data-g="${r.dataset.g}"]`)].map(x => x.dataset.id), i = ids.indexOf(r.dataset.id), j = i + (e.key === "ArrowUp" ? -1 : 1); if (j < 0 || j >= ids.length) return;
+        ids.splice(i, 1); ids.splice(j, 0, r.dataset.id); reorder(ids); const nb = fold.querySelector(`.nb-fnote[data-g="${r.dataset.g}"][data-id="${r.dataset.id}"]`); if (nb) nb.focus();
+      };
+      r.addEventListener("dragstart", e => noteDragStart(e, r.dataset.id, r));
+      r.addEventListener("dragend", () => noteDragEnd(r));
+  }
+  // a saved note: redraw only its rows (its time, star, title); the order catches up on the next full redraw
+  function patchRows(id){
+    const n = NS.get(id); if (!n || !ROWFN) return;
+    fold.querySelectorAll(`.nb-fnote[data-id="${id}"]:not(.nb-cfile)`).forEach(el => {
+      const t = document.createElement("template"); t.innerHTML = ROWFN(n, el); const nr = t.content.firstElementChild; if (!nr) return;
+      el.replaceWith(nr); wireRow(nr);
+      const im = nr.querySelector("img[data-cov]"); if (im) window.InquireNotes.imageURL(im.dataset.cov).then(u => { if (u) im.src = u; });
+    });
+  }
   /* ----- Notes tab: the Code section under the folders (a divider, then the Code folders and files). A code file opens in
      My Code; dragged into a note it becomes a code box (a copy); dropped on a folder it is copied there as a new note.
      The original always stays in My Code (Devon, Oct 2026). ----- */
   const LG = k => (window.NPCode ? NPCode.lang(k) : { short: "&lt;/&gt;" });
-  function codeSection(shut){
-    const cf = CS.folders(), cn = CS.list(), open = !store.get("codesecfold", false);
+  function codeSection(shut, filter){
+    const cf = CS.folders(), cn = CS.list(), open = !store.get("codesecfold", false), fl = filter ? cn.slice().sort(ALLNS.byOrder).filter(n => filter === "fav" ? n.fav : !n.folder) : null;
     const byF = {}; cn.slice().sort(ALLNS.byOrder).forEach(n => { const k = n.folder || "_"; (byF[k] = byF[k] || []).push(n); });
     const crow = (n, d) => `<div class="nb-fnote nb-cfile" role="button" tabindex="0" draggable="true" data-cid="${n.id}" style="--d:${d}" title="${esc(n.title)}: click to open it in My Code; drag it into a note for a copy of its code, or onto a folder to file a copy there"><span class="nb-fni nb-cfi" data-lang="${esc(n.code.lang)}">${esc(LG(n.code.lang).short)}</span><span class="nb-fnt">${esc(n.title)}</span></div>`;
     const cnt = id => { const sub = ALLNS.subtree(id); return cn.filter(n => sub.has(n.folder)).length; };
     const cfrow = f => `<div class="nb-cfd" style="--d:${f.depth}"><button type="button" class="nb-fcar" data-ccar="${f.id}" aria-expanded="${!shut.has(f.id)}" title="${shut.has(f.id) ? "Show" : "Hide"} the files in ${esc(f.name)}" aria-label="${shut.has(f.id) ? "Show" : "Hide"} the files in ${esc(f.name)}">${folderIcon(!shut.has(f.id))}</button><span class="nb-cfdn">${esc(f.name)}</span><span class="nb-fn num">${cnt(f.id)}</span></div>`;
     const tree = parent => cf.filter(f => (f.parent || null) === parent).map(f => cfrow(f) + (shut.has(f.id) ? "" : tree(f.id) + (byF[f.id] || []).map(n => crow(n, f.depth + 1)).join(""))).join("");
-    return `<div class="nb-codeh" role="separator"><button type="button" class="nb-codet" aria-expanded="${open}" title="${open ? "Hide" : "Show"} your code files">${folderIcon(open)} Code</button><span class="nb-fn num">${cn.length}</span><button type="button" class="nb-codego" data-a="gocode" title="Open My Code" aria-label="Open My Code">↗</button></div>`
-      + (open ? `<div class="nb-codetree">${cn.length || cf.length ? tree(null) + (byF._ || []).map(n => crow(n, 0)).join("") : `<p class="nb-codeempty">No code files yet. Make one in <b>My Code</b> on the Main Menu.</p>`}</div>` : "");
+    return `<div class="nb-codeh" role="separator"><button type="button" class="nb-codet" aria-expanded="${open}" title="${open ? "Hide" : "Show"} your code files">${folderIcon(open)} Code</button><span class="nb-fn num">${fl ? fl.length : cn.length}</span><button type="button" class="nb-codego" data-a="gocode" title="Open My Code" aria-label="Open My Code">↗</button></div>`
+      + (open ? `<div class="nb-codetree">${fl ? (fl.length ? fl.map(n => crow(n, 0)).join("") : `<p class="nb-codeempty">${filter === "fav" ? "No favourite code files." : "No unfiled code files."}</p>`) // v0.5.6: the filter reaches the Code section (files only, no folders)
+        : cn.length || cf.length ? tree(null) + (byF._ || []).map(n => crow(n, 0)).join("") : `<p class="nb-codeempty">No code files yet. Make one in <b>My Code</b> on the Main Menu.</p>`}</div>` : "");
   }
   /* the line between the notes folders and the Code section: drag it (or ↑/↓) to share the column; the Code part's height
      is kept (store "codesech"); folded, the Code section takes only its header (Devon, Oct 12 2026) */
@@ -6269,7 +7138,8 @@ function renderNotes(m, focusBody, space = "notes"){
   const msg = t => { if (NS.toast) NS.toast(esc(t), null, 3000); };
   function drawEd(focusBody){
     if (rich) { rich.destroy(); rich = null; }
-    holoEl = null; indEl = null; // the pane is redrawn; ◈ / ↳ put their panels back if they were open
+    holoEl = null; indEl = null; asEl = null; // the pane is redrawn; ◈ / ↳ / ✦ / A✓ put their panels back if they were open
+    if (asKey) { window.removeEventListener("keydown", asKey, true); asKey = null; }
     if (holoKey) { window.removeEventListener("keydown", holoKey, true); holoKey = null; } if (indKey) { window.removeEventListener("keydown", indKey, true); indKey = null; }
     drawInfo();
     ed.classList.remove("nc-pane");
@@ -6287,17 +7157,18 @@ function renderNotes(m, focusBody, space = "notes"){
         openSide: id => { drawFolders(); openSplit(id); } });
       return;
     }
-    ed.innerHTML = `<div class="nb-bar"><button type="button" class="nb-favb${n.fav ? " on" : ""}" data-a="fav" aria-pressed="${n.fav}" title="${n.fav ? "Remove from favourites" : "Add to favourites"}">${n.fav ? "★" : "☆"}</button>
+    ed.innerHTML = `<div class="nb-bar"><button type="button" class="nb-favb${n.fav ? " on" : ""}" data-a="fav" aria-pressed="${n.fav}" title="${n.fav ? "Remove from favourites" : "Add to favourites"}">${n.fav ? "★" : "☆"}</button><span class="nb-save" role="status" aria-live="polite"></span>
         <button type="button" class="btn-s nb-bar-r" data-a="photo" title="Add photos from this computer (or paste / drop them into the note)">＋ Photo</button><button type="button" class="btn-s" data-a="purl" title="Show a photo from a web address">Photo link</button>
         <button type="button" class="btn-s nr-vid" data-a="video" title="Add a video: a file from this computer, or a YouTube, Vimeo or video link" aria-haspopup="dialog">▶ Video</button>
-        <button type="button" class="btn-s" data-a="exp" title="Save this note as Word, Markdown (Obsidian), Apple Notes / Evernote, PDF, a web page or text">Export…</button><button type="button" class="btn-s set-warn" data-a="del">Delete</button></div>
+        <button type="button" class="btn-s set-warn" data-a="del">Delete</button></div>
       <form class="nb-urlrow" hidden><input type="url" placeholder="https://… address of a photo" aria-label="Photo address"><button type="submit" class="btn-s">Insert</button><button type="button" class="btn-s" data-a="purlx">Cancel</button><span class="nb-urlmsg"></span></form>
       <div class="nb-trow"><input class="nb-title" value="${esc(n.title)}" aria-label="Title" maxlength="140"><div class="nb-split" aria-hidden="true" title="Drop a note here to open it beside this one"><span class="nb-split-ic">⧉</span><span>Drop to open side by side</span></div></div>
       <div class="nb-host"></div><input type="file" accept="image/*" multiple hidden>`;
     const ti = $(".nb-title", ed), file = $('input[type="file"]', ed);
     $(".nb-trow", ed).prepend(coverButton(NS, n.id, () => drawList())); // cover photo by the title (v0.5.4)
     rich = NS.mountEditor($(".nb-host", ed), n.id, {
-      onSaved: () => { const it = items.querySelector(`[data-id="${n.id}"]`); if (it) drawList(); },
+      onSaved: () => patchRows(n.id), // v0.5.6: only this note's rows, not the whole bar
+      onEditing: () => saveLine("editing"),
       openNote: id => openLinked(id),
       openSide: id => openFromLink(id), peek: id => peekOpen(id), openFolder: fid => openFolderLink(fid),
       annotations: indShown(), onAnnotation: aid => { IND.open = true; IND.edit = aid; indOpen(n.id); },
@@ -6312,8 +7183,7 @@ function renderNotes(m, focusBody, space = "notes"){
     $('[data-a="purl"]', ed).onclick = () => { urlRow.hidden = !urlRow.hidden; if (!urlRow.hidden) urlIn.focus(); };
     $('[data-a="purlx"]', ed).onclick = () => { urlRow.hidden = true; };
     urlRow.onsubmit = e => { e.preventDefault(); if (rich.addURL(urlIn.value)) { urlIn.value = ""; urlRow.hidden = true; } else $(".nb-urlmsg", urlRow).textContent = "Use an https:// address of an image."; };
-    $('[data-a="exp"]', ed).onclick = () => openIO("note");
-    holoButton(n);
+    holoButton(n); saveLine(); { const sl = $(".nb-save", ed); if (sl && !sl.classList.contains("is-error")) sl.classList.add("quiet"); }
     // delete at once, with Undo in a message for 8 s (photos and videos are only removed once that time is up)
     $('[data-a="del"]', ed).onclick = () => { flushEd(); if (rich) { rich.destroy(); rich = null; } NOTES.sel = null; NS.deleteWithUndo(n.id, id => { if (s.isConnected) { NOTES.sel = id; drawAll(); } }); drawAll(); };
     if (focusBody) setTimeout(() => {
@@ -6343,9 +7213,11 @@ function renderNotes(m, focusBody, space = "notes"){
   function holoButton(n){
     const b = h("button", { type: "button", class: "nb-holob", "aria-label": "Tags, links and source of this note", title: "Tags · Links · Source", "aria-expanded": "false" }, `<span aria-hidden="true">◈</span>`);
     ed.appendChild(b);
-    b.onclick = () => { HOLO.open = !HOLO.open; if (HOLO.open) holoOpen(n.id); else holoClose(); };
+    b.onclick = () => { HOLO.open = !HOLO.open; if (HOLO.open) { if (AS.open) asClose(); holoOpen(n.id); } else holoClose(); };
     if (HOLO.open) holoOpen(n.id);
-    indButton(n);
+    indButton(n); asButtons(n);
+    // short names that show on hover and keyboard focus (v0.5.6, Devon: the symbols alone were not enough)
+    [[".nb-holob:not(.nb-indb):not(.nb-aib):not(.nb-gramb)", "Links"], [".nb-indb", "Paranotes"], [".nb-aib", "AI Chat"], [".nb-gramb", "Grammar"]].forEach(([q, l]) => { const x = $(q, ed); if (x) x.dataset.label = l; });
   }
   /* ----- ↳ Paranotes (Devon, Oct 12 2026): the button above ◈ opens a box above the Links box. "Show paranotes"
      draws your own notes under the words they explain (notes.js does the drawing; store "indshow"); ＋ adds one on the
@@ -6356,7 +7228,7 @@ function renderNotes(m, focusBody, space = "notes"){
   function indButton(n){
     const b = h("button", { type: "button", class: "nb-holob nb-indb", "aria-label": "Paranotes", title: "Paranotes: your own notes under the words they explain", "aria-expanded": "false" }, `<span aria-hidden="true">↳</span>`);
     ed.appendChild(b);
-    b.onclick = () => { IND.open = !IND.open; if (IND.open) indOpen(n.id); else indClose(); };
+    b.onclick = () => { IND.open = !IND.open; if (IND.open) { if (AS.open) asClose(); indOpen(n.id); } else indClose(); };
     if (IND.open) indOpen(n.id);
   }
   function indClose(){ IND.open = false; IND.edit = null; if (indEl) { indEl.remove(); indEl = null; } if (indKey) { window.removeEventListener("keydown", indKey, true); indKey = null; } const b = $(".nb-indb", ed); if (b) b.setAttribute("aria-expanded", "false"); }
@@ -6405,6 +7277,118 @@ function renderNotes(m, focusBody, space = "notes"){
       $('[data-a="cancel"]', f).onclick = () => { clearTimeout(t); rich.setAnnotation(cur.id, ta.value); IND.edit = null; indDraw(NOTES.sel); };
       $('[data-a="del"]', f).onclick = () => { clearTimeout(t); rich.removeAnnotation(cur.id); IND.edit = null; indDraw(NOTES.sel); };
       setTimeout(() => { ta.focus({ preventScroll: true }); ta.setSelectionRange(ta.value.length, ta.value.length); }, 0); }
+  }
+  /* ----- v0.5.6 (Devon): ✦ AI Chat and Aa✓ Grammar check, two more round buttons beside ↳ and ◈. Each opens a box in the same
+     corner (one of them at a time; opening one closes the Links and Paranotes boxes, and the other way round). The work
+     (requests, LanguageTool, the text map) is in assist.js (NPAssist). ----- */
+  const AS = NOTES.as || (NOTES.as = { open: null, box: Object.assign({ r: 16, b: 70, w: 400, h: 460 }, store.get("asbox", {})), chats: {}, g: null });
+  let asEl = null, asKey = null;
+  const GST = () => Object.assign({ def: "school", lang: "en-US", notes: {} }, store.get("grammar", {}));
+  function asButtons(n){
+    [["ai", "nb-aib", "AI Chat", "AI Chat: ask about this note, or have it write, sum up or explain", `<span aria-hidden="true">✦</span>`],
+     ["gram", "nb-gramb", "Grammar check", "Grammar check: spelling, grammar and style, set to the kind of note you are writing", `<span aria-hidden="true" class="nb-gramg">A<small>✓</small></span>`]].forEach(([k, cls, label, title, ic]) => {
+      const b = h("button", { type: "button", class: "nb-holob " + cls, "aria-label": label, title, "aria-expanded": String(AS.open === k) }, ic);
+      ed.appendChild(b); b.onclick = () => { if (AS.open === k) asClose(); else asOpen(k, n.id); };
+    });
+    if (AS.open) asOpen(AS.open, n.id);
+  }
+  function asClose(){ AS.open = null; if (asEl) { asEl.remove(); asEl = null; } if (asKey) { window.removeEventListener("keydown", asKey, true); asKey = null; } ed.querySelectorAll(".nb-aib, .nb-gramb").forEach(b => b.setAttribute("aria-expanded", "false")); }
+  function asFit(){
+    if (!asEl) return; const W = ed.clientWidth, H = ed.clientHeight, x = AS.box;
+    x.w = Math.max(280, Math.min(x.w, W - 8)); x.h = Math.max(240, Math.min(x.h, H - 8));
+    x.r = Math.max(4, Math.min(x.r, W - x.w - 4)); x.b = Math.max(4, Math.min(x.b, H - x.h - 4));
+    Object.assign(asEl.style, { right: x.r + "px", bottom: x.b + "px", width: x.w + "px", height: x.h + "px" });
+  }
+  function asOpen(k, id){
+    if (HOLO.open) holoClose(); if (IND.open) indClose();
+    if (asEl) asEl.remove(); if (asKey) { window.removeEventListener("keydown", asKey, true); asKey = null; }
+    AS.open = k; ed.querySelectorAll(".nb-aib, .nb-gramb").forEach(b => b.setAttribute("aria-expanded", String(b.classList.contains(k === "ai" ? "nb-aib" : "nb-gramb"))));
+    asEl = h("div", { class: "np-holo np-as np-as-" + k, role: "dialog", "aria-label": k === "ai" ? "AI Chat" : "Grammar check" });
+    ed.appendChild(asEl); asFit();
+    if (k === "ai") aiPanel(id); else gramPanel(id);
+    panelResize(asEl, AS.box, asFit, "asbox");
+    asKey = e => { if (e.key === "Escape" && asEl && !document.querySelector(".tm-menu, .np-pop, .ask-ov")) { e.preventDefault(); e.stopPropagation(); asClose(); } };
+    window.addEventListener("keydown", asKey, true);
+  }
+  const asHead = (t, extra) => `<div class="np-holo-h"><div class="np-holo-tabs"><span class="np-as-t">${t}</span></div>${extra || ""}<button type="button" class="np-holo-x" aria-label="Close">✕</button></div>`;
+  const noteText = id => { const n = NS.get(id); if (!n) return null; const t = rich && rich.el ? NPAssist.textMap(rich.el).text : n.body || ""; return { title: n.title, text: t }; };
+  // ✦ AI Chat: a conversation per note for this session (not saved); "Read this note" sends the note with each question
+  function aiPanel(id){
+    const chat = AS.chats[id] || (AS.chats[id] = []);
+    asEl.innerHTML = asHead("✦ AI Chat", `<button type="button" class="np-as-new" title="Start a new chat about this note">New chat</button>`)
+      + `<div class="np-holo-bar"><label class="np-ind-show"><input type="checkbox" class="np-ai-read"${store.get("airead", true) !== false ? " checked" : ""}><span>Read this note</span></label><span class="np-as-st"></span></div>
+      <div class="np-holo-b np-ai-b" aria-live="polite"></div>
+      <form class="np-ai-f"><textarea rows="2" maxlength="8000" placeholder="Ask anything… e.g. Sum up this note · Give me 5 ideas · Explain the second paragraph" aria-label="Message to the AI"></textarea><button type="submit" class="np-ai-send" title="Send (Enter; Shift+Enter for a new line)">Send</button></form>
+      <div class="np-holo-rzs">${RZ}</div>`;
+    const body = $(".np-ai-b", asEl), f = $(".np-ai-f", asEl), ta = $("textarea", f), st = $(".np-as-st", asEl);
+    $(".np-holo-x", asEl).onclick = () => asClose();
+    $(".np-ai-read", asEl).onchange = e => store.set("airead", e.target.checked);
+    $(".np-as-new", asEl).onclick = () => { chat.length = 0; draw(); ta.focus(); };
+    let busy = false, ready = null;
+    const draw = () => {
+      body.innerHTML = (ready === false ? `<div class="np-ai-off"><b>AI Chat is not set up in this copy of NotePath.</b><p>It uses the same AI key as My Code's ⇄ Translate: put the key in <code>ai.config.json</code> beside NotePath (copy <code>ai.config.example.json</code>), then open NotePath again. Settings → Code shows whether it is ready.</p></div>` : "")
+        + (chat.length ? chat.map((m, i) => `<div class="np-ai-m ${m.role === "user" ? "me" : m.err ? "err" : "ai"}"><div class="np-ai-tx">${m.role === "user" || m.err ? esc(m.content).replace(/\n/g, "<br>") : NPAssist.toHTML(m.content)}</div>${m.role === "assistant" && !m.err ? `<div class="np-ai-acts"><button type="button" data-copy="${i}">Copy</button><button type="button" data-ins="${i}" title="Add this answer to the note, after the line you were on">＋ Add to note</button></div>` : ""}</div>`).join("")
+          : ready !== false ? `<p class="np-hl-none">Ask about this note, or ask it to write something for you: a summary, a list of ideas, a clearer version, an explanation. Tip: select words in the note and right-click → <b>Ask AI…</b> to work on just those words.</p>` : "")
+        + (busy ? `<div class="np-ai-m ai busy"><div class="np-ai-tx">Thinking…</div></div>` : "");
+      body.scrollTop = body.scrollHeight;
+      f.querySelector("button").disabled = busy || ready === false; ta.disabled = ready === false;
+      body.querySelectorAll("[data-copy]").forEach(b => b.onclick = () => { const t = chat[+b.dataset.copy].content; if (navigator.clipboard) navigator.clipboard.writeText(t).then(() => msg("Copied"), () => msg("Could not copy")); });
+      body.querySelectorAll("[data-ins]").forEach(b => b.onclick = () => { if (rich && rich.insertBlock && rich.insertBlock(NPAssist.toHTML(chat[+b.dataset.ins].content))) msg("Added to the note"); });
+    };
+    const send = async () => {
+      const q = ta.value.trim(); if (!q || busy || ready === false) return;
+      chat.push({ role: "user", content: q }); ta.value = ""; busy = true; draw();
+      try { const a = await NPAssist.ask(NPAssist.chatRequest(chat.filter(m => !m.err), $(".np-ai-read", asEl) && $(".np-ai-read", asEl).checked ? noteText(id) : null)); chat.push({ role: "assistant", content: a || "(no answer)" }); }
+      catch (e) { chat.push({ role: "assistant", err: true, content: e && e.message ? e.message : "The AI did not answer." }); }
+      busy = false; if (asEl && asEl.isConnected && AS.open === "ai") draw();
+    };
+    f.onsubmit = e => { e.preventDefault(); send(); };
+    ta.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(); } });
+    draw();
+    NPAssist.aiStatus().then(s => { ready = !!(s && s.configured); if (!asEl || AS.open !== "ai") return; st.textContent = ready ? (s.model ? "Ready · " + s.model : "Ready") : "Not set up"; st.classList.toggle("off", !ready); draw(); if (ready) ta.focus({ preventScroll: true }); });
+  }
+  // Aa✓ Grammar check: pick the kind of note (how strict), check, then take a suggestion or ignore it; click one to see it in the note
+  function gramPanel(id){
+    const G = GST(), type = G.notes[id] || G.def;
+    if (!AS.g || AS.g.id !== id) AS.g = { id, list: null, err: "", busy: false, cut: false };
+    const S = AS.g;
+    asEl.innerHTML = asHead("A✓ Grammar check")
+      + `<div class="np-gr-set"><label><span>This note is</span><select class="np-gr-type" aria-label="Kind of note">${NPAssist.GTYPES.map(t => `<option value="${t[0]}"${t[0] === type ? " selected" : ""}>${t[1]}</option>`).join("")}</select></label>
+        <label><span>Language</span><select class="np-gr-lang" aria-label="Language">${NPAssist.GLANGS.map(l => `<option value="${l[0]}"${l[0] === G.lang ? " selected" : ""}>${l[1]}</option>`).join("")}</select></label>
+        <p class="np-gr-what"></p><button type="button" class="np-gr-go">Check this note</button></div>
+      <div class="np-holo-b np-gr-b" aria-live="polite"></div><p class="np-gr-foot">Checked by LanguageTool (free): the note's words are sent to languagetool.org when you press Check.</p><div class="np-holo-rzs">${RZ}</div>`;
+    const tSel = $(".np-gr-type", asEl), lSel = $(".np-gr-lang", asEl), what = $(".np-gr-what", asEl), body = $(".np-gr-b", asEl), go = $(".np-gr-go", asEl);
+    $(".np-holo-x", asEl).onclick = () => asClose();
+    const say = () => { what.textContent = NPAssist.gtype(tSel.value)[2]; };
+    tSel.onchange = () => { const g = GST(); g.notes[id] = tSel.value; g.def = tSel.value; store.set("grammar", g); say(); if (S.list) { S.list = null; draw(); } };
+    lSel.onchange = () => { const g = GST(); g.lang = lSel.value; store.set("grammar", g); };
+    const draw = () => {
+      go.disabled = S.busy; go.textContent = S.busy ? "Checking…" : S.list ? "Check again" : "Check this note";
+      if (S.err) { body.innerHTML = `<p class="np-gr-msg bad">${esc(S.err)}</p>`; return; }
+      if (!S.list) { body.innerHTML = S.busy ? "" : `<p class="np-hl-none">Choose the kind of note you are writing, then press <b>Check this note</b>. A quick note only gets spelling and clear mistakes; formal writing gets every rule.</p>`; return; }
+      if (!S.list.length) { body.innerHTML = `<p class="np-gr-ok">${S.fixed ? "✓ All done. Press Check again to look once more." : `✓ No problems found (checked as ${esc(NPAssist.gtype(tSel.value)[1])}).`}</p>` + (S.cut ? `<p class="np-gr-msg">Only the first ${NPAssist.GT_MAX.toLocaleString()} characters were checked.</p>` : ""); return; }
+      body.innerHTML = `<p class="np-gr-n">${S.list.length} ${S.list.length === 1 ? "thing" : "things"} to look at${S.cut ? ` (the first ${NPAssist.GT_MAX.toLocaleString()} characters)` : ""}</p>`
+        + S.list.map(m => `<div class="np-gr-m k-${m.kind}" data-g="${m.id}"><button type="button" class="np-gr-w" data-show="${m.id}" title="Show it in the note"><s>${esc(m.bad)}</s><span class="np-gr-cat">${esc(m.kind === "spelling" ? "Spelling" : m.cat || "Grammar")}</span></button><p>${esc(m.message)}</p>
+          <div class="np-gr-reps">${m.reps.map((r, j) => `<button type="button" class="np-gr-rep" data-fix="${m.id}" data-r="${j}">${r === "" ? "<i>remove it</i>" : esc(r)}</button>`).join("")}<button type="button" class="np-gr-ign" data-ign="${m.id}">Ignore</button></div></div>`).join("");
+      body.querySelectorAll("[data-show]").forEach(b => b.onclick = () => show(S.list.find(m => m.id === b.dataset.show)));
+      body.querySelectorAll("[data-fix]").forEach(b => b.onclick = () => fix(S.list.find(m => m.id === b.dataset.fix), +b.dataset.r));
+      body.querySelectorAll("[data-ign]").forEach(b => b.onclick = () => { S.fixed = true; S.list = S.list.filter(m => m.id !== b.dataset.ign); draw(); });
+    };
+    const where = m => { if (!rich || !rich.el) return null; const map = NPAssist.textMap(rich.el), at = NPAssist.locate(map, m); return at < 0 ? null : { at, r: NPAssist.rangeAt(map, at, m.length) }; };
+    const show = m => { const w = m && where(m); if (!w || !w.r) { msg("That part of the note has changed. Check again."); return; }
+      rich.el.focus({ preventScroll: true }); const s = getSelection(); s.removeAllRanges(); s.addRange(w.r); const el = w.r.startContainer.parentElement; if (el) el.scrollIntoView({ block: "nearest" }); };
+    const fix = (m, j) => { const w = m && where(m); if (!w || !w.r) { msg("That part of the note has changed. Check again."); return; }
+      const rep = m.reps[j]; rich.el.focus({ preventScroll: true }); const s = getSelection(); s.removeAllRanges(); s.addRange(w.r);
+      if (rep === "") document.execCommand("delete"); else document.execCommand("insertText", false, rep);
+      if (rich.changed) rich.changed();
+      S.fixed = true; S.list = NPAssist.shiftMatches(S.list.filter(x => x.id !== m.id), w.at, m.length, rep.length); draw(); };
+    go.onclick = async () => {
+      const t = noteText(id); if (!t || !t.text.trim()) { S.err = ""; S.list = []; draw(); return; }
+      S.busy = true; S.err = ""; S.fixed = false; draw();
+      try { const r = await NPAssist.grammarCheck(t.text, tSel.value, lSel.value); S.list = r.matches; S.cut = r.cut; } catch (e) { S.err = e && e.message ? e.message : "The check did not work."; S.list = null; }
+      S.busy = false; if (asEl && AS.open === "gram" && AS.g === S) draw();
+    };
+    say(); draw();
   }
   const linksOf = html => { const out = []; String(html || "").replace(/data-note="([a-z0-9]+)"/gi, (x, id) => { if (!out.includes(id)) out.push(id); return x; }); return out; };
   function holoClose(){ HOLO.open = false; if (holoEl) { holoEl.remove(); holoEl = null; } if (holoKey) { window.removeEventListener("keydown", holoKey, true); holoKey = null; } const b = $(".nb-holob", ed); if (b) b.setAttribute("aria-expanded", "false"); indFit(); }
@@ -6685,9 +7669,9 @@ window.InquireApp = {
 $("#brand").onclick = () => go({ view: "menu" });
 // NotePath opens on the start menu; #notes / #favourites open the My notes page.
 const initial = fromHash();
-render();
-try { history.replaceState({ view: "menu" }, "", "#menu"); } catch(e){}
-if (initial && initial.view === "notes") go(initial, false);
+// v0.5.6: the notes load from IndexedDB first (a few ms; on the first start of 0.5.6 they are moved there from localStorage)
+const startUp = () => { render(); try { history.replaceState({ view: "menu" }, "", "#menu"); } catch(e){} if (initial && initial.view === "notes") go(initial, false); };
+if (window.InquireNotes && InquireNotes.ready && !InquireNotes.isReady()) InquireNotes.ready.then(startUp, startUp); else startUp();
 })();
 
 </script>
@@ -7381,6 +8365,7 @@ const out = e => { if (menu && !menu.contains(e.target)) close(); };
 const onScroll = e => { if (menu && e.target instanceof Node && menu.contains(e.target)) return; close(); }; // scrolling a definition keeps the menu
 function key(e) {
   if (!menu) return;
+  if (e.target && e.target.closest && e.target.closest(".tm-ai textarea") && e.key !== "Escape") { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); const b = menu.querySelector('[data-a="ai-go"]'); if (b) b.click(); } return; } // typing a request to the AI
   if (e.target && e.target.closest && e.target.closest(".tm-pn textarea") && e.key !== "Escape") { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); const b = menu.querySelector('[data-a="pn-save"]'); if (b) b.click(); } return; } // typing a paranote
   const bs = [...menu.querySelectorAll("button:not([disabled])")], i = bs.indexOf(document.activeElement);
   if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); close(); }
@@ -7411,17 +8396,23 @@ function open(x, y, c) {
     <button type="button" role="menuitem" data-a="dict"${words > 5 ? " disabled" : ""}><span class="tm-ic">W</span><span>Define “${esc(short)}” · Dictionary<small>${words > 5 ? "Select a word or short phrase" : "Wiktionary and Wikipedia, online"}</small></span></button>
     <button type="button" role="menuitem" data-a="link"><span class="tm-ic">↗</span><span>Link to a note…<small>These words open the note you pick</small></span></button>
     ${c.zone && c.zone.closest && c.zone.closest(".nb-rich") ? `<button type="button" role="menuitem" data-a="pn" aria-haspopup="true"><span class="tm-ic">↳</span><span>Add a paranote…<small>Your own note under these words</small></span></button>` : ""}
+    ${c.zone && c.zone.closest && c.zone.closest(".nb-rich") ? `<button type="button" role="menuitem" data-a="ai" aria-haspopup="true"><span class="tm-ic">✦</span><span>Ask AI…<small>Rewrite, shorten, explain or fix these words</small></span></button>` : ""}
     <button type="button" role="menuitem" data-a="tr"${c.text.length > TR_MAX ? " disabled" : ""} aria-haspopup="true"><span class="tm-ic">文</span><span>Translate…<small>${c.text.length > TR_MAX ? `Select up to ${TR_MAX} characters` : "Spanish, German or French"}</small></span><kbd>▾</kbd></button>`;
   document.body.appendChild(menu);
   const W = menu.offsetWidth, H = menu.offsetHeight;
   const place = () => { const W2 = menu.offsetWidth, H2 = menu.offsetHeight; menu.style.left = Math.max(6, Math.min(innerWidth - W2 - 6, x)) + "px"; menu.style.top = Math.max(6, Math.min(innerHeight - H2 - 6, y)) + "px"; };
   menu.style.left = Math.max(6, Math.min(innerWidth - W - 6, x)) + "px";
   menu.style.top = Math.max(6, Math.min(innerHeight - H - 6, y)) + "px";
-  menu.addEventListener("mousedown", e => { if (!e.target.closest("textarea")) e.preventDefault(); }); // keep the selection while clicking (the paranote box takes the focus)
+  menu.addEventListener("mousedown", e => { if (!e.target.closest("textarea")) e.preventDefault(); }); // (Ask AI's box has a textarea too) // keep the selection while clicking (the paranote box takes the focus)
   menu.addEventListener("click", e => {
     const b = e.target.closest("button[data-a], button[data-lang]"); if (!b || b.disabled) return;
     const a = b.dataset.a;
     if (a === "pn") { pnBox(place); return; }
+    if (a === "ai") { aiBox(place); return; }
+    if (a === "ai-chip") { const t = menu.querySelector(".tm-ai textarea"); if (t) t.value = b.dataset.q; askAI(c, place); return; }
+    if (a === "ai-go") { askAI(c, place); return; }
+    if (a === "ai-copy") { const t = menu._ai; close(); if (t) copyText(t, "Copied the answer"); return; }
+    if (a === "ai-rep" || a === "ai-ins") { const t = menu._ai; close(); if (t) useAI(t, c, a === "ai-rep"); return; }
     if (a === "pn-save") { addParanote(c); return; }
     if (a === "save") { saveDef(x, y, c); return; }
     if (a === "dict") { showDict(c.text, place); return; }
@@ -7454,6 +8445,36 @@ function addParanote(c) {
   if (api.showAnnotations) api.showAnnotations(true);
   toast("Paranote added under “" + esc(c.text.length > 24 ? c.text.slice(0, 22).trim() + "…" : c.text) + "”");
 }
+/* ---------- Ask AI (v0.5.6, Devon): a request about the selected words, answered in the menu: Replace, ＋ Insert below or Copy.
+   The AI is the one set up for My Code's Translate (NPAssist → NPCode.ai → main.js "ai:ask"). ---------- */
+const AI_CHIPS = ["Improve the writing", "Make it shorter", "Fix spelling and grammar", "Explain it simply", "Turn it into a list"];
+function aiBox(place, html) {
+  let b = menu.querySelector(".tm-ai");
+  if (!b) { b = document.createElement("div"); b.className = "tm-ai"; b.innerHTML = `<div class="tm-trh">Ask AI about these words</div><div class="tm-aichips">${AI_CHIPS.map(q => `<button type="button" class="tm-aichip" data-a="ai-chip" data-q="${esc(q)}">${esc(q)}</button>`).join("")}</div><div class="tm-aiq"><textarea rows="2" maxlength="2000" placeholder="Or say what you want… e.g. Make it friendlier" aria-label="What should the AI do with these words?"></textarea><button type="button" class="tm-dgo" data-a="ai-go">Ask</button></div><div class="tm-aiout" aria-live="polite"></div>`; menu.appendChild(b);
+    menu.querySelector('[data-a="ai"]').setAttribute("aria-expanded", "true"); }
+  if (html != null) b.querySelector(".tm-aiout").innerHTML = html;
+  place(); if (html == null) setTimeout(() => { const t = b.querySelector("textarea"); if (t) t.focus({ preventScroll: true }); }, 0);
+  return b;
+}
+async function askAI(c, place) {
+  const A = window.NPAssist, t = menu && menu.querySelector(".tm-ai textarea"); if (!A || !t) return;
+  const q = t.value.trim(); if (!q) { aiBox(place, `<p class="tm-dn">Pick one of the requests above or write your own.</p>`); t.focus(); return; }
+  const m0 = menu; m0._ai = null;
+  const st = await A.aiStatus();
+  if (!st || !st.configured) { if (menu === m0) aiBox(place, `<p class="tm-dn">AI is not set up in this copy of NotePath. It uses the AI key in <code>ai.config.json</code> (the same as My Code's Translate); Settings → Code shows whether it is ready.</p>`); return; }
+  aiBox(place, `<p class="tm-dn tm-busy">Asking the AI…</p>`);
+  let out = "", err = "";
+  try { out = A.cleanEdit(await A.ask(A.selRequest(q, c.text))); } catch (e) { err = e && e.message ? e.message : "The AI did not answer."; }
+  if (menu !== m0) return;
+  if (err || !out) { aiBox(place, `<p class="tm-dn">${esc(err || "The AI gave no answer.")}</p>`); return; }
+  menu._ai = out;
+  aiBox(place, `<div class="tm-aitext">${esc(out).replace(/\n/g, "<br>")}</div><div class="tm-dacts"><button type="button" class="tm-dgo" data-a="ai-rep" title="Put the answer in place of the selected words">Replace</button><button type="button" class="tm-dgo" data-a="ai-ins">＋ Insert below</button><button type="button" class="tm-dgo" data-a="ai-copy">Copy</button></div><p class="tm-dfoot">AI answers can be wrong: read it before you keep it.</p>`);
+}
+function useAI(text, c, replace) {
+  const N = NS(), api = N && N.editorFor(c.zone); if (!api) return;
+  if (replace) { c.zone.focus({ preventScroll: true }); const s = getSelection(); s.removeAllRanges(); s.addRange(c.range); document.execCommand("insertText", false, text); api.changed(); toast("Replaced with the AI's answer"); }
+  else if (api.insertBlock(window.NPAssist ? NPAssist.toHTML(text) : `<div>${esc(text)}</div>`, c.range)) toast("Added the AI's answer below");
+}
 /* ---------- translate: a language box right under the menu ---------- */
 const TR_MAX = 480, LANGS = [["es", "Spanish", "Español"], ["de", "German", "Deutsch"], ["fr", "French", "Français"]], trCache = {};
 const TR_URL = "https://api.mymemory.translated.net/get";
@@ -7485,11 +8506,11 @@ async function translate(text, lang, place) {
   menu._tr = { text: r.text, lang: L[1] };
   trBox(place, `<p class="tm-trtext" lang="${lang}">${esc(r.text)}</p><div class="tm-dacts"><button type="button" class="tm-dgo" data-a="tr-copy">Copy</button><button type="button" class="tm-dgo" data-a="tr-rep">Replace</button><button type="button" class="tm-dgo" data-a="tr-ins">＋ Insert below</button></div><p class="tm-dfoot">${L[1]} · free, from MyMemory (machine translation).</p>`);
 }
-function copyText(t) {
+function copyText(t, said) {
   const ta = document.createElement("textarea"); ta.value = t; ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.appendChild(ta); ta.select();
   let ok = false; try { ok = document.execCommand("copy"); } catch (e) {} ta.remove();
   if (!ok && navigator.clipboard) navigator.clipboard.writeText(t).then(() => {}, () => {});
-  toast("Copied the translation");
+  toast(said || "Copied the translation");
 }
 function useTranslation(t, c, replace) {
   const N = NS(), api = N && N.editorFor(c.zone); if (!api) return;
@@ -7893,7 +8914,7 @@ document.addEventListener("keydown", e => {
   if (ov.hidden) {
     if (e.key === "Escape" && !e.defaultPrevented) {
       // Esc closes the smallest thing first: a popup (it handles Esc itself), then My notes
-      if (document.querySelector(".tm-menu, .nk-pick, .nr-panel, .ask-ov, .nv-pop, .np-pop, .np-holo, .np-ind, .np-peek")) return;
+      if (document.querySelector(".tm-menu, .nk-pick, .nr-panel, .ask-ov, .nv-pop, .np-pop, .np-holo, .np-ind, .np-peek, .nw-present, .np-new")) return;
       if (document.querySelector(".mw-ov:not(.out)") && window.InquireApp) { e.preventDefault(); e.stopPropagation(); InquireApp.closeWin(); return; }
     }
     if (!act || document.querySelector(".ask-ov")) return;
@@ -8254,7 +9275,7 @@ function paneKeys() {
 const K = () => window.InquireKeys || { notes: () => "notepath.notes._local" };
 const readJ = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } };
 function paneData() {
-  const nn = readJ(K().notes(), []).length, NS0 = window.InquireNotes, nf = NS0 ? NS0.readFolders().length : 0;
+  const nn = window.InquireNotes && InquireNotes.readAll ? InquireNotes.readAll().length : readJ(K().notes(), []).length, NS0 = window.InquireNotes, nf = NS0 ? NS0.readFolders().length : 0;
   const w = h(`<div>
     <p class="set-lede">Saved on this computer: <b>${nn}</b> note${nn === 1 ? "" : "s"} in <b>${nf}</b> folder${nf === 1 ? "" : "s"}.</p>
     <div class="set-item"><div><h3>Back up</h3><p>Saves your notes (with their folders, photos, code boxes, music charts and videos up to 25 MB), code files, tasks (with their pictures and files up to 25 MB) and settings to one file. Bigger video files stay on this computer only: the backup tells you which.</p></div><button type="button" class="btn-s" data-a="exp">Export…</button></div>
@@ -8263,7 +9284,7 @@ function paneData() {
   const m = msgEl(); w.appendChild(m);
   w.querySelector('[data-a="exp"]').onclick = async e => {
     const btn = e.currentTarget; btn.disabled = true; btn.textContent = "Saving…";
-    const NS = window.InquireNotes, notes = readJ(K().notes(), []);
+    const NS = window.InquireNotes, notes = NS && NS.readAll ? NS.readAll() : readJ(K().notes(), []); // v0.5.6: notes live in IndexedDB
     const T = window.NPTasks, tasks = T ? T.readRaw() : [];
     // the tasks' pictures and files go in with the notes' photos (as if one note held them all)
     const holders = NS ? NS.list().concat(tasks.length ? [{ title: "My Tasks", html: T.media().map(i => `data-img="${i}"`).join(" ") }] : []) : [];
@@ -8285,9 +9306,9 @@ function paneData() {
       if (!j || j.app !== "NotePath" || !j.data) throw new Error();
       const d = j.data, notes = d.notes || [], set = d.settings;
       if (!Array.isArray(notes)) throw new Error();
-      const mine = readJ(K().notes(), []), ids = new Set(notes.map(x => x && x.id));
+      const NSr = window.InquireNotes, mine = NSr && NSr.readAll ? NSr.readAll() : readJ(K().notes(), []), ids = new Set(notes.map(x => x && x.id));
       const safe = notes.filter(x => x && x.id && typeof x.body === "string").map(x => (typeof x.html === "string" && window.InquireNotes ? Object.assign({}, x, { html: InquireNotes.sanitize(x.html) }) : x)); // never trust markup from a file
-      localStorage.setItem(K().notes(), JSON.stringify(mine.filter(x => !ids.has(x.id)).concat(safe)));
+      if (NSr && NSr.writeAll) NSr.writeAll(mine.filter(x => !ids.has(x.id)).concat(safe)); else localStorage.setItem(K().notes(), JSON.stringify(mine.filter(x => !ids.has(x.id)).concat(safe)));
       if (set && typeof set === "object") localStorage.setItem("notepath.settings", JSON.stringify(set));
       const NS = window.InquireNotes; let np = 0;
       if (NS && Array.isArray(d.folders)) { const have = NS.readFolders(), fids = new Set(have.map(f => f.id)); NS.writeFolders(have.concat(d.folders.filter(f => f && f.id && f.name && !fids.has(f.id)))); }

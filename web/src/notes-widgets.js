@@ -214,8 +214,9 @@ const HEADS = [["h1", "Title", "The biggest line, for the top of the note", "T"]
   ["h2", "Heading 1", "Starts a section", "H1"], ["h3", "Heading 2", "A part of a section", "H2"], ["h4", "Heading 3", "A smaller heading", "H3"]];
 const HTAGS = HEADS.map(x => x[0].toUpperCase()).join(",");
 function headAt(el) { const h = el && el.closest(HTAGS); return h ? HEADS.find(x => x[0] === h.tagName.toLowerCase()) : null; }
-const WIDGET_MENU = [["code", "&lt;/&gt;", "Code box", "Code with highlighting and line numbers"], ["music", "♪", "Music chart", "A staff, a keyboard, chords and playback"],
-  ["sheet", "𝄞", "Lead sheet", "Bars with chord symbols and melody"], ["graph", "∿", "Graph", "Click points on a grid and get their equations"]];
+/* v0.5.6 (Devon): the Music chart left the menu (the Lead sheet does more); Music charts already in notes still open and play */
+const WIDGET_MENU = [["code", "&lt;/&gt;", "Code box", "Code to show and explain: highlight lines, before / after, present it, copy it as a picture"],
+  ["sheet", "𝄞", "Lead sheet", "Bars with chord symbols and melody"], ["graph", "∿", "Graph", "Click points on a grid and get their equations"], ["map", "⌖", "Map", "Search an address and keep it on a map"]];
 function ddPanel(btn, kind, api, sync) {
   const was = dd && dd.dataset.kind; closeDD(); if (was === kind) return;
   const cur = fmtAt(fmtEl(api));
@@ -367,23 +368,126 @@ function annHTML(t) {
     out.push(`<a href="${esc(url)}" target="_blank" rel="noopener noreferrer" title="${esc(url)}">${esc(label)}</a>`); at = m.index + m[0].length; }
   out.push(esc(rest.slice(at))); return out.join("").replace(/\n/g, "<br>");
 }
+/* ---------- code box for showing code to people (v0.5.6, Devon): My Code is where code is written and run; the Code box is
+   for illustrating, giving examples and explaining code to business and personal associates. On top of highlighting, line
+   numbers, Copy and paranotes on code: highlighted lines (click a line number, or type "3-5, 9"), a file-name tab, a caption,
+   a look (like the app, dark, light, high contrast), a text size, line numbers on or off, Before / after with a Compare view
+   (side by side, or only the changes with + / −), ⤢ Present (full window, big text, ← / → step through the highlighted
+   lines), and Copy as a picture (a PNG for slides, email or chat). All of it is kept in the box's data-src. ---------- */
+const CODE_LOOKS = [["theme", "Like the app"], ["dark", "Dark"], ["light", "Light"], ["contrast", "High contrast"]];
+const CODE_SIZES = [["s", 12, "Small"], ["m", 13.5, "Normal"], ["l", 16, "Large"], ["xl", 19, "Extra large"]];
+// "3-5, 9" → Set {3, 4, 5, 9} (1-based line numbers; at most `max` when given)
+function parseLines(s, max) {
+  const out = new Set();
+  String(s || "").replace(/\s*[-–—]\s*/g, "-").split(/[\s,;]+/).forEach(p => { const m = p.match(/^(\d+)(?:-(\d+))?$/); if (!m) return;
+    let a = +m[1], b = m[2] ? +m[2] : a; if (a > b) [a, b] = [b, a]; for (let i = Math.max(1, a); i <= Math.min(b, a + 999); i++) if (!max || i <= max) out.add(i); });
+  return out;
+}
+// Set {3, 4, 5, 9} → [[3, 5], [9, 9]] and "3-5, 9"
+const lineGroups = set => { const g = []; [...set].sort((a, b) => a - b).forEach(n => { const l = g[g.length - 1]; if (l && n === l[1] + 1) l[1] = n; else g.push([n, n]); }); return g; };
+const formatLines = set => lineGroups(set).map(([a, b]) => a === b ? String(a) : a + "-" + b).join(", ");
+// line diff (longest common subsequence): [{ t: "=" | "-" | "+", a: line in before, b: line in after }] (0-based)
+function lineDiff(before, after) {
+  const A = String(before).split("\n"), B = String(after).split("\n");
+  let s = 0; while (s < A.length && s < B.length && A[s] === B[s]) s++;
+  let e = 0; while (e < A.length - s && e < B.length - s && A[A.length - 1 - e] === B[B.length - 1 - e]) e++;
+  const a = A.slice(s, A.length - e), b = B.slice(s, B.length - e), ops = [];
+  for (let i = 0; i < s; i++) ops.push({ t: "=", a: i, b: i });
+  if (a.length * b.length > 4e6) { a.forEach((_, i) => ops.push({ t: "-", a: s + i })); b.forEach((_, j) => ops.push({ t: "+", b: s + j })); }
+  else {
+    const L = Array.from({ length: a.length + 1 }, () => new Uint32Array(b.length + 1));
+    for (let i = a.length - 1; i >= 0; i--) for (let j = b.length - 1; j >= 0; j--) L[i][j] = a[i] === b[j] ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+    let i = 0, j = 0;
+    while (i < a.length || j < b.length) {
+      if (i < a.length && j < b.length && a[i] === b[j]) { ops.push({ t: "=", a: s + i, b: s + j }); i++; j++; }
+      else if (i < a.length && (j >= b.length || L[i + 1][j] >= L[i][j + 1])) { ops.push({ t: "-", a: s + i }); i++; } // removed lines before added ones
+      else { ops.push({ t: "+", b: s + j }); j++; }
+    }
+  }
+  for (let k = 0; k < e; k++) ops.push({ t: "=", a: A.length - e + k, b: B.length - e + k });
+  return ops;
+}
+// the diff as rows side by side: removed and added lines next to each other where they replace each other
+function diffRows(ops) {
+  const rows = []; let k = 0;
+  while (k < ops.length) {
+    if (ops[k].t === "=") { rows.push({ a: ops[k].a, b: ops[k].b, t: "=" }); k++; continue; }
+    const del = [], add = []; while (k < ops.length && ops[k].t !== "=") { (ops[k].t === "-" ? del : add).push(ops[k]); k++; }
+    for (let i = 0; i < Math.max(del.length, add.length); i++) rows.push({ a: del[i] ? del[i].a : null, b: add[i] ? add[i].b : null, t: "~" });
+  }
+  return rows;
+}
+const LOOK_COLORS = {
+  dark: { bg: "#0d1117", text: "#e6edf3", kw: "#d2a8ff", bi: "#ffa657", str: "#a5d6ff", num: "#79c0ff", com: "#8b949e", gut: "#6e7681", band: "rgba(255,214,102,.16)", bar: "#161b22" },
+  light: { bg: "#fbfbfd", text: "#1d2330", kw: "#7a3fd1", bi: "#0b6f8a", str: "#1f7a3a", num: "#a35c00", com: "#7d8592", gut: "#9aa1ad", band: "rgba(255,196,0,.22)", bar: "#eceef3" },
+  contrast: { bg: "#000000", text: "#ffffff", kw: "#ff9de2", bi: "#7fdcff", str: "#9dff9d", num: "#ffd166", com: "#c8c8c8", gut: "#c8c8c8", band: "rgba(255,255,0,.28)", bar: "#1a1a1a" } };
+function themeColors(el) {
+  const cs = getComputedStyle(el), v = k => cs.getPropertyValue(k).trim();
+  return { bg: v("--panel") || "#141b26", text: v("--text") || "#e8edf5", kw: v("--violet") || "#B49BFF", bi: v("--cyan") || "#5CC8E0", str: v("--green") || "#7BD88F", num: v("--amber") || "#F2B84B", com: v("--faint") || "#7d8798", gut: v("--faint") || "#7d8798", band: "rgba(242,184,75,.16)", bar: v("--panel-2") || "#1b2330" };
+}
 function mountCode(el) {
   const d = readSrc(el, { lang: "python", title: "", src: "" });
+  const sizeOf = k => (CODE_SIZES.find(x => x[0] === k) || CODE_SIZES[1]);
+  let srcText = String(d.src || ""), beforeText = String(d.before || ""), cur = d.diff ? (d.tab === "compare" ? "compare" : "after") : "after";
+  const opt = { hl: String(d.hl || ""), file: String(d.file || ""), cap: String(d.cap || ""), look: CODE_LOOKS.some(x => x[0] === d.look) ? d.look : "theme", size: sizeOf(d.size)[0], nums: d.nums !== false, diff: !!d.diff, cmp: d.cmp === "unified" ? "unified" : "split" };
   el.innerHTML = `<div class="nw-h"><span class="nw-tag">&lt;/&gt;</span><input class="nw-title" maxlength="80" placeholder="Code" aria-label="Code box title" value="${esc(d.title)}">
       <select class="nw-lang" aria-label="Language">${LANGS.map(([k, n]) => `<option value="${k}"${d.lang === k ? " selected" : ""}>${n}</option>`).join("")}</select>
-      <button type="button" class="nw-b" data-a="copy" title="Copy the code">Copy</button><button type="button" class="nw-b nw-del" data-a="del" title="Remove this code box" aria-label="Remove code box">✕</button></div>
-    <div class="nw-code"><div class="nw-gut" aria-hidden="true"></div><div class="nw-edit"><pre class="nw-hl" aria-hidden="true"></pre><textarea class="nw-ta" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code"></textarea></div></div>`;
-  const ta = el.querySelector(".nw-ta"), hl = el.querySelector(".nw-hl"), gut = el.querySelector(".nw-gut"), lang = el.querySelector(".nw-lang"), title = el.querySelector(".nw-title");
-  ta.value = d.src;
+      <button type="button" class="nw-b" data-a="copy" title="Copy the code">Copy</button><button type="button" class="nw-b" data-a="img" title="Copy the code as a picture, to paste into slides, an email or a chat">Picture</button><button type="button" class="nw-b" data-a="present" title="Present the code: full window, big text; ← / → step through the highlighted lines">⤢ Present</button><button type="button" class="nw-b nw-optb" data-a="opts" aria-expanded="false" title="File name, highlighted lines, look, size, line numbers, before / after">⚙ Options</button><button type="button" class="nw-b nw-del" data-a="del" title="Remove this code box" aria-label="Remove code box">✕</button></div>
+    <div class="nw-opts" hidden>
+      <label class="nw-o"><span>File name</span><input class="nw-file" maxlength="80" placeholder="e.g. app.py" value="${esc(opt.file)}"></label>
+      <label class="nw-o"><span>Highlight lines</span><input class="nw-hlin" maxlength="120" placeholder="e.g. 3-5, 9" value="${esc(opt.hl)}"></label>
+      <label class="nw-o"><span>Look</span><select class="nw-look">${CODE_LOOKS.map(([k, n]) => `<option value="${k}"${opt.look === k ? " selected" : ""}>${n}</option>`).join("")}</select></label>
+      <label class="nw-o"><span>Text size</span><select class="nw-size">${CODE_SIZES.map(([k, , n]) => `<option value="${k}"${opt.size === k ? " selected" : ""}>${n}</option>`).join("")}</select></label>
+      <label class="nw-ck"><input type="checkbox" class="nw-nums"${opt.nums ? " checked" : ""}> Line numbers</label>
+      <label class="nw-ck"><input type="checkbox" class="nw-diffon"${opt.diff ? " checked" : ""}> Before / after</label>
+      <p class="nw-opth">Tip: click a line number to highlight that line. A caption goes under the code.</p></div>
+    <div class="nw-tabs" role="tablist" aria-label="Before and after" hidden><button type="button" role="tab" data-tab="before">Before</button><button type="button" role="tab" data-tab="after">After</button><button type="button" role="tab" data-tab="compare">Compare</button>
+      <select class="nw-cmpm" aria-label="How to compare"><option value="split">Side by side</option><option value="unified">Changes only (+ / −)</option></select><span class="nw-dsum num"></span></div>
+    <div class="nw-ftab" hidden></div>
+    <div class="nw-code"><div class="nw-gut" aria-label="Line numbers: click one to highlight the line"></div><div class="nw-edit"><div class="nw-bands" aria-hidden="true"></div><pre class="nw-hl" aria-hidden="true"></pre><textarea class="nw-ta" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Code"></textarea></div></div>
+    <div class="nw-cmp" hidden></div>
+    <input class="nw-cap" maxlength="200" placeholder="Add a caption under the code…" aria-label="Caption" value="${esc(opt.cap)}">`;
+  const $q = s => el.querySelector(s);
+  const ta = $q(".nw-ta"), hl = $q(".nw-hl"), gut = $q(".nw-gut"), lang = $q(".nw-lang"), title = $q(".nw-title"), bands = $q(".nw-bands"), cmp = $q(".nw-cmp"), tabs = $q(".nw-tabs"), ftab = $q(".nw-ftab"), cap = $q(".nw-cap"), opts = $q(".nw-opts");
+  ta.value = cur === "before" ? beforeText : srcText;
   let anns = Array.isArray(d.anns) ? d.anns.filter(a => a && /^[a-z0-9]{4,24}$/i.test(a.id) && a.end > a.start).map(a => ({ id: a.id, start: +a.start, end: +a.end, text: String(a.text || "").slice(0, 4000) })) : [];
-  const draw = () => { const ls = ta.value.split("\n"); hl.innerHTML = ls.map(l => hlLine(l, lang.value) || " ").join("\n") + "\n"; gut.innerHTML = ls.map((_, i) => `<span>${i + 1}</span>`).join(""); ta.rows = Math.max(3, Math.min(24, ls.length + 1)); annView(); };
-  const save = () => writeSrc(el, Object.assign({ lang: lang.value, title: title.value.trim(), src: ta.value }, anns.length ? { anns } : {}));
-  /* paranotes on code (Devon, Oct 12 2026): { id, start, end, text } over the source; they follow edits (shifted, or
-     dropped when their code is deleted). While shown and the box is not being typed in, a view replaces the editor: each
-     line with its number, the noted code marked, and the note under its line with a right-angled line from the middle of
-     the code. Click the code to type again; the notes come back when you leave the box. */
-  let prev = ta.value, showAnn = (() => { try { return localStorage.getItem("notepath.indshow") !== "false"; } catch (e) { return true; } })();
-  const view = document.createElement("div"); view.className = "nw-annv"; view.hidden = true; el.querySelector(".nw-code").after(view);
+  const marked = () => parseLines(opt.hl, srcText.split("\n").length);
+  const look = () => { el.dataset.look = opt.look; el.style.setProperty("--nw-fs", sizeOf(opt.size)[1] + "px"); el.classList.toggle("nw-nonums", !opt.nums); el.classList.toggle("has-cap", !!opt.cap); ftab.hidden = !opt.file; ftab.textContent = opt.file; };
+  const drawBands = () => {
+    if (cur === "before") { bands.innerHTML = ""; return; }
+    const cs = getComputedStyle(hl), lh = parseFloat(cs.lineHeight) || 21, pt = parseFloat(cs.paddingTop) || 10;
+    bands.innerHTML = lineGroups(marked()).map(([a, b]) => `<i style="top:${pt + (a - 1) * lh - ta.scrollTop}px;height:${(b - a + 1) * lh}px"></i>`).join("");
+  };
+  const diffHTML = () => {
+    const A = beforeText.split("\n"), B = srcText.split("\n"), ops = lineDiff(beforeText, srcText), L = lang.value;
+    const add = ops.filter(o => o.t === "+").length, del = ops.filter(o => o.t === "-").length;
+    $q(".nw-dsum").textContent = add || del ? `+${add} −${del} line${add + del === 1 ? "" : "s"}` : "No changes yet";
+    if (opt.cmp === "unified") return `<div class="nw-cu">${ops.map(o => `<div class="nw-cr ${o.t === "+" ? "add" : o.t === "-" ? "del" : ""}"><span class="nw-cn">${o.a != null ? o.a + 1 : ""}</span><span class="nw-cn">${o.b != null ? o.b + 1 : ""}</span><span class="nw-cm">${o.t === "+" ? "+" : o.t === "-" ? "−" : ""}</span><span class="nw-cc">${hlLine(o.t === "+" ? B[o.b] : A[o.a], L) || " "}</span></div>`).join("")}</div>`;
+    return `<div class="nw-cs"><div class="nw-csh"><span></span><span>Before</span><span></span><span>After</span></div>${diffRows(ops).map(r => `<div class="nw-cr ${r.t === "~" ? "chg" : ""}"><span class="nw-cn">${r.a != null ? r.a + 1 : ""}</span><span class="nw-cc ${r.t === "~" && r.a != null ? "del" : r.t === "~" ? "gap" : ""}">${r.a != null ? hlLine(A[r.a], L) || " " : ""}</span><span class="nw-cn">${r.b != null ? r.b + 1 : ""}</span><span class="nw-cc ${r.t === "~" && r.b != null ? "add" : r.t === "~" ? "gap" : ""}">${r.b != null ? hlLine(B[r.b], L) || " " : ""}</span></div>`).join("")}</div>`;
+  };
+  const draw = () => {
+    look();
+    tabs.hidden = !opt.diff; tabs.querySelectorAll("[data-tab]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.tab === cur))); $q(".nw-cmpm").value = opt.cmp; $q(".nw-cmpm").hidden = cur !== "compare";
+    el.classList.toggle("nw-cmpon", cur === "compare"); cmp.hidden = cur !== "compare";
+    if (cur === "compare") { cmp.innerHTML = diffHTML(); el.classList.remove("nw-annon"); return; }
+    if (opt.diff) diffHTML(); // keeps the +/− count in the tabs up to date
+    const ls = ta.value.split("\n"), mk = cur === "before" ? new Set() : marked();
+    hl.innerHTML = ls.map(l => hlLine(l, lang.value) || " ").join("\n") + "\n";
+    gut.innerHTML = ls.map((_, i) => `<span data-ln="${i + 1}"${mk.has(i + 1) ? ' class="on"' : ""}>${i + 1}</span>`).join("");
+    ta.rows = Math.max(3, Math.min(24, ls.length + 1)); el.classList.toggle("nw-isbefore", cur === "before");
+    requestAnimationFrame(drawBands); annView();
+  };
+  const save = () => { const o = { lang: lang.value, title: title.value.trim(), src: srcText };
+    if (anns.length) o.anns = anns; if (opt.hl.trim()) o.hl = opt.hl.trim(); if (opt.file.trim()) o.file = opt.file.trim(); if (opt.cap.trim()) o.cap = opt.cap.trim();
+    if (opt.look !== "theme") o.look = opt.look; if (opt.size !== "m") o.size = opt.size; if (!opt.nums) o.nums = false;
+    if (opt.diff) { o.diff = true; o.before = beforeText; if (opt.cmp !== "split") o.cmp = opt.cmp; if (cur === "compare") o.tab = "compare"; }
+    writeSrc(el, o); };
+  /* paranotes on code (Devon, Oct 12 2026): { id, start, end, text } over the source (the After code); they follow edits
+     (shifted, or dropped when their code is deleted). While shown and the box is not being typed in, a view replaces the
+     editor: each line with its number, the noted code marked, and the note under its line with a right-angled line from the
+     middle of the code. Click the code to type again; the notes come back when you leave the box. */
+  let prev = srcText, showAnn = (() => { try { return localStorage.getItem("notepath.indshow") !== "false"; } catch (e) { return true; } })();
+  const view = document.createElement("div"); view.className = "nw-annv"; view.hidden = true; $q(".nw-code").after(view);
   const track = () => { const v = ta.value; if (v === prev) return; let a = 0; while (a < prev.length && a < v.length && prev[a] === v[a]) a++;
     let b = 0; while (b < prev.length - a && b < v.length - a && prev[prev.length - 1 - b] === v[v.length - 1 - b]) b++;
     const oldEnd = prev.length - b, newEnd = v.length - b, delta = v.length - prev.length;
@@ -392,17 +496,17 @@ function mountCode(el) {
       .filter(x => x.end > x.start && v.slice(x.start, x.end).trim());
     prev = v; };
   function annView() {
-    const on = showAnn && anns.length && document.activeElement !== ta;
+    const on = showAnn && anns.length && document.activeElement !== ta && cur === "after";
     const was = el.classList.contains("nw-annon");
     el.classList.toggle("nw-annon", !!on); view.hidden = !on; if (!on) { view.innerHTML = ""; if (was) el.dispatchEvent(new Event("np:ann-layout", { bubbles: true })); return; }
-    const v = ta.value, ls = v.split("\n"), starts = []; let p = 0; ls.forEach(l => { starts.push(p); p += l.length + 1; });
-    const byLine = {}; anns.forEach(x => { const i = starts.findIndex((s0, k) => x.start >= s0 && x.start <= s0 + ls[k].length); if (i >= 0) (byLine[i] = byLine[i] || []).push(x); });
+    const v = srcText, ls = v.split("\n"), starts = []; let p = 0; ls.forEach(l => { starts.push(p); p += l.length + 1; });
+    const mk = marked(), byLine = {}; anns.forEach(x => { const i = starts.findIndex((s0, k) => x.start >= s0 && x.start <= s0 + ls[k].length); if (i >= 0) (byLine[i] = byLine[i] || []).push(x); });
     view.innerHTML = ls.map((l, i) => {
       const here = (byLine[i] || []).sort((x, y) => x.start - y.start); let html = "", at = 0;
       here.forEach(x => { const a0 = Math.max(at, x.start - starts[i]), b0 = Math.min(l.length, x.end - starts[i]); if (b0 <= a0) return;
         html += hlLine(l.slice(at, a0), lang.value) + `<span class="nann-cw" data-cann="${x.id}">${hlLine(l.slice(a0, b0), lang.value)}</span>`; at = b0; });
       html += hlLine(l.slice(at), lang.value);
-      return `<div class="nw-al" data-line="${i}"><span class="nw-an">${i + 1}</span><span class="nw-ac">${html || " "}</span></div>`
+      return `<div class="nw-al${mk.has(i + 1) ? " on" : ""}" data-line="${i}"><span class="nw-an">${i + 1}</span><span class="nw-ac">${html || " "}</span></div>`
         + here.map(x => `<div class="nann-cblk" data-cann="${x.id}"><div class="nann-card nann-ccard" data-cann="${x.id}" title="Click to edit this paranote">${x.text ? annHTML(x.text) : '<i class="nann-empty">Empty paranote</i>'}</div></div>`).join("");
     }).join("");
     requestAnimationFrame(() => view.querySelectorAll(".nann-cblk").forEach(blk => { // the line from the middle of the noted code
@@ -421,9 +525,10 @@ function mountCode(el) {
   });
   ta.addEventListener("blur", () => setTimeout(annView, 0));
   el._ann = {
-    list: () => anns.map(x => ({ id: x.id, words: ta.value.slice(x.start, x.end), text: x.text, code: true })),
+    list: () => anns.map(x => ({ id: x.id, words: srcText.slice(x.start, x.end), text: x.text, code: true })),
     has: id => anns.some(x => x.id === id),
-    add(text) { const a = ta.selectionStart, b = ta.selectionEnd, v = ta.value;
+    add(text) { if (cur !== "after") return { error: "Paranotes go on the After code: open the After tab first." };
+      const a = ta.selectionStart, b = ta.selectionEnd, v = ta.value;
       if (document.activeElement !== ta && !el.contains(document.activeElement)) return { error: "Select the code first." };
       if (b <= a || !v.slice(a, b).trim()) return { error: "Select the code first." };
       if (v.slice(a, b).includes("\n")) return { error: "Select code on one line." };
@@ -435,22 +540,107 @@ function mountCode(el) {
     focus(id) { const w = view.querySelector(`.nann-cw[data-cann="${id}"]`) || el; w.scrollIntoView({ block: "nearest" }); if (w !== el) { w.classList.add("nann-hi"); setTimeout(() => w.classList.remove("nann-hi"), 900); } },
     relayout: () => annView()
   };
-  ta.addEventListener("input", e => { e.stopPropagation(); track(); draw(); save(); });
+  const edited = () => { if (cur === "before") beforeText = ta.value; else { track(); srcText = ta.value; } draw(); save(); };
+  const stop = e => e.stopPropagation();
+  ta.addEventListener("input", e => { e.stopPropagation(); edited(); });
   title.addEventListener("input", e => { e.stopPropagation(); save(); });
   lang.addEventListener("change", () => { draw(); save(); });
-  ta.addEventListener("scroll", () => { hl.scrollLeft = ta.scrollLeft; });
+  ta.addEventListener("scroll", () => { hl.scrollLeft = ta.scrollLeft; drawBands(); });
   ta.addEventListener("keydown", e => {
     if (e.key !== "Tab") return;
     e.preventDefault();
     const s = ta.selectionStart, en = ta.selectionEnd, v = ta.value, ls = v.lastIndexOf("\n", s - 1) + 1;
     if (e.shiftKey) { const cut = v.slice(ls).match(/^ {1,4}/); if (cut) { ta.value = v.slice(0, ls) + v.slice(ls + cut[0].length); ta.selectionStart = ta.selectionEnd = Math.max(ls, s - cut[0].length); } }
     else { ta.value = v.slice(0, s) + "    " + v.slice(en); ta.selectionStart = ta.selectionEnd = s + 4; }
-    track(); draw(); save();
+    edited();
   });
-  el.querySelector('[data-a="copy"]').onclick = e => { const b = e.currentTarget; ta.select(); let ok = false; try { ok = document.execCommand("copy"); } catch (err) {} if (!ok && navigator.clipboard) navigator.clipboard.writeText(ta.value); b.textContent = "Copied"; setTimeout(() => b.textContent = "Copy", 1400); };
+  // options
+  $q('[data-a="opts"]').onclick = e => { const open = opts.hidden; opts.hidden = !open; el.classList.toggle("nw-optson", open); e.currentTarget.setAttribute("aria-expanded", String(open)); };
+  [".nw-file", ".nw-hlin", ".nw-cap"].forEach(s => { const i = $q(s); i.addEventListener("keydown", stop); i.addEventListener("input", e => { e.stopPropagation();
+    if (s === ".nw-file") opt.file = i.value; else if (s === ".nw-hlin") opt.hl = i.value; else opt.cap = i.value; draw(); save(); }); });
+  $q(".nw-look").onchange = e => { opt.look = e.target.value; draw(); save(); };
+  $q(".nw-size").onchange = e => { opt.size = e.target.value; draw(); save(); };
+  $q(".nw-nums").onchange = e => { opt.nums = e.target.checked; draw(); save(); };
+  $q(".nw-diffon").onchange = e => { opt.diff = e.target.checked;
+    if (opt.diff && !beforeText) beforeText = srcText; // start with the same code: change the After tab to show what changed
+    if (!opt.diff && cur !== "after") { cur = "after"; ta.value = srcText; prev = srcText; }
+    draw(); save(); };
+  gut.addEventListener("mousedown", e => e.preventDefault());
+  gut.addEventListener("click", e => { const s = e.target.closest("[data-ln]"); if (!s || cur === "before") return; const set = marked(), n = +s.dataset.ln; set.has(n) ? set.delete(n) : set.add(n);
+    opt.hl = formatLines(set); $q(".nw-hlin").value = opt.hl; draw(); save(); });
+  tabs.addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (!b || b.dataset.tab === cur) return;
+    cur = b.dataset.tab; if (cur !== "compare") { ta.value = cur === "before" ? beforeText : srcText; prev = srcText; } draw(); save(); });
+  $q(".nw-cmpm").onchange = e => { opt.cmp = e.target.value; draw(); save(); };
+  $q('[data-a="copy"]').onclick = e => { const b = e.currentTarget, t = cur === "before" ? beforeText : srcText; let ok = false;
+    if (cur !== "compare") { ta.select(); try { ok = document.execCommand("copy"); } catch (err) {} }
+    if (!ok && navigator.clipboard) navigator.clipboard.writeText(t); b.textContent = "Copied"; setTimeout(() => b.textContent = "Copy", 1400); };
+  $q('[data-a="img"]').onclick = async e => { const b = e.currentTarget; b.disabled = true; try { b.textContent = (await copyPicture()) ? "Copied" : "Saved"; } catch (err) { b.textContent = "Not copied"; } setTimeout(() => { b.textContent = "Picture"; b.disabled = false; }, 1600); };
+  $q('[data-a="present"]').onclick = () => present();
+  const colors = () => opt.look === "theme" ? themeColors(el) : LOOK_COLORS[opt.look];
+  // Copy as a picture: the code drawn on a canvas (title bar with the file name, highlighted lines, caption), as a PNG
+  async function copyPicture() {
+    const C = colors(), S = 2, fs = Math.max(13, sizeOf(opt.size)[1] + 1), lh = Math.round(fs * 1.6), pad = 22;
+    const lines = srcText.replace(/\t/g, "    ").split("\n"), mk = marked(), font = `${fs}px "IBM Plex Mono", Menlo, Consolas, monospace`;
+    const cv = document.createElement("canvas"), g = cv.getContext("2d"); g.font = font;
+    const cw = g.measureText("M").width, gutW = opt.nums ? Math.ceil(String(lines.length).length * cw + 22) : 0;
+    const head = 34, capH = opt.cap.trim() ? Math.round(fs * 2.4) : 0;
+    const W = Math.min(2400, Math.max(420, Math.ceil(gutW + pad * 2 + Math.max(...lines.map(l => l.length)) * cw))), H = head + pad + lines.length * lh + pad + capH;
+    cv.width = W * S; cv.height = H * S; g.scale(S, S);
+    g.fillStyle = C.bg; g.fillRect(0, 0, W, H); g.fillStyle = C.bar; g.fillRect(0, 0, W, head);
+    ["#ff5f57", "#febc2e", "#28c840"].forEach((c, i) => { g.fillStyle = c; g.beginPath(); g.arc(18 + i * 18, head / 2, 5.5, 0, Math.PI * 2); g.fill(); });
+    g.font = `600 ${Math.round(fs * .9)}px "IBM Plex Sans", system-ui, sans-serif`; g.fillStyle = C.com; g.textBaseline = "middle";
+    const label = [opt.file.trim(), title.value.trim()].filter(Boolean).join("  ·  "); if (label) g.fillText(label, 80, head / 2);
+    g.font = font; g.textBaseline = "alphabetic";
+    lineGroups(mk).forEach(([a, b]) => { g.fillStyle = C.band; g.fillRect(0, head + pad + (a - 1) * lh, W, (b - a + 1) * lh); });
+    const tpl = document.createElement("template");
+    lines.forEach((l, i) => {
+      const y = head + pad + i * lh + Math.round(lh * .72);
+      if (opt.nums) { g.fillStyle = C.gut; g.textAlign = "right"; g.fillText(String(i + 1), gutW - 10, y); g.textAlign = "left"; }
+      tpl.innerHTML = hlLine(l, lang.value); let x = gutW + pad;
+      tpl.content.childNodes.forEach(nd => { const t = nd.textContent; if (!t) return; const k = nd.nodeType === 1 ? nd.className : ""; g.fillStyle = C[k] || C.text; g.fillText(t, x, y); x += g.measureText(t).width; });
+    });
+    if (capH) { g.font = `italic ${Math.round(fs * .95)}px "IBM Plex Sans", system-ui, sans-serif`; g.fillStyle = C.com; g.fillText(opt.cap.trim(), pad, H - capH / 2 + fs * .3); }
+    const blob = await new Promise(r => cv.toBlob(r, "image/png"));
+    el._picture = blob; // for the tests
+    try { if (navigator.clipboard && window.ClipboardItem) { await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]); toastW("The code is copied as a picture: paste it into slides, an email or a chat."); return true; } } catch (err) {}
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = (opt.file.trim() || title.value.trim() || "code").replace(/[\\/:*?"<>|]/g, "-") + ".png"; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+    toastW("The picture of the code is saved in your downloads."); return false;
+  }
+  // ⤢ Present: the code over the whole window, big; ← / → step through the highlighted lines (the rest dims); Esc closes
+  function present() {
+    const groups = lineGroups(marked()), ov = document.createElement("div"); let step = -1, fs = 24, show = cur === "compare" ? "compare" : "code";
+    ov.className = "nw-present"; ov.dataset.look = opt.look; ov.setAttribute("role", "dialog"); ov.setAttribute("aria-label", "Present the code"); ov.tabIndex = -1;
+    const name = title.value.trim() || opt.file.trim() || "Code", lname = (LANGS.find(x => x[0] === lang.value) || ["", ""])[1];
+    ov.innerHTML = `<div class="nwp-bar"><span class="nwp-t">${esc(name)}</span>${opt.file.trim() && title.value.trim() ? `<span class="nwp-f">${esc(opt.file.trim())}</span>` : ""}<span class="nwp-l">${esc(lname)}</span><span class="nwp-sp"></span>
+      ${groups.length ? `<button type="button" data-p="prev" title="Previous highlighted lines (←)">←</button><span class="nwp-step num"></span><button type="button" data-p="next" title="Next highlighted lines (→)">→</button>` : ""}
+      ${opt.diff ? `<button type="button" data-p="view">${show === "compare" ? "Show the code" : "Compare before / after"}</button>` : ""}
+      <button type="button" data-p="smaller" title="Smaller text (−)" aria-label="Smaller text">A−</button><button type="button" data-p="bigger" title="Bigger text (+)" aria-label="Bigger text">A+</button><button type="button" data-p="close" title="Close (Esc)">✕ Close</button></div>
+      <div class="nwp-body"></div>${opt.cap.trim() ? `<div class="nwp-cap">${esc(opt.cap.trim())}</div>` : ""}`;
+    const body = ov.querySelector(".nwp-body");
+    const render = () => {
+      ov.style.setProperty("--nwp-fs", fs + "px"); const st = ov.querySelector(".nwp-step"); if (st) st.textContent = step < 0 ? `All · ${groups.length} highlighted` : `${step + 1} / ${groups.length}`;
+      if (show === "compare") { body.innerHTML = `<div class="nw-cmp nwp-cmp">${diffHTML()}</div>`; return; }
+      const ls = srcText.split("\n"), mk = marked(), g = step >= 0 ? groups[step] : null;
+      body.innerHTML = `<div class="nwp-code${opt.nums ? "" : " nonums"}">${ls.map((l, i) => { const n = i + 1, inG = g && n >= g[0] && n <= g[1];
+        return `<div class="nwp-ln${mk.has(n) ? " on" : ""}${g ? (inG ? " focus" : " dim") : ""}" data-ln="${n}"><span class="nwp-n">${n}</span><span class="nwp-c">${hlLine(l, lang.value) || " "}</span></div>`; }).join("")}</div>`;
+      if (g) { const t = body.querySelector(`[data-ln="${g[0]}"]`); if (t) t.scrollIntoView({ block: "center", behavior: "smooth" }); }
+    };
+    const close = () => { ov.remove(); window.removeEventListener("keydown", key, true); const b = $q('[data-a="present"]'); if (b) b.focus({ preventScroll: true }); };
+    const go = d2 => { if (!groups.length) return; step = step + d2; if (step >= groups.length) step = -1; else if (step < -1) step = groups.length - 1; render(); };
+    const key = e => { if (e.key === "Escape") { e.preventDefault(); e.stopImmediatePropagation(); setTimeout(close, 0); return; } // after Settings' own Esc check has seen the box
+      if (e.target && e.target.closest && e.target.closest("select,input")) return;
+      if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") { e.preventDefault(); go(1); } else if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); go(-1); }
+      else if (e.key === "+" || e.key === "=") { fs = Math.min(48, fs + 2); render(); } else if (e.key === "-") { fs = Math.max(14, fs - 2); render(); } };
+    ov.addEventListener("click", e => { const b = e.target.closest("[data-p]"); if (!b) return; const p = b.dataset.p;
+      if (p === "close") close(); else if (p === "next") go(1); else if (p === "prev") go(-1); else if (p === "bigger") { fs = Math.min(48, fs + 2); render(); } else if (p === "smaller") { fs = Math.max(14, fs - 2); render(); }
+      else if (p === "view") { show = show === "compare" ? "code" : "compare"; b.textContent = show === "compare" ? "Show the code" : "Compare before / after"; render(); } });
+    document.body.appendChild(ov); window.addEventListener("keydown", key, true); render(); ov.focus({ preventScroll: true });
+  }
+  [title, cap].forEach(i => i.addEventListener("keydown", stop));
   delButton(el);
   draw();
 }
+const toastW = t => { if (window.InquireNotes && InquireNotes.toast) InquireNotes.toast(esc(t), null, 3500); };
 function delButton(el) {
   const b = el.querySelector('[data-a="del"]'); let armed = 0;
   b.onclick = () => {
@@ -657,22 +847,24 @@ function mount(el) {
   if (el.dataset.w === "code") mountCode(el); else if (el.dataset.w === "music") mountMusic(el); else if (el.dataset.w === "video") mountVideo(el);
   else if (el.dataset.w === "graph" && window.NPGraph) { NPGraph.mount(el); delButton(el); }
   else if (el.dataset.w === "sheet" && window.NPSheet) NPSheet.mount(el);
+  else if (el.dataset.w === "map" && window.NPMap) { NPMap.mount(el); delButton(el); }
 }
 function create(type, data) {
   const el = document.createElement("div"); el.className = "nw"; el.dataset.w = type;
-  el.dataset.src = JSON.stringify(type === "sheet" ? Object.assign({}, window.NPSheet ? NPSheet.DEF : {}, data || {}) : type === "graph" ? Object.assign({}, window.NPGraph ? NPGraph.DEF : {}, data || {}) : type === "video" ? Object.assign({ title: "" }, data || {}) : type === "code" ? Object.assign({ lang: "python", title: "", src: "" }, data || {}) : { title: "", clef: "treble", time: "4/4", tempo: 90, seq: "" });
+  el.dataset.src = JSON.stringify(type === "sheet" ? Object.assign({}, window.NPSheet ? NPSheet.DEF : {}, data || {}) : type === "graph" ? Object.assign({}, window.NPGraph ? NPGraph.DEF : {}, data || {}) : type === "video" ? Object.assign({ title: "" }, data || {}) : type === "map" ? Object.assign({}, window.NPMap ? NPMap.DEF : {}, data || {}) : type === "code" ? Object.assign({ lang: "python", title: "", src: "" }, data || {}) : { title: "", clef: "treble", time: "4/4", tempo: 90, seq: "" });
   return el;
 }
 // plain-text version for search, previews and .md export
 function text(el) {
   const d = readSrc(el, {});
-  if (el.dataset.w === "code") return "\n```" + (d.lang && d.lang !== "text" ? d.lang : "") + (d.title ? " " + d.title : "") + "\n" + (d.src || "") + "\n```\n";
+  if (el.dataset.w === "code") return "\n```" + (d.lang && d.lang !== "text" ? d.lang : "") + (d.title || d.file ? " " + (d.title || d.file) : "") + "\n" + (d.src || "") + "\n```\n" + (d.cap ? d.cap + "\n" : "");
   if (el.dataset.w === "graph") return window.NPGraph ? NPGraph.text(d) : "";
+  if (el.dataset.w === "map") return window.NPMap ? NPMap.text(d) : "";
   if (el.dataset.w === "sheet") return window.NPSheet ? NPSheet.text(el) : "";
   if (el.dataset.w === "video") { const l = videoLink(d); return "\n▶ " + (d.title || "Video") + (l ? " (" + l + ")" : "") + "\n"; }
   if (el.dataset.w === "music") return "\n♪ " + (d.title ? d.title + ": " : "") + (d.seq || "(empty)") + (d.time ? " [" + d.time + ", " + (d.clef || "treble") + " clef]" : "") + "\n";
   return "";
 }
-window.InquireWidgets = { WIDGETS: WIDGET_MENU, toolbar, mount, create, text, colorKey, COLORS, parseSeq, chordNotes, videoFrom, videoPanel,
+window.InquireWidgets = { WIDGETS: WIDGET_MENU, codeKit: { parseLines, formatLines, lineGroups, lineDiff, diffRows }, toolbar, mount, create, text, colorKey, COLORS, parseSeq, chordNotes, videoFrom, videoPanel,
   kit: { splinePath, G_CLEF, F_CLEF, delButton, len, UNITS } }; // shared with notes-sheet.js
 })();

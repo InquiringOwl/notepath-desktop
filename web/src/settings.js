@@ -189,7 +189,7 @@ document.addEventListener("keydown", e => {
   if (ov.hidden) {
     if (e.key === "Escape" && !e.defaultPrevented) {
       // Esc closes the smallest thing first: a popup (it handles Esc itself), then My notes
-      if (document.querySelector(".tm-menu, .nk-pick, .nr-panel, .ask-ov, .nv-pop, .np-pop, .np-holo, .np-ind, .np-peek")) return;
+      if (document.querySelector(".tm-menu, .nk-pick, .nr-panel, .ask-ov, .nv-pop, .np-pop, .np-holo, .np-ind, .np-peek, .nw-present, .np-new")) return;
       if (document.querySelector(".mw-ov:not(.out)") && window.InquireApp) { e.preventDefault(); e.stopPropagation(); InquireApp.closeWin(); return; }
     }
     if (!act || document.querySelector(".ask-ov")) return;
@@ -550,7 +550,7 @@ function paneKeys() {
 const K = () => window.InquireKeys || { notes: () => "notepath.notes._local" };
 const readJ = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } };
 function paneData() {
-  const nn = readJ(K().notes(), []).length, NS0 = window.InquireNotes, nf = NS0 ? NS0.readFolders().length : 0;
+  const nn = window.InquireNotes && InquireNotes.readAll ? InquireNotes.readAll().length : readJ(K().notes(), []).length, NS0 = window.InquireNotes, nf = NS0 ? NS0.readFolders().length : 0;
   const w = h(`<div>
     <p class="set-lede">Saved on this computer: <b>${nn}</b> note${nn === 1 ? "" : "s"} in <b>${nf}</b> folder${nf === 1 ? "" : "s"}.</p>
     <div class="set-item"><div><h3>Back up</h3><p>Saves your notes (with their folders, photos, code boxes, music charts and videos up to 25 MB), code files, tasks (with their pictures and files up to 25 MB) and settings to one file. Bigger video files stay on this computer only: the backup tells you which.</p></div><button type="button" class="btn-s" data-a="exp">Export…</button></div>
@@ -559,7 +559,7 @@ function paneData() {
   const m = msgEl(); w.appendChild(m);
   w.querySelector('[data-a="exp"]').onclick = async e => {
     const btn = e.currentTarget; btn.disabled = true; btn.textContent = "Saving…";
-    const NS = window.InquireNotes, notes = readJ(K().notes(), []);
+    const NS = window.InquireNotes, notes = NS && NS.readAll ? NS.readAll() : readJ(K().notes(), []); // v0.5.6: notes live in IndexedDB
     const T = window.NPTasks, tasks = T ? T.readRaw() : [];
     // the tasks' pictures and files go in with the notes' photos (as if one note held them all)
     const holders = NS ? NS.list().concat(tasks.length ? [{ title: "My Tasks", html: T.media().map(i => `data-img="${i}"`).join(" ") }] : []) : [];
@@ -581,9 +581,9 @@ function paneData() {
       if (!j || j.app !== "NotePath" || !j.data) throw new Error();
       const d = j.data, notes = d.notes || [], set = d.settings;
       if (!Array.isArray(notes)) throw new Error();
-      const mine = readJ(K().notes(), []), ids = new Set(notes.map(x => x && x.id));
+      const NSr = window.InquireNotes, mine = NSr && NSr.readAll ? NSr.readAll() : readJ(K().notes(), []), ids = new Set(notes.map(x => x && x.id));
       const safe = notes.filter(x => x && x.id && typeof x.body === "string").map(x => (typeof x.html === "string" && window.InquireNotes ? Object.assign({}, x, { html: InquireNotes.sanitize(x.html) }) : x)); // never trust markup from a file
-      localStorage.setItem(K().notes(), JSON.stringify(mine.filter(x => !ids.has(x.id)).concat(safe)));
+      if (NSr && NSr.writeAll) NSr.writeAll(mine.filter(x => !ids.has(x.id)).concat(safe)); else localStorage.setItem(K().notes(), JSON.stringify(mine.filter(x => !ids.has(x.id)).concat(safe)));
       if (set && typeof set === "object") localStorage.setItem("notepath.settings", JSON.stringify(set));
       const NS = window.InquireNotes; let np = 0;
       if (NS && Array.isArray(d.folders)) { const have = NS.readFolders(), fids = new Set(have.map(f => f.id)); NS.writeFolders(have.concat(d.folders.filter(f => f && f.id && f.name && !fids.has(f.id)))); }
