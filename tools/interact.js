@@ -103,23 +103,24 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   await wait(800);
   await p.locator('.nb-it', { hasText: 'Note A' }).dragTo(fd('Beta')); await wait(150);
   ok(await p.evaluate(() => InquireNotes.list().find(n => n.title === 'Note A').folder === InquireNotes.folders().find(f => f.name === 'Beta').id), 'note dropped onto a folder');
-  const order = () => p.$$eval('.nb-it .nb-t', es => es.map(e => e.textContent.replace('★', '')));
+  const order = () => p.$$eval('.nb-it[data-g=none] .nb-t', es => es.map(e => e.textContent.replace('★', ''))); // (v0.5.5) the Unfiled notes in the bar
   const before = await order(), last = before[before.length - 1];
-  await p.locator('.nb-it', { hasText: last }).dragTo(p.locator('.nb-it').first(), { targetPosition: { x: 40, y: 3 } }); await wait(150);
+  await p.locator('.nb-it[data-g=none]', { hasText: last }).dragTo(p.locator('.nb-it[data-g=none]').first(), { targetPosition: { x: 40, y: 3 } }); await wait(150);
   ok((await order())[0] === last, 'note dragged to the top of My order', await order());
-  await p.locator('.nb-it', { hasText: last }).focus(); await p.keyboard.press('Alt+ArrowDown'); await wait(100);
+  await p.locator('.nb-it[data-g=none]', { hasText: last }).focus(); await p.keyboard.press('Alt+ArrowDown'); await wait(100);
   ok((await order())[1] === last, 'Alt+↓ moves a note down', await order());
-  await p.locator('.nb-it', { hasText: 'Note B' }).click(); await wait(150); await p.click('.nb-bar [data-a=fav]'); await wait(150);
+  await p.locator('.nb-it[data-g=none]', { hasText: 'Note B' }).click(); await wait(150); await p.click('.nb-bar [data-a=fav]'); await wait(150);
   ok((await order())[0] === 'Note B', 'a starred note goes to the top with ★ first', await order());
   await p.click('.nb-favtop'); await wait(100);
   ok((await order())[0] !== 'Note B', '★ first off: the favourite follows My order', await order());
   // folders list their notes and fold them away
-  ok(await p.$$eval('.nb-fnote', es => es.map(e => e.textContent.trim()).join()) === '▫Note A', 'a folder lists its notes under it', await p.$$eval('.nb-fnote', es => es.map(e => e.textContent)));
+  const betaId = await p.evaluate(() => InquireNotes.folders().find(f => f.name === 'Beta').id), inBeta = `.nb-fnote[data-g="${betaId}"]`;
+  ok(await p.$$eval(inBeta, es => es.map(e => e.querySelector('.nb-t').textContent.trim()).join()) === 'Note A', 'a folder lists its notes under it', await p.$$eval(inBeta, es => es.map(e => e.textContent)));
   await p.click('.nb-fd.user:has-text("Alpha") .nb-fcar'); await wait(100);
-  ok(!(await p.$('.nb-fnote')) && !(await p.$('.nb-fd.user:has-text("Beta")')), '▾ folds a folder: its folders and notes hide');
+  ok(!(await p.$(inBeta)) && !(await p.$('.nb-fd.user:has-text("Beta")')), '▾ folds a folder: its folders and notes hide');
   await p.click('.nb-fd.user:has-text("Alpha") .nb-fcar'); await wait(100);
-  ok(await p.$$eval('.nb-fd.user .nb-fcar', b => b.every(x => x.tagName === 'BUTTON')) && !!(await p.$('.nb-fnote')), 'every folder has its own fold button and unfolds again');
-  await p.click('.nb-fnote'); await wait(200);
+  ok(await p.$$eval('.nb-fd.user .nb-fcar', b => b.every(x => x.tagName === 'BUTTON')) && !!(await p.$(inBeta)), 'every folder has its own fold button and unfolds again');
+  await p.click(inBeta); await wait(200);
   ok(await p.$eval('.nb-title', e => e.value) === 'Note A', 'clicking a note in a folder opens it');
   const fw = () => p.$eval('.nb-folders', e => e.offsetWidth), rzf = await p.locator('.nb-rzf').boundingBox(), fw0 = await fw();
   await p.mouse.move(rzf.x + 5, rzf.y + 60); await p.mouse.down(); await p.mouse.move(rzf.x + 65, rzf.y + 60, { steps: 4 }); await p.mouse.up();
@@ -127,14 +128,18 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   await p.dblclick('.nb-rzf'); await wait(400);
   ok(Math.abs(await fw() - fw0) < 4, 'double-click resets the folders column');
   await p.click('.nb-favtop');
-  await p.click('.nb-fdb[data-f=fav]'); await wait(150);
-  ok(JSON.stringify(await order()) === '["Note B"]', 'Favourites folder lists only starred notes', await order());
-  await p.click('.nb-fdb[data-f=all]'); await wait(150);
-  const lw = () => p.$eval('.nb-list', e => e.offsetWidth);
-  const rz = await p.locator('.nb-rz').boundingBox(); const w0 = await lw(); await p.mouse.move(rz.x + 5, rz.y + 200); await p.mouse.down(); await p.mouse.move(rz.x + 85, rz.y + 200, { steps: 4 }); await p.mouse.up();
-  ok(Math.abs(await lw() - (w0 + 80)) < 4, 'the notes list resizes by dragging', [w0, await lw()]);
+  // (v0.5.5) one Folders & Files bar: Favourites / Unfiled / All notes fold open to list their notes; the Tool bar replaced the notes list
+  await p.click('.nb-lcar[data-lcar=fav]'); await wait(150);
+  ok(JSON.stringify(await p.$$eval('.nb-fnote[data-g=fav] .nb-t', e => e.map(x => x.textContent.replace('★', '')))) === '["Note B"]', 'Favourites opens to list only starred notes', await p.$$eval('.nb-fnote[data-g=fav] .nb-t', e => e.map(x => x.textContent)));
+  await p.click('.nb-lcar[data-lcar=fav]'); await wait(100);
+  ok(!(await p.$('.nb-list')) && !!(await p.$('.nb-folders .nb-tools .np-views')) && !!(await p.$('.nb-folders .nb-sort')), 'the notes list is gone: Show as and the order sit at the top of the Folders & Files bar');
+  ok(JSON.stringify(await p.$$eval('.nb-rail .nb-tool[data-tool]', e => e.map(x => x.dataset.tool + (x.classList.contains('on') ? '*' : '') + (x.getAttribute('aria-disabled') ? '-soon' : '')))) === '["note*","code","canvas-soon","trees-soon","sheets-soon"]', 'the Tool bar: Note (on), Code, Canvas, Note Trees, Spreadsheets (coming soon)');
+  await p.click('.nb-rail [data-tool=trees]', { force: true }); await wait(150);
+  ok(/coming soon/i.test(await p.evaluate(() => document.body.textContent)) && !!(await p.$('.npage')), 'a Coming soon tool says so and stays put');
+  await p.click('.nb-fold[data-p=l]'); await wait(450); ok(await p.$eval('.nb-rail', e => e.offsetWidth) === 0, 'the Tool bar folds away with its tab');
+  await p.click('.nb-fold[data-p=l]'); await wait(450);
   await p.click('.nb-fold[data-p=f]'); await wait(450); ok(await p.$eval('.nb-folders', e => e.offsetWidth) === 0, 'the folders column folds away');
-  await p.click('.nb-fold[data-p=f]'); await p.dblclick('.nb-rz'); await wait(450);
+  await p.click('.nb-fold[data-p=f]'); await wait(450);
 
   /* ---------- the editor: sizes, headings, lists, checklists, strikethrough ---------- */
   await p.locator('.nb-it', { hasText: 'Note C' }).click(); await wait(200);
@@ -225,19 +230,19 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
 
   /* ---------- widgets: code box, music chart, video, graph ---------- */
   await p.click('.nb-rich'); await p.keyboard.press('Control+End');
-  await p.click('.nr-tools [data-dd=widgets]'); await wait(60); await p.click('.np-pop-widgets [data-w=code]'); await wait(200);
+  await p.click('.nb-rail [data-widget=code]'); await wait(200);
   ok(!!(await p.$('.nb-rich .nw[data-w=code] .nw-ta')), 'Code adds a code box');
   await p.keyboard.type('def f(x):\n    return x * 2'); await wait(600);
   ok(/class="kw"|<span class="kw/.test(await p.$eval('.nw[data-w=code]', e => e.innerHTML)) || /def/.test(await p.$eval('.nw[data-w=code]', e => e.textContent)), 'the code box highlights Python');
-  await p.click('.nr-tools [data-dd=widgets]'); await wait(60); await p.click('.np-pop-widgets [data-w=music]'); await wait(200);
+  await p.click('.nb-rail [data-widget=music]'); await wait(200);
   ok(!!(await p.$('.nb-rich .nw[data-w=music] svg')), 'Music adds a music chart with a staff');
-  await p.click('.nr-tools [data-dd=widgets]'); await wait(60); await p.click('.np-pop-widgets [data-w=graph]'); await wait(200);
+  await p.click('.nb-rail [data-widget=graph]'); await wait(200);
   ok(!!(await p.$('.nb-rich .nw[data-w=graph] svg.ng-svg')), 'Graph adds a graph grid');
   const gb = await p.locator('.nw[data-w=graph] .ng-svg').boundingBox(), gpt = (x, y) => [gb.x + (x + 10) / 20 * gb.width, gb.y + (10 - y) / 20 * gb.height];
   for (const [x, y] of [[0, 1], [1, 3], [2, 7]]) { const [cx, cy] = gpt(x, y); await p.mouse.click(cx, cy); await wait(60); }
   ok(await p.$eval('.nw[data-w=graph] .ng-eqv', e => e.textContent) === 'y = x² + x + 1', 'three clicked points give the curve y = x² + x + 1', await p.$eval('.nw[data-w=graph] .ng-side', e => e.textContent));
   ok(!!(await p.$('.nw[data-w=graph] path.ng-curve')), 'the curve is drawn on the grid');
-  { const [cx, cy] = gpt(2, 7); await p.mouse.click(cx, cy); await wait(60); }
+  { const [cx, cy] = await p.evaluate(() => { const cs = [...document.querySelectorAll('.nw[data-w=graph] svg circle')], r = cs[cs.length - 1].getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; }); await p.mouse.click(cx, cy); await wait(60); } // the point's own spot (the grid keeps its shape in a wide note)
   ok(await p.$eval('.nw[data-w=graph] .ng-eqv', e => e.textContent) === 'y = 2x + 1' && await p.$$eval('.nw[data-w=graph] .ng-pts li', l => l.length) === 2, 'clicking a point removes it (two points: a line)');
   await p.fill('.nw[data-w=graph] .ng-in', '30, 40'); await p.press('.nw[data-w=graph] .ng-in', 'Enter'); await wait(80);
   ok(await p.evaluate(() => { const v = document.querySelector('.nw[data-w=graph] .ng-pt[data-i="2"] circle:not(.ng-hit)'); const c = +v.getAttribute('cx'), y = +v.getAttribute('cy'); return c > 0 && c < 480 && y > 0 && y < 360; }), 'a typed point far away resizes the grid to show it');
@@ -257,7 +262,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   await selWord('Hello');
   let pt = await p.evaluate(() => { const b = getSelection().getRangeAt(0).getBoundingClientRect(); return { x: b.x + 5, y: b.y + 5 }; });
   await p.mouse.click(pt.x, pt.y, { button: 'right' }); await wait(200);
-  ok(JSON.stringify(await p.$$eval('.tm-menu > button', e => e.map(x => x.dataset.a))) === '["copy","dict","link","tr"]', 'right-click menu: Copy, Define · Dictionary, Link to a note, Translate');
+  ok(JSON.stringify(await p.$$eval('.tm-menu > button', e => e.map(x => x.dataset.a))) === '["copy","dict","link","pn","tr"]', 'right-click menu: Copy, Define · Dictionary, Link to a note, Add a paranote, Translate');
   await p.click('.tm-menu [data-a=tr]'); await wait(150);
   const mb = await p.$eval('.tm-menu > button[data-a=tr]', e => e.getBoundingClientRect().bottom), tb = await p.$eval('.tm-tr', e => e.getBoundingClientRect().top);
   ok(JSON.stringify(await p.$$eval('.tm-tr .tm-lang b', e => e.map(x => x.textContent))) === '["Spanish","German","French"]' && tb >= mb, 'Translate opens a box right under the menu: Spanish, German, French');
@@ -428,7 +433,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     ok(await c.$eval('.npn-code .glyph', e => getComputedStyle(e).color) === 'rgb(79, 163, 247)', 'My Code on the Main Menu has its blue icon');
     await c.click('[data-a=code]'); await wait(400);
     ok(await c.evaluate(() => location.hash) === '#code' && /Main Menu›My Code/.test(await c.$eval('#crumbs', e => e.textContent)) && await c.$eval('#np-t', e => e.textContent) === 'My Code' && await c.$eval('.np-newb', e => e.textContent) === '＋ New File', 'Main Menu → My Code: #code, breadcrumb, title, ＋ New File');
-    ok(await c.$$eval('.nb-fd.user', e => e.length) === 0 && /No code files/.test(await c.$eval('.nb-items', e => e.textContent)), 'Code has its own folders (none yet), not the notes folders');
+    ok(await c.$$eval('.nb-fd.user', e => e.length) === 0 && /No code files/.test(await c.$eval('.nb-ftree', e => e.textContent)), 'Code has its own folders (none yet), not the notes folders');
     // ＋ New File: language cards, coming soon list
     await c.click('.np-newb'); await wait(250);
     ok(JSON.stringify(await c.$$eval('.ask-kind b', e => e.map(x => x.textContent))) === '["Python","C","C++","JavaScript","Java"]' && /Coming soon:.*Rust/.test(await c.$eval('.ask-soon', e => e.textContent)), 'New File offers Python, C, C++, JavaScript, Java; the rest are Coming soon');
@@ -730,7 +735,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     ok(/<ul data-ck="1"><li>milk<ul data-ck="1"><li>eggs<\/li><\/ul><\/li><\/ul>/.test(await qh()), 'pressing the checklist again indents the box under the one above', await qh());
     await q.keyboard.press('Home'); await q.keyboard.press('Backspace'); await wait(50);
     ok(/<ul data-ck="1"><li>milk<\/li><li>eggs<\/li><\/ul>/.test(await qh()), 'delete at the start of an indented box moves it out one level', await qh());
-    ok(JSON.stringify(await q.$$eval('.p1 .nr-tools button', b => b.slice(0, 5).map(x => x.dataset.cmd || x.dataset.blk || x.dataset.dd))) === '["bold","italic","underline","heads","strikeThrough"]', 'H sits right of underline and left of strikethrough');
+    ok(JSON.stringify(await q.$$eval('.p1 .nr-tools button', b => b.slice(0, 4).map(x => x.dataset.cmd || x.dataset.blk || x.dataset.dd))) === '["bold","italic","underline","strikeThrough"]' && await q.$eval('.p1 .nr-tools .nr-head', e => e.nextElementSibling && e.nextElementSibling.dataset.dd === 'align'), '(v0.5.5) H sits just left of Align & indent, with spacing and clear formatting');
     await q.evaluate(() => { const ed = document.querySelector('.p1 .nb-rich'); ed.innerHTML = '<div>abc</div>'; ed.dispatchEvent(new Event('input')); }); await wait(50);
     await q.click('.p1 .nb-rich'); await q.keyboard.press('Control+End'); await q.keyboard.press('Enter');
     const qdd = async (kind, v) => { await q.click(`.p1 .nr-dd[data-dd=${kind}]`); await wait(80); await q.click(`.np-pop-${kind} [data-v="${v}"]`); await wait(80); };
@@ -788,13 +793,13 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await q.click('.np-holo-x'); await wait(80);
     await q.click(`.p1 .nb-rich`); await q.keyboard.press('Control+z').catch(() => {});
     // (v0.5.1) ▦ Widgets tab; the info box (last edited / created to the second); ◈ Tags · Links · Source panel
-    ok(!(await q.$('.p1 .nr-tools > button[data-w]')) && !!(await q.$('.p1 .nr-tools [data-dd=widgets]')), 'the widget buttons are gathered under one ▦ Widgets tab');
-    await q.click('.p1 .nr-tools [data-dd=widgets]'); await wait(80);
-    ok(JSON.stringify(await q.$$eval('.np-pop-widgets [data-w]', e => e.map(x => x.dataset.w))) === '["code","music","sheet","graph"]', 'Widgets lists the code box, music chart, lead sheet and graph');
-    await q.keyboard.press('Escape'); await wait(80);
-    ok(!(await q.$('.np-pop-widgets')) && !!(await q.$('.npage')), 'Esc closes the Widgets menu and nothing else');
-    await q.click('.p1 .nr-tools [data-dd=widgets]'); await wait(80); await q.click('.np-pop-widgets [data-w=graph]'); await wait(200);
-    ok(!!(await q.$('.p1 .nb-rich .nw[data-w=graph]')) && !(await q.$('.np-pop-widgets')), 'a widget from the Widgets tab goes into the note');
+    // (v0.5.5) the widgets moved from the note's formatting bar to their own section at the top of the Tool bar
+    ok(!(await q.$('.p1 .nr-tools [data-dd=widgets]')) && !(await q.$('.p1 .nr-tools [data-w]')), 'the formatting bar has no Widgets menu any more');
+    ok(JSON.stringify(await q.$$eval('.nb-rail > *', e => e.map(x => x.dataset.widget || x.dataset.tool || x.textContent.trim()))) === '["Widgets","code","music","sheet","graph","more","Tools","note","code","canvas","trees","sheets"]', 'the Tool bar: a Widgets section (Code box, Music, Lead sheet, Graph, more to come) above the tools');
+    await q.click('.p1 .nb-rich'); await q.keyboard.press('Control+End'); await q.click('.nb-rail [data-widget=graph]'); await wait(200);
+    ok(!!(await q.$('.p1 .nb-rich .nw[data-w=graph]')), 'a widget from the Tool bar goes into the note');
+    await q.click('.nb-rail [data-widget=more]', { force: true }); await wait(150);
+    ok(/coming soon/i.test(await q.evaluate(() => document.body.textContent)), 'widgets that connect to other apps are coming soon');
     await q.locator('.nb-fd[data-f="' + ids.f + '"] .nb-fdb').click(); await wait(200);
     await q.locator('.nb-it', { hasText: 'Target' }).click(); await wait(300);
     const info = await q.evaluate(() => { const b = document.querySelector('.nb-info'); return b ? { t: b.textContent, times: [...b.querySelectorAll('time')].map(x => x.textContent) } : null; });
@@ -843,7 +848,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await q.focus('.nb-fsplit'); await q.keyboard.press('ArrowDown'); await wait(50);
     ok(await q.$eval('.nb-fcode', e => e.offsetHeight) === ch1 - 24, '↓ on the line gives the folders more room');
     await q.click('.nb-tools [data-view=icons]'); await wait(150);
-    ok(await q.$eval('.nb-items', e => e.dataset.view) === 'icons' && await q.$$eval('.nb-items .nb-tile', e => e.length) >= 2 && !!(await q.$('.nb-tile .nb-tic svg')), 'Show as Icons shows the notes as tiles');
+    ok(await q.$eval('.nb-ftree', e => e.dataset.view) === 'icons' && await q.$$eval('.nb-ftree .nb-tile', e => e.length) >= 2 && !!(await q.$('.nb-tile .nb-tic svg')), 'Show as Icons shows the notes as tiles');
     await q.click('.nb-tools [data-view=details]'); await wait(150);
     const dh = await q.$$eval('.nb-dhead span', e => e.map(x => x.textContent)), drow = await q.$eval('.nb-it.nb-row', e => [...e.children].map(x => x.textContent));
     ok(JSON.stringify(dh) === '["Name","Modified","Created","Kind"]' && drow.length === 4 && /\d:\d\d/.test(drow[1]) && /Note|Checklist|Graph/.test(drow[3]), 'Show as Details: name, modified, created and kind', { dh, drow });
@@ -1099,7 +1104,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await q.click('.nb-fold[data-p=f]'); await wait(450); await q.click('.nb-fold[data-p=l]'); await wait(450);
     ok(await q.$eval('.nb-sbar input', e => e.getBoundingClientRect().width > 150 && getComputedStyle(e.closest('.nb-sbar')).visibility === 'visible'), 'with the folders and the notes list folded, Search stays');
     await q.fill('.nb-sbar input', 'Needle'); await wait(500);
-    ok(!(await q.$eval('.npage .nb', e => e.classList.contains('lfold'))) && JSON.stringify(await q.$$eval('.nb-it .nb-t', e => e.map(x => x.textContent))) === '["Needle in a folder"]', 'Search looks through every note and shows the list with the results', await q.$$eval('.nb-it .nb-t', e => e.map(x => x.textContent)));
+    ok(!(await q.$eval('.npage .nb', e => e.classList.contains('ffold'))) && JSON.stringify(await q.$$eval('.nb-it .nb-t', e => e.map(x => x.textContent))) === '["Needle in a folder"]', 'Search looks through every note and opens the Folders & Files bar to show them', await q.$$eval('.nb-it .nb-t', e => e.map(x => x.textContent)));
     await q.fill('.nb-sbar input', ''); await wait(200); await q.click('.nb-fold[data-p=f]'); await wait(300);
     // Paranotes
     ok(await q.$eval('.p1 .nb-indb', e => e.getAttribute('aria-label') === 'Paranotes' && /Paranotes/.test(e.title)), 'the ↳ button is called Paranotes');
@@ -1121,22 +1126,22 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await q.evaluate(() => { InquireNotes.create({ title: 'Alpha note', html: '<div>a</div>' }); InquireNotes.create({ title: 'Beta note', html: '<div>b</div>' }); });
     await q.evaluate(() => InquireApp.openNotes()); await wait(500);
     await q.click('.nb-tools [data-view=list]'); await wait(150);
-    const lw0 = await q.$eval('.nb-list', e => e.offsetWidth);
+    const lw0 = await q.$eval('.nb-folders', e => e.offsetWidth);
     await q.click('.nb-tools [data-view=details]'); await wait(450);
-    ok(Math.abs(await q.$eval('.nb-list', e => e.offsetWidth) - lw0) < 2 && await q.evaluate(() => !localStorage.getItem('notepath.nbw') || localStorage.getItem('notepath.nbw') === '0'), 'Details keeps the notes list at the width you gave it', { lw0 });
+    ok(Math.abs(await q.$eval('.nb-folders', e => e.offsetWidth) - lw0) < 2 && await q.evaluate(() => !localStorage.getItem('notepath.nbw') || localStorage.getItem('notepath.nbw') === '0'), 'Details keeps the Folders & Files bar at the width you gave it', { lw0 });
     // resize a Details column
     const c0 = await q.$eval('.nb-dhead > span', e => e.getBoundingClientRect().width), g = await q.$eval('.nb-dcrz[data-c="0"]', e => { const r = e.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; });
     await q.mouse.move(g[0], g[1]); await q.mouse.down(); await q.mouse.move(g[0] + 70, g[1], { steps: 6 }); await q.mouse.up(); await wait(100);
     const c1 = await q.$eval('.nb-dhead > span', e => e.getBoundingClientRect().width), r1 = await q.$eval('.nb-it.nb-row > .nb-t', e => e.getBoundingClientRect().width);
     ok(Math.abs(c1 - c0 - 70) < 6 && Math.abs(r1 - c1) < 2, 'dragging the line after Name makes the Name column wider, in the rows too', { c0, c1, r1 });
     ok(await q.evaluate(() => (JSON.parse(localStorage.getItem('notepath.dcols')) || []).length === 4), 'the column widths are kept');
-    await q.$eval('.nb-items', e => { e.scrollLeft = e.scrollWidth; }); await wait(50);
+    await q.$eval('.nb-fmain', e => { e.scrollLeft = e.scrollWidth; }); await wait(50);
     const g2 = await q.$eval('.nb-dcrz[data-c="1"]', e => { const r = e.getBoundingClientRect(); return [r.x + r.width / 2, r.y + r.height / 2]; }), m0 = await q.$eval('.nb-dhead > span:nth-child(2)', e => e.getBoundingClientRect().width);
     await q.mouse.move(g2[0], g2[1]); await q.mouse.down(); await q.mouse.move(g2[0] - 30, g2[1], { steps: 4 }); await q.mouse.up(); await wait(100);
     { const m1 = await q.$eval('.nb-dhead > span:nth-child(2)', e => e.getBoundingClientRect().width); ok(Math.abs(m1 - (m0 - 30)) < 6, 'other columns resize too (Modified narrower)', { m0, m1, g2 }); }
     await q.click('.nb-tools [data-view=list]'); await wait(100); await q.click('.nb-tools [data-view=details]'); await wait(150);
     ok(Math.abs(await q.$eval('.nb-dhead > span', e => e.getBoundingClientRect().width) - c1) < 2, 'they stay when you come back to Details');
-    ok(await q.$eval('.nb-items', e => e.scrollWidth >= e.clientWidth), 'wide columns scroll sideways inside the list');
+    ok(await q.$eval('.nb-fmain', e => e.scrollWidth > e.clientWidth), 'wide columns scroll sideways inside the bar');
     await q.dblclick('.nb-dcrz[data-c="0"]'); await wait(100);
     ok(await q.evaluate(() => localStorage.getItem('notepath.dcols') === 'null') && Math.abs(await q.$eval('.nb-dhead > span', e => e.getBoundingClientRect().width) - c0) < 3, 'double-click puts the columns back');
     // Compact
@@ -1144,7 +1149,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await q.click('.nb-tools [data-view=list]'); await wait(100); const lh = await q.$eval('.nb-it', e => e.offsetHeight);
     await q.click('.nb-tools [data-view=compact]'); await wait(150);
     const cr = await q.$$eval('.nb-it.nb-crow', e => e.map(x => ({ k: [...x.children].map(c => c.textContent), h: x.offsetHeight })));
-    ok(cr.length >= 2 && cr.every(x => x.k.length === 2 && /\d:\d\d/.test(x.k[1])) && cr[0].h < lh - 10 && !(await q.$('.nb-items[data-view=compact] .nb-dhead')), 'Compact: thin rows with just the name and when it was made', { cr, lh });
+    ok(cr.length >= 2 && cr.every(x => x.k.length === 2 && /\d:\d\d/.test(x.k[1])) && cr[0].h < lh - 10 && !(await q.$('.nb-ftree[data-view=compact] .nb-dhead')), 'Compact: thin rows with just the name and when it was made', { cr, lh });
     await q.locator('.nb-it.nb-crow', { hasText: 'Beta note' }).click(); await wait(250);
     ok(await q.$eval('.p1 .nb-title', e => e.value) === 'Beta note', 'a note opens from the Compact list');
     ok(!(await q.$('.np-holo-bar [data-view=compact]')), '(the ◈ Links panel keeps Icons, List, Details)');
@@ -1159,7 +1164,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await q.click('.nb-tools [data-view=icons]'); await wait(200);
     ok(await q.$eval(`.nb-it[data-id="${bid}"] .nb-tic`, e => !!e.querySelector('img.nb-tcov') && !e.querySelector('svg')) && !!(await q.$('.nb-it.nb-tile:not([data-id="' + bid + '"]) .nb-tic svg')), 'Icons: the cover replaces the note icon (others keep theirs)');
     await q.click('.nb-tools [data-view=compact]'); await wait(100);
-    ok(!(await q.$('.nb-items .nb-cov')), 'Compact keeps to the name and time (no cover)');
+    ok(!(await q.$('.nb-ftree .nb-cov')), 'Compact keeps to the name and time (no cover)');
     await q.click('.nb-tools [data-view=list]'); await wait(100);
     await q.hover('.p1 .nb-cov-w'); await q.click('.p1 .nb-covx'); await wait(300);
     ok(await q.evaluate(b => !InquireNotes.get(b).cover, bid) && !(await q.$(`.nb-it[data-id="${bid}"] .nb-lcov`)), '✕ takes the cover off');
@@ -1223,6 +1228,64 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await q.click('.np-peek [data-a=open]'); await wait(400);
     ok(!(await q.$('.np-peek')) && await q.$eval('.p1 .nb-title', e => e.value) === 'Spoke', 'Open in the box opens that note in the editor');
     await q.keyboard.press('Escape'); await wait(150);
+    await q.close();
+  }
+  /* ---------- (v0.5.5) Folders & Files bar, Search finds folders, Tool bar, Links rows + Compact, H by Align, paranote from the right-click ---------- */
+  {
+    const q = await page(); await q.goto(URL0 + '#menu'); await wait(400);
+    const T = await q.evaluate(() => { const N = InquireNotes, w = N.addFolder('Workshop'), r = N.addFolder('Recipes'), sub = N.addFolder('Desserts', r.id);
+      const a = N.create({ title: 'Bench plan', folder: w.id, html: '<div>Saw and plane the oak.</div>' }), b = N.create({ title: 'Brownies', folder: sub.id, html: '<div>Cocoa</div>' }), c = N.create({ title: 'Loose page', html: '<div>Loose words here</div>' });
+      const CF = N.scope('code'), cf = CF.addFolder('Workshop scripts'); CF.create({ title: 'cut_list.py', folder: cf.id, code: { lang: 'python', src: 'print(1)' } });
+      return { w: w.id, r: r.id, sub: sub.id, a: a.id, b: b.id, c: c.id, cf: cf.id }; });
+    await q.evaluate(a => InquireApp.openNotes(a), T.c); await wait(600);
+    ok(JSON.stringify(await q.$$eval('.nb-ftree .nb-sech', e => e.map(x => x.textContent.replace(/\s+/g, ' ').trim()))) === '["Notes","Music Coming soon"]' && !!(await q.$('.nb-ftree .nb-codeh')), 'one Folders & Files bar: Notes, then Code, then Music (coming soon), each in its own colour');
+    ok(!!(await q.$(`.nb-fnote[data-g="${T.w}"][data-id="${T.a}"]`)) && !!(await q.$(`.nb-fnote[data-g="${T.sub}"][data-id="${T.b}"]`)) && !!(await q.$(`.nb-fnote[data-g=none][data-id="${T.c}"]`)) && !!(await q.$('.nb-cfile')), 'notes sit in their folders (and Unfiled), code files in the Code section');
+    // Show as changes the files in the bar
+    const look = async v => { await q.click(`.nb-tools [data-view=${v}]`); await wait(200); return q.$eval(`.nb-fnote[data-id="${T.a}"]`, e => e.className); };
+    ok(/nb-crow/.test(await look('compact')) && /nb-tile/.test(await look('icons')) && !!(await q.$('.nb-tiles')) && /nb-row/.test(await look('details')) && !!(await q.$('.nb-ftree .nb-dhead')) && /nb-lrow/.test(await look('list')), 'Show as (Compact, Icons, Details, List) changes how the files in the bar look');
+    // drag a note onto a note in another folder: it moves there, in that place
+    await q.locator(`.nb-fnote[data-id="${T.c}"]`).dragTo(q.locator(`.nb-fnote[data-id="${T.a}"]`), { targetPosition: { x: 40, y: 3 } }); await wait(300);
+    ok(await q.evaluate(([c, w]) => InquireNotes.get(c).folder === w, [T.c, T.w]) && JSON.stringify(await q.$$eval(`.nb-fnote[data-g="${T.w}"] .nb-t`, e => e.map(x => x.textContent))) === '["Loose page","Bench plan"]', 'a note dropped among another folder’s notes moves into that folder, in that place');
+    // Search: folders as well as notes (and My Code)
+    await q.fill('.nb-sbar input', 'work'); await wait(300);
+    const res = await q.evaluate(() => ({ secs: [...document.querySelectorAll('.nb-sres .nb-sech')].map(x => x.dataset.sec), f: [...document.querySelectorAll('.nb-sfd')].map(x => x.dataset.sp + ':' + x.textContent.trim()), ic: !!document.querySelector('.nb-sfd .nb-fold-ic svg') }));
+    ok(JSON.stringify(res.secs) === '["folders","code"]' && res.f.includes('notes:Workshop') && res.f.includes('code:Workshop scripts') && res.ic, 'Search finds folders (with the folder icon) and My Code folders too', res);
+    await q.fill('.nb-sbar input', 'dess'); await wait(300);
+    await q.click('.nb-sfd[data-sp=notes]'); await wait(300);
+    ok(await q.$eval('.nb-sbar input', e => e.value) === '' && await q.$eval('.nb-fd.sel', e => e.dataset.f) === T.sub && !!(await q.$(`.nb-fnote[data-g="${T.sub}"]`)), 'clicking a folder found by Search shows it in the bar, open, with its notes');
+    await q.fill('.nb-sbar input', 'cocoa'); await wait(300);
+    ok(JSON.stringify(await q.$$eval('.nb-sres .nb-fnote .nb-t', e => e.map(x => x.textContent))) === '["Brownies"]', 'Search still finds notes by their words');
+    await q.fill('.nb-sbar input', ''); await wait(200);
+    // library groups fold open and stay so
+    await q.click('.nb-lcar[data-lcar=all]'); await wait(150);
+    ok(await q.$$eval('.nb-fnote[data-g=all]', e => e.length) === 3 && JSON.parse(await q.evaluate(() => localStorage.getItem('notepath.libopen'))).includes('all'), 'All notes folds open to list every note (remembered)');
+    await q.click('.nb-lcar[data-lcar=all]'); await wait(100);
+    // the Tool bar: Code ↔ Note
+    await q.click('.nb-rail [data-tool=code]'); await wait(600);
+    ok(await q.$eval('#np-t', e => e.textContent) === 'My Code' && await q.$eval('.nb-rail [data-tool=code]', e => e.classList.contains('on')), 'Code in the Tool bar switches the page to My Code');
+    await q.click('.nb-rail [data-tool=note]'); await wait(500);
+    ok(await q.$eval('#np-t', e => e.textContent) === 'My notes', 'and Note switches back');
+    // ◈ Links: Compact view; Peek and ⧉ right after the title, never on top of it
+    await q.evaluate(([a, b]) => InquireNotes.update(a, { html: `<div>see <a class="nlink" data-note="${b}">Brownies</a></div>` }), [T.a, T.b]);
+    await q.evaluate(a => InquireApp.openNotes(a), T.a); await wait(500);
+    await q.click('.p1 .nb-holob'); await wait(250);
+    ok(JSON.stringify(await q.$$eval('.np-holo-bar [data-view]', e => e.map(x => x.dataset.view))) === '["icons","list","compact","details"]', 'the Links box can show its notes as a Compact list too');
+    const noOverlap = () => q.evaluate(() => [...document.querySelectorAll('.np-holo section[data-sec=out] .np-hl-o')].every(o => { const t = o.querySelector('.np-hl-t').getBoundingClientRect(), box = o.closest('.np-holo').getBoundingClientRect();
+      return [...o.querySelectorAll('.np-hl-s')].every(b => { const r = b.getBoundingClientRect(); return r.width > 0 && r.right <= box.right + 1 && (r.left >= t.right - 1 || r.top >= t.bottom - 1); }); }));
+    for (const v of ['icons', 'list', 'compact', 'details']) { await q.click(`.np-holo-bar [data-view=${v}]`); await wait(150); ok(await noOverlap(), `Links as ${v}: 👁 and ⧉ sit after the title, inside the box`); }
+    await q.click('.np-holo-bar [data-view=compact]'); await wait(100);
+    ok(await q.$eval('.np-holo section[data-sec=out] .np-hl-crow .np-hl-o', e => e.offsetHeight < 34), 'Compact rows are thin');
+    await q.click('.np-holo section[data-sec=out] .np-hl-pk'); await wait(300);
+    ok(await q.$eval('.np-peek-t', e => e.textContent) === 'Brownies' && await q.$eval('.p1 .nb-title', e => e.value) === 'Bench plan', 'Peek from a row does not open the note itself');
+    await q.keyboard.press('Escape'); await wait(250); await q.keyboard.press('Escape'); await wait(150);
+    // right-click: add a paranote
+    await q.evaluate(() => { const ed = document.querySelector('.p1 .nb-rich'); ed.innerHTML = '<div>Cut the legs to length</div>'; ed.dispatchEvent(new Event('input')); }); await wait(500);
+    const wb = await q.evaluate(() => { const ed = document.querySelector('.p1 .nb-rich'), t = ed.querySelector('div').firstChild, i = t.data.indexOf('legs'); ed.focus(); const r = document.createRange(); r.setStart(t, i); r.setEnd(t, i + 4); getSelection().removeAllRanges(); getSelection().addRange(r); const b = r.getBoundingClientRect(); return [b.x + b.width / 2, b.y + b.height / 2]; });
+    await q.mouse.click(wb[0], wb[1], { button: 'right' }); await wait(150);
+    await q.click('.tm-menu [data-a=pn]'); await wait(150);
+    ok(await q.evaluate(() => document.activeElement && document.activeElement.matches('.tm-pn textarea')), 'Add a paranote… opens a box to type it in, right in the menu');
+    await q.keyboard.type('Measure twice: 72 cm.'); await q.click('.tm-pn [data-a=pn-save]'); await wait(400);
+    ok(/<span data-ann="[a-z0-9]+" data-nt="Measure twice: 72 cm\.">legs<\/span>/.test(await q.evaluate(a => InquireNotes.get(a).html, T.a)) && !!(await q.$('.p1 .nann-card')), 'its words become a paranote under the selected words (saved, shown)', await q.evaluate(a => InquireNotes.get(a).html, T.a));
     await q.close();
   }
   /* ---------- (v0.5.4) notes in the folders column drag into the open note as links, like the notes list (slow real mouse drags) ---------- */

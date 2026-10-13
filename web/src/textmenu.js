@@ -22,6 +22,7 @@ const out = e => { if (menu && !menu.contains(e.target)) close(); };
 const onScroll = e => { if (menu && e.target instanceof Node && menu.contains(e.target)) return; close(); }; // scrolling a definition keeps the menu
 function key(e) {
   if (!menu) return;
+  if (e.target && e.target.closest && e.target.closest(".tm-pn textarea") && e.key !== "Escape") { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); const b = menu.querySelector('[data-a="pn-save"]'); if (b) b.click(); } return; } // typing a paranote
   const bs = [...menu.querySelectorAll("button:not([disabled])")], i = bs.indexOf(document.activeElement);
   if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); close(); }
   else if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); (bs[e.key === "ArrowDown" ? (i + 1) % bs.length : (i - 1 + bs.length) % bs.length] || bs[0]).focus(); }
@@ -50,16 +51,19 @@ function open(x, y, c) {
     <button type="button" role="menuitem" data-a="copy"><span class="tm-ic">⧉</span><span>Copy</span><kbd>${/Mac/.test(navigator.platform) ? "⌘" : "Ctrl+"}C</kbd></button>
     <button type="button" role="menuitem" data-a="dict"${words > 5 ? " disabled" : ""}><span class="tm-ic">W</span><span>Define “${esc(short)}” · Dictionary<small>${words > 5 ? "Select a word or short phrase" : "Wiktionary and Wikipedia, online"}</small></span></button>
     <button type="button" role="menuitem" data-a="link"><span class="tm-ic">↗</span><span>Link to a note…<small>These words open the note you pick</small></span></button>
+    ${c.zone && c.zone.closest && c.zone.closest(".nb-rich") ? `<button type="button" role="menuitem" data-a="pn" aria-haspopup="true"><span class="tm-ic">↳</span><span>Add a paranote…<small>Your own note under these words</small></span></button>` : ""}
     <button type="button" role="menuitem" data-a="tr"${c.text.length > TR_MAX ? " disabled" : ""} aria-haspopup="true"><span class="tm-ic">文</span><span>Translate…<small>${c.text.length > TR_MAX ? `Select up to ${TR_MAX} characters` : "Spanish, German or French"}</small></span><kbd>▾</kbd></button>`;
   document.body.appendChild(menu);
   const W = menu.offsetWidth, H = menu.offsetHeight;
   const place = () => { const W2 = menu.offsetWidth, H2 = menu.offsetHeight; menu.style.left = Math.max(6, Math.min(innerWidth - W2 - 6, x)) + "px"; menu.style.top = Math.max(6, Math.min(innerHeight - H2 - 6, y)) + "px"; };
   menu.style.left = Math.max(6, Math.min(innerWidth - W - 6, x)) + "px";
   menu.style.top = Math.max(6, Math.min(innerHeight - H - 6, y)) + "px";
-  menu.addEventListener("mousedown", e => e.preventDefault()); // keep the selection while clicking
+  menu.addEventListener("mousedown", e => { if (!e.target.closest("textarea")) e.preventDefault(); }); // keep the selection while clicking (the paranote box takes the focus)
   menu.addEventListener("click", e => {
     const b = e.target.closest("button[data-a], button[data-lang]"); if (!b || b.disabled) return;
     const a = b.dataset.a;
+    if (a === "pn") { pnBox(place); return; }
+    if (a === "pn-save") { addParanote(c); return; }
     if (a === "save") { saveDef(x, y, c); return; }
     if (a === "dict") { showDict(c.text, place); return; }
     if (a === "tr") { trBox(place); return; }
@@ -73,6 +77,23 @@ function open(x, y, c) {
   document.addEventListener("pointerdown", out, true); document.addEventListener("keydown", key, true);
   window.addEventListener("blur", close); window.addEventListener("resize", close); document.addEventListener("scroll", onScroll, true);
   menu.querySelector("button").focus({ preventScroll: true });
+}
+/* ---------- paranote (v0.5.5, Devon): type it right in the menu; ＋ Add puts it under the selected words ---------- */
+function pnBox(place) {
+  let b = menu.querySelector(".tm-pn");
+  if (!b) { b = document.createElement("div"); b.className = "tm-pn"; b.innerHTML = `<div class="tm-trh">Paranote</div><textarea rows="3" maxlength="4000" placeholder="Your note on these words… Links: paste https://… or write [words](https://…)" aria-label="Paranote"></textarea><p class="tm-dn tm-pnmsg" hidden></p><div class="tm-dacts"><button type="button" class="tm-dgo" data-a="pn-save">＋ Add paranote</button></div>`; menu.appendChild(b); }
+  menu.querySelector('[data-a="pn"]').setAttribute("aria-expanded", "true");
+  place(); setTimeout(() => { const t = b.querySelector("textarea"); if (t) t.focus({ preventScroll: true }); }, 0);
+}
+function addParanote(c) {
+  const N = NS(), api = N && N.editorFor(c.zone), t = menu && menu.querySelector(".tm-pn textarea"); if (!api || !t) return;
+  const text = t.value.trim();
+  if (!text) { const m = menu.querySelector(".tm-pnmsg"); m.hidden = false; m.textContent = "Write the paranote first."; t.focus(); return; }
+  c.zone.focus({ preventScroll: true }); const s = getSelection(); s.removeAllRanges(); s.addRange(c.range);
+  const r = api.addAnnotation(text); close();
+  if (r && r.error) { toast(esc(r.error)); return; }
+  if (api.showAnnotations) api.showAnnotations(true);
+  toast("Paranote added under “" + esc(c.text.length > 24 ? c.text.slice(0, 22).trim() + "…" : c.text) + "”");
 }
 /* ---------- translate: a language box right under the menu ---------- */
 const TR_MAX = 480, LANGS = [["es", "Spanish", "Español"], ["de", "German", "Deutsch"], ["fr", "French", "Français"]], trCache = {};
