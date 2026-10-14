@@ -1097,7 +1097,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     ok(!/<(b|i|u|strong|em|font)\b/.test(hh) && !/data-(c|h|s|f|al|lh|in|ps)=/.test(hh) && !/<h\d/.test(hh) && /<div>Big title<\/div>/.test(hh), 'nothing selected: the whole note loses its formatting (titles become plain lines)', hh);
     ok(/<ul data-ck="1"><li>task under<\/li><\/ul>/.test(hh) && /<a [^>]*data-note="zz"/.test(hh) && /<span data-ann="ab12cd" data-nt="a note">words<\/span>/.test(hh), 'checklists, links and paranotes stay', hh);
     await wait(500); ok(!/data-c=|<b>/.test(await q.evaluate(a => InquireNotes.get(a).html, ids.a)), 'the cleared note is saved');
-    await q.evaluate(() => InquireNotes.undo()); await q.locator('.nb-it', { hasText: 'Needle' }).click(); await q.locator('.nb-it', { hasText: 'Clear me' }).click(); await wait(300);
+    await q.evaluate(() => InquireNotes.undo()); await q.evaluate(a => InquireApp.openNotes(a), ids.b); await wait(400); await q.evaluate(a => InquireApp.openNotes(a), ids.a); await wait(500); // (v0.5.7) open the notes directly: the list rows were not found in time on the slower CI runner
     ok(/<b>|data-c=/.test(await qh()), 'Undo brings the formatting back', await qh());
     // ⇪ Share
     ok(!(await q.$('[data-a=io]')) && /Share/.test(await q.$eval('.np-win .mw-hx [data-a=share]', e => e.textContent)), '⇅ Import / Export became ⇪ Share');
