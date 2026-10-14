@@ -13,7 +13,7 @@
 const KEY = "notepath.settings";
 // tabs: colours of the My notes, My Code and My Music buttons on the Main Menu (amber-orange, blue, magenta); only their glyphs take them
 const TABDEF = { notes: "#F2B84B", code: "#4FA3F7", music: "#D97AE6" };
-const DEF = { theme: "capsuleer", uiScale: 1, textSize: 1, reduceMotion: false, perf: "auto", escKey: true, invertScroll: false, noteLink: "#B49BFF", indent: "#B5D65A", tabs: TABDEF };
+const DEF = { theme: "capsuleer", uiScale: 1, textSize: 1, reduceMotion: false, perf: "auto", escKey: true, invertScroll: false, noteLink: "#B49BFF", indent: "#B5D65A", tabs: TABDEF, cvd: "off", lang: "en" };
 const load = () => {
   let o = {}; try { o = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) {}
   if (o.uiScale == null && typeof o.textScale === "number") o.uiScale = o.textScale; // the old single "Text & interface size" was a zoom
@@ -175,6 +175,11 @@ function jankWatch() {
     }
   }, "Auto watch, first 90 s");
 }
+// colour-blind mode (v0.5.8, Devon): which signal colours to use (notepath.css "colour-blind mode" block)
+const CVDS = [["off", "Off", "Colours as the theme has them."],
+  ["rg", "Red-green", "For protanopia and deuteranopia (the most common kinds): good is blue, warnings yellow, errors vermilion."],
+  ["by", "Blue-yellow", "For tritanopia: good is teal, warnings pink, errors crimson."],
+  ["mono", "No colour", "For full colour blindness (achromatopsia): signals differ by brightness, and every one has a shape or word."]];
 const PERFS_SET = () => PERFS.includes(S.perf) ? S.perf : "auto";
 const PERFS = ["lite", "moderate", "full"];
 const osReduced = () => { try { return !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches); } catch (e) { return false; } };
@@ -187,6 +192,7 @@ function applyAll() {
   Object.keys(TABDEF).forEach(k => document.documentElement.style.setProperty("--tab-" + k, hexOk(S.tabs[k]) ? S.tabs[k] : TABDEF[k]));
   applySizes();
   document.documentElement.toggleAttribute("data-reduce-motion", !!S.reduceMotion || osReduced()); // the system setting counts too (v0.5.7)
+  if (CVDS.some(c => c[0] === S.cvd) && S.cvd !== "off") document.documentElement.dataset.cvd = S.cvd; else delete document.documentElement.dataset.cvd; // colour-blind mode (v0.5.8)
   window.dispatchEvent(new CustomEvent("inquire:theme")); // canvases that paint with the theme (Note Office) repaint
 }
 applyAll();
@@ -275,7 +281,9 @@ function swatch(t) {
     <i class="set-swp"></i><i class="set-sws"></i><i class="set-swd"></i></span>`;
 }
 function paneLook() {
-  const wrap = h(`<div><p class="set-lede">Pick the colours of the console. Each square shows the theme's <b>primary</b> (background), <b>secondary</b> (panels) and <b>detail</b> (frames and glow) colours. Topic colours stay the same in every theme so diagrams keep their meaning. To make your own, scroll to <b>Your colours</b> below.</p></div>`);
+  // (v0.5.8, Devon) two parts, each under a bold header with a solid line: the app's own look, then the colours of tools and features
+  const sect = (t, d) => h(`<div class="set-sect" role="group" aria-label="${t}"><h3 class="set-secth">${t}</h3><p class="set-sectd">${d}</p></div>`);
+  const wrap = h(`<div>${""}<p class="set-lede">Pick the colours of the console. Each square shows the theme's <b>primary</b> (background), <b>secondary</b> (panels) and <b>detail</b> (frames and glow) colours. Topic colours stay the same in every theme so diagrams keep their meaning. To make your own, scroll to <b>Your colours</b> below.</p></div>`);
   FAMS.forEach(([fam, label]) => {
     const g = h(`<div class="set-thfam"><h3>${label}</h3><div class="set-thgrid" role="radiogroup" aria-label="${label}"></div></div>`);
     THEMES.filter(t => t.fam === fam).forEach(t => {
@@ -285,6 +293,7 @@ function paneLook() {
       b.onclick = () => { S.theme = t.id; save(); applyTheme(t.id); wrap.querySelectorAll(".set-th").forEach(x => x.setAttribute("aria-checked", String(x.dataset.id === t.id))); if (wrap._cust) wrap._cust(t); };
       g.querySelector(".set-thgrid").appendChild(b);
     });
+    if (!wrap.querySelector(".set-sect")) wrap.insertBefore(sect("Application colours &amp; themes", "The look of NotePath itself: its theme, your own colours, the Main Menu and colour-blind mode."), wrap.querySelector(".set-lede"));
     wrap.appendChild(g);
   });
   wrap.appendChild(customLook(wrap));
@@ -298,7 +307,7 @@ function paneLook() {
   const pick = lc.querySelector('input[type="color"]');
   pick.oninput = () => { S.noteLink = pick.value; applyAll(); mark(); };
   pick.onchange = () => { S.noteLink = pick.value; save(); };
-  wrap.appendChild(lc);
+  const lcLater = lc;
   // colour of paranotes (your own notes under the words they explain)
   const ic = h(`<div class="set-thfam"><h3>Paranotes</h3><div class="set-item set-lcitem"><div><p>Colour of your paranotes: the notes you add under words in a note (↳ at the bottom right of a note).
       <span class="set-lcdemo set-inddemo">Example: <span class="set-indw">photosynthesis</span><span class="set-indt">how plants turn light into food</span></span></p></div>
@@ -309,7 +318,7 @@ function paneLook() {
   const ipick = ic.querySelector('input[type="color"]');
   ipick.oninput = () => { S.indent = ipick.value; applyAll(); imark(); };
   ipick.onchange = () => { S.indent = ipick.value; save(); };
-  wrap.appendChild(ic);
+  const icLater = ic;
   // colours of the My notes / My Code / My Music Main Menu buttons
   const tc = h(`<div class="set-thfam"><h3>Main Menu colours</h3><div class="set-item"><div><p>Colours of the My notes, My Code and My Music buttons on the Main Menu. Only their icons change colour; the rest keeps your theme.</p></div>
     <div class="set-tabc">${[["notes", "My notes"], ["code", "My Code"], ["music", "My Music"]].map(([k, n]) => `<label class="set-tabcl" style="--c:${S.tabs[k]}"><input type="color" data-tab="${k}" value="${hexOk(S.tabs[k]) ? S.tabs[k] : TABDEF[k]}" aria-label="${n} tab colour"><span>${n}</span></label>`).join("")}
@@ -320,6 +329,16 @@ function paneLook() {
   });
   tc.querySelector('[data-a="tabreset"]').onclick = () => { S.tabs = Object.assign({}, TABDEF); save(); applyAll(); tc.querySelectorAll('input[type="color"]').forEach(inp => { inp.value = TABDEF[inp.dataset.tab]; inp.parentElement.style.setProperty("--c", inp.value); }); };
   wrap.appendChild(tc);
+  // colour-blind mode (v0.5.8, Devon)
+  const cv = h(`<div class="set-thfam"><h3>Colour-blind mode</h3><div class="set-item"><div><p class="set-cvdd"></p>
+      <div class="set-cvdp" aria-hidden="true"><span class="g">✓ Done</span><span class="w">◷ Due soon</span><span class="r">⚠ Overdue</span></div></div>
+    <div class="set-seg" role="radiogroup" aria-label="Colour-blind mode">${CVDS.map(([k, n]) => `<button type="button" role="radio" data-cvd="${k}" aria-checked="${(S.cvd || "off") === k}">${n}</button>`).join("")}</div></div></div>`);
+  const cvText = () => { const c = CVDS.find(x => x[0] === (S.cvd || "off")) || CVDS[0]; cv.querySelector(".set-cvdd").textContent = c[2] + (c[0] === "off" ? " Pick the kind of colour blindness to change done, warning and error colours and add shapes to them." : ""); };
+  cvText();
+  cv.querySelectorAll("[data-cvd]").forEach(b => b.onclick = () => { S.cvd = b.dataset.cvd; save(); applyAll(); cv.querySelectorAll("[data-cvd]").forEach(x => x.setAttribute("aria-checked", String(x === b))); cvText(); });
+  wrap.appendChild(cv);
+  wrap.appendChild(sect("Tool &amp; feature colours", "Colours used inside your notes: linked words and paranotes."));
+  wrap.appendChild(lcLater); wrap.appendChild(icLater);
   pane.appendChild(wrap);
 }
 
@@ -397,7 +416,10 @@ function fader(key, label, desc, min, max, step, marks) {
     </div></div>`;
 }
 function paneDisplay() {
+  const L = window.NPI18N ? NPI18N.LANGS : [["en", "English", "English"]];
   const w = h(`<div>
+    <div class="set-item set-langitem"><div><h3>App language</h3><p class="set-langp">The language of NotePath's menus, buttons and messages. Your notes stay as you wrote them.</p></div>
+      <select class="set-in set-lang no-i18n" aria-label="Language of NotePath">${L.map(([k, n, en]) => `<option value="${k}"${(S.lang || "en") === k ? " selected" : ""}>${esc(n)}${k === "en" ? "" : " · " + esc(en)}</option>`).join("")}</select></div>
     ${fader("textSize", "Text size", "Only the words: notes, menus and labels. Layout keeps its size.", .8, 1.5, .05, [.8, 1, 1.25, 1.5])}
     ${fader("uiScale", "Interface size", "Scales the whole console: panels, buttons and lists, with their text.", .75, 1.4, .05, [.75, 1, 1.2, 1.4])}
     <div class="set-item"><div><h3>Performance</h3><p class="set-perfp"></p></div>
@@ -427,6 +449,10 @@ function paneDisplay() {
   perfText();
   w.querySelectorAll("[data-perf]").forEach(b => b.onclick = () => { S.perf = b.dataset.perf; save(); applyAll(); w.querySelectorAll("[data-perf]").forEach(x => x.setAttribute("aria-checked", String(x === b))); perfText(); });
   w.querySelectorAll(".set-tog input").forEach(i => i.onchange = () => { S[i.dataset.k] = i.checked; save(); applyAll(); });
+  // the language (v0.5.8, Devon): NPI18N translates the page in place; the choice is S.lang
+  const ls = w.querySelector(".set-lang"), lp = w.querySelector(".set-langp");
+  ls.onchange = () => { const v = ls.value; S.lang = v; save(); ls.disabled = true;
+    (window.NPI18N ? NPI18N.set(v) : Promise.resolve()).then(() => { ls.disabled = false; }).catch(() => { ls.disabled = false; lp.textContent = "That language could not be loaded. Try again, or reinstall NotePath."; }); };
   pane.appendChild(w);
 }
 

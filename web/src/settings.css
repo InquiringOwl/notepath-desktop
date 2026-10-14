@@ -253,3 +253,9 @@ body.ask-open .ask-win{transform:none}
 .set-svc input{margin-top:2px;accent-color:var(--frame)}
 .set-in{width:min(320px,100%);box-sizing:border-box;background:var(--ink);color:var(--text);border:1px solid var(--line-2);border-radius:2px;padding:7px 9px;font:400 12.5px/1.2 var(--mono)}
 .set-in:focus{outline:none;border-color:var(--frame)}
+/* (v0.5.8, Devon) Appearance in two parts: a bold header over a solid line */
+.set-sect{margin:6px 0 14px;padding-top:14px;border-top:2px solid color-mix(in srgb,var(--frame) 70%,var(--line-2))}
+.set-sect:first-child{margin-top:0}
+.set-sect+.set-lede{margin-top:0}
+.set-win div.set-sect>h3.set-secth{margin:0 0 4px;font:700 17px/1.25 var(--sans);letter-spacing:.01em;text-transform:none;color:var(--text)}
+.set-sectd{margin:0;font:400 12.5px/1.45 var(--sans);color:var(--muted)}

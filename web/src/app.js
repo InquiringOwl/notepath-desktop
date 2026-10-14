@@ -213,6 +213,12 @@ function renderTasksPage(o = {}){
    NotePath (main.js registers notepath:// links). Notes stay on this computer, so for an associate it is Send a copy (a file
    anyone can open); their NotePath would say the note is not there. ---------- */
 const noteLink = id => "notepath://note/" + id;
+const folderLink = id => "notepath://folder/" + id; // (v0.5.8) right-click a folder → Copy link
+function openFolderLinkTo(id){
+  const NS = window.InquireNotes, f = NS && NS.scope("code").folders().concat(NS.folders()).find(x => x.id === id);
+  if (!f) { toastMsg("That folder is not on this computer.", 6000); return; }
+  go({ view: "notes", space: f.space === "code" ? "code" : "notes", folder: id });
+}
 async function copyText(t){
   try { await navigator.clipboard.writeText(t); return true; } catch (e) {}
   const ta = h("textarea", { style: "position:fixed;left:-9999px;top:0" }); ta.value = t; document.body.appendChild(ta); ta.select();
@@ -453,8 +459,28 @@ function noteKind(n){
   if (n.space === "code") { const l = window.NPCode ? NPCode.lang(n.code.lang) : null; return (l ? l.name : "Code") + " file"; }
   const h = String(n.html || "");
   if (/data-w="sheet"/.test(h)) return "Music chart"; if (/data-w="code"/.test(h)) return "Code note"; if (/data-w="music"/.test(h)) return "Music note";
-  if (/data-w="graph"/.test(h)) return "Graph note"; if (/<ul data-ck/.test(h)) return "Checklist"; if (/data-img=|class="nimg"/.test(h) || /data-w="video"/.test(h)) return "Note · media";
+  if (/data-w="graph"/.test(h)) return "Graph note"; if (/<ul data-ck/.test(h)) return "Checklist"; if (/data-img=|class="nimg"/.test(h) || /data-w="(video|audio)"/.test(h)) return "Note · media";
   return "Note";
+}
+/* (v0.5.8, Devon) the ✦ AI Chat button's figure: a holographic woman's head and shoulders made of coloured light (after his
+   reference picture, without its halo rings), drawn in the theme's colour (var(--frame)) so it follows every theme. Ids are
+   made per copy (the main note and the side-by-side note each draw one). */
+let AIFIG_N = 0;
+function aiFigure(){
+  const k = "aif" + (++AIFIG_N), B = "M20 4C25.2 4 27.4 8 27.2 12.6c-.2 3.8-1.8 6.8-3.8 8.2l.3 5.2c3.6 1.6 8.6 3.4 11.3 8.4L36.6 40H3.4l1.6-5.6c2.7-5 7.7-6.8 11.3-8.4l.3-5.2c-2-1.4-3.6-4.4-3.8-8.2C12.6 8 14.8 4 20 4z";
+  return `<svg class="nb-aifig" viewBox="0 0 40 40" width="34" height="34" aria-hidden="true" focusable="false"><defs>`
+    + `<linearGradient id="${k}g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="s0"/><stop offset=".5" class="s1"/><stop offset=".95" class="s2"/></linearGradient>`
+    + `<linearGradient id="${k}s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="e0"/><stop offset=".6" class="e1"/><stop offset="1" class="e2"/></linearGradient>`
+    + `<radialGradient id="${k}r"><stop offset="0" class="c0"/><stop offset="1" class="c1"/></radialGradient>`
+    + `<pattern id="${k}p" width="4" height="1.8" patternUnits="userSpaceOnUse"><rect width="4" height=".4" class="scan"/></pattern>`
+    + `<clipPath id="${k}c"><path d="${B}"/></clipPath></defs>`
+    + `<path class="body" fill="url(#${k}g)" stroke="url(#${k}s)" d="${B}"/>`
+    + `<rect class="scans" x="0" y="-2" width="40" height="44" fill="url(#${k}p)" clip-path="url(#${k}c)"/>`
+    + `<g class="hair"><path d="M20 3.2C13.2 3.2 10.8 8.6 11.2 13.8c.4 4.6 2 7.8 2.4 10.6.3 2.4-1.6 4.4-5 6"/><path d="M20 3.2c6.8 0 9.2 5.4 8.8 10.6-.4 4.6-2 7.8-2.4 10.6-.3 2.4 1.6 4.4 5 6"/><path class="thin" d="M12.4 9.4c-.8 3.6.2 7.4 2 10.6M27.6 9.4c.8 3.6-.2 7.4-2 10.6"/>`
+    + `<path class="thin" d="M20 4.2c-3.6.4-5.6 2.8-6.2 5.8M20 4.2c3.6.4 5.6 2.8 6.2 5.8M18 4.5c-2 1.6-2.8 3.4-3 5M22 4.5c2 1.6 2.8 3.4 3 5M20 4v3.4"/></g>`
+    + `<g class="face"><path d="M15.4 10.9q1.8-.8 3.4 0M21.2 10.9q1.8-.8 3.4 0"/><path class="eye" d="M15.6 12.8q1.7 1.1 3.3 0M21.1 12.8q1.7 1.1 3.3 0"/><path d="M20 13.6v2.4q-.5.5-.9.5"/><path class="lip" d="M18.3 18.2q1.7.9 3.4 0M18.3 18.2q.8-.5 1.7-.1.9-.4 1.7.1"/></g>`
+    + `<g class="neck"><path d="M17.6 21.6v4.4M22.4 21.6v4.4M14.4 30.2q3 1.4 5.6.8M25.6 30.2q-3 1.4-5.6.8"/></g>`
+    + `<circle cx="20" cy="4.2" r="3" fill="url(#${k}r)"/></svg>`;
 }
 const NOTE_IC = '<svg viewBox="0 0 24 28" width="30" height="34" aria-hidden="true"><path d="M3 2h12l6 6v18H3z" class="pg"/><path d="M15 2v6h6" class="fd"/><path d="M7 13h10M7 17h10M7 21h6" class="ln"/></svg>';
 /* the Tool bar (v0.5.5, Devon; where the notes list was): tools that change what the note area is for. Note and Code now;
@@ -466,13 +492,23 @@ const TOOLS = [["note", "✎", "Note", "Write: text, lists, photos and widgets"]
 /* v0.5.5 (Devon): the ▦ Widgets menu moved out of the note's formatting bar into the Tool bar, in its own section above the
    tools: a click puts the widget into the note you were writing in (after the line you were on). Widgets that connect to
    other apps and services (APIs) will join this section. */
-const WIDGET_SHORT = { code: "Code box", music: "Music", sheet: "Lead sheet", graph: "Graph", map: "Map" };
+const WIDGET_SHORT = { code: "Code box", music: "Music", sheet: "Lead sheet", graph: "Graph", map: "Map", audio: "Audio", sign: "Sign" };
 const railHTML = code => `<div class="nb-railh">Widgets</div>` + ((window.InquireWidgets && InquireWidgets.WIDGETS) || []).map(([w, g, n, d]) =>
     `<button type="button" class="nb-tool nb-wtool${code ? " soon" : ""}" data-widget="${w}" data-name="${n}"${code ? ' aria-disabled="true"' : ""} title="${code ? `${n}: widgets go into notes (My notes)` : `${n}: ${d}. Goes in after the line you are on`}"><span class="nb-tooli" aria-hidden="true">${g}</span><span class="nb-tooln">${WIDGET_SHORT[w] || n}</span></button>`).join("")
   + `<button type="button" class="nb-tool nb-wtool nb-wmore soon" data-widget="more" aria-disabled="true" data-name="App widgets" title="Widgets that connect to other apps and services: coming soon"><span class="nb-tooli" aria-hidden="true">＋</span><span class="nb-tooln">More</span><small>Soon</small></button>`
   + `<div class="nb-railh">Tools</div>` + TOOLS.map(([k, ic, n, d]) => { const soon = !d, on = (k === "note" && !code) || (k === "code" && code);
   return `<button type="button" class="nb-tool${on ? " on" : ""}${soon ? " soon" : ""}" data-tool="${k}" data-name="${n}" aria-pressed="${on}"${soon ? ' aria-disabled="true"' : ""} title="${n}${soon ? ": coming soon" : ": " + d}"><span class="nb-tooli" aria-hidden="true">${ic}</span><span class="nb-tooln">${n === "Spreadsheets" ? "Sheets" : n === "Note Trees" ? "Trees" : n}</span>${soon ? '<small>Soon</small>' : ""}</button>`; }).join("");
 const NOTE_MINI = '<svg viewBox="0 0 12 14" width="11" height="13"><path d="M1.5 1h6l3 3v9h-9z" class="pg"/><path d="M7.5 1v3h3" class="fd"/></svg>';
+/* (v0.5.8, Devon) My notes comes in two versions, picked in the header: Simple = the Folders & Files bar (notes only) and the
+   note (formatting without headings, align, indent and spacing, clear formatting; Grammar check and audio recording stay);
+   Professional = everything. Kept in notepath.notemode; My Code is always Professional. */
+/* (v0.5.8, Devon) 🎙 audio recording: one recording at a time, for the note it was started in (even if another note is
+   opened meanwhile); kept while My notes is open, saved into its note when stopped or when My notes closes. */
+const REC = { on: false };
+const REC_MAX = 3 * 3600; // seconds
+function recMime(){ const M = window.MediaRecorder; if (!M || !M.isTypeSupported) return ""; return ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus"].find(t => M.isTypeSupported(t)) || ""; }
+function recSecs(){ return !REC.on ? 0 : (REC.acc + (REC.paused ? 0 : (performance.now() - REC.t0))) / 1000; }
+const noteMode = () => store.get("notemode", "pro") === "simple" ? "simple" : "pro";
 function renderNotes(m, focusBody, space = "notes"){
   const NS = window.InquireNotes.scope(space), NOTES = SPACES[space], CODE = space === "code", SK = SKEYS[space];
   const ALLNS = window.InquireNotes, CS = window.InquireNotes.scope("code");
@@ -519,8 +555,20 @@ function renderNotes(m, focusBody, space = "notes"){
   const realFolder = () => NS.folders().some(f => f.id === NOTES.folder) ? NOTES.folder : null;
   const newHere = () => { flushEd(); (CODE ? newCode : newNote)({ folder: realFolder(), fav: NOTES.folder === "fav" }); };
   $('[data-a="newnote"]', m.head).onclick = newHere;
+  const SIMPLE = () => !CODE && noteMode() === "simple";
+  if (!CODE) {
+    m.head.insertAdjacentHTML("afterbegin", `<span class="np-mode" role="radiogroup" aria-label="Version of My notes"><button type="button" role="radio" data-mode="simple" title="Simple: your notes and folders, and the everyday formatting">Simple</button><button type="button" role="radio" data-mode="pro" title="Professional: every tool, widget and panel">Professional</button></span>`);
+    const mb = $(".np-mode", m.head), paintMode = () => { const md = noteMode(); nbEl.dataset.mode = md; mb.querySelectorAll("[data-mode]").forEach(b => { b.setAttribute("aria-checked", String(b.dataset.mode === md)); b.tabIndex = b.dataset.mode === md ? 0 : -1; }); };
+    mb.addEventListener("click", e => { const b = e.target.closest("[data-mode]"); if (!b || b.dataset.mode === noteMode()) return; setMode(b.dataset.mode); });
+    mb.addEventListener("keydown", e => { if (!/^Arrow(Left|Right|Up|Down)$/.test(e.key)) return; e.preventDefault(); const md = noteMode() === "simple" ? "pro" : "simple"; setMode(md); $(`[data-mode="${md}"]`, mb).focus(); });
+    var setMode = md => { flushEd(); store.set("notemode", md); paintMode();
+      if (md === "simple") { if (typeof holoClose === "function") { holoClose(); indClose(); if (AS.open === "ai") asClose(); peekClose(); } }
+      drawAll(); msg(md === "simple" ? "Simple: just your notes and folders. Professional brings back every tool." : "Professional: every tool, widget and panel is back."); };
+    paintMode();
+  }
   // ⇅ Import / Export (io.js): the note open now and the folder being viewed are offered first
-  const openIO = scope => { flushEd(); if (window.NPIO) NPIO.open({ note: NOTES.sel, folder: NOTES.folder, scope, onImported: r => { NOTES.folder = "all"; if (r.made[0]) NOTES.sel = r.made[0]; drawAll(); } }); };
+  const openIO = scope => { flushEd(); if (window.NPIO) NPIO.open({ note: NOTES.sel, folder: NOTES.folder, scope, onImported: r => { NOTES.folder = "all"; if (r.made[0]) NOTES.sel = r.made[0]; drawAll(); },
+    onChanged: () => { if (NOTES.sel && !NS.get(NOTES.sel)) { if (rich) { rich.destroy(); rich = null; } NOTES.sel = null; } drawAll(); } }); };
   const shb = $('[data-a="share"]', m.head); if (shb) shb.onclick = () => shareMenu(shb, { id: NOTES.sel, flush: flushEd, openIO });
   // undo / redo (notes.js keeps the steps): save what is being typed, step, redraw everything from the store
   const hb = { undo: $('[data-a="undo"]', m.head), redo: $('[data-a="redo"]', m.head) };
@@ -640,15 +688,15 @@ function renderNotes(m, focusBody, space = "notes"){
       const frow = (f, sp, list) => `<button type="button" class="nb-sfd" data-sf="${f.id}" data-sp="${sp}" title="Show the folder ${esc(f.name)}">${folderIcon(false)}<span class="nb-fnm">${esc(f.name)}</span>${path(f, list) ? `<span class="nb-spath">in ${esc(path(f, list))}</span>` : ""}</button>`;
       const crowS = n => `<div class="nb-fnote nb-cfile" role="button" tabindex="0" draggable="true" data-cid="${n.id}" style="--d:0" title="${esc(n.title)}: click to open it in My Code"><span class="nb-fni nb-cfi" data-lang="${esc(n.code.lang)}">${esc(LG(n.code.lang).short)}</span><span class="nb-fnt">${esc(n.title)}</span></div>`;
       const sec = (k, cls, label, body, n) => n ? `<div class="nb-sech ${cls}" data-sec="${k}">${label} <span class="num">${n}</span></div>${body}` : "";
-      const total = fl.length + nl.length + cfl.length + cnl.length;
+      const total = fl.length + nl.length + (SIMPLE() ? 0 : cfl.length + cnl.length);
       fold.innerHTML = `<div class="nb-sres">${dhead}<div class="nb-sres-h">${total ? `${total} found for “${esc(NOTES.q.trim())}”` : `Nothing matches “${esc(NOTES.q.trim())}”`}</div>`
         + sec("folders", "", CODE ? "Code folders" : "Folders", fl.map(f => frow(f, CODE ? "code" : "notes", fs)).join(""), fl.length)
         + sec("files", CODE ? "is-code" : "is-notes", CODE ? "Code files" : "Notes", files(nl, 0, "q"), nl.length)
-        + sec("code", "is-code", "My Code", cfl.map(f => frow(f, "code", cf)).join("") + cnl.map(crowS).join(""), cfl.length + cnl.length) + `</div>`;
+        + (SIMPLE() ? "" : sec("code", "is-code", "My Code", cfl.map(f => frow(f, "code", cf)).join("") + cnl.map(crowS).join(""), cfl.length + cnl.length)) + `</div>`;
     } else {
       fold.innerHTML = (CODE ? "" : `<div class="nb-fmain">`) + dhead + `<div class="nb-sech ${CODE ? "is-code" : "is-notes"}">${CODE ? "Code" : "Notes"}</div>` + (FILTER ? libRows() : libHTML)
-        + (FILTER ? "" : `<div class="nb-fh nb-ftop" data-top>${CODE ? "Code folders" : "Folders"}</div>` + tree(null)
-        + `<button type="button" class="nb-fadd" data-a="addf">＋ New folder</button>`) + (CODE ? "" : `</div><div class="nb-fsplit" role="separator" aria-orientation="horizontal" tabindex="0" aria-label="Share the bar between notes and code (drag, or ↑/↓; double-click resets)" title="Drag to give the Code section more or less room · double-click resets"></div><div class="nb-fcode">${codeSection(shut, FILTER)}<div class="nb-sech is-music nb-music" title="My Music is coming soon">Music <span class="nb-soon">Coming soon</span></div></div>`);
+        + (FILTER ? "" : `<div class="nb-fh nb-ftop" data-top>${CODE ? "Code folders" : "Folders"}</div>` + tree(null))
+        + `<button type="button" class="nb-fadd" data-a="addf" title="Make a new folder">＋ New folder</button>` + (CODE ? "" : `</div><div class="nb-fsplit" role="separator" aria-orientation="horizontal" tabindex="0" aria-label="Share the bar between notes and code (drag, or ↑/↓; double-click resets)" title="Drag to give the Code section more or less room · double-click resets"></div><div class="nb-fcode">${codeSection(shut, FILTER)}<div class="nb-sech is-music nb-music" title="My Music is coming soon">Music <span class="nb-soon">Coming soon</span></div></div>`);
     }
     fold.classList.toggle("is-search", !!qq); if (qq) fold.classList.remove("has-fsplit", "code-shut");
     fold.dataset.filter = FILTER && !qq ? FILTER : "";
@@ -667,7 +715,7 @@ function renderNotes(m, focusBody, space = "notes"){
       NOTES.q = ""; q.value = ""; NOTES.folder = b.dataset.sf; drawFolders();
       const rowEl = fold.querySelector(`.nb-fd[data-f="${b.dataset.sf}"]`); if (rowEl) { rowEl.scrollIntoView({ block: "nearest" }); const fb = rowEl.querySelector(".nb-fdb"); if (fb) fb.focus({ preventScroll: true }); } });
     // pick, open/close, rename, delete
-    fold.querySelectorAll(".nb-fdb").forEach(b => b.onclick = () => { NOTES.folder = b.dataset.f; drawFolders(); });
+    fold.querySelectorAll(".nb-fdb").forEach(b => b.onclick = e => { if (b.closest(".nb-fd.user") && pickClick(e, "f", b.dataset.f)) return; NOTES.folder = b.dataset.f; drawFolders(); });
     fold.querySelectorAll(".nb-fd.user").forEach(d => d.addEventListener("click", e => { if (e.target.closest("button,input,form")) return; const b = d.querySelector(".nb-fdb"); if (b) b.click(); }));
     fold.querySelectorAll("[data-car]").forEach(b => b.onclick = e => { e.stopPropagation(); const c = closed(), id = b.dataset.car; c.has(id) ? c.delete(id) : c.add(id); store.set("notefold", [...c]); drawFolders(); });
     fold.querySelectorAll("[data-sub]").forEach(b => b.onclick = () => { const id = b.dataset.sub, c = closed(); c.delete(id); store.set("notefold", [...c]);
@@ -690,12 +738,118 @@ function renderNotes(m, focusBody, space = "notes"){
       d.addEventListener("dragend", () => { DRAG = null; d.classList.remove("dragging"); clearDrop(); nbEl.classList.remove("dragfolder"); hideCaret(); });
     });
     const addf = $('[data-a="addf"]', fold); if (addf) addf.onclick = e => nameBox(e.target, "", v => { const f = NS.addFolder(v); NOTES.folder = f.id; drawAll(); });
+    pickPaint();
   }
+  /* ----- (v0.5.8, Devon) Select and the right-click menu in the Folders & Files bar. Ctrl+click (⌘+click on a Mac) adds a
+     note or folder to the selection or takes it out, Shift+click selects everything between, Esc or a plain click clears it.
+     Right-click a note, a folder or Unfiled / Favourites / All notes: Copy link · Select · Select all · Delete. Delete on a
+     selected item deletes the whole selection (asks once more for more than one item or a folder), with Undo. Deleting a
+     folder keeps its notes and folders (they move up a level), as the ✕ on the row does. ----- */
+  const PICK = NOTES.pick || (NOTES.pick = { n: new Set(), f: new Set(), anchor: null });
+  const MODK = /Mac/.test(navigator.platform) ? "⌘" : "Ctrl+";
+  const pickCount = () => PICK.n.size + PICK.f.size;
+  function pickPaint(){
+    fold.querySelectorAll(".nb-fnote[data-id]:not(.nb-cfile)").forEach(r => { const on = PICK.n.has(r.dataset.id); r.classList.toggle("is-picked", on); });
+    fold.querySelectorAll(".nb-fd.user[data-f]").forEach(r => r.classList.toggle("is-picked", PICK.f.has(r.dataset.f)));
+    let bar = $(".nb-pickbar", nbEl.querySelector(".nb-folders")); const k = pickCount();
+    if (!k) { if (bar) bar.remove(); return; }
+    if (!bar) { bar = h("div", { class: "nb-pickbar", role: "status" }); nbEl.querySelector(".nb-folders").insertBefore(bar, fold); }
+    const parts = []; if (PICK.n.size) parts.push(`${PICK.n.size} ${CODE ? "file" : "note"}${PICK.n.size === 1 ? "" : "s"}`); if (PICK.f.size) parts.push(`${PICK.f.size} folder${PICK.f.size === 1 ? "" : "s"}`);
+    bar.innerHTML = `<span class="nb-pickn"><span>${parts.join(" and ")}</span> <span>selected</span></span><button type="button" class="nb-pickx" data-p="del" title="Delete the selected items">Delete</button><button type="button" class="nb-pickx" data-p="clear" title="Clear the selection (Esc)" aria-label="Clear the selection">✕</button>`;
+    bar.onclick = e => { const b = e.target.closest("[data-p]"); if (!b) return; if (b.dataset.p === "clear") pickClear(); else { if (b.dataset.armed) { pickDelete([...PICK.n], [...PICK.f]); return; } b.dataset.armed = "1"; b.textContent = "Delete " + k + "?"; b.classList.add("armed"); setTimeout(() => { if (b.isConnected) { delete b.dataset.armed; b.textContent = "Delete"; b.classList.remove("armed"); } }, 3500); } };
+  }
+  function pickClear(){ PICK.n.clear(); PICK.f.clear(); PICK.anchor = null; pickPaint(); }
+  const pickSet = kind => kind === "n" ? PICK.n : PICK.f;
+  function pickToggle(kind, id){ const S = pickSet(kind); S.has(id) ? S.delete(id) : S.add(id); PICK.anchor = { kind, id }; pickPaint(); }
+  // a modified click: true when it was a selection click (the caller then does nothing else)
+  function pickClick(e, kind, id){
+    if (e.metaKey || e.ctrlKey) { e.preventDefault(); pickToggle(kind, id); return true; }
+    if (e.shiftKey) { e.preventDefault();
+      const sel = kind === "n" ? ".nb-fnote[data-id]:not(.nb-cfile)" : ".nb-fd.user[data-f]", key = kind === "n" ? "id" : "f";
+      const ids = [...new Set([...fold.querySelectorAll(sel)].map(x => x.dataset[key]))];
+      const a = PICK.anchor && PICK.anchor.kind === kind ? ids.indexOf(PICK.anchor.id) : -1, b = ids.indexOf(id);
+      if (a < 0) { // no start yet: the open note / folder is the start
+        const st = kind === "n" ? ids.indexOf(NOTES.sel) : ids.indexOf(NOTES.folder); if (st >= 0) { ids.slice(Math.min(st, b), Math.max(st, b) + 1).forEach(x => pickSet(kind).add(x)); } else pickSet(kind).add(id);
+      } else ids.slice(Math.min(a, b), Math.max(a, b) + 1).forEach(x => pickSet(kind).add(x));
+      pickPaint(); return true; }
+    if (pickCount()) pickClear();
+    return false;
+  }
+  // the notes a "Select all" on this row means: its folder's notes, Unfiled, Favourites, everything, or what Search shows
+  function groupNotes(g){
+    const all = NS.list();
+    if (g === "none") return all.filter(n => !n.folder).map(n => n.id);
+    if (g === "fav") return all.filter(n => n.fav).map(n => n.id);
+    if (g === "all") return all.map(n => n.id);
+    if (g === "q") return [...new Set([...fold.querySelectorAll('.nb-fnote[data-g="q"]')].map(x => x.dataset.id))];
+    return all.filter(n => n.folder === g).map(n => n.id);
+  }
+  const groupName = g => g === "none" ? "Unfiled" : g === "fav" ? "Favourites" : g === "all" ? (CODE ? "all files" : "All notes") : g === "q" ? "the search results" : (NS.folders().find(f => f.id === g) || {}).name || "this folder";
+  async function pickDelete(nids, fids){
+    nids = nids.filter(id => NS.get(id)); fids = fids.filter(id => NS.folders().some(f => f.id === id));
+    if (!nids.length && !fids.length) return;
+    flushEd();
+    if (nids.includes(NOTES.sel)) { if (rich) { rich.destroy(); rich = null; } NOTES.sel = null; }
+    if (SPLIT.id && nids.includes(SPLIT.id)) closeSplit(true);
+    nids.forEach(id => NS.trash(id));
+    const fs0 = NS.folders(), depth = id => (fs0.find(f => f.id === id) || {}).depth || 0;
+    fids.slice().sort((a, b) => depth(b) - depth(a)).forEach(id => NS.removeFolder(id)); // inner folders first
+    if (fids.includes(NOTES.folder)) NOTES.folder = "all";
+    PICK.n.clear(); PICK.f.clear(); PICK.anchor = null;
+    drawAll();
+    const mark = NS.history().undo, parts = [];
+    if (nids.length) parts.push(`${nids.length} ${CODE ? "file" : "note"}${nids.length === 1 ? "" : "s"}`); if (fids.length) parts.push(`${fids.length} folder${fids.length === 1 ? "" : "s"}`);
+    NS.toast(`Deleted ${parts.join(" and ")}${fids.length ? ". What was in the folders moved up a level" : ""}`, { label: "Undo", run: () => {
+      if (NS.history().undo !== mark) { msg("Use ↶ Undo at the top to step back to it."); return; }
+      if (NS.undo()) drawAll(); } }, 9000);
+  }
+  let fmenu = null;
+  function fmenuClose(){ if (!fmenu) return; fmenu.remove(); fmenu = null; document.removeEventListener("pointerdown", fmenuOut, true); window.removeEventListener("keydown", fmenuKey, true); window.removeEventListener("blur", fmenuClose); }
+  const fmenuOut = e => { if (fmenu && !fmenu.contains(e.target)) fmenuClose(); };
+  const fmenuKey = e => { if (e.key === "Escape" && fmenu) { e.preventDefault(); e.stopPropagation(); fmenuClose(); } };
+  fold.addEventListener("contextmenu", e => {
+    const nr = e.target.closest(".nb-fnote[data-id]:not(.nb-cfile)"), fr = !nr && e.target.closest(".nb-fd[data-f]");
+    if (!nr && !fr) return;
+    e.preventDefault(); fmenuClose();
+    const lib = fr && !fr.classList.contains("user"), kind = nr ? "n" : "f", id = nr ? nr.dataset.id : fr.dataset.f, g = nr ? nr.dataset.g : id;
+    const item = kind === "n" ? NS.get(id) : NS.folders().find(f => f.id === id);
+    if (!lib && !item) return;
+    const inSel = !lib && pickSet(kind).has(id), many = inSel && pickCount() > 1;
+    const name = lib ? groupName(id) : kind === "n" ? item.title : item.name, short = t => esc(String(t || "").length > 34 ? String(t).slice(0, 32).trim() + "…" : t || "");
+    const delN = many ? [...PICK.n] : kind === "n" ? [id] : [], delF = many ? [...PICK.f] : kind === "f" && !lib ? [id] : [];
+    const delWhat = many ? `${pickCount()} selected items` : kind === "n" ? `“${short(name)}”` : `the folder “${short(name)}”`;
+    const all = lib ? groupNotes(id) : kind === "n" ? groupNotes(g) : NS.folders().map(f => f.id);
+    fmenu = h("div", { class: "tm-menu win nb-fmenu", role: "menu", "aria-label": lib ? name : kind === "n" ? (CODE ? "File" : "Note") : "Folder" });
+    fmenu.innerHTML = (lib ? "" : `<button type="button" role="menuitem" data-m="copy"><span class="tm-ic">⧉</span><span>${many ? `Copy ${pickCount()} links` : "Copy link"}<small>${many ? "One per line, to paste into a note, a calendar or an email to yourself" : kind === "n" ? `Opens “${short(name)}” in NotePath on this computer` : `Opens the folder “${short(name)}” in NotePath on this computer`}</small></span></button>
+      <button type="button" role="menuitem" data-m="pick"><span class="tm-ic">${inSel ? "☒" : "☐"}</span><span>${inSel ? "Unselect" : "Select"}<small>${MODK}click also selects · Shift+click selects a run</small></span><kbd>${MODK}click</kbd></button>`)
+      + `<button type="button" role="menuitem" data-m="all"${all.length ? "" : " disabled"}><span class="tm-ic">▦</span><span>${kind === "f" && !lib ? "Select all folders" : (CODE ? "Select all files in " : "Select all notes in ") + esc(lib || g === "none" || g === "fav" || g === "all" || g === "q" ? groupName(g) : "“" + groupName(g) + "”")}<small>${all.length} ${kind === "f" && !lib ? "folder" : CODE ? "file" : "note"}${all.length === 1 ? "" : "s"}</small></span></button>`
+      + (lib ? "" : `<div class="nb-fmsep" role="separator"></div><button type="button" role="menuitem" class="nb-fmdel" data-m="del"><span class="tm-ic">✕</span><span>${many ? `Delete ${pickCount()} selected items` : "Delete"}<small>${delF.length ? "Notes and folders inside a folder move up a level" : "Undo is offered right after"}</small></span></button>`);
+    document.body.appendChild(fmenu);
+    const W = fmenu.offsetWidth, H = fmenu.offsetHeight;
+    fmenu.style.left = Math.max(6, Math.min(innerWidth - W - 6, e.clientX)) + "px"; fmenu.style.top = Math.max(6, Math.min(innerHeight - H - 6, e.clientY)) + "px";
+    fmenu.addEventListener("click", async ev => {
+      const b = ev.target.closest("button[data-m]"); if (!b || b.disabled) return; const m = b.dataset.m;
+      if (m === "copy") { const ids = many ? [...PICK.n].map(x => ["n", x]).concat([...PICK.f].map(x => ["f", x])) : [[kind, id]];
+        const lines = ids.map(([k, x]) => { const o = k === "n" ? NS.get(x) : NS.folders().find(f => f.id === x); return o ? (ids.length > 1 ? (k === "n" ? o.title : o.name) + " — " : "") + (k === "n" ? noteLink(x) : folderLink(x)) : ""; }).filter(Boolean);
+        fmenuClose(); msg((await copyText(lines.join("\n"))) ? (lines.length > 1 ? `Copied ${lines.length} links.` : "Link copied. It opens this in NotePath on this computer.") : "Copying did not work."); return; }
+      if (m === "pick") { fmenuClose(); pickToggle(kind, id); return; }
+      if (m === "all") { fmenuClose(); all.forEach(x => pickSet(kind === "f" && !lib ? "f" : "n").add(x)); PICK.anchor = null; pickPaint(); msg(`Selected ${all.length}. Right-click one of them → Delete to delete them all.`); return; }
+      if (m === "del") {
+        const big = delN.length + delF.length > 1 || delF.length;
+        if (big && !b.dataset.armed) { b.dataset.armed = "1"; b.classList.add("armed"); b.querySelector("span:not(.tm-ic)").firstChild.textContent = `Click again to delete ${delWhat}`; return; }
+        fmenuClose(); if (!big && delN.length === 1) { const n = NS.get(delN[0]); flushEd(); if (NOTES.sel === delN[0]) { if (rich) { rich.destroy(); rich = null; } NOTES.sel = null; } PICK.n.delete(delN[0]); NS.deleteWithUndo(delN[0], x => { if (s.isConnected) { NOTES.sel = x; drawAll(); } }); drawAll(); void n; return; }
+        pickDelete(delN, delF); }
+    });
+    document.addEventListener("pointerdown", fmenuOut, true); window.addEventListener("keydown", fmenuKey, true); window.addEventListener("blur", fmenuClose);
+    setTimeout(() => { const f = fmenu && fmenu.querySelector("button:not([disabled])"); if (f) f.focus({ preventScroll: true }); }, 0);
+  });
+  const pickEsc = e => { if (e.key !== "Escape" || !pickCount() || fmenu || document.querySelector(".tm-menu, .np-pop, .ask-ov, .np-holo, .np-peek, .nw-present, .set-ov:not([hidden])")) return; const t = e.target; if (t && t.closest && t.closest("input, textarea, select, [contenteditable=true]")) return; e.preventDefault(); e.stopPropagation(); pickClear(); };
+  window.addEventListener("keydown", pickEsc, true); m.cleanup.push(() => { window.removeEventListener("keydown", pickEsc, true); fmenuClose(); });
   // one note row in the bar: open, keyboard, drag (v0.5.6: on its own, so a saved note's row can be redrawn alone)
   function wireRow(r){
       const mine = NOTES.sort !== "recent";
       const open = () => { if (NOTES.sel === r.dataset.id) return; flushEd(); NOTES.sel = r.dataset.id; const n = NS.get(r.dataset.id); if (n && !inView(n)) NOTES.folder = n.folder || "all"; drawAll(); };
-      r.onclick = open;
+      r.onclick = e => { if (pickClick(e, "n", r.dataset.id)) return; open(); };
       r.onkeydown = e => {
         if ((e.key === "Enter" || e.key === " ") && e.target === r) { e.preventDefault(); open(); return; }
         // Alt+↑/↓ moves the note among the notes listed with it (My order)
@@ -711,7 +865,7 @@ function renderNotes(m, focusBody, space = "notes"){
     const n = NS.get(id); if (!n || !ROWFN) return;
     fold.querySelectorAll(`.nb-fnote[data-id="${id}"]:not(.nb-cfile)`).forEach(el => {
       const t = document.createElement("template"); t.innerHTML = ROWFN(n, el); const nr = t.content.firstElementChild; if (!nr) return;
-      el.replaceWith(nr); wireRow(nr);
+      el.replaceWith(nr); wireRow(nr); nr.classList.toggle("is-picked", PICK.n.has(id));
       const im = nr.querySelector("img[data-cov]"); if (im) window.InquireNotes.thumbURL(im.dataset.cov, 160).then(u => { if (u) im.src = u; });
     });
   }
@@ -900,7 +1054,7 @@ function renderNotes(m, focusBody, space = "notes"){
     $('[data-a="purl"]', ed).onclick = () => { urlRow.hidden = !urlRow.hidden; if (!urlRow.hidden) urlIn.focus(); };
     $('[data-a="purlx"]', ed).onclick = () => { urlRow.hidden = true; };
     urlRow.onsubmit = e => { e.preventDefault(); if (rich.addURL(urlIn.value)) { urlIn.value = ""; urlRow.hidden = true; } else $(".nb-urlmsg", urlRow).textContent = "Use an https:// address of an image."; };
-    holoButton(n); saveLine(); { const sl = $(".nb-save", ed); if (sl && !sl.classList.contains("is-error")) sl.classList.add("quiet"); }
+    holoButton(n); recButton(n); wordCount(); saveLine(); { const sl = $(".nb-save", ed); if (sl && !sl.classList.contains("is-error")) sl.classList.add("quiet"); }
     // delete at once, with Undo in a message for 8 s (photos and videos are only removed once that time is up)
     $('[data-a="del"]', ed).onclick = () => { flushEd(); if (rich) { rich.destroy(); rich = null; } NOTES.sel = null; NS.deleteWithUndo(n.id, id => { if (s.isConnected) { NOTES.sel = id; drawAll(); } }); drawAll(); };
     if (focusBody) setTimeout(() => {
@@ -931,7 +1085,7 @@ function renderNotes(m, focusBody, space = "notes"){
     const b = h("button", { type: "button", class: "nb-holob", "aria-label": "Tags, links and source of this note", title: "Tags · Links · Source", "aria-expanded": "false" }, `<span aria-hidden="true">◈</span>`);
     ed.appendChild(b);
     b.onclick = () => { HOLO.open = !HOLO.open; if (HOLO.open) { if (AS.open) asClose(); holoOpen(n.id); } else holoClose(); };
-    if (HOLO.open) holoOpen(n.id);
+    if (HOLO.open && !SIMPLE()) holoOpen(n.id);
     indButton(n); asButtons(n);
     // short names that show on hover and keyboard focus (v0.5.6, Devon: the symbols alone were not enough)
     [[".nb-holob:not(.nb-indb):not(.nb-aib):not(.nb-gramb)", "Links"], [".nb-indb", "Paranotes"], [".nb-aib", "AI Chat"], [".nb-gramb", "Grammar"]].forEach(([q, l]) => { const x = $(q, ed); if (x) x.dataset.label = l; });
@@ -946,7 +1100,7 @@ function renderNotes(m, focusBody, space = "notes"){
     const b = h("button", { type: "button", class: "nb-holob nb-indb", "aria-label": "Paranotes", title: "Paranotes: your own notes under the words they explain", "aria-expanded": "false" }, `<span aria-hidden="true">↳</span>`);
     ed.appendChild(b);
     b.onclick = () => { IND.open = !IND.open; if (IND.open) { if (AS.open) asClose(); indOpen(n.id); } else indClose(); };
-    if (IND.open) indOpen(n.id);
+    if (IND.open && !SIMPLE()) indOpen(n.id);
   }
   function indClose(){ IND.open = false; IND.edit = null; if (indEl) { indEl.remove(); indEl = null; } if (indKey) { window.removeEventListener("keydown", indKey, true); indKey = null; } const b = $(".nb-indb", ed); if (b) b.setAttribute("aria-expanded", "false"); }
   function indFit(){
@@ -1001,13 +1155,131 @@ function renderNotes(m, focusBody, space = "notes"){
   const AS = NOTES.as || (NOTES.as = { open: null, box: Object.assign({ r: 16, b: 70, w: 400, h: 460 }, store.get("asbox", {})), chats: {}, g: null });
   let asEl = null, asKey = null;
   const GST = () => Object.assign({ def: "school", lang: "en-US", notes: {} }, store.get("grammar", {}));
+  /* ----- Word count (v0.5.8, Devon): a slim line at the bottom of the note, between 🎙 and the corner buttons: words,
+     characters, reading time; with words selected, the count of the selection. Widgets and paranotes are not counted;
+     Chinese and Japanese characters count one word each. ----- */
+  function countText(root, range){
+    let t = ""; const tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: x => x.parentElement && x.parentElement.closest(".nw, .nann-layer, .np-ck") ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
+    let x; while ((x = tw.nextNode())) { if (range && !range.intersectsNode(x)) continue; let v = x.data;
+      if (range) v = v.slice(x === range.startContainer ? range.startOffset : 0, x === range.endContainer ? range.endOffset : v.length);
+      t += v + (x.parentElement && /^(DIV|P|LI|H\d)$/.test(x.parentElement.tagName) ? " " : ""); }
+    t = t.replace(/\u200b/g, "");
+    const cjk = (t.match(/[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/g) || []).length;
+    const words = (t.replace(/[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/g, " ").match(/[\p{L}\p{N}][\p{L}\p{N}\p{M}'’_-]*/gu) || []).length + cjk;
+    const chars = [...t.replace(/\s+$/, "").replace(/^\s+/, "")].filter(c => c !== "\n").length, bare = [...t].filter(c => !/\s/.test(c)).length;
+    return { words, chars, bare };
+  }
+  function wordCount(){
+    if (CODE || !rich) return;
+    const bar = h("div", { class: "nb-wc num", role: "status", "aria-live": "off", title: "Word count" });
+    // (v0.5.8, Devon) a switch in front of it shows or hides the count; kept in notepath.wordcount (on by default)
+    const sw = h("button", { type: "button", class: "nb-wct", role: "switch" }, `<span class="nb-wcti" aria-hidden="true"></span><span class="nb-wctl">Word count</span>`);
+    const setOn = on => { store.set("wordcount", on); sw.setAttribute("aria-checked", String(on)); sw.title = on ? "Hide the word count" : "Show the word count"; sw.setAttribute("aria-label", sw.title); bar.hidden = !on; ed.classList.toggle("wc-off", !on); if (on) paint(); };
+    sw.onclick = () => setOn(!store.get("wordcount", true));
+    ed.appendChild(sw); ed.appendChild(bar);
+    const plural = (n, w) => `${n.toLocaleString()} ${w}${n === 1 ? "" : "s"}`;
+    const paint = () => { if (!rich || !bar.isConnected || bar.hidden) return;
+      const all = countText(rich.el), sel = getSelection(), r = sel.rangeCount && !sel.isCollapsed && rich.el.contains(sel.getRangeAt(0).commonAncestorContainer) ? sel.getRangeAt(0) : null;
+      const mins = all.words / 238, read = all.words ? (mins < 1 ? "under 1 min read" : `${Math.round(mins)} min read`) : "";
+      if (r) { const c = countText(rich.el, r); bar.classList.add("sel"); bar.innerHTML = `<b>${c.words.toLocaleString()}</b> <span>of ${plural(all.words, "word")} selected</span><span class="nb-wcx"> <span>· ${plural(c.chars, "character")}</span></span>`; }
+      else { bar.classList.remove("sel"); bar.innerHTML = `<b>${plural(all.words, "word")}</b><span class="nb-wcx"> <span>· ${plural(all.chars, "character")}</span>${read ? ` · <span>${read}</span>` : ""}</span>`; } // one phrase per span, so each translates (i18n.js)
+      bar.title = `${plural(all.words, "word")} · ${plural(all.chars, "character")} (${all.bare.toLocaleString()} without spaces)${read ? " · " + read : ""}`; };
+    let t = 0; const later = ms => { clearTimeout(t); t = setTimeout(paint, ms); };
+    rich.el.addEventListener("input", () => later(200));
+    const ro = new MutationObserver(() => later(250)); ro.observe(rich.el, { childList: true, subtree: false });
+    const onSel = () => { if (bar.isConnected) later(120); else { document.removeEventListener("selectionchange", onSel); ro.disconnect(); } };
+    document.addEventListener("selectionchange", onSel); m.cleanup.push(() => { document.removeEventListener("selectionchange", onSel); ro.disconnect(); });
+    setOn(store.get("wordcount", true));
+  }
+  /* ----- 🎙 Record (v0.5.8, Devon): bottom left of the note, in Simple and Professional ----- */
+  function recButton(n){
+    if (CODE) return;
+    const old = $(".nb-rec", ed); if (old) old.remove();
+    const box = h("div", { class: "nb-rec", role: "group", "aria-label": "Audio recording" });
+    ed.appendChild(box); recPaint(box, n);
+  }
+  function recPaint(box, n){
+    box = box || $(".nb-rec", ed); if (!box) return;
+    const MIC = window.InquireWidgets ? InquireWidgets.MIC_IC : "🎙";
+    if (!REC.on) {
+      box.className = "nb-rec";
+      box.innerHTML = `<button type="button" class="nb-recb" data-label="Record" title="Record audio into this note (your microphone)" aria-label="Record audio into this note">${MIC}</button>`;
+      $(".nb-recb", box).onclick = () => recStart(n);
+      return;
+    }
+    const other = REC.noteId !== NOTES.sel, nt = NS.get(REC.noteId);
+    box.className = "nb-rec on" + (REC.paused ? " paused" : "");
+    box.innerHTML = `<span class="nb-recdot" aria-hidden="true"></span><span class="nb-rect num" role="timer" aria-live="off">${InquireWidgets.clock(recSecs())}</span><span class="nb-reclv" aria-hidden="true"><i></i></span>`
+      + `<span class="nb-recs">${REC.paused ? "Paused" : "Recording"}${other && nt ? ` into “${esc(nt.title)}”` : ""}</span>`
+      + `<button type="button" class="nb-recx" data-r="pause" title="${REC.paused ? "Carry on recording" : "Pause"}" aria-label="${REC.paused ? "Resume" : "Pause"}">${REC.paused ? "▶" : "❚❚"}</button>`
+      + `<button type="button" class="nb-recx nb-recstop" data-r="stop" title="Stop and put the recording in the note" aria-label="Stop and save">■ Save</button>`
+      + `<button type="button" class="nb-recx" data-r="cancel" title="Throw this recording away" aria-label="Discard the recording">✕</button>`;
+    box.onclick = e => { const b = e.target.closest("[data-r]"); if (!b) return; if (b.dataset.r === "pause") recPause(); else if (b.dataset.r === "stop") recStop(true); else recStop(false); };
+  }
+  async function recStart(n){
+    if (REC.on) return;
+    const md = navigator.mediaDevices;
+    if (!md || !md.getUserMedia || !window.MediaRecorder) { msg("Recording needs a microphone, and this window can't reach one."); return; }
+    let stream;
+    try { stream = await md.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); }
+    catch (e) { msg(/NotAllowed|Security|Permission/i.test(e && e.name || "") ? (/Mac/.test(navigator.platform) ? "NotePath may not use the microphone. Turn it on in System Settings › Privacy & Security › Microphone, then try again." : "NotePath may not use the microphone. Allow it in your system's privacy settings, then try again.") : "No microphone was found."); return; }
+    const mime = recMime(); let mr;
+    try { mr = new MediaRecorder(stream, mime ? { mimeType: mime, audioBitsPerSecond: 64000 } : undefined); } catch (e) { stream.getTracks().forEach(t => t.stop()); msg("This computer can't record audio here."); return; }
+    Object.assign(REC, { on: true, mr, stream, chunks: [], noteId: n.id, paused: false, acc: 0, t0: performance.now(), mime: mr.mimeType || mime || "audio/webm", started: new Date() });
+    mr.ondataavailable = e => { if (e.data && e.data.size) REC.chunks.push(e.data); };
+    mr.start(1000);
+    // a small level meter (≈ 12 updates a second)
+    try { const AC = window.AudioContext || window.webkitAudioContext; REC.ac = new AC(); const an = REC.ac.createAnalyser(); an.fftSize = 512; REC.ac.createMediaStreamSource(stream).connect(an); REC.an = an; REC.buf = new Uint8Array(an.fftSize); } catch (e) {}
+    REC.tick = setInterval(recTick, 80);
+    window.__npRec = () => ({ on: REC.on, paused: REC.paused, secs: recSecs(), level: REC.lv || 0, note: REC.noteId }); // for the tests
+    if (REC.ac && REC.ac.resume) REC.ac.resume().catch(() => {});
+    recPaint(null, n); const sb = $(".nb-recstop", ed); if (sb) sb.focus({ preventScroll: true });
+  }
+  function recTick(){
+    if (!REC.on) return;
+    const box = $(".nb-rec.on", ed); if (box) {
+      const t = $(".nb-rect", box); if (t) t.textContent = InquireWidgets.clock(recSecs());
+      const lv = $(".nb-reclv i", box); if (lv && REC.an && !REC.paused) { REC.an.getByteTimeDomainData(REC.buf); let pk = 0; for (let i = 0; i < REC.buf.length; i += 4) pk = Math.max(pk, Math.abs(REC.buf[i] - 128)); REC.lv = Math.max(REC.lv || 0, pk); lv.style.transform = `scaleX(${Math.min(1, pk / 90).toFixed(2)})`; }
+    }
+    if (recSecs() >= REC_MAX) { recStop(true); msg("Recordings stop at 3 hours: this one is saved."); }
+  }
+  function recPause(){
+    if (!REC.on) return;
+    if (REC.paused) { REC.mr.resume(); REC.paused = false; REC.t0 = performance.now(); }
+    else { REC.mr.pause(); REC.paused = true; REC.acc += performance.now() - REC.t0; }
+    recPaint();
+  }
+  function recStop(keep){
+    if (!REC.on) return Promise.resolve();
+    const R = Object.assign({}, REC), dur = recSecs();
+    clearInterval(REC.tick); REC.on = false;
+    try { if (R.ac) R.ac.close(); } catch (e) {}
+    const done = new Promise(res => { R.mr.onstop = res; });
+    try { R.mr.stop(); } catch (e) {}
+    R.stream.getTracks().forEach(t => t.stop());
+    const box = $(".nb-rec", ed); if (box) recPaint(box, NS.get(NOTES.sel) || { id: NOTES.sel });
+    return done.then(async () => {
+      if (!keep) { msg("Recording thrown away."); return; }
+      const blob = new Blob(R.chunks, { type: R.mime.split(";")[0] || "audio/webm" });
+      if (!blob.size) { msg("Nothing was recorded."); return; }
+      const d = R.started, title = "Recording · " + d.toLocaleDateString(undefined, { month: "short", day: "numeric" }) + ", " + d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+      try {
+        if (rich && rich.id === R.noteId && rich.addAudio && s.isConnected) { await rich.addAudio(blob, { title, dur }); }
+        else { const nt = NS.get(R.noteId); if (!nt) { msg("The note for that recording is gone."); return; }
+          const vid = await NS.putVideo(blob), w = InquireWidgets.create("audio", { vid, title, dur: Math.round(dur), mime: blob.type });
+          NS.update(R.noteId, { html: (nt.html || "") + w.outerHTML + "<div><br></div>" }); }
+        msg(`Saved the recording (${InquireWidgets.clock(dur)}) in the note.`);
+      } catch (e) { msg("The recording could not be saved."); }
+    });
+  }
+  m.cleanup.push(() => { if (REC.on) recStop(true); });
   function asButtons(n){
-    [["ai", "nb-aib", "AI Chat", "AI Chat: ask about this note, or have it write, sum up or explain", `<span aria-hidden="true">✦</span>`],
+    [["ai", "nb-aib", "AI Chat", "AI Chat: ask about this note, or have it write, sum up or explain", aiFigure()],
      ["gram", "nb-gramb", "Grammar check", "Grammar check: spelling, grammar and style, set to the kind of note you are writing", `<span aria-hidden="true" class="nb-gramg">A<small>✓</small></span>`]].forEach(([k, cls, label, title, ic]) => {
       const b = h("button", { type: "button", class: "nb-holob " + cls, "aria-label": label, title, "aria-expanded": String(AS.open === k) }, ic);
       ed.appendChild(b); b.onclick = () => { if (AS.open === k) asClose(); else asOpen(k, n.id); };
     });
-    if (AS.open) asOpen(AS.open, n.id);
+    if (AS.open && !(SIMPLE() && AS.open === "ai")) asOpen(AS.open, n.id);
   }
   function asClose(){ AS.open = null; if (asEl) { asEl.remove(); asEl = null; } if (asKey) { window.removeEventListener("keydown", asKey, true); asKey = null; } ed.querySelectorAll(".nb-aib, .nb-gramb").forEach(b => b.setAttribute("aria-expanded", "false")); }
   function asFit(){
@@ -1196,7 +1468,7 @@ function renderNotes(m, focusBody, space = "notes"){
     $(".np-peek-m", peekEl).textContent = (f ? f.name : "Unfiled") + " · edited " + stampShort(n.updated);
     if (n.space === "code") { body.innerHTML = `<pre class="np-peek-code"></pre>`; body.firstChild.textContent = (n.code && n.code.src) || ""; return; }
     const t = document.createElement("template"); t.innerHTML = ALLNS.sanitize(n.html || "");
-    t.content.querySelectorAll("div.nw").forEach(w => { const k = w.getAttribute("data-w"); const p = document.createElement("div"); p.className = "np-peek-w"; p.textContent = "▦ " + ({ code: "Code box", music: "Music chart", sheet: "Lead sheet", graph: "Graph", video: "Video" }[k] || "Widget") + " · open the note to see it"; w.replaceWith(p); });
+    t.content.querySelectorAll("div.nw").forEach(w => { const k = w.getAttribute("data-w"); const p = document.createElement("div"); p.className = "np-peek-w"; p.textContent = "▦ " + ({ code: "Code box", music: "Music chart", sheet: "Lead sheet", graph: "Graph", video: "Video", map: "Map", audio: "Audio recording", sign: "Signature" }[k] || "Widget") + " · open the note to see it"; w.replaceWith(p); });
     t.content.querySelectorAll("span[data-ann]").forEach(sp => sp.removeAttribute("data-ann"));
     body.innerHTML = ""; body.appendChild(t.content);
     if (!body.textContent.trim() && !body.querySelector("img")) body.innerHTML = `<p class="np-hl-none">This note is empty.</p>`;
@@ -1250,9 +1522,9 @@ function renderNotes(m, focusBody, space = "notes"){
     if (rich2) { rich2.destroy(); rich2 = null; }
     const n = SPLIT.id && NS.get(SPLIT.id);
     if (!n) { SPLIT.id = null; SPLIT.min = false; }
-    const show = !!n && !SPLIT.min;
+    const show = !!n && !SPLIT.min && !SIMPLE(); // Simple has one note at a time; Professional brings the second one back
     ed2.hidden = !show; edSec.classList.toggle("split", show);
-    tabs.hidden = !(n && SPLIT.min);
+    tabs.hidden = !(n && SPLIT.min) || SIMPLE();
     tabs.innerHTML = n && SPLIT.min ? `<div class="nb-tab"><button type="button" class="nb-tab-t" data-a="max" title="Bring ${esc(n.title)} back beside this note">▣ <span>${esc(n.title)}</span></button><button type="button" class="nb-tab-b" data-a="max" title="Maximise: open it side by side again" aria-label="Maximise ${esc(n.title)}">⤢</button><button type="button" class="nb-tab-b" data-a="close" title="Close" aria-label="Close ${esc(n.title)}">✕</button></div>` : "";
     tabs.querySelectorAll('[data-a="max"]').forEach(b => b.onclick = () => { SPLIT.min = false; drawSplit(); });
     const tx = $('[data-a="close"]', tabs); if (tx) tx.onclick = () => closeSplit();
@@ -1341,7 +1613,7 @@ let DESK_VERSION = "";
 if (window.inquireDesktop) {
   const D = window.inquireDesktop;
   document.documentElement.classList.add("desktop", "os-" + D.platform);
-  if (D.onRoute) D.onRoute(r => { if (r && r.note) return openNoteLink(r.note); if (r && r.view) go(r); }); // tray menu: Open My Tasks, the next reminder
+  if (D.onRoute) D.onRoute(r => { if (r && r.note) return openNoteLink(r.note); if (r && r.folderLink) return openFolderLinkTo(r.folderLink); if (r && r.view) go(r); }); // tray menu: Open My Tasks, the next reminder
   D.version().then(v => { DESK_VERSION = v; const el = document.querySelector("#verline .num"); if (el) el.textContent = "v" + v; });
   const bar = $("#upd");
   let hideT = null;
@@ -1365,7 +1637,7 @@ if (window.inquireDesktop) {
 
 /* ---------- hooks for settings.js and textmenu.js ---------- */
 window.InquireApp = {
-  noteLink, openNoteLink, coverButton,
+  noteLink, openNoteLink, folderLink, openFolderLinkTo, coverButton,
   context(){ return { view: S.view }; },
   openNotes: id => go({ view: "notes", space: "notes", folder: "all", sel: id || null }),
   newNote,

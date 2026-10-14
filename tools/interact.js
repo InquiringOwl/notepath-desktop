@@ -818,7 +818,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     // (v0.5.1) ▦ Widgets tab; the info box (last edited / created to the second); ◈ Tags · Links · Source panel
     // (v0.5.5) the widgets moved from the note's formatting bar to their own section at the top of the Tool bar
     ok(!(await q.$('.p1 .nr-tools [data-dd=widgets]')) && !(await q.$('.p1 .nr-tools [data-w]')), 'the formatting bar has no Widgets menu any more');
-    ok(JSON.stringify(await q.$$eval('.nb-rail > *', e => e.map(x => x.dataset.widget || x.dataset.tool || (x.classList.contains('nb-hide') ? 'hide' : x.textContent.trim())))) === '["hide","Widgets","code","sheet","graph","map","more","Tools","note","canvas","trees","sheets"]', 'the Tool bar: ◀ Hide, a Widgets section (Code box, Lead sheet, Graph, Map, more to come) above the tools');
+    ok(JSON.stringify(await q.$$eval('.nb-rail > *', e => e.map(x => x.dataset.widget || x.dataset.tool || (x.classList.contains('nb-hide') ? 'hide' : x.textContent.trim())))) === '["hide","Widgets","code","sheet","graph","map","sign","more","Tools","note","canvas","trees","sheets"]', 'the Tool bar: ◀ Hide, a Widgets section (Code box, Lead sheet, Graph, Map, Signature, more to come) above the tools');
     await q.click('.p1 .nb-rich'); await q.keyboard.press('Control+End'); await q.click('.nb-rail [data-widget=graph]'); await wait(200);
     ok(!!(await q.$('.p1 .nb-rich .nw[data-w=graph]')), 'a widget from the Tool bar goes into the note');
     await q.click('.nb-rail [data-widget=more]', { force: true }); await wait(150);
@@ -1355,7 +1355,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await q.click('.nb-tools [data-view=list]'); await wait(200);
     // Task 2: All notes / Favourites / Unfiled filter the bar
     await q.click('.nb-fdb[data-f=fav]'); await wait(250);
-    const seen = () => q.evaluate(() => ({ notes: [...document.querySelectorAll('.nb-ftree .nb-fnote:not(.nb-cfile)')].map(x => x.querySelector('.nb-t').textContent.replace('★', '').trim()).sort(), folders: document.querySelectorAll('.nb-ftree .nb-fd.user, .nb-ftree .nb-cfd, .nb-ftree .nb-fadd, .nb-ftree [data-top]').length, code: [...document.querySelectorAll('.nb-ftree .nb-cfile')].map(x => x.textContent.replace(/^PY/, '').trim()), libs: [...document.querySelectorAll('.nb-fd.lib')].map(x => x.dataset.f) }));
+    const seen = () => q.evaluate(() => ({ notes: [...document.querySelectorAll('.nb-ftree .nb-fnote:not(.nb-cfile)')].map(x => x.querySelector('.nb-t').textContent.replace('★', '').trim()).sort(), folders: document.querySelectorAll('.nb-ftree .nb-fd.user, .nb-ftree .nb-cfd, .nb-ftree [data-top]').length, code: [...document.querySelectorAll('.nb-ftree .nb-cfile')].map(x => x.textContent.replace(/^PY/, '').trim()), libs: [...document.querySelectorAll('.nb-fd.lib')].map(x => x.dataset.f) }));
     let v = await seen();
     ok(JSON.stringify(v.notes) === '["Starred loose","Wrench list"]' && v.folders === 0 && JSON.stringify(v.code) === '["fav.py"]' && JSON.stringify(v.libs) === '["all","fav","none"]', 'Favourites shows only the starred notes: no other notes, no folders (Code too)', v);
     await q.click('.nb-fdb[data-f=none]'); await wait(250); v = await seen();
@@ -1445,7 +1445,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await q.click('.tm-menu [data-a=ai-rep]'); await wait(300);
     ok(/^A shorter line\./.test(await q.$eval('.p1 .nb-rich', e => e.textContent)), 'Replace puts the answer in place of the selected words');
     // the Map widget
-    ok(JSON.stringify(await q.$$eval('.nb-rail [data-widget]', e => e.map(x => x.dataset.widget))) === '["code","sheet","graph","map","more"]', 'Map is in the Widgets section of the Tool bar');
+    ok(JSON.stringify(await q.$$eval('.nb-rail [data-widget]', e => e.map(x => x.dataset.widget))) === '["code","sheet","graph","map","sign","more"]', 'Map is in the Widgets section of the Tool bar');
     await q.click('.nb-rail [data-widget=map]'); await wait(400);
     ok(!!(await q.$('.p1 .nw[data-w=map] .nm-q')) && await q.evaluate(() => document.activeElement && document.activeElement.matches('.nm-q')), 'the Map widget goes into the note, ready to search');
     await q.fill('.nm-q', 'nowhere at all'); await q.keyboard.press('Enter'); await wait(400);
@@ -1676,6 +1676,304 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     ok(JSON.stringify(await q.$$eval('.p1 .nb-holob', b => b.map(x => x.dataset.label))) === '["Links","Paranotes","AI Chat","Grammar"]', 'the corner buttons are named: Links, Paranotes, AI Chat, Grammar');
     await q.hover('.p1 .nb-aib'); await wait(250);
     ok(await q.$eval('.p1 .nb-aib', e => getComputedStyle(e, '::after').opacity) === '1' && await q.$eval('.p1 .nb-aib', e => getComputedStyle(e, '::after').content) === '"AI Chat"', 'hovering a corner button shows its name');
+    await q.close();
+  }
+  {
+    // v0.5.8 (Devon): the selected tile's line, the corner buttons (AI Chat far right with its figure), ◀ Hide under Show as, Import & Export progress
+    const q = await page(() => { localStorage.setItem('notepath.noteview', '"icons"'); });
+    await q.goto(URL0 + '#menu'); await wait(500);
+    await q.evaluate(async () => { const N = InquireNotes, f = N.addFolder('Work');
+      const c = document.createElement('canvas'); c.width = 400; c.height = 400; const x = c.getContext('2d'); for (let i = 0; i < 900; i++) { x.fillStyle = `hsl(${i % 360},70%,50%)`; x.fillRect(Math.random() * 400, Math.random() * 400, 20, 20); }
+      const blob = await new Promise(r => c.toBlob(r, 'image/png')), big = '<div>' + 'Lorem ipsum dolor sit amet, '.repeat(300) + '</div>';
+      for (let i = 0; i < 24; i++) { const id = await N.putImage(blob); N.create({ title: 'Progress note with a long name ' + i, html: big + `<div><img data-img="${id}"></div>`, folder: i % 2 ? f.id : null }); } });
+    await q.click('[data-a=open]'); await q.waitForSelector('.nb-tiles .nb-fnote'); await wait(400);
+    await q.click('.nb-tiles .nb-fnote >> nth=0'); await wait(400);
+    const geo = await q.$eval('.nb-tiles .nb-fnote.sel', t => { const r = t.getBoundingClientRect(), cs = getComputedStyle(t, '::before'), l = r.left + parseFloat(cs.left), w = parseFloat(cs.width), ic = t.querySelector('.nb-tic').getBoundingClientRect(), ti = t.querySelector('.nb-t').getBoundingClientRect();
+      return { content: cs.content, l, w, h: parseFloat(cs.height), th: r.height, tl: r.left, ic: ic.left, ti: ti.left }; });
+    ok(geo.content === '""' && Math.abs(geo.l - geo.tl) <= 2 && geo.h >= geo.th - 8 && geo.l + geo.w <= geo.ic - 4 && geo.l + geo.w <= geo.ti, 'Icons: the selected note’s line runs down the left edge of its square, clear of the icon and the name', geo);
+    // corner buttons: AI Chat on the far right, bigger, with the holographic figure in the theme colour
+    const cb = await q.$$eval('.p1 .nb-holob', b => b.map(x => { const r = x.getBoundingClientRect(); return { k: x.dataset.label, r: r.right, w: r.width, cy: r.top + r.height / 2 }; }));
+    const ai = cb.find(x => x.k === 'AI Chat');
+    ok(cb.every(x => x === ai || x.r < ai.r) && JSON.stringify(cb.slice().sort((a, b) => b.r - a.r).map(x => x.k)) === '["AI Chat","Links","Paranotes","Grammar"]', 'corner buttons right to left: AI Chat, Links, Paranotes, Grammar', cb);
+    ok(ai.w > Math.max(...cb.filter(x => x !== ai).map(x => x.w)) && cb.every(x => Math.abs(x.cy - ai.cy) < 2), 'AI Chat is the biggest corner button, centred on the same line', cb);
+    ok(await q.$eval('.p1 .nb-aib', e => !!e.querySelector('svg.nb-aifig') && !/✦/.test(e.textContent) && getComputedStyle(e, '::before').content === '""' && (getComputedStyle(e, '::before').animationName === 'nb-aura') === (document.documentElement.dataset.perf !== 'lite' && !document.documentElement.hasAttribute('data-reduce-motion'))), 'AI Chat shows the holographic figure (no ✦) with an aura that breathes (still in Lite and with Reduce motion)');
+    const fc = c => q.evaluate(() => getComputedStyle(document.querySelector('.p1 .nb-aifig .hair path')).stroke);
+    const c1 = await fc(); await q.evaluate(() => document.documentElement.style.setProperty('--frame', '#D97AE6')); await wait(50); const c2 = await fc(); await q.evaluate(() => document.documentElement.style.removeProperty('--frame'));
+    ok(c1 !== c2 && /217, 122, 230|d97ae6/i.test(c2), 'the figure takes the theme colour', [c1, c2]);
+    await q.click('.p1 .nb-aib'); await wait(250);
+    ok(!!(await q.$('.np-holo.np-as-ai')), 'AI Chat still opens its box'); await q.keyboard.press('Escape'); await wait(150);
+    // ◀ Hide: under Show as at the far left; on one line it follows ★ first
+    const hb = async () => q.evaluate(() => { const r = s => document.querySelector(s).getBoundingClientRect(), v = r('.nb-ftools .np-views'), h = r('.nb-ftools .nb-hide'), f = r('.nb-ftools .nb-favtop'); return { vl: v.left, vb: v.bottom, vt: v.top, hl: h.left, ht: h.top, fl: f.left, fr: f.right, ft: f.top }; });
+    let g = await hb();
+    ok(Math.abs(g.hl - g.vl) < 1 && g.ht >= g.vb && Math.abs(g.ft - g.ht) < 2 && g.fl > g.hl, 'narrow bar: ◀ Hide sits at the far left right under Show as, ★ first beside it', g);
+    await q.evaluate(() => { document.querySelector('.nb').style.setProperty('--nb-fw-user', '440px'); }); await wait(150); g = await hb();
+    ok(Math.abs(g.ht - g.vt) < 3 && g.hl > g.fr && g.hl - g.fr <= 8, 'wide bar (one line): ◀ Hide comes straight after ★ first', g);
+    await q.evaluate(() => { document.querySelector('.nb').style.removeProperty('--nb-fw-user'); });
+    // Import & Export progress: size, speed, time left, % meter
+    const rep = await q.evaluate(async () => { const ps = []; const r = await NPIO.exportNotes('all', 'md', { noSave: true, onProgress: p => ps.push(p) });
+      const z = new File([r.blob], 'round.zip', { type: 'application/zip' }), pi = []; await NPIO.importFiles([z], { onProgress: p => pi.push(p) });
+      const mono = a => a.every((p, i) => !i || p.f >= a[i - 1].f - 1e-9);
+      return { n: ps.length, mono: mono(ps), last: ps[ps.length - 1], size: ps[0] && ps[0].size, zip: ps.some(p => p.phase === 'zip'), eta: ps.some(p => p.eta != null || p.finished), ni: pi.length, imono: mono(pi), ilast: pi[pi.length - 1], isize: z.size, read: pi.some(p => p.phase === 'read') }; });
+    ok(rep.n >= 3 && rep.mono && rep.last.finished && rep.last.pct === 100 && rep.size > 24 * 8000 && rep.zip, 'export reports its progress: never backwards, the notes then the .zip, ends at 100%', rep);
+    ok(rep.ni >= 3 && rep.imono && rep.ilast.finished && rep.ilast.pct === 100 && rep.ilast.size === rep.isize && rep.read, 'import reports its progress from the size of the files picked (reading the .zip, then the notes)', rep);
+    ok(await q.evaluate(() => NPIO.fmtBytes(1536) === '1.5 KB' && NPIO.fmtBytes(5 * 1048576) === '5.0 MB' && NPIO.fmtTime(75) === '1 min 15 s' && NPIO.fmtTime(.4) === 'less than a second'), 'sizes and times read plainly (1.5 KB, 5.0 MB, 1 min 15 s)');
+    await q.click('[data-a=share]'); await q.click('.np-share-pop [data-s=io]'); await q.waitForSelector('.io-fmt');
+    ok(await q.$$eval('.io-prog', e => e.length === 2 && e.every(x => x.hidden)), 'the window has an export and an import bar, hidden until something runs');
+    await q.click('[data-s=all]'); await q.click('[data-f=html]');
+    const dl = q.waitForEvent('download').catch(() => null); await q.click('[data-a=export]');
+    const vals = []; for (let i = 0; i < 300; i++) { const v = await q.$eval('.io-progx .io-prog-bar', e => +e.getAttribute('aria-valuenow')); if (!vals.includes(v)) vals.push(v); if (await q.$('.io-progx .io-prog.ok')) break; await wait(20); }
+    await dl;
+    const ui = await q.$eval('.io-progx .io-prog', e => ({ pct: e.querySelector('.io-prog-pct').textContent, size: e.querySelector('.io-prog-size').textContent, speed: e.querySelector('.io-prog-speed').textContent, what: e.querySelector('.io-prog-what').textContent, role: e.querySelector('[role=progressbar]').getAttribute('aria-valuenow'), fill: e.querySelector('.io-prog-fill').style.width }));
+    ok(ui.pct === '100%' && ui.role === '100' && /^100(\.0)?%$/.test(ui.fill) && /of \d/.test(ui.size) && /MB|KB/.test(ui.size) && /on average/.test(ui.speed) && /\.zip · /.test(ui.what) && vals.every((v, i) => !i || v >= vals[i - 1]), 'Export shows the bar: % meter to 100%, size, average speed and the file it made', { ui, vals });
+    const zp = path.join(dir, 'progress-import.zip'); fs.writeFileSync(zp, Buffer.from(await q.evaluate(async () => { const r = await NPIO.exportNotes('all', 'txt', { noSave: true }); return [...new Uint8Array(await r.blob.arrayBuffer())]; })));
+    await q.setInputFiles('.io-fin', zp); await q.waitForSelector('.io-progi .io-prog.ok', { timeout: 15000 });
+    const iu = await q.$eval('.io-progi .io-prog', e => ({ pct: e.querySelector('.io-prog-pct').textContent, size: e.querySelector('.io-prog-size').textContent, t: e.querySelector('.io-prog-t').textContent }));
+    ok(iu.pct === '100%' && /of \d/.test(iu.size) && /Import finished/.test(iu.t) && /Imported/.test(await q.$eval('.io-log', e => e.textContent)), 'Import shows the bar too: size, % meter, finished', iu);
+    await q.keyboard.press('Escape'); await wait(200);
+    await q.close();
+  }
+  {
+    // v0.5.8 batch 2 (Devon): Emoji after Highlight, Simple / Professional, Indent less / more, 🎙 audio recording
+    const b2 = await chromium.launch({ args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] });
+    const q = await b2.newPage({ viewport: { width: 1440, height: 900 } }); q.setDefaultTimeout(6000); q.on('pageerror', e => errs.push(e.message));
+    await q.addInitScript(() => { localStorage.setItem('notepath.seen056', 'true'); });
+    await q.goto(URL0 + '#menu'); await wait(500);
+    const ids = await q.evaluate(() => { const N = InquireNotes, a = N.create({ title: 'Indent me', html: '<div>Line one</div><div>Line two</div><ul><li>Item A</li><li>Item B</li></ul>' }), b = N.create({ title: 'Other note', html: '<div>Other</div>' });
+      N.scope('code').create({ title: 'hello.py', code: { lang: 'python', src: 'print(1)' }, html: '', body: 'print(1)' }); return { a: a.id, b: b.id }; });
+    await q.click('[data-a=open]'); await q.waitForSelector('.nb-rich'); await q.click(`.nb-fnote[data-id="${ids.a}"]`); await wait(400);
+    // Task 5: emoji right after the highlight colour
+    ok(await q.$eval('.nr-tools .nr-hlb', e => { const n = e.nextElementSibling; return !!n && n.classList.contains('nr-sym'); }), 'the Emoji & symbols button sits right after the Highlight colour');
+    // Task 8: Indent less / more on the format bar (Professional)
+    ok(await q.$$eval('.nr-tools .nr-ind', e => e.length === 2 && e.every(x => x.offsetParent) && e[0].dataset.a === 'indent-' && e[1].dataset.a === 'indent+'), 'Professional: Decrease / Increase indent buttons on the format bar');
+    const line = n => q.evaluate(n => { const d = document.querySelector('.p1 .nb-rich').querySelectorAll(':scope > div')[n]; return d ? d.getAttribute('data-in') : 'missing'; }, n);
+    await q.evaluate(() => { const ed = document.querySelector('.p1 .nb-rich'), t = ed.querySelector(':scope > div').firstChild, r = document.createRange(); r.setStart(t, 3); r.collapse(true); ed.focus(); getSelection().removeAllRanges(); getSelection().addRange(r); });
+    await q.click('.nr-ind[data-a="indent+"]'); await wait(80); await q.click('.nr-ind[data-a="indent+"]'); await wait(80);
+    ok(await line(0) === '2' && await line(1) === null, 'Increase indent moves only the line the caret is on, a step each press', [await line(0), await line(1)]);
+    await q.click('.nr-ind[data-a="indent-"]'); await wait(80);
+    ok(await line(0) === '1', 'Decrease indent takes a step back', await line(0));
+    await q.evaluate(() => { const li = document.querySelectorAll('.p1 .nb-rich li')[1], r = document.createRange(); r.setStart(li.firstChild, 2); r.collapse(true); document.querySelector('.p1 .nb-rich').focus(); getSelection().removeAllRanges(); getSelection().addRange(r); });
+    await q.click('.nr-ind[data-a="indent+"]'); await wait(120);
+    ok(await q.evaluate(() => !!document.querySelector('.p1 .nb-rich li li') && /Item B/.test(document.querySelector('.p1 .nb-rich li li').textContent)), 'in a list, Increase indent tucks the item under the one above');
+    await q.click('.nr-ind[data-a="indent-"]'); await wait(120);
+    ok(await q.evaluate(() => !document.querySelector('.p1 .nb-rich li li')), 'and Decrease indent brings it back out');
+    await wait(600); ok(await q.evaluate(id => /data-in="1"/.test(InquireNotes.get(id).html), ids.a), 'indents are saved with the note');
+    // Task 6: Simple / Professional
+    ok(await q.$eval('.np-mode [data-mode=pro]', e => e.getAttribute('aria-checked') === 'true') && await q.$eval('.nb', e => e.dataset.mode) === 'pro', 'My notes opens as Professional by default (the switch in the header)');
+    await q.fill('input[type="search"]', 'hello'); await wait(300);
+    ok(/My Code/.test(await q.$eval('.nb-sres', e => e.textContent)), 'Professional: search also finds My Code files');
+    await q.fill('input[type="search"]', ''); await wait(200);
+    await q.click('.np-mode [data-mode=simple]'); await wait(400);
+    const vis = sel => q.$$eval(sel, e => e.some(x => x.offsetParent || getComputedStyle(x).position === 'fixed' && x.getClientRects().length));
+    ok(await q.$eval('.nb', e => e.dataset.mode) === 'simple' && !(await vis('.nb-rail')) && !(await vis('.nb-fcode')) && !(await vis('.nb-fsplit')), 'Simple: no Tool bar, no Code or Music sections');
+    ok(!(await vis('.nr-head')) && !(await vis('.nr-alb')) && !(await vis('.nr-spb')) && !(await vis('.nr-clr')) && !(await vis('.nr-ind')), 'Simple: no headings, align & indent, spacing, indent buttons or clear formatting');
+    ok(await q.$$eval('.p1 .nr-tools [data-cmd], .p1 .nr-tools [data-blk], .p1 .nr-font, .p1 .nr-size, .p1 .nr-colb, .p1 .nr-hlb, .p1 .nr-sym', e => e.length === 12 && e.every(x => x.offsetParent)), 'Simple keeps bold, italic, underline, strikethrough, the lists, font, size, colours, highlight and emoji');
+    ok(JSON.stringify(await q.$$eval('.p1 .nb-holob', e => e.filter(x => x.offsetParent).map(x => x.dataset.label))) === '["Grammar"]' && await vis('.p1 .nb-recb'), 'Simple: Grammar check and Record stay; Links, Paranotes and AI Chat go');
+    ok(await q.$eval('.p1', e => e.getBoundingClientRect().left) < await q.$eval('.nb-folders', e => e.getBoundingClientRect().right) + 4, 'Simple: the note sits right beside the Folders & Files bar');
+    await q.fill('input[type="search"]', 'hello'); await wait(300);
+    ok(!/My Code/.test(await q.$eval('.nb-sres', e => e.textContent)), 'Simple: search keeps to notes');
+    await q.fill('input[type="search"]', ''); await wait(200);
+    await q.reload(); await q.waitForSelector('.nb-rich'); await wait(300);
+    ok(await q.$eval('.nb', e => e.dataset.mode) === 'simple' && await q.$eval('.np-mode [data-mode=simple]', e => e.getAttribute('aria-checked') === 'true'), 'the choice is remembered');
+    await q.goto(URL0 + '#code'); await q.waitForSelector('.nb.nb-code'); await wait(300);
+    ok(!(await q.$('.np-mode')) && await vis('.nb-rail'), 'My Code has no switch and keeps its Tool bar');
+    await q.goto(URL0 + '#notes'); await q.waitForSelector('.nb-rich'); await wait(300);
+    await q.click('.np-mode [data-mode=pro]'); await wait(400);
+    ok(await vis('.nb-rail') && await vis('.nb-fcode') && await vis('.nr-head') && (await q.$$eval('.p1 .nb-holob', e => e.filter(x => x.offsetParent).length)) === 4, 'Professional brings every tool back');
+    await q.click('.np-mode [data-mode=simple]'); await wait(300);
+    // Task 7: 🎙 audio recording (a fake microphone)
+    await q.click(`.nb-fnote[data-id="${ids.b}"]`); await wait(400);
+    const rb = await q.$eval('.p1 .nb-recb', e => { const r = e.getBoundingClientRect(), p = document.querySelector('.p1').getBoundingClientRect(); return { l: r.left - p.left, b: p.bottom - r.bottom }; });
+    ok(rb.l < 40 && rb.b < 40, 'the Record button sits at the bottom left of the note', rb);
+    await q.click('.p1 .nb-recb'); await q.waitForSelector('.nb-rec.on'); await wait(1300);
+    let st = await q.evaluate(() => window.__npRec());
+    ok(st.on && st.secs > 1 && /0:0[1-9]/.test(await q.$eval('.nb-rect', e => e.textContent)), 'Record starts: a running clock', st);
+    await q.click('[data-r=pause]'); await wait(700); const p1 = await q.evaluate(() => window.__npRec().secs); await wait(500); const p2 = await q.evaluate(() => window.__npRec().secs);
+    ok(Math.abs(p2 - p1) < 0.05 && await q.$('.nb-rec.paused'), 'Pause stops the clock');
+    await q.click('[data-r=pause]'); await wait(800);
+    await q.click('[data-r=stop]'); await q.waitForSelector('.p1 .nw[data-w=audio] audio'); await wait(600);
+    const au = await q.evaluate(async id => { const w = document.querySelector('.p1 .nw[data-w=audio]'), d = JSON.parse(w.dataset.src), b = await InquireNotes.mediaBlob(d.vid); return { d, size: b && b.size, type: b && b.type, src: !!w.querySelector('audio').src, saved: /data-w="audio"/.test(InquireNotes.get(id).html), on: window.__npRec().on }; }, ids.b);
+    ok(au.size > 500 && /^audio\//.test(au.type) && au.src && au.saved && !au.on && au.d.dur >= 1 && /^Recording · /.test(au.d.title), 'Save puts a player in the note; the clip is kept on this computer with its length and a dated title', au);
+    await q.click('.p1 .nb-recb'); await q.waitForSelector('.nb-rec.on'); await wait(600); await q.click('[data-r=cancel]'); await wait(500);
+    ok(await q.$$eval('.p1 .nw[data-w=audio]', e => e.length) === 1, '✕ throws a recording away');
+    await q.click('.p1 .nb-recb'); await q.waitForSelector('.nb-rec.on'); await wait(700);
+    await q.click(`.nb-fnote[data-id="${ids.a}"]`); await wait(500);
+    ok(/into “Other note”/.test(await q.$eval('.nb-rec.on', e => e.textContent)), 'opening another note keeps recording, and says which note it goes into');
+    await q.click('[data-r=stop]'); await wait(1200);
+    ok(await q.evaluate(id => (InquireNotes.get(id).html.match(/data-w="audio"/g) || []).length, ids.b) === 2 && await q.evaluate(id => !/data-w="audio"/.test(InquireNotes.get(id).html), ids.a), 'that recording lands in the note it was started in');
+    const md = await q.evaluate(async () => { const r = await NPIO.exportNotes('note', 'md', { note: (InquireNotes.list().find(n => n.title === 'Other note') || {}).id, noSave: true }); const z = await NPIO.unzip(r.blob); return { file: r.file, names: z.map(e => e.name), text: await (z.find(e => /\.md$/.test(e.name)) || { text: async () => '' }).text() }; });
+    ok(/\.zip$/.test(md.file) && md.names.filter(n => /attachments\/.+\.webm$/.test(n)).length === 2 && /🎙 \[Recording · .*\]\(.*attachments\/.+\.webm\)/.test(md.text), 'Markdown export carries the recordings as attachments with links', md);
+    await q.click('.np-mode [data-mode=pro]'); await wait(300);
+    ok(await q.$eval('.p1 .nb-recb', e => !!e.offsetParent), 'Record is there in Professional too');
+    await q.reload(); await q.waitForSelector('.nb-rich'); await wait(400); await q.click(`.nb-fnote[data-id="${ids.b}"]`); await wait(600);
+    ok(await q.evaluate(() => document.querySelectorAll('.p1 .nw[data-w=audio] audio').length === 2 && [...document.querySelectorAll('.p1 .nw[data-w=audio] audio')].every(a => /^blob:/.test(a.src))), 'recordings stay after a reload and still play');
+    await b2.close();
+  }
+  {
+    // v0.5.8 batch 3 (Devon): word count, colour-blind mode, ✍ signature (Professional), NotePath in other languages
+    const q = await page(); await q.goto(URL0 + '#menu'); await wait(400);
+    const nid = await q.evaluate(() => InquireNotes.create({ title: 'Contract', html: '<div>I will deliver the report by Friday.</div>' }).id);
+    await q.click('[data-a=open]'); await q.waitForSelector('.nb-rich'); await q.click(`.nb-fnote[data-id="${nid}"]`); await wait(500);
+    // word count
+    ok(/^7 words/.test(await q.$eval('.p1 .nb-wc', e => e.textContent)) && /characters/.test(await q.$eval('.p1 .nb-wc', e => e.textContent)), 'the word count shows words and characters at the bottom of the note', await q.$eval('.p1 .nb-wc', e => e.textContent));
+    await q.click('.p1 .nb-rich > div'); await q.keyboard.press('End'); await q.keyboard.type(' Thank you.'); await wait(500);
+    ok(/^9 words/.test(await q.$eval('.p1 .nb-wc', e => e.textContent)), 'it follows the typing');
+    await q.evaluate(() => { const t = document.querySelector('.p1 .nb-rich > div').firstChild, r = document.createRange(); r.setStart(t, 2); r.setEnd(t, 11); getSelection().removeAllRanges(); getSelection().addRange(r); }); await wait(400);
+    ok(/^2 of 9 words selected · 9 characters/.test(await q.$eval('.p1 .nb-wc', e => e.textContent)), 'with words selected it counts the selection', await q.$eval('.p1 .nb-wc', e => e.textContent));
+    // the on / off switch in front of it
+    ok(await q.$eval('.p1 .nb-wct', e => e.getAttribute('role') === 'switch' && e.getAttribute('aria-checked') === 'true'), 'a Word count switch sits in front of the count, on by default');
+    await q.click('.p1 .nb-wct'); await wait(200);
+    ok(await q.$eval('.p1 .nb-wc', e => e.hidden && !e.offsetParent) && await q.$eval('.p1 .nb-wct', e => e.getAttribute('aria-checked') === 'false') && await q.evaluate(() => localStorage.getItem('notepath.wordcount') === 'false'), 'the switch hides the count, and it is kept');
+    await q.click(`.nb-fnote[data-id="${nid}"]`); await wait(300);
+    ok(await q.$eval('.p1 .nb-wc', e => e.hidden), 'it stays off when the note is drawn again');
+    await q.click('.p1 .nb-wct'); await wait(300);
+    ok(/9 words/.test(await q.$eval('.p1 .nb-wc', e => e.offsetParent ? e.textContent : '')), 'and on again shows the count', await q.$eval('.p1 .nb-wc', e => e.textContent));
+    // ✍ signature: in Professional's Tool bar, not in Simple
+    ok(!!(await q.$('.nb-rail [data-widget=sign]')), 'Signature is in the Widgets of the Tool bar (Professional)');
+    await q.click('.p1 .nb-rich > div'); await q.keyboard.press('End');
+    await q.click('.nb-rail [data-widget=sign]'); await q.waitForSelector('.p1 .ns-cv'); await wait(300);
+    ok(await q.$eval('.p1 .ns-sign', e => e.disabled), 'Sign waits for a signature and a name');
+    const bx = await q.$eval('.p1 .ns-cv', e => { const r = e.getBoundingClientRect(); return { x: r.left, y: r.top }; });
+    await q.mouse.move(bx.x + 50, bx.y + 100); await q.mouse.down(); for (let i = 0; i <= 30; i++) await q.mouse.move(bx.x + 50 + i * 8, bx.y + 100 - Math.sin(i / 3) * 25); await q.mouse.up();
+    await q.fill('.p1 .ns-name', 'Jamie Lemaster'); await wait(150);
+    ok(!(await q.$eval('.p1 .ns-sign', e => e.disabled)), 'drawn and named: Sign is ready');
+    await q.click('.p1 .ns-sign'); await q.waitForSelector('.p1 .ns-done .ns-img'); await wait(600);
+    const sg = await q.evaluate(async id => { const w = document.querySelector('.p1 .nw[data-w=sign]'), d = JSON.parse(w.dataset.src), b = await InquireNotes.mediaBlob(d.img); return { d, type: b && b.type, size: b && b.size, seal: w.querySelector('.ns-seal').textContent, saved: /data-w="sign"/.test(InquireNotes.get(id).html), pad: !!w.querySelector('.ns-cv') }; }, nid);
+    ok(sg.d.name === 'Jamie Lemaster' && sg.d.at > 0 && /^[0-9a-f]{64}$/.test(sg.d.hash) && sg.type === 'image/png' && sg.size > 200 && sg.saved && !sg.pad && /words are as they were/.test(sg.seal), 'Sign locks it: the picture is kept, with the name, date and time and a fingerprint of the words', sg);
+    ok(/Signed by Jamie Lemaster · \d\d\/\d\d\/\d\d \d\d:\d\d [AP]M/.test(await q.$eval('.p1 .ns-by', e => e.textContent)), 'the signature line says who and when');
+    await q.click('.p1 .nb-rich > div'); await q.keyboard.press('End'); await q.keyboard.type(' Changed.'); await wait(1300);
+    ok(/changed since it was signed/.test(await q.$eval('.p1 .ns-seal', e => e.textContent)), 'changing the note\'s words afterwards shows on the seal');
+    const hx = await q.evaluate(async id => { const r = await NPIO.exportNotes('note', 'html', { note: id, noSave: true }); const t = await r.blob.text(); return /Signed by Jamie Lemaster/.test(t) && /<img[^>]+data:image\/png/.test(t); }, nid);
+    ok(hx, 'the web page export carries the signature picture and line');
+    ok(await q.evaluate(id => InquireNotes.list().length && true, nid) && /✍ Signed by Jamie/.test(await q.evaluate(id => InquireNotes.toText(InquireNotes.get(id).html), nid)), 'the note\'s text (search, plain exports) says who signed');
+    await q.click('.np-mode [data-mode=simple]'); await wait(300);
+    ok(!(await q.$eval('.nb-rail', e => !!e.offsetParent)) && await q.$eval('.p1 .nw[data-w=sign]', e => !!e.offsetParent), 'Simple has no Tool bar to add one, but signed notes still show their signature');
+    await q.click('.np-mode [data-mode=pro]'); await wait(300);
+    // colour-blind mode
+    await q.evaluate(() => InquireSettings.open('look')); await wait(300);
+    ok(JSON.stringify(await q.$$eval('.set-seg [data-cvd]', e => e.map(x => x.dataset.cvd))) === '["off","rg","by","mono"]' && await q.$eval('[data-cvd=off]', e => e.getAttribute('aria-checked')) === 'true', 'Settings → Appearance: Colour-blind mode Off · Red-green · Blue-yellow · No colour');
+    const g0 = await q.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--green').trim());
+    await q.click('[data-cvd=rg]'); await wait(200);
+    const g1 = await q.evaluate(() => [document.documentElement.dataset.cvd, getComputedStyle(document.documentElement).getPropertyValue('--green').trim(), getComputedStyle(document.documentElement).getPropertyValue('--red').trim()]);
+    ok(g1[0] === 'rg' && g1[1].toLowerCase() === '#56b4e9' && g1[2].toLowerCase() === '#d55e00' && g0.toLowerCase() !== '#56b4e9', 'Red-green swaps the good / error colours for a safe pair', g1);
+    await q.click('[data-cvd=mono]'); await wait(150);
+    ok(await q.evaluate(() => document.documentElement.dataset.cvd === 'mono' && JSON.parse(localStorage.getItem('notepath.settings')).cvd === 'mono'), 'No colour is applied and kept');
+    await q.click('[data-cvd=off]'); await wait(150);
+    ok(await q.evaluate(() => !document.documentElement.hasAttribute('data-cvd')), 'Off puts the theme colours back');
+    // languages
+    await q.click('.set-tab[data-tab=display]'); await wait(250);
+    ok(await q.$$eval('.set-lang option', e => e.length) === 11, 'Settings → Display & comfort: 11 languages');
+    await q.selectOption('.set-lang', 'es'); await wait(1200);
+    ok(await q.evaluate(() => document.documentElement.lang === 'es' && /Pantalla y comodidad/.test(document.querySelector('.set-tab[data-tab=display]').textContent)), 'choosing Español translates Settings at once');
+    await q.evaluate(() => InquireSettings.close()); await wait(300);
+    const es = await q.evaluate(id => ({ crumb: document.querySelector('.crumbs').textContent, title: document.querySelector('.nb-title').value, body: document.querySelector('.p1 .nb-rich > div').textContent, wc: document.querySelector('.p1 .nb-wc').textContent, newb: document.querySelector('.np-newb').textContent, by: document.querySelector('.ns-by').textContent }), nid);
+    ok(/Mis notas/.test(es.crumb) && /Nueva nota/i.test(es.newb) && /palabras/.test(es.wc), 'My notes is in Spanish (breadcrumb, buttons, word count)', es);
+    ok(es.title === 'Contract' && /^I will deliver the report by Friday\. Thank you\. Changed\.$/.test(es.body) && /Jamie Lemaster/.test(es.by), 'your own titles and words are never translated', es);
+    await q.reload(); await q.waitForSelector('.nb-rich'); await wait(600);
+    ok(await q.evaluate(() => document.documentElement.lang === 'es' && /Mis notas/.test(document.querySelector('.crumbs').textContent)), 'the language is kept and used from the start');
+    await q.evaluate(() => NPI18N.set('ar')); await wait(800);
+    ok(await q.evaluate(() => document.documentElement.dir === 'rtl' && /ملاحظاتي/.test(document.querySelector('.crumbs').textContent)), 'Arabic is written right to left');
+    await q.evaluate(() => InquireSettings.open('display')); await wait(300); await q.selectOption('.set-lang', 'en'); await wait(700);
+    ok(await q.evaluate(() => document.documentElement.lang === 'en' && document.documentElement.dir === 'ltr' && /Display & comfort/.test(document.querySelector('.set-tab[data-tab=display]').textContent)), 'English puts every word back');
+    await q.evaluate(() => InquireSettings.close()); await wait(200);
+    ok(/My notes/.test(await q.$eval('.crumbs', e => e.textContent)) && /New Note/.test(await q.$eval('.np-newb', e => e.textContent)), 'the page is English again');
+    await q.close();
+  }
+  {
+    // v0.5.8 batch 4 (Devon): Appearance in two parts, ＋ New folder always in sight, select + right-click menu, Check for duplicates
+    const q = await page(); await q.goto(URL0 + '#menu'); await wait(400);
+    await q.evaluate(() => InquireSettings.open('look')); await wait(300);
+    const secs = await q.$$eval('.set-sect', e => e.map(x => ({ t: x.querySelector('h3').textContent, w: getComputedStyle(x.querySelector('h3')).fontWeight, b: getComputedStyle(x).borderTopStyle })));
+    ok(secs.length === 2 && /Application colours & themes/.test(secs[0].t) && /Tool & feature colours/.test(secs[1].t) && secs.every(x => +x.w >= 700 && x.b === 'solid'), 'Settings → Appearance: two parts under bold headers and solid lines (the app; tools & features)', secs);
+    ok(await q.evaluate(() => { const s2 = document.querySelectorAll('.set-sect')[1], after = el => !!(s2.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING);
+      return after(document.querySelector('.set-lcdemo')) && after(document.querySelector('.set-inddemo')) && !after(document.querySelector('.set-th')) && !after(document.querySelector('[data-cvd=rg]')); }), 'note links and paranotes sit under Tool & feature colours; themes and colour-blind mode under the app');
+    await q.evaluate(() => InquireSettings.close()); await wait(200);
+    const ids = await q.evaluate(() => { const N = InquireNotes, w = N.addFolder('Work'), h = N.addFolder('Home'), o = {};
+      ['A', 'B', 'C', 'D'].forEach(x => o['w' + x] = N.create({ title: 'Work ' + x, folder: w.id, html: '<div>work item ' + x + '</div>' }).id);
+      o.h1 = N.create({ title: 'Home 1', folder: h.id, html: '<div>at home</div>' }).id;
+      ['1', '2', '3'].forEach(x => o['l' + x] = N.create({ title: 'Loose ' + x, html: '<div>loose ' + x + '</div>' }).id);
+      for (let i = 0; i < 25; i++) N.addFolder('Extra ' + i);
+      o.w = w.id; o.h = h.id; return o; });
+    await q.click('[data-a=open]'); await q.waitForSelector('.nb-fnote'); await wait(400);
+    // ＋ New folder stays in sight with many folders, right above Code & Music
+    const nf = await q.evaluate(() => { const b = document.querySelector('.nb-ftree [data-a=addf]'), r = b.getBoundingClientRect(), m = document.querySelector('.nb-fmain').getBoundingClientRect(), c = document.querySelector('.nb-fsplit').getBoundingClientRect(); return { vis: r.bottom <= m.bottom + 1 && r.top >= m.top, gap: c.top - r.bottom, scroll: document.querySelector('.nb-fmain').scrollHeight > document.querySelector('.nb-fmain').clientHeight }; });
+    ok(nf.vis && nf.gap >= 0 && nf.gap < 16 && nf.scroll, '＋ New folder stays in sight at the bottom of the folders, right above Code & Music, even when the list scrolls', nf);
+    await q.click('.nb-fdb[data-f=fav]'); await wait(300);
+    ok(await q.$eval('.nb-ftree [data-a=addf]', e => !!e.offsetParent), 'and under the Favourites filter too');
+    await q.click('.nb-fdb[data-f=all]'); await wait(300);
+    await q.click('.np-mode [data-mode=simple]'); await wait(300); ok(await q.$eval('.nb-ftree [data-a=addf]', e => !!e.offsetParent), 'and in Simple'); await q.click('.np-mode [data-mode=pro]'); await wait(300);
+    // select: Ctrl+click, Shift+click, Esc
+    const mod = process.platform === 'darwin' ? 'Meta' : 'Control';
+    const row = id => q.locator(`.nb-fnote[data-id="${id}"]`).first();
+    const picked = () => q.$$eval('.nb-fnote.is-picked, .nb-fd.user.is-picked', e => [...new Set(e.map(x => x.dataset.id || x.dataset.f))]);
+    const order = await q.$$eval(`.nb-fnote[data-g="${ids.w}"]`, e => e.map(x => x.dataset.id)); // as listed (My order)
+    await row(order[0]).click({ modifiers: [mod] }); await wait(150);
+    ok(JSON.stringify(await picked()) === JSON.stringify([order[0]]) && /1 note selected/.test(await q.$eval('.nb-pickbar', e => e.textContent)), `${mod}+click selects a note (and a bar says how many)`);
+    await row(order[2]).click({ modifiers: ['Shift'] }); await wait(150);
+    ok(JSON.stringify((await picked()).sort()) === JSON.stringify(order.slice(0, 3).sort()), 'Shift+click selects the run between', { got: await picked(), order });
+    await row(order[1]).click({ modifiers: [mod] }); await wait(150);
+    ok((await picked()).length === 2 && !(await picked()).includes(order[1]), `${mod}+click again takes one out`);
+    ok(await q.evaluate(t => !document.querySelector('.nb-title') || document.querySelector('.nb-title').value !== t, 'Work ' + 'B'), 'selecting does not open the note');
+    await q.locator(`.nb-fd.user[data-f="${ids.h}"] .nb-fdb`).click({ modifiers: [mod] }); await wait(150);
+    ok((await q.$$eval('.nb-fd.user.is-picked', e => e.map(x => x.dataset.f))).includes(ids.h) && /2 notes and 1 folder selected/.test(await q.$eval('.nb-pickbar', e => e.textContent)), 'folders can be selected with notes');
+    await q.keyboard.press('Escape'); await wait(150);
+    ok((await picked()).length === 0 && !(await q.$('.nb-pickbar')) && !(await q.$('.set-ov:not([hidden])')), 'Esc clears the selection (and does not open Settings)');
+    // right-click a note
+    await row(ids.wB).click({ button: 'right' }); await wait(200);
+    ok(JSON.stringify(await q.$$eval('.nb-fmenu [data-m]', e => e.map(x => x.dataset.m))) === '["copy","pick","all","del"]', 'right-click a note: Copy link · Select · Select all · Delete');
+    await q.click('.nb-fmenu [data-m=copy]'); await wait(200);
+    ok(await q.evaluate(() => navigator.clipboard.readText().catch(() => '')).then(t => t === 'notepath://note/' + ids.wB || t === '') && /Link copied/.test(await q.$eval('.tm-toast', e => e.textContent)), 'Copy link copies the note’s link');
+    await row(ids.wB).click({ button: 'right' }); await wait(200); await q.click('.nb-fmenu [data-m=pick]'); await wait(150);
+    ok(JSON.stringify(await picked()) === JSON.stringify([ids.wB]), 'Select (from the menu) selects it');
+    await row(ids.wB).click({ button: 'right' }); await wait(200); await q.click('.nb-fmenu [data-m=all]'); await wait(150);
+    ok((await picked()).length === 4 && [ids.wA, ids.wB, ids.wC, ids.wD].every(x => (true)), 'Select all on a note in Work selects every note in Work', await picked());
+    await q.keyboard.press('Escape'); await wait(100);
+    await row(ids.l2).click({ button: 'right' }); await wait(200); await q.click('.nb-fmenu [data-m=all]'); await wait(150);
+    ok(JSON.stringify((await picked()).sort()) === JSON.stringify([ids.l1, ids.l2, ids.l3].sort()), 'Select all on an Unfiled note selects every unfiled note');
+    await q.keyboard.press('Escape'); await wait(100);
+    await q.locator(`.nb-fd.user[data-f="${ids.h}"]`).click({ button: 'right' }); await wait(200);
+    ok(/Copy link/.test(await q.$eval('.nb-fmenu', e => e.textContent)), 'right-click a folder: the same menu');
+    await q.click('.nb-fmenu [data-m=all]'); await wait(150);
+    ok((await picked()).length === 27 && (await picked()).includes(ids.w), 'Select all on a folder selects every folder', (await picked()).length);
+    await q.keyboard.press('Escape'); await wait(100);
+    await q.locator('.nb-fd[data-f=none]').click({ button: 'right' }); await wait(200);
+    ok(JSON.stringify(await q.$$eval('.nb-fmenu [data-m]', e => e.map(x => x.dataset.m))) === '["all"]', 'right-click Unfiled: Select all');
+    await q.keyboard.press('Escape'); await wait(100);
+    // delete a selected group: right-click one of them → Delete (twice) → all gone, Undo brings them back
+    await row(ids.wA).click({ modifiers: [mod] }); await row(ids.wD).click({ modifiers: [mod] }); await row(ids.l3).click({ modifiers: [mod] }); await wait(150);
+    await row(ids.wD).click({ button: 'right' }); await wait(200);
+    ok(/Delete 3 selected items/.test(await q.$eval('.nb-fmenu [data-m=del]', e => e.textContent)), 'right-clicking a selected note offers to delete the whole selection');
+    await q.click('.nb-fmenu [data-m=del]'); await wait(150);
+    ok(await q.evaluate(() => !!document.querySelector('.nb-fmenu .nb-fmdel.armed')) && await q.evaluate(n => InquireNotes.list().length === n, 8), 'it asks once more first');
+    await q.click('.nb-fmenu [data-m=del]'); await wait(500);
+    ok(await q.evaluate(o => [o.wA, o.wD, o.l3].every(id => !InquireNotes.get(id)) && InquireNotes.list().length === 5, ids) && /Deleted 3 notes/.test(await q.$eval('.tm-toast', e => e.textContent)), 'Delete deletes all three, and says so');
+    await q.click('.tm-toast button'); await wait(500);
+    ok(await q.evaluate(o => [o.wA, o.wD, o.l3].every(id => !!InquireNotes.get(id)), ids), 'Undo brings them all back');
+    await q.locator(`.nb-fd.user[data-f="${ids.h}"]`).click({ button: 'right' }); await wait(200); await q.click('.nb-fmenu [data-m=del]'); await q.click('.nb-fmenu [data-m=del]'); await wait(400);
+    ok(await q.evaluate(o => !InquireNotes.folders().some(f => f.id === o.h) && !InquireNotes.get(o.h1).folder, ids), 'deleting a folder keeps its notes (they move up a level)');
+    // Check for duplicates (Import & Export)
+    await q.evaluate(() => { const N = InquireNotes, long = 'Plan for the spring fair: tables, chairs, two tents, the sound system, volunteers for the gate and the bake sale, and posters for the library. Ask the council about parking on Saturday morning, order the food early, and check the weather forecast every day during the week before the fair. ';
+      N.create({ title: 'Fair plan', html: '<div>' + long + '</div>' }); N.create({ title: 'Fair plan', html: '<div>' + long + '</div>' }); N.create({ title: 'Copy of the plan', html: '<div>' + long + '</div>' });
+      N.create({ title: 'Fair plan v2', html: '<div>' + long.replace('library', 'school') + 'Thanks!</div>' }); N.create({ title: 'Fair plan v3', html: '<div>' + long.replace('two tents', 'three tents') + '</div>' }); });
+    const dg = await q.evaluate(() => NPIO.findDuplicates(InquireNotes.list()).map(g => g.kind + ':' + g.ids.map(id => InquireNotes.get(id).title).sort().join('|')));
+    ok(dg.includes('words:Copy of the plan|Fair plan|Fair plan') && dg.some(x => /^near:Fair plan v2\|Fair plan v3$/.test(x)), 'findDuplicates: the same words under any titles in one group, nearly the same in another', dg);
+    await q.click('[data-a=share]'); await q.click('.np-share-pop [data-s=io]'); await q.waitForSelector('.io-dupgo');
+    await q.click('.io-dupgo'); await wait(400);
+    ok(await q.$$eval('.io-dupg', e => e.length) >= 2 && /% alike/.test(await q.$eval('.io-dupr', e => e.textContent)), 'Check my notes lists the groups, with how alike');
+    const g0 = await q.$eval('.io-dupg', e => e.dataset.ids.split(','));
+    await q.click('.io-dupg >> nth=0 >> .io-dupn >> nth=0 >> [data-d=keep]'); await wait(400);
+    ok(await q.evaluate(g => g.filter(id => InquireNotes.get(id)).length === 1, g0), 'Keep this one deletes the others in the group');
+    await q.click('.tm-toast button'); await wait(400);
+    ok(await q.evaluate(g => g.every(id => InquireNotes.get(id)), g0), 'and Undo brings them back');
+    const g1 = await q.$$eval('.io-dupg', e => (e.find(x => /alike/.test(x.textContent)) || { dataset: { ids: '' } }).dataset.ids.split(','));
+    await q.click('.io-dupg:has-text("alike") [data-d=merge]'); await wait(400);
+    ok(await q.evaluate(g => { const left = g.filter(id => InquireNotes.get(id)); return left.length === 1 && /merged from/.test(InquireNotes.get(left[0]).html); }, g1), 'Merge into one puts them into the oldest note and deletes the rest');
+    const before = await q.$$eval('.io-dupg', e => e.length);
+    await q.click('.io-dupg >> nth=0 >> [data-d=ignore]'); await wait(300);
+    ok(await q.$$eval('.io-dupg', e => e.length) === before - 1 && await q.evaluate(() => JSON.parse(localStorage.getItem('notepath.dupignore')).length === 1), 'Not duplicates hides the group for good');
+    const zp = path.join(dir, 'dups.zip'); fs.writeFileSync(zp, Buffer.from(await q.evaluate(async () => { const r = await NPIO.exportNotes('all', 'md', { noSave: true }); return [...new Uint8Array(await r.blob.arrayBuffer())]; })));
+    await q.setInputFiles('.io-fin', zp); await q.waitForSelector('.io-progi .io-prog.ok', { timeout: 15000 }); await wait(300);
+    ok(/look like notes you already had/.test(await q.$eval('.io-log', e => e.textContent)) && !!(await q.$('.io-log [data-a=dups2]')), 'after an import that brought copies, NotePath offers to check for duplicates');
+    await q.keyboard.press('Escape'); await wait(200);
     await q.close();
   }
   {

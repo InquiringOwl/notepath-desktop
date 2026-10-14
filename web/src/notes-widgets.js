@@ -104,6 +104,25 @@ function mountVideo(el) {
   ti.addEventListener("input", e => { e.stopPropagation(); writeSrc(el, Object.assign(readSrc(el, {}), { title: ti.value.trim() })); });
   delButton(el);
 }
+/* ---------- (v0.5.8, Devon) audio recordings: the clip is kept in IndexedDB like a video file ("vid" in data-src, so it is
+   deleted, undone and backed up with the note); { vid, title, dur (seconds), mime } ---------- */
+const clock = s => { s = Math.max(0, Math.round(+s || 0)); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return (h ? h + ":" + String(m).padStart(2, "0") : m) + ":" + String(x).padStart(2, "0"); };
+function mountAudio(el) {
+  const d = readSrc(el, { title: "", dur: 0 });
+  const ext = /mp4|m4a|aac/.test(d.mime || "") ? "m4a" : /ogg/.test(d.mime || "") ? "ogg" : "webm";
+  el.innerHTML = `<div class="nw-h"><span class="nw-tag nw-atag" aria-hidden="true">${MIC_IC}</span><input class="nw-title" maxlength="80" placeholder="Audio recording" aria-label="Recording title" value="${esc(d.title)}">
+      <span class="nw-adur num" title="Length">${esc(clock(d.dur))}</span><a class="nw-b nw-asave" role="button" tabindex="0" title="Save the recording as a file" aria-label="Save the recording as a file">⤓</a><button type="button" class="nw-b nw-del" data-a="del" title="Remove this recording" aria-label="Remove recording">✕</button></div>
+    <div class="nw-abox"><audio controls preload="metadata"></audio></div>`;
+  const au = el.querySelector("audio"), sv = el.querySelector(".nw-asave");
+  if (d.vid && window.InquireNotes) InquireNotes.imageURL(d.vid).then(u => {
+    if (u) { au.src = u; sv.href = u; sv.download = (d.title || "Recording").replace(/[\\/:*?"<>|]+/g, " ").trim() + "." + ext; }
+    else el.querySelector(".nw-abox").innerHTML = `<p class="nw-vmiss">This recording's file is missing.</p>`; });
+  au.addEventListener("loadedmetadata", () => { if (isFinite(au.duration) && !d.dur) el.querySelector(".nw-adur").textContent = clock(au.duration); });
+  const ti = el.querySelector(".nw-title");
+  ti.addEventListener("input", e => { e.stopPropagation(); writeSrc(el, Object.assign(readSrc(el, {}), { title: ti.value.trim() })); });
+  delButton(el);
+}
+const MIC_IC = '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="5.5" y="1.5" width="5" height="8.5" rx="2.5"/><path d="M3 7.5a5 5 0 0 0 10 0M8 12.5V15M5.5 15h5"/></svg>';
 let vpanel = null;
 function closeVPanel() { if (vpanel) { vpanel.remove(); vpanel = null; document.removeEventListener("pointerdown", outV, true); document.removeEventListener("keydown", keyV, true); } }
 const outV = e => { if (vpanel && !vpanel.contains(e.target) && !e.target.closest(".nr-vid")) closeVPanel(); };
@@ -136,15 +155,15 @@ function toolbar(api) {
   const mod = /Mac/.test(navigator.platform) ? "⌘" : "Ctrl+";
   bar.innerHTML = `<button type="button" data-cmd="bold" title="Bold (${mod}B)" aria-label="Bold"><b>B</b></button><button type="button" data-cmd="italic" title="Italic (${mod}I)" aria-label="Italic"><i>I</i></button><button type="button" data-cmd="underline" title="Underline (${mod}U)" aria-label="Underline"><u>U</u></button><button type="button" data-cmd="strikeThrough" title="Strikethrough" aria-label="Strikethrough"><s>S</s></button>
     <span class="nr-sep"></span><button type="button" data-blk="ul" title="Bulleted list · press again to indent (Tab indents, Shift+Tab moves back, delete at the start takes the bullet off)" aria-label="Bulleted list">•≡</button><button type="button" data-blk="ol" title="Numbered list · delete at the start of a line takes the number off" aria-label="Numbered list">1.≡</button><button type="button" data-blk="ck" title="Checklist: click a box to tick an item off · press again to indent · delete at the start of a line takes the box off" aria-label="Checklist">☑</button>
-    <span class="nr-sep"></span><button type="button" class="nr-dd nr-font" data-dd="font" title="Font" aria-haspopup="listbox" aria-label="Font"><span class="nr-ddv">Default</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-dd nr-size" data-dd="size" title="Text size" aria-haspopup="listbox" aria-label="Text size"><span class="nr-ddv num">15</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-dd nr-colb" data-dd="color" title="Text colour" aria-haspopup="dialog" aria-label="Text colour"><span class="nr-cola" aria-hidden="true">A</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-dd nr-hlb" data-dd="hilite" title="Highlight colour" aria-haspopup="dialog" aria-label="Highlight colour"><span class="nr-hla" aria-hidden="true">ab</span><span class="nr-car" aria-hidden="true">▾</span></button>
-    <span class="nr-sep"></span><button type="button" class="nr-dd nr-head" data-dd="heads" title="Titles and headings: Title, Subtitle, Heading 1, 2, 3" aria-haspopup="menu" aria-label="Titles and headings" aria-pressed="false"><span class="nr-ddv">H</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-dd nr-alb" data-dd="align" title="Align &amp; indent: nothing selected = the whole note, words selected = only those" aria-haspopup="menu" aria-label="Align and indent"><span class="nr-ali" aria-hidden="true">${ALIGN_IC.left}</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-dd nr-spb" data-dd="spacing" title="Line &amp; paragraph spacing" aria-haspopup="menu" aria-label="Line and paragraph spacing"><span class="nr-ali" aria-hidden="true">${SPACE_IC}</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-clr" data-a="clear" title="Clear formatting: nothing selected = the whole note, words selected = only those" aria-label="Clear formatting">${CLEAR_IC}</button>
-    <span class="nr-sep"></span><button type="button" class="nr-sym" title="Emoji and symbols (Greek, maths, alchemical)" aria-haspopup="dialog">☺ Ω</button>
+    <span class="nr-sep"></span><button type="button" class="nr-dd nr-font" data-dd="font" title="Font" aria-haspopup="listbox" aria-label="Font"><span class="nr-ddv">Default</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-dd nr-size" data-dd="size" title="Text size" aria-haspopup="listbox" aria-label="Text size"><span class="nr-ddv num">15</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-dd nr-colb" data-dd="color" title="Text colour" aria-haspopup="dialog" aria-label="Text colour"><span class="nr-cola" aria-hidden="true">A</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-dd nr-hlb" data-dd="hilite" title="Highlight colour" aria-haspopup="dialog" aria-label="Highlight colour"><span class="nr-hla" aria-hidden="true">ab</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-sym" title="Emoji and symbols (Greek, maths, alchemical)" aria-haspopup="dialog">☺ Ω</button>
+    <span class="nr-sep nr-pro"></span><button type="button" class="nr-dd nr-head nr-pro" data-dd="heads" title="Titles and headings: Title, Subtitle, Heading 1, 2, 3" aria-haspopup="menu" aria-label="Titles and headings" aria-pressed="false"><span class="nr-ddv">H</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-dd nr-alb nr-pro" data-dd="align" title="Align &amp; indent: nothing selected = the whole note, words selected = only those" aria-haspopup="menu" aria-label="Align and indent"><span class="nr-ali" aria-hidden="true">${ALIGN_IC.left}</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-ind nr-pro" data-a="indent-" title="Decrease indent: the line you are on, or the lines selected (Shift+Tab in a list)" aria-label="Decrease indent">${IND_IC["-"]}</button><button type="button" class="nr-ind nr-pro" data-a="indent+" title="Increase indent: the line you are on, or the lines selected (Tab in a list)" aria-label="Increase indent">${IND_IC["+"]}</button><button type="button" class="nr-dd nr-spb nr-pro" data-dd="spacing" title="Line &amp; paragraph spacing" aria-haspopup="menu" aria-label="Line and paragraph spacing"><span class="nr-ali" aria-hidden="true">${SPACE_IC}</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-clr nr-pro" data-a="clear" title="Clear formatting: nothing selected = the whole note, words selected = only those" aria-label="Clear formatting">${CLEAR_IC}</button>
     `;
   bar.addEventListener("mousedown", e => e.preventDefault()); // keep the selection in the note
   bar.addEventListener("click", e => {
     const b = e.target.closest("button"); if (!b) return;
     if (b.dataset.cmd) { api.focus(); document.execCommand(b.dataset.cmd); sync(); api.changed(); }
     else if (b.dataset.blk) { api.focus(); block(b.dataset.blk, api); sync(); api.changed(); }
+    else if (b.dataset.a === "indent+" || b.dataset.a === "indent-") { closeDD(); if (api.indentLine) { api.indentLine(b.dataset.a === "indent+" ? 1 : -1); sync(); } }
     else if (b.dataset.a === "clear") { closeDD(); if (api.clearFormat) { const all = api.clearFormat(); sync(); if (window.InquireNotes && InquireNotes.toast) InquireNotes.toast(all ? "Formatting cleared from the whole note." : "Formatting cleared from the selected words.", null, 2500); } }
     else if (b.dataset.dd) ddPanel(b, b.dataset.dd, api, sync);
     else if (b.classList.contains("nr-sym")) symbolPanel(b, api);
@@ -216,7 +235,8 @@ const HTAGS = HEADS.map(x => x[0].toUpperCase()).join(",");
 function headAt(el) { const h = el && el.closest(HTAGS); return h ? HEADS.find(x => x[0] === h.tagName.toLowerCase()) : null; }
 /* v0.5.6 (Devon): the Music chart left the menu (the Lead sheet does more); Music charts already in notes still open and play */
 const WIDGET_MENU = [["code", "&lt;/&gt;", "Code box", "Code to show and explain: highlight lines, before / after, present it, copy it as a picture"],
-  ["sheet", "𝄞", "Lead sheet", "Bars with chord symbols and melody"], ["graph", "∿", "Graph", "Click points on a grid and get their equations"], ["map", "⌖", "Map", "Search an address and keep it on a map"]];
+  ["sheet", "𝄞", "Lead sheet", "Bars with chord symbols and melody"], ["graph", "∿", "Graph", "Click points on a grid and get their equations"], ["map", "⌖", "Map", "Search an address and keep it on a map"],
+  ["sign", "✍", "Signature", "Sign the note: draw, type or use a photo of your signature; it locks with your name and the date"]];
 function ddPanel(btn, kind, api, sync) {
   const was = dd && dd.dataset.kind; closeDD(); if (was === kind) return;
   const cur = fmtAt(fmtEl(api));
@@ -845,13 +865,15 @@ function mount(el) {
   if (el._nw) return; el._nw = true;
   el.contentEditable = "false";
   if (el.dataset.w === "code") mountCode(el); else if (el.dataset.w === "music") mountMusic(el); else if (el.dataset.w === "video") mountVideo(el);
+  else if (el.dataset.w === "audio") mountAudio(el);
   else if (el.dataset.w === "graph" && window.NPGraph) { NPGraph.mount(el); delButton(el); }
   else if (el.dataset.w === "sheet" && window.NPSheet) NPSheet.mount(el);
   else if (el.dataset.w === "map" && window.NPMap) { NPMap.mount(el); delButton(el); }
+  else if (el.dataset.w === "sign" && window.NPSign) NPSign.mount(el);
 }
 function create(type, data) {
   const el = document.createElement("div"); el.className = "nw"; el.dataset.w = type;
-  el.dataset.src = JSON.stringify(type === "sheet" ? Object.assign({}, window.NPSheet ? NPSheet.DEF : {}, data || {}) : type === "graph" ? Object.assign({}, window.NPGraph ? NPGraph.DEF : {}, data || {}) : type === "video" ? Object.assign({ title: "" }, data || {}) : type === "map" ? Object.assign({}, window.NPMap ? NPMap.DEF : {}, data || {}) : type === "code" ? Object.assign({ lang: "python", title: "", src: "" }, data || {}) : { title: "", clef: "treble", time: "4/4", tempo: 90, seq: "" });
+  el.dataset.src = JSON.stringify(type === "sheet" ? Object.assign({}, window.NPSheet ? NPSheet.DEF : {}, data || {}) : type === "graph" ? Object.assign({}, window.NPGraph ? NPGraph.DEF : {}, data || {}) : type === "video" || type === "audio" || type === "sign" ? Object.assign({ title: "" }, data || {}) : type === "map" ? Object.assign({}, window.NPMap ? NPMap.DEF : {}, data || {}) : type === "code" ? Object.assign({ lang: "python", title: "", src: "" }, data || {}) : { title: "", clef: "treble", time: "4/4", tempo: 90, seq: "" });
   return el;
 }
 // plain-text version for search, previews and .md export
@@ -862,9 +884,11 @@ function text(el) {
   if (el.dataset.w === "map") return window.NPMap ? NPMap.text(d) : "";
   if (el.dataset.w === "sheet") return window.NPSheet ? NPSheet.text(el) : "";
   if (el.dataset.w === "video") { const l = videoLink(d); return "\n▶ " + (d.title || "Video") + (l ? " (" + l + ")" : "") + "\n"; }
+  if (el.dataset.w === "sign") return window.NPSign ? NPSign.text(d) : "";
+  if (el.dataset.w === "audio") return "\n🎙 " + (d.title || "Audio recording") + (d.dur ? " (" + clock(d.dur) + ")" : "") + "\n";
   if (el.dataset.w === "music") return "\n♪ " + (d.title ? d.title + ": " : "") + (d.seq || "(empty)") + (d.time ? " [" + d.time + ", " + (d.clef || "treble") + " clef]" : "") + "\n";
   return "";
 }
-window.InquireWidgets = { WIDGETS: WIDGET_MENU, codeKit: { parseLines, formatLines, lineGroups, lineDiff, diffRows }, toolbar, mount, create, text, colorKey, COLORS, parseSeq, chordNotes, videoFrom, videoPanel,
+window.InquireWidgets = { WIDGETS: WIDGET_MENU, codeKit: { parseLines, formatLines, lineGroups, lineDiff, diffRows }, toolbar, mount, create, text, colorKey, COLORS, parseSeq, chordNotes, videoFrom, videoPanel, MIC_IC, clock,
   kit: { splinePath, G_CLEF, F_CLEF, delButton, len, UNITS } }; // shared with notes-sheet.js
 })();

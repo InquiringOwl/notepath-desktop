@@ -17,6 +17,52 @@ const $ = (s, r) => r.querySelector(s);
 const NS = () => window.InquireNotes;
 const enc = new TextEncoder(), dec = new TextDecoder();
 
+/* ---------- progress (v0.5.8, Devon): how big, how fast, how long, how far ----------
+   track(onProgress, size, plan): plan = [[phase, weight], …] (weights add up to 1); begin(phase, total bytes), tick(phase,
+   bytes, what), done(extra). Sends { f, pct, bytes (of size done), size, speed (bytes/s), eta (s, or null while it can't
+   tell yet), what, phase, finished } about 12 times a second, and lets the page paint now and then (yield) so the bar
+   moves while the notes are worked through. No onProgress = no reports and no pauses. */
+function track(on, size, plan) {
+  const t0 = performance.now(), ph = {}; let last = 0, lastYield = t0, what = "", cur = plan[0] && plan[0][0], fin = false;
+  plan.forEach(([k, w]) => ph[k] = { w, total: 0, done: 0 });
+  const frac = () => Math.min(1, plan.reduce((a, [k]) => a + (ph[k].total ? ph[k].w * Math.min(1, ph[k].done / ph[k].total) : 0), 0));
+  const emit = force => {
+    if (!on) return; const now = performance.now(); if (!force && now - last < 80) return; last = now;
+    const f = fin ? 1 : frac(), el = (now - t0) / 1000, bytes = Math.round(f * size), speed = el > 0.05 ? bytes / el : 0;
+    const eta = fin ? 0 : f >= 0.02 && el >= 0.3 ? Math.max(0, el * (1 - f) / f) : null;
+    try { on({ f, pct: Math.floor(f * 100), bytes, size, elapsed: el, speed, eta, what, phase: cur, finished: fin }); } catch (e) {}
+  };
+  return {
+    begin(k, total, w) { cur = k; if (ph[k]) ph[k].total = Math.max(1, total); if (w) what = w; emit(true); },
+    tick(k, bytes, w) { cur = k; if (ph[k]) ph[k].done += bytes || 0; if (w) what = w; emit(); },
+    done(w) { fin = true; if (w) what = w; emit(true); },
+    async yield() { if (!on) return; const now = performance.now(); if (now - lastYield < 40) return; lastYield = now; await new Promise(r => setTimeout(r, 0)); }
+  };
+}
+const fmtBytes = n => { n = +n || 0; if (n < 1024) return n + " B"; const u = ["KB", "MB", "GB"]; let i = -1; do { n /= 1024; i++; } while (n >= 1024 && i < 2); return (n >= 100 ? n.toFixed(0) : n.toFixed(1)) + " " + u[i]; };
+const fmtTime = s => s == null ? "" : s < 1 ? "less than a second" : s < 60 ? Math.round(s) + " s" : s < 3600 ? Math.floor(s / 60) + " min " + String(Math.round(s % 60)).padStart(2, "0") + " s" : Math.floor(s / 3600) + " h " + Math.round((s % 3600) / 60) + " min";
+// the bar in the window: size, speed, time left and a % meter (role=progressbar)
+function progUI(host, label) {
+  const el = document.createElement("div"); el.className = "io-prog"; el.hidden = true;
+  el.innerHTML = `<div class="io-prog-top"><span class="io-prog-t"></span><span class="io-prog-size num"></span></div>
+    <div class="io-prog-bar" role="progressbar" aria-label="${esc(label)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i class="io-prog-fill"></i><span class="io-prog-pct num">0%</span></div>
+    <div class="io-prog-stats num"><span class="io-prog-speed"></span><span class="io-prog-eta"></span></div><div class="io-prog-what"></div>`;
+  host.appendChild(el);
+  const q = c => el.querySelector(c), bar = q(".io-prog-bar");
+  return {
+    el,
+    start(title) { el.hidden = false; el.className = "io-prog run"; q(".io-prog-t").textContent = title; this.paint({ f: 0, pct: 0, bytes: 0, size: 0, speed: 0, eta: null, what: "" }); },
+    paint(p) {
+      q(".io-prog-fill").style.width = (p.f * 100).toFixed(1) + "%"; q(".io-prog-pct").textContent = p.pct + "%"; bar.setAttribute("aria-valuenow", String(p.pct));
+      q(".io-prog-size").textContent = p.size ? `${fmtBytes(p.bytes)} of ${fmtBytes(p.size)}` : "";
+      q(".io-prog-speed").textContent = p.finished ? (p.elapsed != null ? `Took ${fmtTime(p.elapsed)}` : "") + (p.speed ? ` · ${fmtBytes(p.speed)}/s on average` : "") : p.speed ? `${fmtBytes(p.speed)}/s` : "Starting…";
+      q(".io-prog-eta").textContent = p.finished ? "" : p.eta == null ? "Working out the time left…" : p.eta < 1 ? "Less than a second left" : `About ${fmtTime(p.eta)} left`;
+      q(".io-prog-what").textContent = p.what || "";
+    },
+    end(ok, title) { el.className = "io-prog " + (ok ? "ok" : "bad"); q(".io-prog-t").textContent = title; if (!ok) q(".io-prog-eta").textContent = ""; }
+  };
+}
+
 /* ---------- zip (store + deflate via CompressionStream; read via DecompressionStream) ---------- */
 const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
 const crc32 = b => { let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = CRC[(c ^ b[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
@@ -24,7 +70,7 @@ async function pipe(bytes, stream) { const r = new Response(new Blob([bytes]).st
 const deflate = b => pipe(b, new CompressionStream("deflate-raw")), inflate = b => pipe(b, new DecompressionStream("deflate-raw"));
 const toBytes = d => typeof d === "string" ? enc.encode(d) : d instanceof Uint8Array ? d : new Uint8Array(d);
 // entries: [{ name, data: string | Uint8Array }] → Blob (application/zip)
-async function zip(entries) {
+async function zip(entries, onEntry) {
   const parts = [], central = []; let off = 0;
   const now = new Date(), dtime = (now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1), ddate = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
   for (const e of entries) {
@@ -40,6 +86,7 @@ async function zip(entries) {
     c.setUint32(16, crc, true); c.setUint32(20, body.length, true); c.setUint32(24, raw.length, true); c.setUint16(28, name.length, true); c.setUint32(42, off, true);
     central.push(new Uint8Array(c.buffer), name);
     off += 30 + name.length + body.length;
+    if (onEntry) await onEntry(raw.length, e.name);
   }
   const csize = central.reduce((a, b) => a + b.length, 0), end = new DataView(new ArrayBuffer(22));
   end.setUint32(0, 0x06054b50, true); end.setUint16(8, entries.length, true); end.setUint16(10, entries.length, true); end.setUint32(12, csize, true); end.setUint32(16, off, true);
@@ -118,6 +165,8 @@ function ir(html) {
   const widget = el => { let d = {}; try { d = JSON.parse(el.getAttribute("data-src") || "{}"); } catch (e) {}
     if (el.getAttribute("data-w") === "code") return { t: "code", lang: d.lang || "", title: d.title || "", src: String(d.src || "") };
     let tx = ""; try { tx = window.InquireWidgets ? InquireWidgets.text(el).trim() : ""; } catch (e) {}
+    if (el.getAttribute("data-w") === "sign" && d.img && d.at && window.NPSign) return { t: "p", runs: [{ img: d.img, alt: "Signature of " + (d.name || "") }, { br: true }, { text: NPSign.line(d) }] }; // (v0.5.8) a signature: its picture and line
+    if (el.getAttribute("data-w") === "audio" && d.vid) return { t: "text", text: tx, aud: d.vid, title: d.title || "Audio recording" }; // (v0.5.8) a recording
     return { t: "text", text: tx }; };
   const list = (el, depth) => { const kind = el.tagName === "OL" ? "ol" : el.getAttribute("data-ck") === "1" ? "ck" : "ul";
     [...el.children].forEach(li => { if (li.tagName !== "LI") return; out.push({ t: "li", list: kind, done: li.getAttribute("data-done") === "1", depth, runs: runs(li, {}, true), lay: lay(li) });
@@ -141,7 +190,7 @@ function ir(html) {
 }
 const imgIdsOf = blocks => [...new Set(blocks.flatMap(b => (b.runs || []).filter(r => r.img).map(r => r.img)))];
 async function mediaBlob(id) { try { return NS() ? await NS().mediaBlob(id) : null; } catch (e) { return null; } }
-const extOf = type => ({ "image/png": "png", "image/jpeg": "jpg", "image/gif": "gif", "image/webp": "webp", "image/svg+xml": "svg" })[type] || "bin";
+const extOf = type => ({ "image/png": "png", "image/jpeg": "jpg", "image/gif": "gif", "image/webp": "webp", "image/svg+xml": "svg", "audio/webm": "webm", "audio/mp4": "m4a", "audio/ogg": "ogg", "audio/mpeg": "mp3", "audio/wav": "wav" })[String(type || "").split(";")[0]] || "bin";
 
 /* ---------- exporters ---------- */
 const safeName = s => (String(s || "").replace(/[\\/:*?"<>|#^\[\]\u0000-\u001F]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 100)) || "Untitled";
@@ -163,7 +212,7 @@ function toMD(n, ctx) {
     else if (b.t === "li") { if (prev !== "li" || (b.depth === 0 && prevList && prevList !== b.list)) gap(); prevList = b.depth === 0 ? b.list : prevList; lines.push("    ".repeat(b.depth) + (b.list === "ol" ? "1. " : b.list === "ck" ? (b.done ? "- [x] " : "- [ ] ") : "- ") + inl(b.runs)); }
     else if (b.t === "quote") { gap(); inl(b.runs).split("\n").forEach(l => lines.push("> " + l.replace(/ {2}$/, ""))); lines.push(""); }
     else if (b.t === "code") { gap(); lines.push("```" + (b.lang === "text" ? "" : b.lang || "") + (b.title ? " title=\"" + b.title + "\"" : ""), ...b.src.replace(/\n$/, "").split("\n"), "```"); lines.push(""); }
-    else if (b.t === "text") { gap(); lines.push(b.text); lines.push(""); }
+    else if (b.t === "text") { gap(); const ap = b.aud && ctx.img ? ctx.img(b.aud) : ""; lines.push(ap ? `🎙 [${mdEsc(b.title || "Audio recording")}](${encodeURI(ap)})` + (b.text.match(/\(([\d:]+)\)\s*$/) ? " (" + b.text.match(/\(([\d:]+)\)\s*$/)[1] + ")" : "") : b.text); lines.push(""); }
     prev = b.t;
   });
   const fm = ["---", "created: " + new Date(n.created).toISOString(), "updated: " + new Date(n.updated).toISOString()].concat(n.fav ? ["favourite: true"] : [], ["---", ""]);
@@ -323,45 +372,58 @@ async function exportNotes(scope, fmt, o = {}) {
   const rel = n => folderPath(n.folder, fs).slice(base.length);
   const used = new Set(), fileOf = {}, uniq = (dir, nm, ext) => { let f = (dir.length ? dir.join("/") + "/" : "") + nm + "." + ext, i = 2; while (used.has(f.toLowerCase())) f = (dir.length ? dir.join("/") + "/" : "") + nm + " " + i++ + "." + ext; used.add(f.toLowerCase()); return f; };
   notes.forEach(n => { fileOf[n.id] = uniq(rel(n), safeName(n.title), fmt === "pdf" ? "md" : FORMATS.find(f => f.k === fmt).ext); });
+  // (v0.5.8) progress: the size is the notes' text plus their photos; a .zip is packed in a second phase
+  const on = o.onProgress, many = fmt === "pdf" ? false : fmt === "enex" ? new Set(notes.map(n => rel(n).join(" - "))).size > 1 : !one || (fmt === "md" && notes.some(n => /data-img=|data-w="audio"/.test(n.html || "")));
+  const textOf = n => (n.html || n.body || "").length + (n.title || "").length, mediaSize = {};
+  if (on) for (const n of notes) for (const id of imgIdsOf(ir(n.html))) if (!(id in mediaSize)) { const b = await mediaBlob(id); mediaSize[id] = b ? b.size : 0; }
+  const seen = new Set(), noteBytes = n => textOf(n) + (on ? imgIdsOf(ir(n.html)).reduce((a, id) => { if (seen.has(id)) return a; seen.add(id); return a + (mediaSize[id] || 0); }, 0) : 0);
+  const size = notes.reduce((a, n) => a + textOf(n), 0) + Object.values(mediaSize).reduce((a, b) => a + b, 0);
+  const T = track(on, size, many ? [["notes", .6], ["zip", .4]] : fmt === "pdf" ? [["notes", .5], ["pdf", .5]] : [["notes", 1]]);
+  T.begin("notes", size, notes.length === 1 ? "Preparing " + notes[0].title : `Preparing ${notes.length} notes`);
+  let ni = 0; const step = async n => { ni++; T.tick("notes", noteBytes(n), `Note ${ni} of ${notes.length}: ${n.title || "Untitled"}`); await T.yield(); };
+  const packZip = async es => { T.begin("zip", es.reduce((a, e) => a + toBytes(e.data).length, 0) || 1, "Packing the .zip"); return zip(es, async (b, nm) => { T.tick("zip", b, "Packing " + nm.split("/").pop()); await T.yield(); }); };
   const titleOf = id => { const n = N.get(id); return n ? (fileOf[id] ? fileOf[id].replace(/^.*\//, "").replace(/\.[a-z]+$/, "") : safeName(n.title)) : null; };
   let blob, file;
   if (fmt === "md") {
     const atts = {}, entries = [];
     for (const n of notes) {
-      const imgs = imgIdsOf(ir(n.html));
+      const imgs = imgIdsOf(ir(n.html)).concat(ir(n.html).filter(b => b.aud).map(b => b.aud)); // photos and (v0.5.8) recordings
       for (const id of imgs) if (!atts[id]) { const b = await mediaBlob(id); if (b) atts[id] = { path: "attachments/" + id + "." + extOf(b.type), bytes: new Uint8Array(await b.arrayBuffer()) }; }
       const depth = fileOf[n.id].split("/").length - 1;
       entries.push({ name: fileOf[n.id], data: toMD(n, { img: id => atts[id] ? "../".repeat(depth) + atts[id].path : "", title: titleOf }) });
+      await step(n);
     }
     Object.values(atts).forEach(a => entries.push({ name: a.path, data: a.bytes }));
     if (one && !Object.keys(atts).length) { blob = new Blob([entries[0].data], { type: "text/markdown" }); file = stem + ".md"; }
-    else { blob = await zip(entries.map(e => one ? e : Object.assign({}, e, { name: stem + "/" + e.name }))); file = stem + ".zip"; }
+    else { blob = await packZip(entries.map(e => one ? e : Object.assign({}, e, { name: stem + "/" + e.name }))); file = stem + ".zip"; }
   } else if (fmt === "txt") {
-    const entries = notes.map(n => ({ name: fileOf[n.id], data: n.title + "\n\n" + N.toText(n.html) + "\n" }));
-    if (one) { blob = new Blob([entries[0].data], { type: "text/plain" }); file = stem + ".txt"; } else { blob = await zip(entries.map(e => Object.assign({}, e, { name: stem + "/" + e.name }))); file = stem + ".zip"; }
+    const entries = []; for (const n of notes) { entries.push({ name: fileOf[n.id], data: n.title + "\n\n" + N.toText(n.html) + "\n" }); await step(n); }
+    if (one) { blob = new Blob([entries[0].data], { type: "text/plain" }); file = stem + ".txt"; } else { blob = await packZip(entries.map(e => Object.assign({}, e, { name: stem + "/" + e.name }))); file = stem + ".zip"; }
   } else if (fmt === "docx") {
-    if (one) { blob = await toDOCX(notes[0]); file = stem + ".docx"; }
-    else { const entries = []; for (const n of notes) entries.push({ name: stem + "/" + fileOf[n.id], data: new Uint8Array(await (await toDOCX(n)).arrayBuffer()) }); blob = await zip(entries); file = stem + ".zip"; }
+    if (one) { blob = await toDOCX(notes[0]); file = stem + ".docx"; await step(notes[0]); }
+    else { const entries = []; for (const n of notes) { entries.push({ name: stem + "/" + fileOf[n.id], data: new Uint8Array(await (await toDOCX(n)).arrayBuffer()) }); await step(n); } blob = await packZip(entries); file = stem + ".zip"; }
   } else if (fmt === "html" || fmt === "pdf") {
-    const urls = {}; for (const n of notes) for (const id of imgIdsOf(ir(n.html))) if (!(id in urls)) urls[id] = await dataURL(id);
+    const urls = {}; for (const n of notes) { for (const id of imgIdsOf(ir(n.html))) if (!(id in urls)) urls[id] = await dataURL(id); await step(n); }
     const ctx = { src: id => urls[id] || "", href: id => fileOf[id] ? "#n-" + id : "", path: one ? null : n => rel(n).join(" › ") };
     if (fmt === "pdf" || one) {
       const page = htmlDoc(one ? notes[0].title : name || "NotePath notes", notes.map(n => article(n, ctx)).join("\n"));
-      if (fmt === "pdf") { blob = await pdf(page); file = stem + ".pdf"; if (!blob) return { printed: true, count: notes.length }; }
+      if (fmt === "pdf") { T.begin("pdf", 1, "Making the PDF"); blob = await pdf(page); T.tick("pdf", 1); file = stem + ".pdf"; if (!blob) { T.done("Sent to the print window"); return { printed: true, count: notes.length }; } }
       else { blob = new Blob([page], { type: "text/html" }); file = stem + ".html"; }
     } else {
       const entries = notes.map(n => { const depth = fileOf[n.id].split("/").length - 1;
         return { name: stem + "/" + fileOf[n.id], data: htmlDoc(n.title, article(n, Object.assign({}, ctx, { path: null, href: id => fileOf[id] ? "../".repeat(depth) + encodeURI(fileOf[id]) : "" }))) }; });
-      blob = await zip(entries); file = stem + ".zip";
+      blob = await packZip(entries); file = stem + ".zip";
     }
   } else if (fmt === "enex") {
     // one notebook per folder (Evernote) / one import per file (Apple Notes): the folder path is the file name, and a tag
     const groups = {}; notes.forEach(n => { const k = rel(n).join(" - ") || (one ? "" : name ? safeName(name) : "Notes"); (groups[k] = groups[k] || []).push(n); });
     const keys = Object.keys(groups);
-    if (keys.length === 1) { blob = new Blob([await toENEX(groups[keys[0]], n => rel(n).join("/"))], { type: "application/enex+xml" }); file = (one ? stem : safeName(keys[0] || stem)) + ".enex"; }
-    else { const entries = []; for (const k of keys) entries.push({ name: stem + "/" + safeName(k) + ".enex", data: await toENEX(groups[k], n => rel(n).join("/")) }); blob = await zip(entries); file = stem + ".zip"; }
+    const grp = async k => { const x = await toENEX(groups[k], n => rel(n).join("/")); for (const n of groups[k]) await step(n); return x; };
+    if (keys.length === 1) { blob = new Blob([await grp(keys[0])], { type: "application/enex+xml" }); file = (one ? stem : safeName(keys[0] || stem)) + ".enex"; }
+    else { const entries = []; for (const k of keys) entries.push({ name: stem + "/" + safeName(k) + ".enex", data: await grp(k) }); blob = await packZip(entries); file = stem + ".zip"; }
   }
   if (!o.noSave) save(blob, file);
+  T.done(`${file} · ${fmtBytes(blob.size)}`);
   return { file, count: notes.length, bytes: blob.size, blob };
 }
 /* ---------- Share → Email and Print (v0.5.6, Devon) ----------
@@ -591,20 +653,27 @@ const NOTION_ID = /\s[0-9a-f]{32}$/i, cleanName = s => s.replace(/\.[^.\/]+$/, "
 const SKIP = /(^|\/)(\.obsidian|\.trash|\.git|__MACOSX|\.DS_Store|Thumbs\.db)(\/|$)/i;
 const NOTE_EXT = /\.(md|markdown|txt|html?|docx|enex|json)$/i;
 // items: [{ path ("Vault/Projects/Idea.md"), bytes(), text(), size }] (zips are opened; a zip's own name becomes a folder)
-async function gather(files) {
+async function gather(files, T) {
   const items = [];
   for (const f of files) {
+    if (T && /\.zip$/i.test(f.name)) { T.tick("read", 0, "Opening " + f.name); await T.yield(); }
     const path = String(f.webkitRelativePath || f.relPath || f.name).replace(/\\/g, "/");
     if (/\.zip$/i.test(f.name)) {
       const ents = await unzip(f), stem = f.name.replace(/\.zip$/i, "");
       const tops = new Set(ents.map(e => e.name.split("/")[0])), single = tops.size === 1 && ents.every(e => e.name.includes("/"));
       ents.forEach(e => items.push({ path: (path.includes("/") ? path.replace(/[^/]+$/, "") : "") + (single ? e.name : stem + "/" + e.name), bytes: e.bytes, text: e.text, size: e.size, zip: true }));
     } else items.push({ path, size: f.size, bytes: async () => new Uint8Array(await f.arrayBuffer()), text: () => f.text(), file: f });
+    if (T) { T.tick("read", f.size || 0); await T.yield(); }
   }
   return items.filter(x => !SKIP.test(x.path));
 }
 async function importFiles(files, o = {}) {
-  const N = NS(), items = await gather(files), report = { notes: 0, folders: 0, photos: 0, skipped: [], made: [] };
+  // (v0.5.8) progress: the size is the files picked; a .zip is read first, then each note (and the photos it brings in)
+  const size = files.reduce((a, f) => a + (f.size || 0), 0), zipped = files.some(f => /\.zip$/i.test(f.name));
+  const T = track(o.onProgress, size, zipped ? [["read", .25], ["notes", .75]] : [["notes", 1]]);
+  if (zipped) T.begin("read", files.filter(f => /\.zip$/i.test(f.name)).reduce((a, f) => a + (f.size || 0), 0) + files.filter(f => !/\.zip$/i.test(f.name)).length, "Reading the files");
+  const N = NS(), items = await gather(files, zipped ? T : null), report = { notes: 0, folders: 0, photos: 0, skipped: [], made: [] };
+  let photoBytes = 0;
   const byPath = new Map(items.map(it => [it.path.toLowerCase(), it])), byBase = new Map();
   items.forEach(it => { const b = it.path.split("/").pop().toLowerCase(); if (!byBase.has(b)) byBase.set(b, it); });
   const findFile = (src, from) => { if (!src || /^[a-z]+:/i.test(src)) return null; let p = decodeURIComponent(src.split(/[?#]/)[0]); const dir = from.split("/").slice(0, -1);
@@ -612,7 +681,7 @@ async function importFiles(files, o = {}) {
     return byPath.get(norm.join("/").toLowerCase()) || byBase.get(p.split("/").pop().toLowerCase()) || null; };
   const stored = new Map(); // a photo used by several notes is stored once
   const storeBytes = async (bytes, name, mime) => { const type = mime || ({ png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", webp: "image/webp", svg: "image/svg+xml", bmp: "image/bmp" })[(name.match(/\.(\w+)$/) || [])[1] && name.match(/\.(\w+)$/)[1].toLowerCase()];
-    if (!/^image\//.test(type || "")) return null; const id = await N.putImage(new Blob([bytes], { type })); report.photos++; return id; };
+    if (!/^image\//.test(type || "")) return null; const id = await N.putImage(new Blob([bytes], { type })); report.photos++; photoBytes += bytes.length || 0; return id; };
   const ctxFor = it => {
     const pend = [];
     const imgTag = (id, alt) => id ? `<img data-img="${id}" alt="${esc(alt || "")}">` : "";
@@ -643,7 +712,11 @@ async function importFiles(files, o = {}) {
   };
   const notePaths = items.filter(it => NOTE_EXT.test(it.path));
   items.filter(it => !NOTE_EXT.test(it.path) && !/\.(png|jpe?g|gif|webp|svg|bmp|css|js|csv|ico)$/i.test(it.path)).forEach(it => report.skipped.push(it.path.split("/").pop() + (/\.pdf$/i.test(it.path) ? " (PDF import: coming soon)" : /\.(one|onepkg)$/i.test(it.path) ? " (OneNote: connect Microsoft in a later update)" : /\.(rtf|pages|doc)$/i.test(it.path) ? " (save it as .docx first)" : "")));
+  const IMG = /\.(png|jpe?g|gif|webp|svg|bmp)$/i, work = notePaths.reduce((a, it) => a + (it.size || 0), 0) + items.filter(it => IMG.test(it.path)).reduce((a, it) => a + (it.size || 0), 0);
+  T.begin("notes", work || 1, notePaths.length ? `Reading ${notePaths.length} file${notePaths.length === 1 ? "" : "s"}` : "Nothing to import");
+  let ii = 0;
   for (const it of notePaths) {
+    ii++; T.tick("notes", 0, `File ${ii} of ${notePaths.length}: ${it.path.split("/").pop()}`); photoBytes = 0;
     const dirs = it.path.split("/").slice(0, -1), ext = (it.path.match(/\.(\w+)$/) || [])[1].toLowerCase();
     try {
       if (ext === "md" || ext === "markdown") { const c = ctxFor(it), r = mdToHTML(await it.text(), c); r.html = await c.done(r.html); add(it, r, dirs); }
@@ -660,6 +733,7 @@ async function importFiles(files, o = {}) {
         const kd = dirs.map(d => /^keep$/i.test(d) ? "Google Keep" : d).filter(d => !/^takeout$/i.test(d)); add(it, n, n.label ? kd.concat(n.label) : kd);
       }
     } catch (e) { report.skipped.push(it.path.split("/").pop() + " (" + (e.message || "could not be read") + ")"); }
+    T.tick("notes", (it.size || 0) + photoBytes); await T.yield();
   }
   // links between the imported notes ([[Title]], [text](Other.md)) now that every note has its id
   const tmap = new Map(); made.forEach(m => { tmap.set(m.title.toLowerCase(), m.id); tmap.set(cleanName(m.path.split("/").pop()).toLowerCase(), m.id); });
@@ -669,7 +743,67 @@ async function importFiles(files, o = {}) {
     N.update(m.id, patch);
   });
   report.made = made.map(m => m.id);
+  T.done(`${report.notes} note${report.notes === 1 ? "" : "s"} · ${fmtBytes(size)}`);
   return report;
+}
+
+/* ---------- (v0.5.8, Devon) Check for duplicates ----------
+   findDuplicates(notes) → groups, each note in one group at most, in this order:
+     "exact"  same title and the same words;  "words" the same words under different titles;
+     "near"   nearly the same words (≥ NEAR alike: Jaccard of word 3-grams, word sets for short notes; candidates from MinHash +
+              LSH bands, so thousands of notes stay quick);  "title" the same title with different words.
+   Words = the note's text (photos, widgets' insides and formatting are not compared), lower case, spaces and punctuation
+   folded. Empty notes only match by title. Ignored groups are remembered (notepath.dupignore: the sorted ids). */
+const NEAR = 0.9, NH = 64, BANDS = 16;
+const normWords = t => String(t || "").toLowerCase().normalize("NFKC").replace(/[​]/g, "").replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+const normTitle = t => normWords(t);
+function hash32(str, seed) { let h = 2166136261 ^ seed; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } h ^= h >>> 13; h = Math.imul(h, 0x5bd1e995); h ^= h >>> 15; return h >>> 0; }
+function shingles(w) { const a = w ? w.split(" ") : []; if (a.length < 6) return new Set(a); const s = new Set(); for (let i = 0; i + 1 < a.length; i++) s.add(a[i] + " " + a[i + 1]); return s; }
+const bag = w => { const m = new Map(); (w ? w.split(" ") : []).forEach(x => m.set(x, (m.get(x) || 0) + 1)); return m; };
+// how alike two notes' words are: shared words (counting repeats) over all words of the longer one
+function alike(a, b) { let mn = 0, ta = 0, tb = 0; for (const v of a.values()) ta += v; for (const v of b.values()) tb += v; if (!ta && !tb) return 1; for (const [k, v] of a) { const u = b.get(k); if (u) mn += Math.min(u, v); } return mn / Math.max(ta, tb); }
+function findDuplicates(notes, o = {}) {
+  const near = o.near || NEAR, ign = new Set(o.ignored || []), info = notes.map(n => ({ n, w: normWords(n.body != null ? n.body : (NS() ? NS().toText(n.html) : "")), t: normTitle(n.title) }));
+  const ignSets = [...ign].map(k => new Set(k.split(","))), ignored = ids => ignSets.some(S => ids.every(id => S.has(id))); // "Not duplicates": those notes never group among themselves again
+  const used = new Set(), groups = [], add = (kind, list, score) => { const ids = list.map(x => x.n.id); if (list.length < 2 || ignored(ids)) return; list.forEach(x => used.add(x.n.id)); groups.push({ kind, ids, score }); };
+  const by = f => { const m = new Map(); info.forEach(x => { if (used.has(x.n.id)) return; const k = f(x); if (k == null) return; if (!m.has(k)) m.set(k, []); m.get(k).push(x); }); return [...m.values()]; };
+  // the same words: exact copies when every title matches too
+  by(x => x.w ? x.w : null).forEach(l => add(l.every(x => x.t === l[0].t) ? "exact" : "words", l, 1));
+  by(x => !x.w && x.t ? x.t : null).forEach(l => add("exact", l, 1)); // empty notes with one title
+  // nearly the same: MinHash over word pairs, LSH bands → candidate pairs → word-count likeness; groups only of notes that are all alike
+  const rest = info.filter(x => !used.has(x.n.id) && x.w), sh = rest.map(x => shingles(x.w)), bags = rest.map(x => bag(x.w)), len = rest.map(x => x.w.split(" ").length), buckets = new Map();
+  rest.forEach((x, i) => { const sig = new Array(NH).fill(0xffffffff); for (const g of sh[i]) for (let k = 0; k < NH; k++) { const v = hash32(g, k * 7919 + 1); if (v < sig[k]) sig[k] = v; }
+    const r = NH / BANDS; for (let b = 0; b < BANDS; b++) { const bk = b + ":" + sig.slice(b * r, b * r + r).join("."); if (!buckets.has(bk)) buckets.set(bk, []); buckets.get(bk).push(i); } });
+  const pairs = [], tried = new Set();
+  for (const l of buckets.values()) { if (l.length < 2 || l.length > 300) continue;
+    for (let a = 0; a < l.length; a++) for (let b = a + 1; b < l.length; b++) { const i = Math.min(l[a], l[b]), j = Math.max(l[a], l[b]), pk = i + ":" + j; if (tried.has(pk)) continue; tried.add(pk);
+      if (Math.min(len[i], len[j]) / Math.max(len[i], len[j]) < near) continue;
+      const v = alike(bags[i], bags[j]); if (v >= near) pairs.push([v, i, j]); } }
+  pairs.sort((a, b) => b[0] - a[0]);
+  const gOf = new Map(), gl = [];
+  for (const [v, i, j] of pairs) {
+    const gi = gOf.get(i), gj = gOf.get(j);
+    if (gi == null && gj == null) { const g = { m: [i, j], lo: v }; gl.push(g); gOf.set(i, g); gOf.set(j, g); continue; }
+    if (gi != null && gj != null) continue;
+    const g = gi != null ? gi : gj, x = gi != null ? j : i; if (g.m.length >= 20) continue;
+    let lo = g.lo, ok = true; for (const y of g.m) { const s2 = alike(bags[x], bags[y]); if (s2 < near) { ok = false; break; } lo = Math.min(lo, s2); }
+    if (ok) { g.m.push(x); g.lo = lo; gOf.set(x, g); }
+  }
+  gl.forEach(g => add("near", g.m.map(i => rest[i]), g.lo));
+  by(x => x.t ? x.t : null).forEach(l => add("title", l, 0));
+  const rank = { exact: 0, words: 1, near: 2, title: 3 };
+  return groups.sort((a, b) => rank[a.kind] - rank[b.kind] || b.ids.length - a.ids.length);
+}
+const DUPIGN = "notepath.dupignore";
+const dupIgnored = () => { try { const a = JSON.parse(localStorage.getItem(DUPIGN) || "[]"); return Array.isArray(a) ? a : []; } catch (e) { return []; } };
+function dupIgnore(ids) { try { const a = dupIgnored(); a.push(ids.slice().sort().join(",")); localStorage.setItem(DUPIGN, JSON.stringify(a.slice(-500))); } catch (e) {} }
+// merge: the first note keeps its title and place; the others' words go under it, each after a line naming it; then they are deleted
+function mergeNotes(ids) {
+  const N = NS(), list = ids.map(id => N.get(id)).filter(Boolean); if (list.length < 2) return null;
+  const [keep, ...rest] = list;
+  const html = keep.html + rest.map(n => `<div><br></div><div>— <i>merged from “${esc(n.title)}”</i> —</div>${n.html || ""}`).join("");
+  N.update(keep.id, { html, fav: list.some(n => n.fav) || keep.fav }); rest.forEach(n => N.trash(n.id));
+  return keep.id;
 }
 
 /* ---------- the window: My notes › ⇅ Import / Export ---------- */
@@ -687,15 +821,46 @@ function open(o = {}) {
         <button type="button" role="radio" data-s="folder"${fname && fcount ? "" : " disabled"}><b>This folder</b><small>${fname ? esc(fname) + " · " + fcount + " note" + (fcount === 1 ? "" : "s") : "Pick a folder first"}</small></button>
         <button type="button" role="radio" data-s="all"${all.length ? "" : " disabled"}><b>Everything</b><small>${all.length} note${all.length === 1 ? "" : "s"}, with their folders</small></button></div>
       <div class="io-fmts" role="radiogroup" aria-label="Format">${FORMATS.map(f => `<button type="button" role="radio" class="io-fmt" data-f="${f.k}"><span class="io-ext">.${f.ext}</span><b>${esc(f.name)}</b><small class="io-for">${esc(f.for)}</small><small>${esc(f.note)}</small></button>`).join("")}</div>
-      <div class="io-go"><button type="button" class="btn good" data-a="export">Export</button><p class="io-msg" role="status" aria-live="polite"></p></div></section>
+      <div class="io-go"><button type="button" class="btn good" data-a="export">Export</button><p class="io-msg" role="status" aria-live="polite"></p></div><div class="io-progx"></div></section>
     <section class="io-col"><h3 class="io-h">Import</h3>
       <div class="io-drop" tabindex="0" role="button" aria-label="Choose files to import">Drop files, a .zip or a whole folder here<br><small>or</small><span class="io-btns"><button type="button" class="btn-s" data-a="files">Choose files…</button><button type="button" class="btn-s" data-a="dir">Choose a folder…</button></span></div>
       <label class="io-into">Put them in <select class="io-sel" aria-label="Folder for imported notes"><option value="">Top level</option>${fs.map(f => `<option value="${f.id}"${f.id === fid ? " selected" : ""}>${"  ".repeat(f.depth)}${esc(f.name)}</option>`).join("")}</select></label>
       <ul class="io-works"><li><b>Obsidian</b> vault (pick its folder) or Markdown files, with [[links]] and attachments</li><li><b>Notion</b> export (.zip, Markdown &amp; CSV)</li><li><b>Word</b> and <b>Google Docs</b> (.docx; in Google Docs: File › Download › Word)</li>
         <li><b>Apple Notes</b> and <b>Evernote</b> (.enex), web pages (.html), plain text (.txt)</li><li><b>Google Keep</b> (Google Takeout .zip, or its .json files)</li><li class="io-soon">Coming later: PDF, and OneNote / Google Drive straight from your account</li></ul>
-      <p class="io-log" role="status" aria-live="polite"></p>
-      <input type="file" class="io-fin" multiple accept=".md,.markdown,.txt,.html,.htm,.docx,.enex,.json,.zip" hidden><input type="file" class="io-din" webkitdirectory multiple hidden></section></div>`;
+      <div class="io-progi"></div><p class="io-log" role="status" aria-live="polite"></p>
+      <input type="file" class="io-fin" multiple accept=".md,.markdown,.txt,.html,.htm,.docx,.enex,.json,.zip" hidden><input type="file" class="io-din" webkitdirectory multiple hidden></section>
+    <section class="io-col io-dup"><div class="io-duph"><h3 class="io-h">Check for duplicates</h3><p class="io-dupd">Finds notes that are copies of each other, nearly the same (90% or more of the same words), or share a title, so you can keep one, merge them or leave them.</p><button type="button" class="btn-s io-dupgo" data-a="dups">Check my notes</button></div><div class="io-dupr" role="region" aria-label="Duplicates found" aria-live="polite"></div></section></div>`;
   const b = w.body, msg = $(".io-msg", b), log = $(".io-log", b);
+  const px = progUI($(".io-progx", b), "Export progress"), pi = progUI($(".io-progi", b), "Import progress");
+  // duplicates (v0.5.8)
+  const dupR = $(".io-dupr", b), changed = () => { if (o.onChanged) try { o.onChanged(); } catch (e) {} };
+  const KIND = { exact: ["Exact copies", "Same title and the same words"], words: ["Same words", "The same words under different titles"], near: ["Nearly the same", ""], title: ["Same title", "The same title, different words"] };
+  const fsAll = () => N.folders(), where = n => { const p = folderPath(n.folder, fsAll()); return p.length ? p.join(" › ") : "Unfiled"; };
+  const when = t => { const d = new Date(t || 0); return isNaN(d) ? "" : d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }); };
+  const words = n => (normWords(n.body || "").match(/\S+/g) || []).length;
+  let undoMark = -1;
+  function runDups(focus) {
+    const groups = findDuplicates(N.list(), { ignored: dupIgnored() });
+    if (!groups.length) { dupR.innerHTML = `<p class="io-dupnone">✓ No duplicates found in ${N.list().length} notes.</p>`; return groups; }
+    const total = groups.reduce((a, g) => a + g.ids.length, 0);
+    dupR.innerHTML = `<p class="io-dupsum"><span>${groups.length} group${groups.length === 1 ? "" : "s"}</span> · <span>${total} notes</span></p>` + groups.map((g, gi) => {
+      const ns = g.ids.map(id => N.get(id)).filter(Boolean).sort((a, c) => (a.created || 0) - (c.created || 0));
+      return `<div class="io-dupg" data-g="${gi}" data-ids="${ns.map(n => n.id).join(",")}"><div class="io-dupgh"><b>${KIND[g.kind][0]}</b>${g.kind === "near" ? ` <span class="io-dupsc">${Math.round(g.score * 100)}% alike</span>` : `<span class="io-dupk">${KIND[g.kind][1]}</span>`}
+        <span class="io-dupga"><button type="button" class="btn-s" data-d="merge" title="Put them all into the oldest note, one after the other, and delete the rest">Merge into one</button><button type="button" class="btn-s" data-d="ignore" title="They are meant to be alike: don't show this group again">Not duplicates</button></span></div>`
+        + ns.map((n, i) => `<div class="io-dupn" data-id="${n.id}"><div class="io-dupt"><b class="no-i18n">${esc(n.title)}</b><small><span class="no-i18n">${esc(where(n))}</span> · <span>made ${esc(when(n.created))}</span> · <span>edited ${esc(when(n.updated))}</span> · <span>${words(n)} words</span>${i === 0 ? ` · <span>oldest</span>` : ""}</small><span class="io-dupp no-i18n">${esc((n.body || "").replace(/\s+/g, " ").trim().slice(0, 140) || "(no words)")}</span></div>
+          <span class="io-dupna"><button type="button" class="btn-s" data-d="open">Open</button><button type="button" class="btn-s io-dupkeep" data-d="keep" title="Keep this note and delete the others in this group">Keep this one</button></span></div>`).join("") + `</div>`; }).join("");
+    if (focus) { const f = dupR.querySelector("button"); if (f) f.focus({ preventScroll: true }); }
+    return groups;
+  }
+  const afterChange = (text, mark) => { changed(); runDups(); N.toast(esc(text), { label: "Undo", run: () => { if (N.history().undo !== mark) { N.toast("Use ↶ Undo in My notes to step back to it.", null, 4000); return; } if (N.undo()) { changed(); runDups(); } } }, 9000); };
+  $('[data-a="dups"]', b).onclick = () => { const gs = runDups(true); $('[data-a="dups"]', b).textContent = "Check again"; void gs; };
+  dupR.addEventListener("click", e => {
+    const btn = e.target.closest("[data-d]"); if (!btn) return; const g = btn.closest(".io-dupg"), ids = g.dataset.ids.split(","), d = btn.dataset.d;
+    if (d === "open") { const id = btn.closest(".io-dupn").dataset.id; if (window.InquireApp && InquireApp.openNoteLink) { if (w.close) w.close(); InquireApp.openNoteLink(id); } return; }
+    if (d === "ignore") { dupIgnore(ids); runDups(); return; }
+    if (d === "keep") { const keep = btn.closest(".io-dupn").dataset.id, gone = ids.filter(x => x !== keep); gone.forEach(x => N.trash(x)); undoMark = N.history().undo; afterChange(`Kept one, deleted ${gone.length}.`, undoMark); return; }
+    if (d === "merge") { const ns = ids.map(x => N.get(x)).filter(Boolean).sort((a, c) => (a.created || 0) - (c.created || 0)); mergeNotes(ns.map(n => n.id)); undoMark = N.history().undo; afterChange(`Merged ${ns.length} notes into “${ns[0].title}”.`, undoMark); }
+  });
   const paint = () => { b.querySelectorAll("[data-s]").forEach(x => x.setAttribute("aria-checked", String(x.dataset.s === scope))); b.querySelectorAll("[data-f]").forEach(x => x.setAttribute("aria-checked", String(x.dataset.f === fmt)));
     const n = pick(scope, { note: o.note, folder: fid }).notes.length; $('[data-a="export"]', b).textContent = `Export ${n} note${n === 1 ? "" : "s"} as ${FORMATS.find(f => f.k === fmt).name}`; };
   b.querySelectorAll("[data-s]").forEach(x => x.onclick = () => { scope = x.dataset.s; paint(); });
@@ -703,21 +868,27 @@ function open(o = {}) {
   paint();
   $('[data-a="export"]', b).onclick = async e => {
     const btn = e.currentTarget; btn.disabled = true; msg.className = "io-msg"; msg.textContent = "Exporting…";
-    try { const r = await exportNotes(scope, fmt, { note: o.note, folder: fid }); msg.classList.add("ok");
-      msg.textContent = r.printed ? "Choose “Save as PDF” in the print window." : `Saved ${r.file} (${r.count} note${r.count === 1 ? "" : "s"}).`; }
-    catch (err) { msg.classList.add("bad"); msg.textContent = err.message || "The export did not work."; }
+    px.start("Exporting as " + FORMATS.find(f => f.k === fmt).name);
+    try { const r = await exportNotes(scope, fmt, { note: o.note, folder: fid, onProgress: p => px.paint(p) }); msg.classList.add("ok");
+      px.end(true, r.printed ? "Ready to print" : "Export finished");
+      msg.textContent = r.printed ? "Choose “Save as PDF” in the print window." : `Saved ${r.file} (${r.count} note${r.count === 1 ? "" : "s"}, ${fmtBytes(r.bytes)}).`; }
+    catch (err) { px.end(false, "Export stopped"); msg.classList.add("bad"); msg.textContent = err.message || "The export did not work."; }
     btn.disabled = false;
   };
   const fin = $(".io-fin", b), din = $(".io-din", b), drop = $(".io-drop", b);
   const run = async files => {
     if (!files.length) return; log.className = "io-log"; log.textContent = "Importing…";
+    pi.start(`Importing ${files.length} file${files.length === 1 ? "" : "s"}`);
     try {
-      const r = await importFiles(files, { folder: $(".io-sel", b).value || null });
+      const r = await importFiles(files, { folder: $(".io-sel", b).value || null, onProgress: p => pi.paint(p) });
+      pi.end(!!r.notes, r.notes ? "Import finished" : "Nothing imported");
       log.classList.add(r.notes ? "ok" : "bad");
       log.innerHTML = (r.notes ? `Imported <b>${r.notes}</b> note${r.notes === 1 ? "" : "s"}${r.folders ? `, ${r.folders} folder${r.folders === 1 ? "" : "s"}` : ""}${r.photos ? `, ${r.photos} photo${r.photos === 1 ? "" : "s"}` : ""}.` : "Nothing to import there.")
         + (r.skipped.length ? `<br><span class="io-skip">Skipped: ${r.skipped.slice(0, 8).map(esc).join(", ")}${r.skipped.length > 8 ? ` and ${r.skipped.length - 8} more` : ""}</span>` : "");
       if (r.notes && o.onImported) o.onImported(r);
-    } catch (err) { log.classList.add("bad"); log.textContent = err.message || "The import did not work."; }
+      if (r.notes) { const made = new Set(r.made), dg = findDuplicates(N.list(), { ignored: dupIgnored() }).filter(g => g.ids.some(id => made.has(id)) && g.ids.some(id => !made.has(id)));
+        if (dg.length) { const k = dg.reduce((a, g) => a + g.ids.filter(id => made.has(id)).length, 0); log.insertAdjacentHTML("beforeend", `<br><span class="io-dupoff">${k} of the imported notes look like notes you already had. <button type="button" class="btn-s" data-a="dups2">Check for duplicates</button></span>`); $('[data-a="dups2"]', log).onclick = () => { runDups(true); $(".io-dup", b).scrollIntoView({ block: "start", behavior: "smooth" }); }; } }
+    } catch (err) { pi.end(false, "Import stopped"); log.classList.add("bad"); log.textContent = err.message || "The import did not work."; }
   };
   $('[data-a="files"]', b).onclick = e => { e.stopPropagation(); fin.click(); }; $('[data-a="dir"]', b).onclick = e => { e.stopPropagation(); din.click(); };
   drop.onclick = () => fin.click(); drop.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fin.click(); } };
@@ -739,5 +910,5 @@ async function droppedFiles(dt) {
   return out;
 }
 
-window.NPIO = { open, exportNotes, email, printNote, mailURL, hooks, importFiles, zip, unzip, md5, ir, toMD, toHTMLBody, toDOCX, toENEX, mdToHTML, htmlToNote, docxToNote, enexToNotes, keepToNote, FORMATS };
+window.NPIO = { open, exportNotes, findDuplicates, mergeNotes, track, fmtBytes, fmtTime, email, printNote, mailURL, hooks, importFiles, zip, unzip, md5, ir, toMD, toHTMLBody, toDOCX, toENEX, mdToHTML, htmlToNote, docxToNote, enexToNotes, keepToNote, FORMATS };
 })();

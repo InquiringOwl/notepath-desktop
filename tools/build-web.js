@@ -12,9 +12,9 @@ const css = ['web/src/style.css', 'web/src/settings.css', 'web/src/menu.css', 'w
 // Top-bar mark, inlined so the page works anywhere.
 const markUri = 'data:image/png;base64,' + fs.readFileSync(path.join(R, 'app/brand/np-mark-64.png')).toString('base64');
 // Order matters: helper rules (Python highlighting, music theory) → notes engine → widgets → app → right-click menu → documents → settings.
-const files = ['web/lib/lazy.js', 'web/lib/diag.js', 'web/lib/python-tokens.js', 'web/lib/music-theory.js', 'web/src/notes.js', 'web/src/notes-widgets.js', 'web/src/notes-graph.js', 'web/src/notes-sheet.js', 'web/src/notes-map.js', 'web/src/code.js', 'web/src/tasks.js', 'web/src/io.js', 'web/src/assist.js', 'web/src/app.js', 'web/src/office.js', 'web/src/textmenu.js', 'web/src/eula.js', 'web/src/settings.js'];
+const files = ['web/lib/lazy.js', 'web/lib/i18n.js', 'web/lib/diag.js', 'web/lib/python-tokens.js', 'web/lib/music-theory.js', 'web/src/notes.js', 'web/src/notes-widgets.js', 'web/src/notes-graph.js', 'web/src/notes-sheet.js', 'web/src/notes-map.js', 'web/src/notes-sign.js', 'web/src/code.js', 'web/src/tasks.js', 'web/src/io.js', 'web/src/assist.js', 'web/src/app.js', 'web/src/office.js', 'web/src/textmenu.js', 'web/src/eula.js', 'web/src/settings.js'];
 // v0.5.7: these run on first use (web/lib/lazy.js); the rest run at start. [name, the window global that wakes it]
-const LAZY = { 'web/src/office.js': ['office', 'NoteOffice'], 'web/src/io.js': ['io', 'NPIO'], 'web/src/notes-sheet.js': ['sheet', 'NPSheet'], 'web/src/notes-graph.js': ['graph', 'NPGraph'], 'web/src/notes-map.js': ['map', 'NPMap'], 'web/src/assist.js': ['assist', 'NPAssist'] };
+const LAZY = { 'web/src/office.js': ['office', 'NoteOffice'], 'web/src/io.js': ['io', 'NPIO'], 'web/src/notes-sheet.js': ['sheet', 'NPSheet'], 'web/src/notes-graph.js': ['graph', 'NPGraph'], 'web/src/notes-map.js': ['map', 'NPMap'], 'web/src/notes-sign.js': ['sign', 'NPSign'], 'web/src/assist.js': ['assist', 'NPAssist'] };
 const scripts = files.map(f => {
   const src = read(f);
   if (/<\/script/i.test(src)) throw new Error(f + ' contains </script>, which would break the page.');
@@ -51,6 +51,16 @@ function copyMonaco() {
   fs.writeFileSync(mark, ver);
   console.log('copied Monaco', ver, 'into app/vendor/monaco');
 }
+// v0.5.8: NotePath in other languages (web/lib/i18n.js): the dictionaries in web/i18n/<code>.json are checked and copied to
+// app/i18n/ (served as notepath://app/i18n/…); their hashes go in the page so a cached dictionary is used only while current.
+const I18N_V = {};
+{ const dir = path.join(R, 'web/i18n'), out = path.join(R, 'app/i18n');
+  if (fs.existsSync(dir)) { fs.mkdirSync(out, { recursive: true });
+    for (const f of fs.readdirSync(dir).filter(f => /^[a-z]{2}\.json$/.test(f)).sort()) {
+      const txt = fs.readFileSync(path.join(dir, f), 'utf8'); let j; try { j = JSON.parse(txt); } catch (e) { throw new Error('web/i18n/' + f + ': ' + e.message); }
+      if (!j || typeof j.strings !== 'object') throw new Error('web/i18n/' + f + ': needs a "strings" object');
+      I18N_V[f.slice(0, 2)] = require('crypto').createHash('md5').update(txt).digest('hex').slice(0, 10);
+      if (!fs.existsSync(path.join(out, f)) || fs.readFileSync(path.join(out, f), 'utf8') !== txt) fs.writeFileSync(path.join(out, f), txt); } } }
 const monacoTag = base => `<script>window.NP_MONACO_BASE = ${JSON.stringify(base)};</script>`;
 
 const body = `<div id="app">
@@ -62,6 +72,7 @@ const body = `<div id="app">
   <main class="view" id="view" tabindex="-1"></main>
   <div class="upd" id="upd" role="status" hidden></div>
 </div>
+<script>window.NP_I18N_V = ${JSON.stringify(I18N_V)};</script>
 ${scripts}
 `;
 
@@ -98,7 +109,7 @@ ${body}
 </body></html>
 `;
 
-module.exports = { files, LAZY, desktop, R, copyMonaco };
+module.exports = { files, LAZY, desktop, R, copyMonaco, I18N_V };
 if (require.main !== module) return;
 copyMonaco();
 fs.writeFileSync(path.join(R, 'app/index.html'), desktop);

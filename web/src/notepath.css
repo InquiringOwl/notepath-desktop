@@ -506,6 +506,24 @@ body.office-on #app{visibility:hidden}
 .io-go{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .io-msg,.io-log{margin:0;font:400 12.5px/1.45 var(--sans);color:var(--muted)}
 .io-msg.ok,.io-log.ok{color:var(--green)} .io-msg.bad,.io-log.bad{color:var(--red)}
+/* (v0.5.8, Devon) Import & Export progress: size, speed, time left and a % meter (io.js progUI) */
+.io-prog{margin:12px 0 4px;padding:10px 12px 9px;border:1px solid color-mix(in srgb,var(--frame) 40%,var(--line-2));border-radius:3px;background:color-mix(in srgb,var(--frame) 6%,rgba(0,0,0,.18))}
+.io-prog[hidden]{display:none}
+.io-prog-top{display:flex;align-items:baseline;gap:10px;margin-bottom:7px}
+.io-prog-t{font:600 10.5px/1.2 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--frame)}
+.io-prog-size{margin-left:auto;font:500 11.5px/1.2 var(--mono);color:var(--text)}
+.io-prog-bar{position:relative;height:20px;border:1px solid color-mix(in srgb,var(--frame) 55%,var(--line-2));border-radius:2px;background:rgba(0,0,0,.3);overflow:hidden}
+.io-prog-fill{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,color-mix(in srgb,var(--frame) 55%,transparent),var(--frame));box-shadow:0 0 12px color-mix(in srgb,var(--frame) 60%,transparent);transition:width .15s linear}
+.io-prog.run .io-prog-fill{background-image:linear-gradient(90deg,color-mix(in srgb,var(--frame) 55%,transparent),var(--frame)),repeating-linear-gradient(-45deg,rgba(255,255,255,.14) 0 6px,transparent 6px 12px);background-blend-mode:overlay;background-size:auto,17px 17px;animation:io-stripes .8s linear infinite}
+@keyframes io-stripes{to{background-position:0 0,17px 0}}
+.io-prog-pct{position:absolute;inset:0;display:grid;place-items:center;font:700 11.5px/1 var(--mono);color:var(--text);text-shadow:0 0 3px rgba(0,0,0,.9),0 1px 2px rgba(0,0,0,.9)}
+.io-prog-stats{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:7px;font:500 11px/1.3 var(--mono);color:var(--muted)}
+.io-prog-eta{margin-left:auto}
+.io-prog-what{margin-top:4px;font:400 11.5px/1.35 var(--sans);color:var(--faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.io-prog.ok{border-color:color-mix(in srgb,var(--green) 55%,var(--line-2))} .io-prog.ok .io-prog-t{color:var(--green)} .io-prog.ok .io-prog-pct{color:#0b1410;text-shadow:none} .io-prog.ok .io-prog-fill{background:var(--green);box-shadow:0 0 10px color-mix(in srgb,var(--green) 50%,transparent)}
+.io-prog.bad{border-color:color-mix(in srgb,var(--red) 55%,var(--line-2))} .io-prog.bad .io-prog-t{color:var(--red)} .io-prog.bad .io-prog-fill{background:var(--red)}
+@media (prefers-reduced-motion:reduce){ .io-prog-fill{transition:none} .io-prog.run .io-prog-fill{animation:none} }
+:root[data-reduce-motion] .io-prog.run .io-prog-fill,:root[data-perf="lite"] .io-prog.run .io-prog-fill{animation:none}
 .io-skip{color:var(--faint)}
 .io-drop{cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;padding:26px 16px;border:1px dashed var(--line-2);border-radius:4px;text-align:center;font:500 13.5px/1.4 var(--sans);color:var(--text)}
 .io-drop small{color:var(--faint)}
@@ -655,7 +673,7 @@ body.office-on #app{visibility:hidden}
 .nb-dc{font-size:11.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .nb-dc.num{font:500 10.5px/1.2 var(--mono)}
 /* ↳ Indented notes: the button above ◈, its panel (above the Links panel), and the notes drawn under their words */
-.nb-holob.nb-indb{right:68px;font-size:18px} /* side by side with ◈ */
+.nb-holob.nb-indb{font-size:18px} /* side by side with ◈ (positions: the v0.5.8 block) */
 .np-ind-t{font:600 10.5px/1 var(--ui);letter-spacing:.18em;text-transform:uppercase;color:var(--note-indent,#B5D65A);padding:7px 2px 9px}
 .np-holo-bar{position:relative;display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid color-mix(in srgb,var(--frame) 18%,transparent)}
 .np-holo-lbl{font:600 9.5px/1 var(--ui);letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin-right:auto}
@@ -801,8 +819,8 @@ a.nlink[data-folder]::before{content:"";display:inline-block;width:.95em;height:
 .np-shf button{all:unset;box-sizing:border-box;cursor:pointer;text-align:center;padding:8px 4px;border:1px solid var(--line-2);border-radius:2px}
 .np-shf small{display:block;font:500 10.5px/1.2 var(--mono);color:var(--muted);margin-top:3px}
 .np-shio{border-top:1px solid var(--line);margin-top:2px;padding-top:4px}
-.nr-tools .nr-clr{color:var(--muted)}
-.nr-tools .nr-clr:hover{color:var(--text)}
+.nr-tools .nr-clr,.nr-tools .nr-ind{color:var(--muted)}
+.nr-tools .nr-clr:hover,.nr-tools .nr-ind:hover{color:var(--text)}
 
 /* ---------- Details columns you can resize, the Compact list, cover photos (v0.5.4) ---------- */
 .nb-dhead>span{position:relative;min-width:0;overflow:visible;white-space:nowrap}
@@ -909,8 +927,9 @@ div.nb{--nb-lw:64px}
 .nb-ftree.has-fsplit .nb-dhead{margin:-10px -8px 4px}
 .nb-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:4px;padding:2px 4px 4px calc(6px + var(--d,1) * 14px)}
 .nb-ftree .nb-tiles .nb-fnote.nb-tile{flex-direction:column;align-items:center;text-align:center;gap:4px;padding:8px 4px 6px;border:1px solid transparent;border-radius:3px}
-.nb-ftree .nb-tiles .nb-fnote.nb-tile[aria-selected="true"]{border-color:color-mix(in srgb,var(--frame) 55%,transparent);background:color-mix(in srgb,var(--frame) 12%,transparent)}
-.nb-ftree .nb-tiles .nb-fnote.nb-tile[aria-selected="true"]::before{display:none}
+/* (v0.5.8, Devon) the selected tile's neon line runs down the left edge of its lit square (as the folders' line sits at the row's edge), never over the icon or the name */
+.nb-ftree .nb-tiles .nb-fnote.nb-tile.sel{border-color:color-mix(in srgb,var(--frame) 40%,transparent);background:color-mix(in srgb,var(--frame) 10%,transparent)}
+.nb-ftree .nb-tiles .nb-fnote.nb-tile.sel::before{content:"";position:absolute;left:-1px;top:3px;bottom:3px;width:3px;border-radius:2px;background:var(--frame);box-shadow:0 0 8px var(--frame)}
 .nb-ftree .nb-tile .nb-tic{height:40px}
 .nb-ftree .nb-tile .nb-tic.has-cov{width:44px;height:44px}
 .nb-ftree .nb-tile .nb-tcov{width:44px;height:44px}
@@ -1013,7 +1032,13 @@ div.nb{--nb-lw:64px}
   font:600 10.5px/1 var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
 .nb-hide:hover{color:var(--text);border-color:var(--frame)}
 .nb-hide:focus-visible{outline:2px solid var(--frame);outline-offset:1px}
-.nb-ftools .nb-hide{margin-left:auto}
+/* (v0.5.8, Devon) ◀ Hide sits at the far left on its own line, right under the Show as buttons, with ★ first beside it;
+   once the bar is wide enough for one line of buttons, it follows ★ first directly (the ::after line break goes) */
+.nb-ftools{container-type:inline-size}
+.nb-ftools::after{content:"";flex:0 0 100%;height:0;margin-top:-6px;order:1}
+.nb-ftools .nb-hide{order:2}
+.nb-ftools .nb-favtop{order:3}
+@container (min-width:370px){ .nb-ftools::after{display:none} .nb-ftools .nb-hide{order:4} }
 .nb-rail .nb-hide.nb-hidel{display:flex;flex-direction:column;justify-content:center;gap:2px;height:auto;padding:6px 2px;margin-bottom:4px;text-align:center}
 .nb-hidel .nb-tooli{font-size:11px}
 .nb-hidel .nb-tooln{font:600 8.5px/1 var(--ui);letter-spacing:.14em}
@@ -1045,8 +1070,42 @@ div.nb{--nb-lw:64px}
 .nm-placer{display:flex;align-items:flex-start;gap:8px;margin-bottom:8px} .nm-placer .nm-place{flex:1;margin:0}
 .nm-head .nw-del{margin-left:auto}
 /* ---------- v0.5.6 (Devon): ✦ AI Chat and A✓ Grammar check (buttons beside ↳ and ◈, their boxes; app.js asButtons / aiPanel / gramPanel) ---------- */
-.nb-holob.nb-aib{right:118px;font-size:18px}
-.nb-holob.nb-gramb{right:168px}
+/* (v0.5.8, Devon) right to left: ✦ AI Chat (bigger, brighter, the holographic figure) · ◈ Links · ↳ Paranotes · A✓ Grammar */
+.nb-holob:not(.nb-indb):not(.nb-aib):not(.nb-gramb){right:78px}
+.nb-holob.nb-indb{right:128px}
+.nb-holob.nb-gramb{right:178px}
+.nb-holob.nb-aib{right:14px;bottom:11px;width:52px;height:52px;overflow:visible;color:var(--frame);
+  border:1px solid color-mix(in srgb,var(--frame) 85%,#fff 15%);
+  background:radial-gradient(circle at 50% 38%,color-mix(in srgb,var(--frame) 34%,var(--panel-2)),color-mix(in srgb,var(--frame) 10%,var(--panel)) 72%);
+  box-shadow:0 0 14px color-mix(in srgb,var(--frame) 70%,transparent),0 0 34px color-mix(in srgb,var(--frame) 40%,transparent),inset 0 0 14px color-mix(in srgb,var(--frame) 30%,transparent),0 4px 14px rgba(0,0,0,.35)}
+.nb-holob.nb-aib:hover{box-shadow:0 0 18px color-mix(in srgb,var(--frame) 85%,transparent),0 0 46px color-mix(in srgb,var(--frame) 50%,transparent),inset 0 0 16px color-mix(in srgb,var(--frame) 40%,transparent),0 6px 16px rgba(0,0,0,.4)}
+.nb-holob.nb-aib[aria-expanded="true"]{color:var(--frame);background:radial-gradient(circle at 50% 38%,color-mix(in srgb,var(--frame) 50%,var(--panel-2)),color-mix(in srgb,var(--frame) 22%,var(--panel)) 72%);border-width:2px;border-color:var(--frame)}
+/* the aura: a soft ring that breathes (still under Reduce motion and in Lite) */
+.nb-holob.nb-aib::before{content:"";position:absolute;inset:-7px;border-radius:50%;pointer-events:none;border:1px solid color-mix(in srgb,var(--frame) 45%,transparent);
+  background:radial-gradient(circle,transparent 58%,color-mix(in srgb,var(--frame) 22%,transparent) 70%,transparent 74%);animation:nb-aura 3.6s ease-in-out infinite}
+@keyframes nb-aura{0%,100%{opacity:.55;transform:scale(.96)}50%{opacity:1;transform:scale(1.06)}}
+.nb-aifig{display:block;width:38px;height:38px;overflow:visible;filter:drop-shadow(0 0 2px color-mix(in srgb,var(--frame) 90%,transparent)) drop-shadow(0 0 5px color-mix(in srgb,var(--frame) 55%,transparent))}
+.nb-aifig .s0{stop-color:color-mix(in srgb,var(--frame) 45%,#fff);stop-opacity:.7}
+.nb-aifig .s1{stop-color:var(--frame);stop-opacity:.32}
+.nb-aifig .s2{stop-color:var(--frame);stop-opacity:0}
+.nb-aifig .c0{stop-color:#fff;stop-opacity:.95}
+.nb-aifig .c1{stop-color:var(--frame);stop-opacity:0}
+.nb-aifig .scan{fill:color-mix(in srgb,var(--frame) 40%,#fff);opacity:.22}
+.nb-aifig .body{stroke-width:.75}
+.nb-aifig .e0{stop-color:color-mix(in srgb,var(--frame) 40%,#fff);stop-opacity:.95}
+.nb-aifig .e1{stop-color:var(--frame);stop-opacity:.75}
+.nb-aifig .e2{stop-color:var(--frame);stop-opacity:0}
+.nb-aifig .hair path{fill:none;stroke:var(--frame);stroke-width:.9;stroke-linecap:round}
+.nb-aifig .hair .thin{stroke:color-mix(in srgb,var(--frame) 40%,#fff);stroke-width:.5;opacity:.85}
+.nb-aifig .face path,.nb-aifig .neck path{fill:none;stroke:color-mix(in srgb,var(--frame) 30%,#fff);stroke-width:.55;stroke-linecap:round;opacity:.85}
+.nb-aifig .face .eye{stroke-width:.75;opacity:1}
+.nb-aifig .face .lip{stroke:color-mix(in srgb,var(--frame) 15%,#fff);stroke-width:.65}
+.nb-aifig .neck path{stroke:var(--frame);opacity:.7}
+.nb-aifig .scans{animation:nb-scan 2.8s linear infinite}
+@keyframes nb-scan{from{transform:translateY(0)}to{transform:translateY(1.6px)}}
+@media (prefers-reduced-motion:reduce){ .nb-holob.nb-aib::before,.nb-aifig .scans{animation:none} }
+:root[data-reduce-motion] .nb-holob.nb-aib::before,:root[data-reduce-motion] .nb-aifig .scans,:root[data-perf="lite"] .nb-holob.nb-aib::before,:root[data-perf="lite"] .nb-aifig .scans{animation:none}
+:root[data-perf="lite"] .nb-aifig{filter:none}
 .nb-gramg{font:700 17px/1 var(--serif,Georgia);position:relative}
 .nb-gramg small{position:absolute;right:-9px;bottom:-3px;font:700 11px/1 var(--sans);color:var(--green,#7BD88F)}
 .nb-holob[aria-expanded="true"] .nb-gramg small{color:var(--ink)}
@@ -1090,7 +1149,7 @@ div.nb{--nb-lw:64px}
 .np-gr-rep:hover{background:color-mix(in srgb,var(--green,#7BD88F) 32%,transparent)}
 .np-gr-ign{all:unset;cursor:pointer;padding:5px 6px;font:600 10px/1 var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)} .np-gr-ign:hover{color:var(--text)}
 .np-gr-foot{position:relative;margin:0;padding:6px 10px 8px;font:400 10.5px/1.35 var(--sans);color:var(--faint);border-top:1px solid color-mix(in srgb,var(--frame) 15%,transparent)}
-@media (max-width:760px){ .nb-holob.nb-aib{right:112px} .nb-holob.nb-gramb{right:158px} }
+@media (max-width:760px){ .nb-holob:not(.nb-indb):not(.nb-aib):not(.nb-gramb){right:72px} .nb-holob.nb-indb{right:118px} .nb-holob.nb-gramb{right:164px} .nb-holob.nb-aib{right:12px} }
 /* right-click → Ask AI… */
 .tm-ai{border-top:1px solid var(--line);margin-top:4px;padding:8px 8px 6px;display:flex;flex-direction:column;gap:7px;max-width:340px}
 .tm-aichips{display:flex;flex-wrap:wrap;gap:4px}
@@ -1235,3 +1294,185 @@ div.nb{--nb-lw:64px}
 :root[data-perf="lite"] .vt-in{animation:none}
 :root[data-perf="lite"] .set-win,:root[data-perf="lite"] .mw-win,:root[data-perf="lite"] .ask-win,:root[data-perf="lite"] .np-pop,:root[data-perf="lite"] .tm-menu,:root[data-perf="lite"] .nr-panel,:root[data-perf="lite"] .nk-pick{box-shadow:0 6px 18px rgba(0,0,0,.5);transition-property:opacity;transform:none}
 :root[data-perf="lite"] .set-sw.set-glass .set-sws{backdrop-filter:none}
+/* ---------- v0.5.8 (Devon): Simple / Professional versions of My notes (app.js noteMode, .np-mode; .nb[data-mode]) ---------- */
+.np-mode{display:inline-flex;border:1px solid color-mix(in srgb,var(--frame) 55%,var(--line-2));border-radius:2px;overflow:hidden;background:rgba(0,0,0,.18)}
+.np-mode button{all:unset;box-sizing:border-box;cursor:pointer;padding:8px 11px;color:var(--muted);font:600 11px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase}
+.np-mode button+button{border-left:1px solid color-mix(in srgb,var(--frame) 40%,var(--line-2))}
+.np-mode button:hover{color:var(--text)}
+.np-mode button[aria-checked="true"]{color:var(--ink,#0b0f16);background:var(--frame)}
+.np-mode button:focus-visible{outline:2px solid var(--text);outline-offset:-2px}
+div.nb[data-mode="simple"]{--nb-lw:0px}
+.nb[data-mode="simple"]>.nb-rail,.nb[data-mode="simple"] .nb-fold[data-p="l"],.nb[data-mode="simple"] .nb-rz,
+.nb[data-mode="simple"] .nb-fsplit,.nb[data-mode="simple"] .nb-fcode,
+.nb[data-mode="simple"] .nr-pro,.nb[data-mode="simple"] .nb-split,.nb[data-mode="simple"] .nb-tabs,
+.nb[data-mode="simple"] .nb-holob:not(.nb-gramb){display:none!important}
+.nb[data-mode="simple"] .nb-fmain{flex:1 1 auto!important;height:auto!important;max-height:none!important}
+.nb[data-mode="simple"] .nb-holob.nb-gramb{right:18px}
+.nb[data-mode="simple"]>.nb-ed{grid-column:3}
+/* ---------- v0.5.8 (Devon): 🎙 audio recording, bottom left of the note (app.js recButton / recStart / recStop; widget data-w="audio") ---------- */
+.nb-rec{position:absolute;left:18px;bottom:16px;z-index:6;display:flex;align-items:center;gap:8px}
+.nb-recb{all:unset;box-sizing:border-box;cursor:pointer;position:relative;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;color:var(--frame);
+  border:1px solid color-mix(in srgb,var(--frame) 60%,transparent);background:radial-gradient(circle at 50% 35%,color-mix(in srgb,var(--frame) 26%,var(--panel-2)),color-mix(in srgb,var(--frame) 8%,var(--panel)));
+  box-shadow:0 0 16px color-mix(in srgb,var(--frame) 35%,transparent),0 4px 14px rgba(0,0,0,.35);transition:transform .15s,box-shadow .15s}
+.nb-recb svg{width:19px;height:19px}
+.nb-recb:hover{transform:translateY(-1px);box-shadow:0 0 24px color-mix(in srgb,var(--frame) 55%,transparent),0 6px 16px rgba(0,0,0,.4)}
+.nb-recb:focus-visible{outline:2px solid var(--text);outline-offset:2px}
+.nb-recb[data-label]::after{content:attr(data-label);position:absolute;left:calc(100% + 8px);top:50%;transform:translate(-4px,-50%);padding:5px 9px;border-radius:3px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s,transform .15s;
+  font:600 10px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--text);background:var(--panel-2,#121a24);border:1px solid color-mix(in srgb,var(--frame) 45%,var(--line-2))}
+.nb-recb:hover::after,.nb-recb:focus-visible::after{opacity:1;transform:translate(0,-50%)}
+.nb-rec.on{padding:6px 6px 6px 12px;border-radius:24px;border:1px solid color-mix(in srgb,var(--red,#E5675B) 60%,var(--line-2));background:color-mix(in srgb,var(--red,#E5675B) 10%,var(--panel,#0d141d));box-shadow:0 0 18px color-mix(in srgb,var(--red,#E5675B) 30%,transparent),0 4px 14px rgba(0,0,0,.35);max-width:calc(100% - 250px)}
+.nb-recdot{flex:none;width:11px;height:11px;border-radius:50%;background:var(--red,#E5675B);box-shadow:0 0 8px var(--red,#E5675B);animation:nb-recp 1.2s ease-in-out infinite}
+.nb-rec.paused .nb-recdot{animation:none;opacity:.45}
+@keyframes nb-recp{50%{opacity:.35}}
+.nb-rect{font:600 13px/1 var(--mono);color:var(--text);min-width:3.2em}
+.nb-reclv{flex:none;width:46px;height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
+.nb-reclv i{display:block;height:100%;background:linear-gradient(90deg,var(--green,#7BD88F),var(--amber,#F2B84B) 70%,var(--red,#E5675B));transform-origin:left;transform:scaleX(0);transition:transform .08s linear}
+.nb-recs{font:500 11.5px/1.2 var(--sans);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.nb-recx{all:unset;flex:none;cursor:pointer;height:30px;min-width:30px;padding:0 9px;box-sizing:border-box;display:grid;place-items:center;border-radius:15px;border:1px solid var(--line-2);color:var(--text);font:600 11px/1 var(--ui);letter-spacing:.1em;text-transform:uppercase;background:rgba(0,0,0,.25)}
+.nb-recx:hover{border-color:var(--frame)} .nb-recx:focus-visible{outline:2px solid var(--frame)}
+.nb-recstop{background:var(--red,#E5675B);border-color:var(--red,#E5675B);color:#fff}
+@media (prefers-reduced-motion:reduce){ .nb-recdot{animation:none} .nb-recb{transition:none} }
+:root[data-reduce-motion] .nb-recdot{animation:none}
+/* the audio widget in a note */
+.nb-rich .nw[data-w="audio"]{border-left-color:var(--red,#E5675B)}
+.nw-atag{display:inline-grid;place-items:center;color:var(--red,#E5675B)}
+.nw-adur{font:500 11px/1 var(--mono);color:var(--muted);margin-left:auto}
+.nw-asave{text-decoration:none}
+.nw-abox{padding:8px 10px 10px}
+.nw-abox audio{width:100%;height:36px;display:block}
+/* the note's last lines stay clear of the round buttons at the bottom */
+.nb-pane.p1 .nb-rich{padding-bottom:72px}
+@media (max-width:760px){ .np-win .mw-hx{flex-wrap:wrap} .np-win .mw-hx .np-mode{flex:1 0 100%} .np-mode button{flex:1;text-align:center} }
+@media (max-width:760px){ .nb-rec.on{max-width:calc(100% - 84px);padding-left:10px} .nb-rec.on .nb-recs,.nb-rec.on .nb-reclv{display:none} }
+/* ---------- v0.5.8 (Devon): word count, at the bottom of the note between 🎙 and the corner buttons (app.js wordCount) ---------- */
+.nb-pane.p1{container-type:inline-size;container-name:np1}
+.nb-wc{position:absolute;z-index:5;left:74px;right:250px;bottom:16px;height:42px;line-height:42px!important;display:block;pointer-events:none;
+  font:500 11.5px/1.2 var(--mono);color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nb-wc b{font-weight:600;color:var(--muted)}
+.nb-wc.sel b{color:var(--frame)}
+.nb-wcx{}
+.nb[data-mode="simple"] .nb-wc{right:76px}
+.nb-rec.on~.nb-wc{display:none}
+@container np1 (max-width:560px){ .nb-wcx{display:none} }
+@media (max-width:760px){ .nb-wc{right:70px} .nb-wcx{display:none} }
+/* ---------- v0.5.8 (Devon): colour-blind mode (Settings → Appearance; settings.js S.cvd → html[data-cvd]). The signal colours
+   (done / good, warning, error / delete) move to pairs that stay apart for that kind of colour vision (Okabe–Ito based), and
+   shapes or words are added where colour alone carried the meaning. Themes, your own colours and note colours stay as chosen. ---------- */
+:root[data-cvd="rg"]{--green:#56B4E9;--red:#D55E00;--amber:#F0E442}
+:root[data-cvd="by"]{--green:#2EC4B6;--red:#E0245E;--amber:#FF9EBB}
+:root[data-cvd="mono"]{--green:#E8E8E8;--red:#FFFFFF;--amber:#A8A8A8}
+:root[data-cvd] .nt-it[data-pri="high"],:root[data-cvd] .nt-head[data-pri="high"]{--pc:var(--red)}
+:root[data-cvd] .nt-it[data-pri="med"],:root[data-cvd] .nt-head[data-pri="med"]{--pc:var(--amber)}
+:root[data-cvd] .nt-pri[data-pri="high"]{color:var(--red)} :root[data-cvd] .nt-pri[data-pri="med"]{color:var(--amber)}
+:root[data-cvd] .nt-due.soon::before{content:"◷ "}
+:root[data-cvd] .nt-due.od::before{content:"⚠ "}
+:root[data-cvd] .nt-due.od{text-decoration:underline;text-underline-offset:3px}
+:root[data-cvd] .nw-cc.del,:root[data-cvd] .nw-cu .nw-cr.del>span{background-image:repeating-linear-gradient(135deg,transparent 0 5px,rgba(255,255,255,.07) 5px 7px)}
+:root[data-cvd] .nw-cc.del::before{content:"− ";opacity:.8} :root[data-cvd] .nw-cc.add::before{content:"+ ";opacity:.8}
+:root[data-cvd] .io-prog.bad .io-prog-fill{background-image:repeating-linear-gradient(135deg,rgba(0,0,0,.35) 0 6px,transparent 6px 12px)}
+:root[data-cvd] .io-prog.ok .io-prog-t::before{content:"✓ "} :root[data-cvd] .io-prog.bad .io-prog-t::before{content:"✕ "}
+:root[data-cvd] .io-msg.ok::before,:root[data-cvd] .io-log.ok::before{content:"✓ "} :root[data-cvd] .io-msg.bad::before,:root[data-cvd] .io-log.bad::before{content:"⚠ "}
+:root[data-cvd] .set-warn,:root[data-cvd] .nb-recstop{text-decoration:underline;text-underline-offset:3px}
+:root[data-cvd="mono"] .nb-recdot{box-shadow:0 0 0 2px var(--panel,#0d141d),0 0 0 3px #fff}
+:root[data-cvd="mono"] .nt-due.od,:root[data-cvd="mono"] .io-msg.bad,:root[data-cvd="mono"] .io-log.bad{font-weight:700}
+/* the preview in Settings */
+.set-cvdp{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.set-cvdp span{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:2px;border:1px solid currentColor;font:600 11px/1 var(--ui);letter-spacing:.1em;text-transform:uppercase}
+.set-cvdp .g{color:var(--green)} .set-cvdp .w{color:var(--amber)} .set-cvdp .r{color:var(--red)}
+/* ---------- v0.5.8 (Devon): ✍ Signature widget (notes-sign.js, NPSign; Professional: added from the Tool bar) ---------- */
+.nb-rich .nw[data-w="sign"]{border-left-color:var(--frame)}
+.ns-tag{font-size:15px}
+.ns-ht{font:600 10.5px/1 var(--ui);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.ns-hint,.ns-lock{margin-left:auto;font:500 10.5px/1 var(--mono);color:var(--faint)}
+.ns-pad{padding:10px 12px 12px;display:flex;flex-direction:column;gap:9px}
+.ns-tabs{display:flex;gap:4px;flex-wrap:wrap}
+.ns-tabs button{all:unset;cursor:pointer;padding:6px 11px;border:1px solid var(--line-2);border-radius:2px;font:600 10.5px/1 var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.ns-tabs button[aria-selected="true"]{color:var(--ink,#0b0f16);background:var(--frame);border-color:var(--frame)}
+.ns-tabs button:focus-visible{outline:2px solid var(--frame);outline-offset:1px}
+.ns-stage{position:relative;height:170px;border-radius:3px;background:#F7F5EF;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);overflow:hidden}
+.ns-stage.draw{cursor:crosshair;touch-action:none}
+.ns-cv{display:block;width:100%;height:170px}
+.ns-stage::after{content:"";position:absolute;left:44px;right:24px;bottom:38px;border-bottom:1.5px solid rgba(27,42,87,.35);pointer-events:none}
+.ns-x{position:absolute;left:20px;bottom:36px;font:400 20px/1 var(--sans);color:rgba(27,42,87,.45);pointer-events:none}
+.ns-ph{position:absolute;inset:0;display:grid;place-items:center;font:400 13px/1.3 var(--sans);color:rgba(27,42,87,.45);pointer-events:none;text-align:center;padding:0 20px}
+.ns-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ns-row[hidden]{display:none}
+.ns-row small{font:400 11.5px/1.35 var(--sans);color:var(--faint)}
+.ns-in{box-sizing:border-box;height:30px;padding:4px 9px;border:1px solid var(--line-2);border-radius:2px;background:rgba(0,0,0,.25);color:var(--text);font:400 13.5px/1.2 var(--sans);min-width:0}
+.ns-in:focus{outline:none;border-color:var(--frame)}
+.ns-tname{flex:1 1 200px}
+.ns-lab{flex:1 1 260px;display:flex;align-items:center;gap:8px;font:600 10.5px/1 var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.ns-lab .ns-in{flex:1;text-transform:none;letter-spacing:0}
+.ns-fonts{display:inline-flex;gap:4px}
+.ns-fonts button{all:unset;cursor:pointer;padding:3px 10px;border:1px solid var(--line-2);border-radius:2px;font-size:17px;color:var(--muted)}
+.ns-fonts button[aria-checked="true"]{color:var(--text);border-color:var(--frame);background:color-mix(in srgb,var(--frame) 14%,transparent)}
+.ns-go{justify-content:space-between}
+.ns-rem{display:inline-flex;align-items:center;gap:7px;font:400 12.5px/1.3 var(--sans);color:var(--muted);cursor:pointer}
+.ns-rem input{accent-color:var(--frame);width:15px;height:15px;margin:0}
+.ns-sign:disabled{opacity:.45;cursor:not-allowed}
+.ns-note{margin:0;font:400 11px/1.4 var(--sans);color:var(--faint)}
+.ns-card{margin:10px 12px 12px;padding:14px 18px 12px;border-radius:3px;background:#F7F5EF;color:#1B2A57;max-width:520px}
+.ns-img{display:block;max-width:100%;max-height:120px;margin:0 0 -6px 18px}
+.ns-rule{border-bottom:1.5px solid rgba(27,42,87,.4);margin:0 0 7px}
+.ns-by{margin:0;font:500 12.5px/1.35 var(--sans);color:#1B2A57}
+.ns-seal{margin:6px 0 0;font:600 11px/1.3 var(--sans);color:#1d6b43}
+.ns-seal.bad{color:#9a3b10}
+:root[data-cvd] .ns-seal{color:#1B2A57} :root[data-cvd] .ns-seal.bad{text-decoration:underline}
+.nb-rail .nb-tooln{max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* ---------- v0.5.8 (Devon): ＋ New folder is always in sight, at the bottom of the folders (right above Code & Music), in every view and filter ---------- */
+.nb-ftree .nb-fadd{position:sticky;bottom:0;z-index:3;margin-top:auto;flex:none;background:var(--panel,#0d141d);box-shadow:0 -8px 10px -4px var(--panel,#0d141d)}
+.nb-ftree .nb-fmain .nb-fadd,.nb-ftree:not(.has-fsplit)>.nb-fadd{margin-top:auto}
+@media (max-width:860px){ .nb-ftree .nb-fadd{position:static} }
+/* ---------- v0.5.8 (Devon): selection in the Folders & Files bar (Ctrl/⌘+click, Shift+click, Select all) and its right-click menu ---------- */
+.nb-ftree .nb-fnote.is-picked,.nb-ftree .nb-fd.user.is-picked{background:color-mix(in srgb,var(--frame) 22%,transparent)!important;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--frame) 65%,transparent)}
+.nb-ftree .nb-fnote.is-picked::after,.nb-ftree .nb-fd.user.is-picked::after{content:"✓";position:absolute;right:6px;top:50%;transform:translateY(-50%);width:16px;height:16px;border-radius:50%;display:grid;place-items:center;font:700 10px/1 var(--sans);color:var(--ink,#0b0f16);background:var(--frame);pointer-events:none}
+.nb-ftree .nb-tiles .nb-fnote.is-picked::after{top:8px;transform:none}
+.nb-fd.user{position:relative}
+.nb-pickbar{flex:none;display:flex;align-items:center;gap:8px;padding:6px 8px 6px 12px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--frame) 14%,var(--panel,#0d141d));font:600 11.5px/1.2 var(--sans);color:var(--text)}
+.nb-pickn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nb-pickx{all:unset;cursor:pointer;padding:5px 9px;border:1px solid var(--line-2);border-radius:2px;font:600 10px/1 var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--text);background:rgba(0,0,0,.2)}
+.nb-pickx:hover{border-color:var(--frame)} .nb-pickx:focus-visible{outline:2px solid var(--frame)}
+.nb-pickx.armed,.nb-fmenu .nb-fmdel.armed{color:#fff;background:var(--red,#E5675B);border-color:var(--red,#E5675B)}
+.nb-fmsep{height:1px;margin:4px 6px;background:var(--line-2)}
+.nb-fmenu .nb-fmdel .tm-ic{color:var(--red,#E5675B)}
+.nb-fmenu .nb-fmdel.armed .tm-ic,.nb-fmenu .nb-fmdel.armed small{color:#fff}
+.nb-ftree .nb-fnote,.nb-ftree .nb-fd.user{-webkit-user-select:none;user-select:none}
+/* ---------- v0.5.8 (Devon): Check for duplicates, under Export and Import in the Import & Export window (io.js findDuplicates) ---------- */
+.io .io-dup{grid-column:1/-1;border-left:0!important;border-top:1px solid var(--line)}
+.io-duph{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px}
+.io-duph .io-h{flex:none}
+.io-dupd{flex:1 1 360px;margin:0;font:400 12.5px/1.45 var(--sans);color:var(--muted)}
+.io-dupr{display:flex;flex-direction:column;gap:10px}
+.io-dupr:empty{display:none}
+.io-dupnone{margin:0;font:500 13px/1.4 var(--sans);color:var(--green)}
+.io-dupsum{margin:0;font:600 11px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.io-dupg{border:1px solid var(--line-2);border-left:3px solid var(--frame);border-radius:3px;background:rgba(0,0,0,.14)}
+.io-dupgh{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:8px 10px;border-bottom:1px solid var(--line)}
+.io-dupgh b{font:600 13px/1.2 var(--sans);color:var(--text)}
+.io-dupk{font:400 12px/1.3 var(--sans);color:var(--faint)}
+.io-dupsc{font:600 11px/1 var(--mono);color:var(--frame);padding:3px 6px;border:1px solid color-mix(in srgb,var(--frame) 50%,transparent);border-radius:2px}
+.io-dupga{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.io-dupn{display:flex;gap:10px;align-items:center;padding:8px 10px}
+.io-dupn+.io-dupn{border-top:1px dashed var(--line)}
+.io-dupt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.io-dupt b{font:600 13px/1.3 var(--sans);color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.io-dupt small{font:400 11.5px/1.3 var(--sans);color:var(--faint)}
+.io-dupp{font:400 12px/1.4 var(--sans);color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.io-dupna{flex:none;display:flex;gap:6px}
+.io-dupkeep{color:var(--green)!important}
+.io-dupoff{display:inline-flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:6px;color:var(--text)}
+@media (max-width:760px){ .io-dupn{flex-wrap:wrap} .io-dupga{margin-left:0} }
+/* ---------- v0.5.8 (Devon): the word count's on / off switch (app.js wordCount, store notepath.wordcount) ---------- */
+.nb-wct{all:unset;box-sizing:border-box;position:absolute;z-index:6;left:72px;bottom:24px;height:26px;display:inline-flex;align-items:center;gap:6px;padding:0 9px 0 5px;border:1px solid var(--line-2);border-radius:13px;cursor:pointer;
+  font:600 9.5px/1 var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--faint);background:rgba(0,0,0,.18)}
+.nb-wct:hover{color:var(--text);border-color:var(--frame)}
+.nb-wct:focus-visible{outline:2px solid var(--frame);outline-offset:2px}
+.nb-wcti{position:relative;width:24px;height:14px;border-radius:7px;background:var(--line-2);transition:background .15s}
+.nb-wcti::after{content:"";position:absolute;left:2px;top:2px;width:10px;height:10px;border-radius:50%;background:var(--muted);transition:transform .15s,background .15s}
+.nb-wct[aria-checked="true"] .nb-wcti{background:color-mix(in srgb,var(--frame) 55%,transparent)}
+.nb-wct[aria-checked="true"] .nb-wcti::after{transform:translateX(10px);background:var(--frame)}
+.nb-pane.p1 .nb-wc{left:196px}
+.nb-wc[hidden]{display:none}
+.nb-rec.on~.nb-wct{display:none}
+@media (prefers-reduced-motion:reduce){ .nb-wcti,.nb-wcti::after{transition:none} }
+@media (max-width:760px){ .nb-wctl{display:none} .nb-wct{padding:0 5px} .nb-pane.p1 .nb-wc{left:116px} }

@@ -64,7 +64,7 @@ function fontToSpan(f, over) {
   const sp = document.createElement("span"); if (k) { sp.setAttribute("data-c", k); if (HEX.test(k)) sp.style.color = k; } if (s) sp.setAttribute("data-s", s); if (fv) sp.setAttribute("data-f", fv);
   sp.append(...f.childNodes); f.replaceWith(sp); return sp;
 }
-const WIDGETS = new Set(["code", "music", "video", "graph", "sheet", "map"]);
+const WIDGETS = new Set(["code", "music", "video", "graph", "sheet", "map", "audio", "sign"]);
 const DROP = new Set(["SCRIPT", "STYLE", "IFRAME", "OBJECT", "EMBED", "LINK", "META", "TEMPLATE", "SVG", "MATH", "NOSCRIPT", "TITLE", "HEAD", "FORM", "INPUT", "BUTTON", "TEXTAREA", "SELECT", "VIDEO", "AUDIO", "CANVAS"]);
 function clean(node) {
   [...node.childNodes].forEach(c => {
@@ -128,7 +128,7 @@ function toText(html) {
 const textToHtml = t => String(t || "").split("\n").map(l => `<div>${l ? esc(l) : "<br>"}</div>`).join("");
 const imgIds = html => [...String(html || "").matchAll(/data-img="([a-z0-9]+)"/gi)].map(m => m[1]);
 // photos and video files share the IndexedDB store; a video widget keeps its file id as "vid" in data-src (attribute-escaped JSON)
-const mediaIds = html => imgIds(html).concat([...String(html || "").matchAll(/&quot;vid&quot;:&quot;([a-z0-9]+)&quot;/gi)].map(m => m[1]));
+const mediaIds = html => imgIds(html).concat([...String(html || "").matchAll(/&quot;(?:vid|img)&quot;:&quot;([a-z0-9]+)&quot;/gi)].map(m => m[1])); // videos, recordings (vid) and signatures (img, v0.5.8)
 // every photo a note keeps: the ones in its text and its cover photo (v0.5.4)
 const COVER_ID = /^[a-z0-9]{4,40}$/i;
 const noteMedia = n => mediaIds(n && n.html).concat(n && n.cover && COVER_ID.test(n.cover) ? [n.cover] : []);
@@ -593,6 +593,12 @@ function mountEditor(host, id, o = {}) {
     for (const f of vids) { try { const vid = await putVideo(f); addWidget("video", { kind: "file", vid, title: String(f.name || "").replace(/\.[^.]+$/, "").slice(0, 80) }); nv++; } catch (e) { console.warn("Video not stored", e); if (o.onMessage) o.onMessage(f.size > VIDEO_MAX ? "That video is over 500 MB" : "That video could not be stored"); } }
     return ids.length + nv;
   }
+  // (v0.5.8) an audio recording: kept in IndexedDB (as video files are), then a player after the line the caret is on
+  async function addAudio(blob, o2 = {}) {
+    const vid = await putVideo(blob);
+    addWidget("audio", { vid, title: o2.title || "", dur: Math.round(o2.dur || 0), mime: String(blob.type || "").split(";")[0] });
+    return vid;
+  }
   // a video from a link: YouTube, Vimeo, or an https .mp4/.webm/.ogg/.mov file
   function addVideoLink(url) {
     const v = window.InquireWidgets && InquireWidgets.videoFrom(url); if (!v) return false;
@@ -785,7 +791,7 @@ function mountEditor(host, id, o = {}) {
     if (block) block.after(w, after); else ed.append(w, after);
     const s = getSelection(), r = document.createRange(); r.setStart(after, 0); r.collapse(true); s.removeAllRanges(); s.addRange(r); last = r.cloneRange();
     hydrate(ed); save();
-    const f = type === "video" || type === "graph" || type === "sheet" ? null : w.querySelector(type === "code" ? ".nw-ta" : type === "map" ? ".nm-q" : ".nw-piano button"); if (f) f.focus({ preventScroll: true });
+    const f = type === "video" || type === "audio" || type === "sign" || type === "graph" || type === "sheet" ? null : w.querySelector(type === "code" ? ".nw-ta" : type === "map" ? ".nm-q" : ".nw-piano button"); if (f) f.focus({ preventScroll: true });
     w.scrollIntoView({ block: "nearest" });
   }
   // a block (definition, quote) placed after the line that holds `range` (or the caret), never inside it
@@ -1071,6 +1077,23 @@ function mountEditor(host, id, o = {}) {
     save(); flush(); annLayout();
     return t.whole;
   }
+  // (v0.5.8, Devon) the format bar's Indent less / more: the line the caret is on (or every line selected), one 2em step;
+  // in a list the item moves a level in or out first (as Tab / Shift+Tab), and only uses a step when it can't
+  function indentLine(dir) {
+    api.focus();
+    const s = getSelection(); let r = s.rangeCount ? s.getRangeAt(0) : null;
+    if (!r || !ed.contains(r.commonAncestorContainer)) r = last && ed.contains(last.commonAncestorContainer) ? last : null;
+    if (!r || inWidget(r.startContainer)) return false;
+    const one = r.collapsed || !r.toString().replace(/[\s​]/g, "");
+    if (one) { const li = itemAt(); if (li) { const moved = dir > 0 ? (li.previousElementSibling && li.previousElementSibling.tagName === "LI" ? indentItem(li) : false) : outdentItem(li); if (moved) { save(); flush(); annLayout(); return true; } } }
+    let els;
+    if (one) { let el = lineOf(r.startContainer); if (!el) { const k = [r.startContainer, r.startOffset]; topBlocks(); el = lineOf(k[0]); try { const nr = document.createRange(); nr.setStart(k[0], k[1]); nr.collapse(true); s.removeAllRanges(); s.addRange(nr); last = nr.cloneRange(); } catch (e) {} } els = el ? [el] : []; }
+    else els = layoutTargets(false).els;
+    let changed = false;
+    els.forEach(el => { const cur = +(el.getAttribute("data-in") || 0), n = Math.max(0, Math.min(8, cur + (dir > 0 ? 1 : -1))); if (n === cur) return; changed = true; if (n) el.setAttribute("data-in", String(n)); else el.removeAttribute("data-in"); });
+    if (changed) { save(); flush(); annLayout(); }
+    return changed;
+  }
   // Chromium edits inline colours itself (it may clear or copy style="color"): keep data-c in step with what is shown
   function syncColors() {
     ed.querySelectorAll("span").forEach(sp => {
@@ -1086,11 +1109,11 @@ function mountEditor(host, id, o = {}) {
     openSide: noteId => { if (!o.openSide || !get(noteId)) return false; flush(); o.openSide(noteId); return true; },
     peek: noteId => { if (!o.peek) return false; flush(); o.peek(noteId); return true; },
     openNote: noteId => { if (!o.openNote || !get(noteId)) return false; flush(); o.openNote(noteId); return true; },
-    addFiles, addURL, addVideoLink, linkRange, insertNoteLink, insertWidgetAt, insertText, addWidget, insertBlock,
+    addFiles, addURL, addVideoLink, addAudio, linkRange, insertNoteLink, insertWidgetAt, insertText, addWidget, insertBlock,
     focus: () => { ed.focus({ preventScroll: true }); const s = getSelection(); if (last && (!s.rangeCount || !ed.contains(s.getRangeAt(0).commonAncestorContainer))) { s.removeAllRanges(); s.addRange(last); } },
     changed: () => save(),
     // kind "color" (a #hex, or "" for the normal colour), "size" (a number, or "" for normal), "font" (a key, or "" for the note's font)
-    blockStyle, layoutAt, clearFormat,
+    blockStyle, layoutAt, clearFormat, indentLine,
     format: (kind, v) => {
       api.focus(); document.execCommand("styleWithCSS", false, false);
       { const s0 = getSelection(), r0 = s0.rangeCount ? s0.getRangeAt(0) : null; // nothing selected: what is typed next gets it
@@ -1143,7 +1166,7 @@ function scope(sp) {
 // My Tasks (tasks.js) keeps its pictures and files in the same store
 async function putFile(blob) { if (blob.size > VIDEO_MAX) throw new Error("too big"); const id = uid(); await tx("readwrite", st => st.put({ blob, at: Date.now() }, id)); return id; }
 async function mediaBlob(id) { const rec = await tx("readonly", st => st.get(id)).catch(() => null); return rec && rec.blob ? rec.blob : null; } // (import / export: no fetch of blob: URLs, which the CSP refuses)
-window.InquireNotes = { scope, spaceOf, putImage, putFile, delMedia: delImages, mediaBlob, list, get, create, update, remove, trash, restore, purge, deleteWithUndo, toast, appendBlock, exportMedia, key, link, unlink, appendQuote,
+window.InquireNotes = { scope, spaceOf, putImage, putFile, putVideo, delMedia: delImages, mediaBlob, list, get, create, update, remove, trash, restore, purge, deleteWithUndo, toast, appendBlock, exportMedia, key, link, unlink, appendQuote,
   undo, redo, history, NSIZES, NFONTS, folders, addFolder, renameFolder, setFolderFav, removeFolder, moveFolder, subtree, setOrder, byOrder, sanitize, toText, mountEditor, editorFor, hydrate, pick, pickNote, imageURL, thumbURL, exportImages, importImages,
   readFolders: readF, writeFolders: writeF,
   // v0.5.6: the store is in IndexedDB and in memory; the page waits for `ready` before it draws

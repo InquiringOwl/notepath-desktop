@@ -114,5 +114,14 @@ vm.runInContext(read('web/src/office.js'), ctx);
   ok(O.layout(mk(40), [], 1040).sheets.every(s => s.layer !== 'front'), 'office: 40 unfiled notes all sit on the furniture');
 }
 
+// 9. (v0.5.8) the languages: every dictionary has every catalog string, with the same placeholders; the list in i18n.js matches the files
+{ const dir = path.join(__dirname, '..', 'web/i18n'), cat = JSON.parse(fs.readFileSync(path.join(dir, '_catalog.json'), 'utf8'));
+  const ph = x => (String(x).match(/\{[qcs]?\d+\}/g) || []).sort().join(','), files = fs.readdirSync(dir).filter(f => /^[a-z]{2}\.json$/.test(f));
+  const codes = [...read('web/lib/i18n.js').matchAll(/\["([a-z]{2})", "[^"]+", "[^"]+"\]/g)].map(m => m[1]).filter(c => c !== 'en');
+  ok(codes.length === 10 && codes.every(c => files.includes(c + '.json')) && files.length === 10, 'i18n: 10 languages, each with its dictionary', { codes, files });
+  for (const f of files) { const d = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')).strings || {};
+    const miss = Object.keys(cat).filter(k => typeof d[k] !== 'string' || !d[k]), bad = Object.keys(cat).filter(k => typeof d[k] === 'string' && ph(k) !== ph(d[k]));
+    ok(!miss.length && !bad.length, 'i18n: ' + f + ' is complete and keeps every placeholder', { miss: miss.slice(0, 3), bad: bad.slice(0, 3) }); } }
+
 console.log(`unit: ${pass.length} passed${fails.length ? ', ' + fails.length + ' failed' : ''}`);
 if (fails.length) { console.error(fails.map(x => '  ✗ ' + x).join('\n')); process.exit(1); }

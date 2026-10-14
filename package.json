@@ -1,7 +1,7 @@
 {
   "name": "notepath-desktop",
   "productName": "NotePath",
-  "version": "0.5.7",
+  "version": "0.5.8",
   "description": "NotePath: a notepad console for every kind of note: rich text, folders, photos, video, code and music.",
   "author": "Wolfie's Coven <devon@ashleyhoffmann.com>",
   "license": "UNLICENSED",
@@ -65,6 +65,9 @@
       "category": "public.app-category.productivity",
       "identity": null,
       "hardenedRuntime": false,
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "NotePath records audio into your notes when you press Record."
+      },
       "target": [
         {
           "target": "dmg",

@@ -56,15 +56,16 @@ function openIn(route) { showWin(); const go = () => win.webContents.send('app:r
 /* ---------------- note links (v0.5.4): Share → Copy link gives notepath://note/<id>; clicked in another file, an email to
    yourself or a calendar, it opens that note here. Notes live only on this computer, so on someone else's computer the link
    only opens NotePath (it says the note is not there); Share → Send a copy is for associates. */
-const NOTE_LINK = /^notepath:\/\/note\/([a-z0-9]+)/i;
+const NOTE_LINK = /^notepath:\/\/(note|folder)\/([a-z0-9]+)/i; // v0.5.8: folders too (right-click → Copy link in the Folders & Files bar)
 let pendingNote = null;
 function openNoteLink(url) {
   const m = String(url || '').match(NOTE_LINK); if (!m) return false;
-  if (!app.isReady() || !win) { pendingNote = m[1]; return true; }
-  openIn({ view: 'notes', note: m[1] }); return true;
+  const r = m[1].toLowerCase() === 'folder' ? { view: 'notes', folderLink: m[2] } : { view: 'notes', note: m[2] };
+  if (!app.isReady() || !win) { pendingNote = r; return true; }
+  openIn(r); return true;
 }
 app.on('open-url', (e, url) => { if (NOTE_LINK.test(url)) { e.preventDefault(); openNoteLink(url); } }); // macOS
-{ const a = process.argv.find(x => NOTE_LINK.test(x)); if (a) pendingNote = a.match(NOTE_LINK)[1]; } // Windows / Linux: opened by a link
+{ const a = process.argv.find(x => NOTE_LINK.test(x)); if (a) { const m = a.match(NOTE_LINK); pendingNote = m[1].toLowerCase() === 'folder' ? { view: 'notes', folderLink: m[2] } : { view: 'notes', note: m[2] }; } } // Windows / Linux: opened by a link
 function trayIcon() { const img = nativeImage.createFromPath(path.join(APP_DIR, 'brand', 'np-mark-64.png')); return img.isEmpty() ? img : img.resize({ width: 16, height: 16, quality: 'best' }); }
 function updateTray() {
   if (!USE_TRAY()) { if (tray) { tray.destroy(); tray = null; } return; }
@@ -344,7 +345,7 @@ app.whenReady().then(() => {
   createWindow(); updateTray();
   // note links: NotePath opens notepath://note/… links from other apps (packaged app; from source it passes this script)
   try { if (process.defaultApp) { if (process.argv.length >= 2) app.setAsDefaultProtocolClient('notepath', process.execPath, [path.resolve(process.argv[1])]); } else app.setAsDefaultProtocolClient('notepath'); } catch (e) { log.warn('note links', e); }
-  if (pendingNote) { const id = pendingNote; pendingNote = null; openIn({ view: 'notes', note: id }); }
+  if (pendingNote) { const r = pendingNote; pendingNote = null; openIn(r); }
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); else showWin(); });
 });
 // one NotePath at a time: opening it again (Start menu, desktop icon) brings the hidden window back instead of a second copy

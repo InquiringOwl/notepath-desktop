@@ -1,0 +1,113 @@
+{
+  "name": "notepath-desktop",
+  "productName": "NotePath",
+  "version": "0.5.7",
+  "description": "NotePath: a notepad console for every kind of note: rich text, folders, photos, video, code and music.",
+  "author": "Wolfie's Coven <devon@ashleyhoffmann.com>",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "build:web": "node tools/build-web.js",
+    "test": "node tools/unit.js",
+    "smoke": "node tools/smoke.js",
+    "interact": "node tools/interact.js",
+    "check": "node tools/build-web.js && node tools/unit.js && node tools/smoke.js && node tools/interact.js",
+    "start": "node tools/build-web.js && electron .",
+    "dist": "node tools/build-web.js && electron-builder --publish never",
+    "release": "node tools/release.js",
+    "publish:local": "node tools/build-web.js && electron-builder --publish always"
+  },
+  "dependencies": {
+    "electron-log": "^5.4.4",
+    "electron-updater": "^6.8.9"
+  },
+  "devDependencies": {
+    "electron": "^44.5.0",
+    "electron-builder": "^26.15.3",
+    "monaco-editor": "0.52.2",
+    "playwright": "^1.56.0"
+  },
+  "build": {
+    "appId": "com.wolfiescoven.notepath",
+    "protocols": [
+      {
+        "name": "NotePath note link",
+        "schemes": [
+          "notepath"
+        ]
+      }
+    ],
+    "productName": "NotePath",
+    "copyright": "Copyright © 2026 Wolfie's Coven",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "updater-mac.js",
+      "app/**/*",
+      "ai.config.json",
+      "package.json"
+    ],
+    "afterPack": "build/after-pack.js",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "InquiringOwl",
+        "repo": "notepath-desktop",
+        "releaseType": "release"
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "identity": null,
+      "hardenedRuntime": false,
+      "extendInfo": { "NSMicrophoneUsageDescription": "NotePath records audio into your notes when you press Record." },
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "NotePath-${version}-${arch}-mac.${ext}"
+    },
+    "dmg": {
+      "artifactName": "NotePath-${version}-${arch}.${ext}"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "NotePath-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Office",
+      "artifactName": "NotePath-${version}.${ext}"
+    }
+  }
+}

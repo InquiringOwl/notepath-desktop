@@ -406,6 +406,12 @@ body.ask-open .ask-win{transform:none}
 .set-svc input{margin-top:2px;accent-color:var(--frame)}
 .set-in{width:min(320px,100%);box-sizing:border-box;background:var(--ink);color:var(--text);border:1px solid var(--line-2);border-radius:2px;padding:7px 9px;font:400 12.5px/1.2 var(--mono)}
 .set-in:focus{outline:none;border-color:var(--frame)}
+/* (v0.5.8, Devon) Appearance in two parts: a bold header over a solid line */
+.set-sect{margin:6px 0 14px;padding-top:14px;border-top:2px solid color-mix(in srgb,var(--frame) 70%,var(--line-2))}
+.set-sect:first-child{margin-top:0}
+.set-sect+.set-lede{margin-top:0}
+.set-win div.set-sect>h3.set-secth{margin:0 0 4px;font:700 17px/1.25 var(--sans);letter-spacing:.01em;text-transform:none;color:var(--text)}
+.set-sectd{margin:0;font:400 12.5px/1.45 var(--sans);color:var(--muted)}
 
 /* Menu notes strip (.mnotes), My notes (.nb), rich editor, toolbar, widgets, picker, right-click menu, toast, windows over the app (.mw-*). Cut from Inquire's menu.css (display box, Assist dock and Achievements removed). */
 /* ---- notes on the menu ---- */
@@ -1262,6 +1268,24 @@ body.office-on #app{visibility:hidden}
 .io-go{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .io-msg,.io-log{margin:0;font:400 12.5px/1.45 var(--sans);color:var(--muted)}
 .io-msg.ok,.io-log.ok{color:var(--green)} .io-msg.bad,.io-log.bad{color:var(--red)}
+/* (v0.5.8, Devon) Import & Export progress: size, speed, time left and a % meter (io.js progUI) */
+.io-prog{margin:12px 0 4px;padding:10px 12px 9px;border:1px solid color-mix(in srgb,var(--frame) 40%,var(--line-2));border-radius:3px;background:color-mix(in srgb,var(--frame) 6%,rgba(0,0,0,.18))}
+.io-prog[hidden]{display:none}
+.io-prog-top{display:flex;align-items:baseline;gap:10px;margin-bottom:7px}
+.io-prog-t{font:600 10.5px/1.2 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--frame)}
+.io-prog-size{margin-left:auto;font:500 11.5px/1.2 var(--mono);color:var(--text)}
+.io-prog-bar{position:relative;height:20px;border:1px solid color-mix(in srgb,var(--frame) 55%,var(--line-2));border-radius:2px;background:rgba(0,0,0,.3);overflow:hidden}
+.io-prog-fill{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,color-mix(in srgb,var(--frame) 55%,transparent),var(--frame));box-shadow:0 0 12px color-mix(in srgb,var(--frame) 60%,transparent);transition:width .15s linear}
+.io-prog.run .io-prog-fill{background-image:linear-gradient(90deg,color-mix(in srgb,var(--frame) 55%,transparent),var(--frame)),repeating-linear-gradient(-45deg,rgba(255,255,255,.14) 0 6px,transparent 6px 12px);background-blend-mode:overlay;background-size:auto,17px 17px;animation:io-stripes .8s linear infinite}
+@keyframes io-stripes{to{background-position:0 0,17px 0}}
+.io-prog-pct{position:absolute;inset:0;display:grid;place-items:center;font:700 11.5px/1 var(--mono);color:var(--text);text-shadow:0 0 3px rgba(0,0,0,.9),0 1px 2px rgba(0,0,0,.9)}
+.io-prog-stats{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:7px;font:500 11px/1.3 var(--mono);color:var(--muted)}
+.io-prog-eta{margin-left:auto}
+.io-prog-what{margin-top:4px;font:400 11.5px/1.35 var(--sans);color:var(--faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.io-prog.ok{border-color:color-mix(in srgb,var(--green) 55%,var(--line-2))} .io-prog.ok .io-prog-t{color:var(--green)} .io-prog.ok .io-prog-pct{color:#0b1410;text-shadow:none} .io-prog.ok .io-prog-fill{background:var(--green);box-shadow:0 0 10px color-mix(in srgb,var(--green) 50%,transparent)}
+.io-prog.bad{border-color:color-mix(in srgb,var(--red) 55%,var(--line-2))} .io-prog.bad .io-prog-t{color:var(--red)} .io-prog.bad .io-prog-fill{background:var(--red)}
+@media (prefers-reduced-motion:reduce){ .io-prog-fill{transition:none} .io-prog.run .io-prog-fill{animation:none} }
+:root[data-reduce-motion] .io-prog.run .io-prog-fill,:root[data-perf="lite"] .io-prog.run .io-prog-fill{animation:none}
 .io-skip{color:var(--faint)}
 .io-drop{cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;padding:26px 16px;border:1px dashed var(--line-2);border-radius:4px;text-align:center;font:500 13.5px/1.4 var(--sans);color:var(--text)}
 .io-drop small{color:var(--faint)}
@@ -1411,7 +1435,7 @@ body.office-on #app{visibility:hidden}
 .nb-dc{font-size:11.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .nb-dc.num{font:500 10.5px/1.2 var(--mono)}
 /* ↳ Indented notes: the button above ◈, its panel (above the Links panel), and the notes drawn under their words */
-.nb-holob.nb-indb{right:68px;font-size:18px} /* side by side with ◈ */
+.nb-holob.nb-indb{font-size:18px} /* side by side with ◈ (positions: the v0.5.8 block) */
 .np-ind-t{font:600 10.5px/1 var(--ui);letter-spacing:.18em;text-transform:uppercase;color:var(--note-indent,#B5D65A);padding:7px 2px 9px}
 .np-holo-bar{position:relative;display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid color-mix(in srgb,var(--frame) 18%,transparent)}
 .np-holo-lbl{font:600 9.5px/1 var(--ui);letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin-right:auto}
@@ -1557,8 +1581,8 @@ a.nlink[data-folder]::before{content:"";display:inline-block;width:.95em;height:
 .np-shf button{all:unset;box-sizing:border-box;cursor:pointer;text-align:center;padding:8px 4px;border:1px solid var(--line-2);border-radius:2px}
 .np-shf small{display:block;font:500 10.5px/1.2 var(--mono);color:var(--muted);margin-top:3px}
 .np-shio{border-top:1px solid var(--line);margin-top:2px;padding-top:4px}
-.nr-tools .nr-clr{color:var(--muted)}
-.nr-tools .nr-clr:hover{color:var(--text)}
+.nr-tools .nr-clr,.nr-tools .nr-ind{color:var(--muted)}
+.nr-tools .nr-clr:hover,.nr-tools .nr-ind:hover{color:var(--text)}
 
 /* ---------- Details columns you can resize, the Compact list, cover photos (v0.5.4) ---------- */
 .nb-dhead>span{position:relative;min-width:0;overflow:visible;white-space:nowrap}
@@ -1665,8 +1689,9 @@ div.nb{--nb-lw:64px}
 .nb-ftree.has-fsplit .nb-dhead{margin:-10px -8px 4px}
 .nb-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:4px;padding:2px 4px 4px calc(6px + var(--d,1) * 14px)}
 .nb-ftree .nb-tiles .nb-fnote.nb-tile{flex-direction:column;align-items:center;text-align:center;gap:4px;padding:8px 4px 6px;border:1px solid transparent;border-radius:3px}
-.nb-ftree .nb-tiles .nb-fnote.nb-tile[aria-selected="true"]{border-color:color-mix(in srgb,var(--frame) 55%,transparent);background:color-mix(in srgb,var(--frame) 12%,transparent)}
-.nb-ftree .nb-tiles .nb-fnote.nb-tile[aria-selected="true"]::before{display:none}
+/* (v0.5.8, Devon) the selected tile's neon line runs down the left edge of its lit square (as the folders' line sits at the row's edge), never over the icon or the name */
+.nb-ftree .nb-tiles .nb-fnote.nb-tile.sel{border-color:color-mix(in srgb,var(--frame) 40%,transparent);background:color-mix(in srgb,var(--frame) 10%,transparent)}
+.nb-ftree .nb-tiles .nb-fnote.nb-tile.sel::before{content:"";position:absolute;left:-1px;top:3px;bottom:3px;width:3px;border-radius:2px;background:var(--frame);box-shadow:0 0 8px var(--frame)}
 .nb-ftree .nb-tile .nb-tic{height:40px}
 .nb-ftree .nb-tile .nb-tic.has-cov{width:44px;height:44px}
 .nb-ftree .nb-tile .nb-tcov{width:44px;height:44px}
@@ -1769,7 +1794,13 @@ div.nb{--nb-lw:64px}
   font:600 10.5px/1 var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
 .nb-hide:hover{color:var(--text);border-color:var(--frame)}
 .nb-hide:focus-visible{outline:2px solid var(--frame);outline-offset:1px}
-.nb-ftools .nb-hide{margin-left:auto}
+/* (v0.5.8, Devon) ◀ Hide sits at the far left on its own line, right under the Show as buttons, with ★ first beside it;
+   once the bar is wide enough for one line of buttons, it follows ★ first directly (the ::after line break goes) */
+.nb-ftools{container-type:inline-size}
+.nb-ftools::after{content:"";flex:0 0 100%;height:0;margin-top:-6px;order:1}
+.nb-ftools .nb-hide{order:2}
+.nb-ftools .nb-favtop{order:3}
+@container (min-width:370px){ .nb-ftools::after{display:none} .nb-ftools .nb-hide{order:4} }
 .nb-rail .nb-hide.nb-hidel{display:flex;flex-direction:column;justify-content:center;gap:2px;height:auto;padding:6px 2px;margin-bottom:4px;text-align:center}
 .nb-hidel .nb-tooli{font-size:11px}
 .nb-hidel .nb-tooln{font:600 8.5px/1 var(--ui);letter-spacing:.14em}
@@ -1801,8 +1832,42 @@ div.nb{--nb-lw:64px}
 .nm-placer{display:flex;align-items:flex-start;gap:8px;margin-bottom:8px} .nm-placer .nm-place{flex:1;margin:0}
 .nm-head .nw-del{margin-left:auto}
 /* ---------- v0.5.6 (Devon): ✦ AI Chat and A✓ Grammar check (buttons beside ↳ and ◈, their boxes; app.js asButtons / aiPanel / gramPanel) ---------- */
-.nb-holob.nb-aib{right:118px;font-size:18px}
-.nb-holob.nb-gramb{right:168px}
+/* (v0.5.8, Devon) right to left: ✦ AI Chat (bigger, brighter, the holographic figure) · ◈ Links · ↳ Paranotes · A✓ Grammar */
+.nb-holob:not(.nb-indb):not(.nb-aib):not(.nb-gramb){right:78px}
+.nb-holob.nb-indb{right:128px}
+.nb-holob.nb-gramb{right:178px}
+.nb-holob.nb-aib{right:14px;bottom:11px;width:52px;height:52px;overflow:visible;color:var(--frame);
+  border:1px solid color-mix(in srgb,var(--frame) 85%,#fff 15%);
+  background:radial-gradient(circle at 50% 38%,color-mix(in srgb,var(--frame) 34%,var(--panel-2)),color-mix(in srgb,var(--frame) 10%,var(--panel)) 72%);
+  box-shadow:0 0 14px color-mix(in srgb,var(--frame) 70%,transparent),0 0 34px color-mix(in srgb,var(--frame) 40%,transparent),inset 0 0 14px color-mix(in srgb,var(--frame) 30%,transparent),0 4px 14px rgba(0,0,0,.35)}
+.nb-holob.nb-aib:hover{box-shadow:0 0 18px color-mix(in srgb,var(--frame) 85%,transparent),0 0 46px color-mix(in srgb,var(--frame) 50%,transparent),inset 0 0 16px color-mix(in srgb,var(--frame) 40%,transparent),0 6px 16px rgba(0,0,0,.4)}
+.nb-holob.nb-aib[aria-expanded="true"]{color:var(--frame);background:radial-gradient(circle at 50% 38%,color-mix(in srgb,var(--frame) 50%,var(--panel-2)),color-mix(in srgb,var(--frame) 22%,var(--panel)) 72%);border-width:2px;border-color:var(--frame)}
+/* the aura: a soft ring that breathes (still under Reduce motion and in Lite) */
+.nb-holob.nb-aib::before{content:"";position:absolute;inset:-7px;border-radius:50%;pointer-events:none;border:1px solid color-mix(in srgb,var(--frame) 45%,transparent);
+  background:radial-gradient(circle,transparent 58%,color-mix(in srgb,var(--frame) 22%,transparent) 70%,transparent 74%);animation:nb-aura 3.6s ease-in-out infinite}
+@keyframes nb-aura{0%,100%{opacity:.55;transform:scale(.96)}50%{opacity:1;transform:scale(1.06)}}
+.nb-aifig{display:block;width:38px;height:38px;overflow:visible;filter:drop-shadow(0 0 2px color-mix(in srgb,var(--frame) 90%,transparent)) drop-shadow(0 0 5px color-mix(in srgb,var(--frame) 55%,transparent))}
+.nb-aifig .s0{stop-color:color-mix(in srgb,var(--frame) 45%,#fff);stop-opacity:.7}
+.nb-aifig .s1{stop-color:var(--frame);stop-opacity:.32}
+.nb-aifig .s2{stop-color:var(--frame);stop-opacity:0}
+.nb-aifig .c0{stop-color:#fff;stop-opacity:.95}
+.nb-aifig .c1{stop-color:var(--frame);stop-opacity:0}
+.nb-aifig .scan{fill:color-mix(in srgb,var(--frame) 40%,#fff);opacity:.22}
+.nb-aifig .body{stroke-width:.75}
+.nb-aifig .e0{stop-color:color-mix(in srgb,var(--frame) 40%,#fff);stop-opacity:.95}
+.nb-aifig .e1{stop-color:var(--frame);stop-opacity:.75}
+.nb-aifig .e2{stop-color:var(--frame);stop-opacity:0}
+.nb-aifig .hair path{fill:none;stroke:var(--frame);stroke-width:.9;stroke-linecap:round}
+.nb-aifig .hair .thin{stroke:color-mix(in srgb,var(--frame) 40%,#fff);stroke-width:.5;opacity:.85}
+.nb-aifig .face path,.nb-aifig .neck path{fill:none;stroke:color-mix(in srgb,var(--frame) 30%,#fff);stroke-width:.55;stroke-linecap:round;opacity:.85}
+.nb-aifig .face .eye{stroke-width:.75;opacity:1}
+.nb-aifig .face .lip{stroke:color-mix(in srgb,var(--frame) 15%,#fff);stroke-width:.65}
+.nb-aifig .neck path{stroke:var(--frame);opacity:.7}
+.nb-aifig .scans{animation:nb-scan 2.8s linear infinite}
+@keyframes nb-scan{from{transform:translateY(0)}to{transform:translateY(1.6px)}}
+@media (prefers-reduced-motion:reduce){ .nb-holob.nb-aib::before,.nb-aifig .scans{animation:none} }
+:root[data-reduce-motion] .nb-holob.nb-aib::before,:root[data-reduce-motion] .nb-aifig .scans,:root[data-perf="lite"] .nb-holob.nb-aib::before,:root[data-perf="lite"] .nb-aifig .scans{animation:none}
+:root[data-perf="lite"] .nb-aifig{filter:none}
 .nb-gramg{font:700 17px/1 var(--serif,Georgia);position:relative}
 .nb-gramg small{position:absolute;right:-9px;bottom:-3px;font:700 11px/1 var(--sans);color:var(--green,#7BD88F)}
 .nb-holob[aria-expanded="true"] .nb-gramg small{color:var(--ink)}
@@ -1846,7 +1911,7 @@ div.nb{--nb-lw:64px}
 .np-gr-rep:hover{background:color-mix(in srgb,var(--green,#7BD88F) 32%,transparent)}
 .np-gr-ign{all:unset;cursor:pointer;padding:5px 6px;font:600 10px/1 var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)} .np-gr-ign:hover{color:var(--text)}
 .np-gr-foot{position:relative;margin:0;padding:6px 10px 8px;font:400 10.5px/1.35 var(--sans);color:var(--faint);border-top:1px solid color-mix(in srgb,var(--frame) 15%,transparent)}
-@media (max-width:760px){ .nb-holob.nb-aib{right:112px} .nb-holob.nb-gramb{right:158px} }
+@media (max-width:760px){ .nb-holob:not(.nb-indb):not(.nb-aib):not(.nb-gramb){right:72px} .nb-holob.nb-indb{right:118px} .nb-holob.nb-gramb{right:164px} .nb-holob.nb-aib{right:12px} }
 /* right-click → Ask AI… */
 .tm-ai{border-top:1px solid var(--line);margin-top:4px;padding:8px 8px 6px;display:flex;flex-direction:column;gap:7px;max-width:340px}
 .tm-aichips{display:flex;flex-wrap:wrap;gap:4px}
@@ -1991,6 +2056,188 @@ div.nb{--nb-lw:64px}
 :root[data-perf="lite"] .vt-in{animation:none}
 :root[data-perf="lite"] .set-win,:root[data-perf="lite"] .mw-win,:root[data-perf="lite"] .ask-win,:root[data-perf="lite"] .np-pop,:root[data-perf="lite"] .tm-menu,:root[data-perf="lite"] .nr-panel,:root[data-perf="lite"] .nk-pick{box-shadow:0 6px 18px rgba(0,0,0,.5);transition-property:opacity;transform:none}
 :root[data-perf="lite"] .set-sw.set-glass .set-sws{backdrop-filter:none}
+/* ---------- v0.5.8 (Devon): Simple / Professional versions of My notes (app.js noteMode, .np-mode; .nb[data-mode]) ---------- */
+.np-mode{display:inline-flex;border:1px solid color-mix(in srgb,var(--frame) 55%,var(--line-2));border-radius:2px;overflow:hidden;background:rgba(0,0,0,.18)}
+.np-mode button{all:unset;box-sizing:border-box;cursor:pointer;padding:8px 11px;color:var(--muted);font:600 11px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase}
+.np-mode button+button{border-left:1px solid color-mix(in srgb,var(--frame) 40%,var(--line-2))}
+.np-mode button:hover{color:var(--text)}
+.np-mode button[aria-checked="true"]{color:var(--ink,#0b0f16);background:var(--frame)}
+.np-mode button:focus-visible{outline:2px solid var(--text);outline-offset:-2px}
+div.nb[data-mode="simple"]{--nb-lw:0px}
+.nb[data-mode="simple"]>.nb-rail,.nb[data-mode="simple"] .nb-fold[data-p="l"],.nb[data-mode="simple"] .nb-rz,
+.nb[data-mode="simple"] .nb-fsplit,.nb[data-mode="simple"] .nb-fcode,
+.nb[data-mode="simple"] .nr-pro,.nb[data-mode="simple"] .nb-split,.nb[data-mode="simple"] .nb-tabs,
+.nb[data-mode="simple"] .nb-holob:not(.nb-gramb){display:none!important}
+.nb[data-mode="simple"] .nb-fmain{flex:1 1 auto!important;height:auto!important;max-height:none!important}
+.nb[data-mode="simple"] .nb-holob.nb-gramb{right:18px}
+.nb[data-mode="simple"]>.nb-ed{grid-column:3}
+/* ---------- v0.5.8 (Devon): 🎙 audio recording, bottom left of the note (app.js recButton / recStart / recStop; widget data-w="audio") ---------- */
+.nb-rec{position:absolute;left:18px;bottom:16px;z-index:6;display:flex;align-items:center;gap:8px}
+.nb-recb{all:unset;box-sizing:border-box;cursor:pointer;position:relative;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;color:var(--frame);
+  border:1px solid color-mix(in srgb,var(--frame) 60%,transparent);background:radial-gradient(circle at 50% 35%,color-mix(in srgb,var(--frame) 26%,var(--panel-2)),color-mix(in srgb,var(--frame) 8%,var(--panel)));
+  box-shadow:0 0 16px color-mix(in srgb,var(--frame) 35%,transparent),0 4px 14px rgba(0,0,0,.35);transition:transform .15s,box-shadow .15s}
+.nb-recb svg{width:19px;height:19px}
+.nb-recb:hover{transform:translateY(-1px);box-shadow:0 0 24px color-mix(in srgb,var(--frame) 55%,transparent),0 6px 16px rgba(0,0,0,.4)}
+.nb-recb:focus-visible{outline:2px solid var(--text);outline-offset:2px}
+.nb-recb[data-label]::after{content:attr(data-label);position:absolute;left:calc(100% + 8px);top:50%;transform:translate(-4px,-50%);padding:5px 9px;border-radius:3px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s,transform .15s;
+  font:600 10px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--text);background:var(--panel-2,#121a24);border:1px solid color-mix(in srgb,var(--frame) 45%,var(--line-2))}
+.nb-recb:hover::after,.nb-recb:focus-visible::after{opacity:1;transform:translate(0,-50%)}
+.nb-rec.on{padding:6px 6px 6px 12px;border-radius:24px;border:1px solid color-mix(in srgb,var(--red,#E5675B) 60%,var(--line-2));background:color-mix(in srgb,var(--red,#E5675B) 10%,var(--panel,#0d141d));box-shadow:0 0 18px color-mix(in srgb,var(--red,#E5675B) 30%,transparent),0 4px 14px rgba(0,0,0,.35);max-width:calc(100% - 250px)}
+.nb-recdot{flex:none;width:11px;height:11px;border-radius:50%;background:var(--red,#E5675B);box-shadow:0 0 8px var(--red,#E5675B);animation:nb-recp 1.2s ease-in-out infinite}
+.nb-rec.paused .nb-recdot{animation:none;opacity:.45}
+@keyframes nb-recp{50%{opacity:.35}}
+.nb-rect{font:600 13px/1 var(--mono);color:var(--text);min-width:3.2em}
+.nb-reclv{flex:none;width:46px;height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
+.nb-reclv i{display:block;height:100%;background:linear-gradient(90deg,var(--green,#7BD88F),var(--amber,#F2B84B) 70%,var(--red,#E5675B));transform-origin:left;transform:scaleX(0);transition:transform .08s linear}
+.nb-recs{font:500 11.5px/1.2 var(--sans);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.nb-recx{all:unset;flex:none;cursor:pointer;height:30px;min-width:30px;padding:0 9px;box-sizing:border-box;display:grid;place-items:center;border-radius:15px;border:1px solid var(--line-2);color:var(--text);font:600 11px/1 var(--ui);letter-spacing:.1em;text-transform:uppercase;background:rgba(0,0,0,.25)}
+.nb-recx:hover{border-color:var(--frame)} .nb-recx:focus-visible{outline:2px solid var(--frame)}
+.nb-recstop{background:var(--red,#E5675B);border-color:var(--red,#E5675B);color:#fff}
+@media (prefers-reduced-motion:reduce){ .nb-recdot{animation:none} .nb-recb{transition:none} }
+:root[data-reduce-motion] .nb-recdot{animation:none}
+/* the audio widget in a note */
+.nb-rich .nw[data-w="audio"]{border-left-color:var(--red,#E5675B)}
+.nw-atag{display:inline-grid;place-items:center;color:var(--red,#E5675B)}
+.nw-adur{font:500 11px/1 var(--mono);color:var(--muted);margin-left:auto}
+.nw-asave{text-decoration:none}
+.nw-abox{padding:8px 10px 10px}
+.nw-abox audio{width:100%;height:36px;display:block}
+/* the note's last lines stay clear of the round buttons at the bottom */
+.nb-pane.p1 .nb-rich{padding-bottom:72px}
+@media (max-width:760px){ .np-win .mw-hx{flex-wrap:wrap} .np-win .mw-hx .np-mode{flex:1 0 100%} .np-mode button{flex:1;text-align:center} }
+@media (max-width:760px){ .nb-rec.on{max-width:calc(100% - 84px);padding-left:10px} .nb-rec.on .nb-recs,.nb-rec.on .nb-reclv{display:none} }
+/* ---------- v0.5.8 (Devon): word count, at the bottom of the note between 🎙 and the corner buttons (app.js wordCount) ---------- */
+.nb-pane.p1{container-type:inline-size;container-name:np1}
+.nb-wc{position:absolute;z-index:5;left:74px;right:250px;bottom:16px;height:42px;line-height:42px!important;display:block;pointer-events:none;
+  font:500 11.5px/1.2 var(--mono);color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nb-wc b{font-weight:600;color:var(--muted)}
+.nb-wc.sel b{color:var(--frame)}
+.nb-wcx{}
+.nb[data-mode="simple"] .nb-wc{right:76px}
+.nb-rec.on~.nb-wc{display:none}
+@container np1 (max-width:560px){ .nb-wcx{display:none} }
+@media (max-width:760px){ .nb-wc{right:70px} .nb-wcx{display:none} }
+/* ---------- v0.5.8 (Devon): colour-blind mode (Settings → Appearance; settings.js S.cvd → html[data-cvd]). The signal colours
+   (done / good, warning, error / delete) move to pairs that stay apart for that kind of colour vision (Okabe–Ito based), and
+   shapes or words are added where colour alone carried the meaning. Themes, your own colours and note colours stay as chosen. ---------- */
+:root[data-cvd="rg"]{--green:#56B4E9;--red:#D55E00;--amber:#F0E442}
+:root[data-cvd="by"]{--green:#2EC4B6;--red:#E0245E;--amber:#FF9EBB}
+:root[data-cvd="mono"]{--green:#E8E8E8;--red:#FFFFFF;--amber:#A8A8A8}
+:root[data-cvd] .nt-it[data-pri="high"],:root[data-cvd] .nt-head[data-pri="high"]{--pc:var(--red)}
+:root[data-cvd] .nt-it[data-pri="med"],:root[data-cvd] .nt-head[data-pri="med"]{--pc:var(--amber)}
+:root[data-cvd] .nt-pri[data-pri="high"]{color:var(--red)} :root[data-cvd] .nt-pri[data-pri="med"]{color:var(--amber)}
+:root[data-cvd] .nt-due.soon::before{content:"◷ "}
+:root[data-cvd] .nt-due.od::before{content:"⚠ "}
+:root[data-cvd] .nt-due.od{text-decoration:underline;text-underline-offset:3px}
+:root[data-cvd] .nw-cc.del,:root[data-cvd] .nw-cu .nw-cr.del>span{background-image:repeating-linear-gradient(135deg,transparent 0 5px,rgba(255,255,255,.07) 5px 7px)}
+:root[data-cvd] .nw-cc.del::before{content:"− ";opacity:.8} :root[data-cvd] .nw-cc.add::before{content:"+ ";opacity:.8}
+:root[data-cvd] .io-prog.bad .io-prog-fill{background-image:repeating-linear-gradient(135deg,rgba(0,0,0,.35) 0 6px,transparent 6px 12px)}
+:root[data-cvd] .io-prog.ok .io-prog-t::before{content:"✓ "} :root[data-cvd] .io-prog.bad .io-prog-t::before{content:"✕ "}
+:root[data-cvd] .io-msg.ok::before,:root[data-cvd] .io-log.ok::before{content:"✓ "} :root[data-cvd] .io-msg.bad::before,:root[data-cvd] .io-log.bad::before{content:"⚠ "}
+:root[data-cvd] .set-warn,:root[data-cvd] .nb-recstop{text-decoration:underline;text-underline-offset:3px}
+:root[data-cvd="mono"] .nb-recdot{box-shadow:0 0 0 2px var(--panel,#0d141d),0 0 0 3px #fff}
+:root[data-cvd="mono"] .nt-due.od,:root[data-cvd="mono"] .io-msg.bad,:root[data-cvd="mono"] .io-log.bad{font-weight:700}
+/* the preview in Settings */
+.set-cvdp{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.set-cvdp span{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:2px;border:1px solid currentColor;font:600 11px/1 var(--ui);letter-spacing:.1em;text-transform:uppercase}
+.set-cvdp .g{color:var(--green)} .set-cvdp .w{color:var(--amber)} .set-cvdp .r{color:var(--red)}
+/* ---------- v0.5.8 (Devon): ✍ Signature widget (notes-sign.js, NPSign; Professional: added from the Tool bar) ---------- */
+.nb-rich .nw[data-w="sign"]{border-left-color:var(--frame)}
+.ns-tag{font-size:15px}
+.ns-ht{font:600 10.5px/1 var(--ui);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.ns-hint,.ns-lock{margin-left:auto;font:500 10.5px/1 var(--mono);color:var(--faint)}
+.ns-pad{padding:10px 12px 12px;display:flex;flex-direction:column;gap:9px}
+.ns-tabs{display:flex;gap:4px;flex-wrap:wrap}
+.ns-tabs button{all:unset;cursor:pointer;padding:6px 11px;border:1px solid var(--line-2);border-radius:2px;font:600 10.5px/1 var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.ns-tabs button[aria-selected="true"]{color:var(--ink,#0b0f16);background:var(--frame);border-color:var(--frame)}
+.ns-tabs button:focus-visible{outline:2px solid var(--frame);outline-offset:1px}
+.ns-stage{position:relative;height:170px;border-radius:3px;background:#F7F5EF;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);overflow:hidden}
+.ns-stage.draw{cursor:crosshair;touch-action:none}
+.ns-cv{display:block;width:100%;height:170px}
+.ns-stage::after{content:"";position:absolute;left:44px;right:24px;bottom:38px;border-bottom:1.5px solid rgba(27,42,87,.35);pointer-events:none}
+.ns-x{position:absolute;left:20px;bottom:36px;font:400 20px/1 var(--sans);color:rgba(27,42,87,.45);pointer-events:none}
+.ns-ph{position:absolute;inset:0;display:grid;place-items:center;font:400 13px/1.3 var(--sans);color:rgba(27,42,87,.45);pointer-events:none;text-align:center;padding:0 20px}
+.ns-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ns-row[hidden]{display:none}
+.ns-row small{font:400 11.5px/1.35 var(--sans);color:var(--faint)}
+.ns-in{box-sizing:border-box;height:30px;padding:4px 9px;border:1px solid var(--line-2);border-radius:2px;background:rgba(0,0,0,.25);color:var(--text);font:400 13.5px/1.2 var(--sans);min-width:0}
+.ns-in:focus{outline:none;border-color:var(--frame)}
+.ns-tname{flex:1 1 200px}
+.ns-lab{flex:1 1 260px;display:flex;align-items:center;gap:8px;font:600 10.5px/1 var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.ns-lab .ns-in{flex:1;text-transform:none;letter-spacing:0}
+.ns-fonts{display:inline-flex;gap:4px}
+.ns-fonts button{all:unset;cursor:pointer;padding:3px 10px;border:1px solid var(--line-2);border-radius:2px;font-size:17px;color:var(--muted)}
+.ns-fonts button[aria-checked="true"]{color:var(--text);border-color:var(--frame);background:color-mix(in srgb,var(--frame) 14%,transparent)}
+.ns-go{justify-content:space-between}
+.ns-rem{display:inline-flex;align-items:center;gap:7px;font:400 12.5px/1.3 var(--sans);color:var(--muted);cursor:pointer}
+.ns-rem input{accent-color:var(--frame);width:15px;height:15px;margin:0}
+.ns-sign:disabled{opacity:.45;cursor:not-allowed}
+.ns-note{margin:0;font:400 11px/1.4 var(--sans);color:var(--faint)}
+.ns-card{margin:10px 12px 12px;padding:14px 18px 12px;border-radius:3px;background:#F7F5EF;color:#1B2A57;max-width:520px}
+.ns-img{display:block;max-width:100%;max-height:120px;margin:0 0 -6px 18px}
+.ns-rule{border-bottom:1.5px solid rgba(27,42,87,.4);margin:0 0 7px}
+.ns-by{margin:0;font:500 12.5px/1.35 var(--sans);color:#1B2A57}
+.ns-seal{margin:6px 0 0;font:600 11px/1.3 var(--sans);color:#1d6b43}
+.ns-seal.bad{color:#9a3b10}
+:root[data-cvd] .ns-seal{color:#1B2A57} :root[data-cvd] .ns-seal.bad{text-decoration:underline}
+.nb-rail .nb-tooln{max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* ---------- v0.5.8 (Devon): ＋ New folder is always in sight, at the bottom of the folders (right above Code & Music), in every view and filter ---------- */
+.nb-ftree .nb-fadd{position:sticky;bottom:0;z-index:3;margin-top:auto;flex:none;background:var(--panel,#0d141d);box-shadow:0 -8px 10px -4px var(--panel,#0d141d)}
+.nb-ftree .nb-fmain .nb-fadd,.nb-ftree:not(.has-fsplit)>.nb-fadd{margin-top:auto}
+@media (max-width:860px){ .nb-ftree .nb-fadd{position:static} }
+/* ---------- v0.5.8 (Devon): selection in the Folders & Files bar (Ctrl/⌘+click, Shift+click, Select all) and its right-click menu ---------- */
+.nb-ftree .nb-fnote.is-picked,.nb-ftree .nb-fd.user.is-picked{background:color-mix(in srgb,var(--frame) 22%,transparent)!important;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--frame) 65%,transparent)}
+.nb-ftree .nb-fnote.is-picked::after,.nb-ftree .nb-fd.user.is-picked::after{content:"✓";position:absolute;right:6px;top:50%;transform:translateY(-50%);width:16px;height:16px;border-radius:50%;display:grid;place-items:center;font:700 10px/1 var(--sans);color:var(--ink,#0b0f16);background:var(--frame);pointer-events:none}
+.nb-ftree .nb-tiles .nb-fnote.is-picked::after{top:8px;transform:none}
+.nb-fd.user{position:relative}
+.nb-pickbar{flex:none;display:flex;align-items:center;gap:8px;padding:6px 8px 6px 12px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--frame) 14%,var(--panel,#0d141d));font:600 11.5px/1.2 var(--sans);color:var(--text)}
+.nb-pickn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nb-pickx{all:unset;cursor:pointer;padding:5px 9px;border:1px solid var(--line-2);border-radius:2px;font:600 10px/1 var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--text);background:rgba(0,0,0,.2)}
+.nb-pickx:hover{border-color:var(--frame)} .nb-pickx:focus-visible{outline:2px solid var(--frame)}
+.nb-pickx.armed,.nb-fmenu .nb-fmdel.armed{color:#fff;background:var(--red,#E5675B);border-color:var(--red,#E5675B)}
+.nb-fmsep{height:1px;margin:4px 6px;background:var(--line-2)}
+.nb-fmenu .nb-fmdel .tm-ic{color:var(--red,#E5675B)}
+.nb-fmenu .nb-fmdel.armed .tm-ic,.nb-fmenu .nb-fmdel.armed small{color:#fff}
+.nb-ftree .nb-fnote,.nb-ftree .nb-fd.user{-webkit-user-select:none;user-select:none}
+/* ---------- v0.5.8 (Devon): Check for duplicates, under Export and Import in the Import & Export window (io.js findDuplicates) ---------- */
+.io .io-dup{grid-column:1/-1;border-left:0!important;border-top:1px solid var(--line)}
+.io-duph{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px}
+.io-duph .io-h{flex:none}
+.io-dupd{flex:1 1 360px;margin:0;font:400 12.5px/1.45 var(--sans);color:var(--muted)}
+.io-dupr{display:flex;flex-direction:column;gap:10px}
+.io-dupr:empty{display:none}
+.io-dupnone{margin:0;font:500 13px/1.4 var(--sans);color:var(--green)}
+.io-dupsum{margin:0;font:600 11px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.io-dupg{border:1px solid var(--line-2);border-left:3px solid var(--frame);border-radius:3px;background:rgba(0,0,0,.14)}
+.io-dupgh{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:8px 10px;border-bottom:1px solid var(--line)}
+.io-dupgh b{font:600 13px/1.2 var(--sans);color:var(--text)}
+.io-dupk{font:400 12px/1.3 var(--sans);color:var(--faint)}
+.io-dupsc{font:600 11px/1 var(--mono);color:var(--frame);padding:3px 6px;border:1px solid color-mix(in srgb,var(--frame) 50%,transparent);border-radius:2px}
+.io-dupga{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.io-dupn{display:flex;gap:10px;align-items:center;padding:8px 10px}
+.io-dupn+.io-dupn{border-top:1px dashed var(--line)}
+.io-dupt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.io-dupt b{font:600 13px/1.3 var(--sans);color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.io-dupt small{font:400 11.5px/1.3 var(--sans);color:var(--faint)}
+.io-dupp{font:400 12px/1.4 var(--sans);color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.io-dupna{flex:none;display:flex;gap:6px}
+.io-dupkeep{color:var(--green)!important}
+.io-dupoff{display:inline-flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:6px;color:var(--text)}
+@media (max-width:760px){ .io-dupn{flex-wrap:wrap} .io-dupga{margin-left:0} }
+/* ---------- v0.5.8 (Devon): the word count's on / off switch (app.js wordCount, store notepath.wordcount) ---------- */
+.nb-wct{all:unset;box-sizing:border-box;position:absolute;z-index:6;left:72px;bottom:24px;height:26px;display:inline-flex;align-items:center;gap:6px;padding:0 9px 0 5px;border:1px solid var(--line-2);border-radius:13px;cursor:pointer;
+  font:600 9.5px/1 var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--faint);background:rgba(0,0,0,.18)}
+.nb-wct:hover{color:var(--text);border-color:var(--frame)}
+.nb-wct:focus-visible{outline:2px solid var(--frame);outline-offset:2px}
+.nb-wcti{position:relative;width:24px;height:14px;border-radius:7px;background:var(--line-2);transition:background .15s}
+.nb-wcti::after{content:"";position:absolute;left:2px;top:2px;width:10px;height:10px;border-radius:50%;background:var(--muted);transition:transform .15s,background .15s}
+.nb-wct[aria-checked="true"] .nb-wcti{background:color-mix(in srgb,var(--frame) 55%,transparent)}
+.nb-wct[aria-checked="true"] .nb-wcti::after{transform:translateX(10px);background:var(--frame)}
+.nb-pane.p1 .nb-wc{left:196px}
+.nb-wc[hidden]{display:none}
+.nb-rec.on~.nb-wct{display:none}
+@media (prefers-reduced-motion:reduce){ .nb-wcti,.nb-wcti::after{transition:none} }
+@media (max-width:760px){ .nb-wctl{display:none} .nb-wct{padding:0 5px} .nb-pane.p1 .nb-wc{left:116px} }
 
 </style>
 </head><body>
@@ -2004,6 +2251,7 @@ div.nb{--nb-lw:64px}
   <main class="view" id="view" tabindex="-1"></main>
   <div class="upd" id="upd" role="status" hidden></div>
 </div>
+<script>window.NP_I18N_V = {"ar":"89b1116915","de":"6ae115dbc4","es":"11dad6dad3","fr":"9c27796547","ja":"92c66a70d8","ko":"4fd682cdf6","nl":"25d8577a6b","pt":"141b9a313a","ru":"05bcbfce45","zh":"8bcc6a137d"};</script>
 <script>/* web/lib/lazy.js */
 /* NotePath lazy modules (v0.5.7). Big, rarely used scripts (Note Office, Import & Export, Sheet, Graph, Map, AI Chat helpers) sit in the
    page as inert <script type="text/plain" data-np-lazy="name"> text and run the first time something touches their global
@@ -2034,7 +2282,167 @@ div.nb{--nb-lw:64px}
 })();
 
 </script>
-<script>NPLazy.lazy("office", "NoteOffice"); NPLazy.lazy("io", "NPIO"); NPLazy.lazy("sheet", "NPSheet"); NPLazy.lazy("graph", "NPGraph"); NPLazy.lazy("map", "NPMap"); NPLazy.lazy("assist", "NPAssist");</script>
+<script>NPLazy.lazy("office", "NoteOffice"); NPLazy.lazy("io", "NPIO"); NPLazy.lazy("sheet", "NPSheet"); NPLazy.lazy("graph", "NPGraph"); NPLazy.lazy("map", "NPMap"); NPLazy.lazy("sign", "NPSign"); NPLazy.lazy("assist", "NPAssist");</script>
+<script>/* web/lib/i18n.js */
+/* NotePath in other languages (v0.5.8, Devon): window.NPI18N.
+   The app is written in English; this layer translates what is on screen. A MutationObserver walks every text node and the
+   attributes people see or hear (title, aria-label, placeholder, data-label, alt) and swaps the English for the chosen
+   language from a dictionary (app/i18n/<code>.json, made from web/i18n by build-web.js), so no call site had to change.
+   Keys are the English with numbers as {1}, {2}… and anything in “curly quotes” as {q1}… (names, titles), so "3 notes" and
+   "Export 60 notes as Markdown" find their sentence; the numbers and names are put back. Your own words are never touched:
+   the note editor (except the chrome of widgets), titles, names and anything typed in a field are skipped (SKIP / own()).
+   English keeps the page as it is and costs nothing. The chosen language is S.lang in notepath.settings (Settings → Display
+   & comfort → Language); its dictionary is cached in localStorage so the next start is translated from the first paint.
+   NPI18N.t("…") translates a string for code that draws text itself. Collecting the strings for the dictionaries:
+   tools/i18n-collect.js (window.__npCollect). */
+(function () {
+"use strict";
+const LANGS = [["en", "English", "English"], ["es", "Español", "Spanish"], ["fr", "Français", "French"], ["de", "Deutsch", "German"],
+  ["pt", "Português (Brasil)", "Portuguese (Brazil)"], ["ru", "Русский", "Russian"], ["zh", "中文（简体）", "Chinese (Simplified)"], ["ja", "日本語", "Japanese"],
+  ["nl", "Nederlands", "Dutch"], ["ar", "العربية", "Arabic"], ["ko", "한국어", "Korean"]];
+const HTML_LANG = { pt: "pt-BR", zh: "zh-CN" };
+const VER = window.NP_I18N_V || {}; // build-web.js: { code: hash of its dictionary }
+const ATTRS = ["title", "aria-label", "placeholder", "data-label", "alt", "aria-roledescription"];
+// never translated (and never walked into): your own words and code
+const SKIP = "script, style, textarea, input, .io-sel, code, pre, .monaco-editor, .nc-edhost, .no-i18n, [translate='no'], .nb-title, .nb-t, .mnote-b, .nb-fd.user .nb-fnm, .nb-cfd .nb-fnm, .nb-sfd .nb-fnm, .nb-fnt, .nb-tname, .mnote-t, .nt-name, .nt-tt, .np-hl-t, .np-peek-b, .np-peek-t, .nw-code, .nw-cmp, .nw-annv, .nw-ta, .ns-by, .nann-layer, .nb-lnk, .nb-spath, .nb-recs b, .office-canvas, canvas";
+const own = el => { const r = el.closest(".nb-rich, .nw"); return !!r && r.classList.contains("nb-rich"); }; // in a note, outside any widget = your words
+let code = "en", dict = null, obs = null, busy = false;
+const ORIG = new WeakMap(), AORIG = new WeakMap();
+const lsGet = k => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } };
+
+// "Export 60 notes as “Week 3”" → key "Export {1} notes as “{q1}”", nums ["60"], quotes ["Week 3"]; colour codes (#5cc8e0) → {c1}
+const AZ = "abcdefghijklmnopqrstuvwxyz";
+function norm(s) {
+  const nums = [], qs = [], cs = [];
+  let k = String(s).replace(/\s+/g, " ").trim();
+  k = k.replace(/“([^”]*)”/g, (m, a) => { qs.push(a); return "“\u0001" + AZ[qs.length - 1] + "”"; }); // names first, so their digits stay theirs
+  k = k.replace(/#(?:[0-9a-f]{6}|[0-9a-f]{3})\b/gi, m => { cs.push(m); return "\u0002" + AZ[cs.length - 1]; });
+  k = k.replace(/\d+(?:[.,:/]\d+)*/g, m => { nums.push(m); return "{" + nums.length + "}"; });
+  k = k.replace(/\u0001([a-z])/g, (m, c) => "{q" + (AZ.indexOf(c) + 1) + "}").replace(/\u0002([a-z])/g, (m, c) => "{c" + (AZ.indexOf(c) + 1) + "}");
+  return { k, nums, qs, cs };
+}
+// patterns: keys with {s1}, {s2}… (a name or a value the app puts in: "Delete {s1}") match a whole string; indexed by first word
+let PAT = new Map();
+const firstWord = k => (k.match(/^[^\s{]+/) || [""])[0];
+function compile(d) {
+  PAT = new Map();
+  for (const k of Object.keys(d)) {
+    if (!/\{s\d+\}/.test(k) || !d[k]) continue;
+    const order = [], src = "^" + k.split(/(\{s\d+\})/).map(p => { const m = p.match(/^\{s(\d+)\}$/); if (m) { order.push(+m[1]); return "(.*?)"; } return p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }).join("") + "$";
+    let re; try { re = new RegExp(src); } catch (e) { continue; }
+    // a slot glued after a word in the English ("folder{s2}") is a plural ending: its "s" is kept only where the translation
+    // also glues it to a Latin letter (Spanish "carpeta{s2}"), and dropped elsewhere (Russian, Chinese, Arabic…)
+    const plural = new Set([...k.matchAll(/[A-Za-z]\{s(\d+)\}/g)].map(m => +m[1]));
+    const w = /^\{s\d+\}/.test(k) ? "" : firstWord(k); if (!PAT.has(w)) PAT.set(w, []); PAT.get(w).push({ re, order, tpl: d[k], plural });
+  }
+}
+const slot = v => { const x = dict[v]; return typeof x === "string" && x && !/\{/.test(v) ? x : v; }; // a value that is itself a word of the app is translated
+function fill(tpl, n) {
+  return tpl.replace(/\{([qc]?)(\d+)\}/g, (m, q, i) => { const v = (q === "q" ? n.qs : q === "c" ? n.cs : n.nums)[+i - 1]; return v == null ? m : q === "q" ? slot(v) : v; });
+}
+function lookup(core) {
+  if (!dict) return null;
+  const n = norm(core), tpl = dict[n.k];
+  if (typeof tpl === "string" && tpl) return fill(tpl, n);
+  const cands = (PAT.get(firstWord(n.k)) || []).concat(PAT.get("") || []);
+  for (const p of cands) { const m = p.re.exec(n.k); if (!m) continue;
+    const out = p.tpl.replace(/(.?)\{s(\d+)\}/g, (x, pre, i) => { const at = p.order.indexOf(+i); if (at < 0) return x; const v = m[at + 1];
+      if (p.plural.has(+i) && /^(s|es)?$/.test(v) && !/[A-Za-z]/.test(pre)) return pre; return pre + slot(v); });
+    return fill(out, n); }
+  return null;
+}
+function t(s) { if (code === "en" || !dict || !s) return s; const m = String(s).match(/^(\s*)([\s\S]*?)(\s*)$/); const o = lookup(m[2]); return o == null ? s : m[1] + o + m[3]; }
+const hasLetter = s => /\p{L}/u.test(s);
+
+/* the walk: every visible English string, with where it is (for the collector) */
+function walk(root, onText, onAttr) {
+  if (!root) return;
+  if (root.nodeType === 3) { const p = root.parentElement; if (p && !p.closest(SKIP) && !own(p)) onText(root); return; }
+  if (root.nodeType !== 1 && root.nodeType !== 9 && root.nodeType !== 11) return;
+  if (root.nodeType === 1 && root.closest(SKIP)) { if (root.matches("input, select, textarea, canvas")) attrs(root, onAttr); return; }
+  const tw = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, { acceptNode: x => {
+    if (x.nodeType === 1) { if (x.matches(SKIP)) { if (x.matches("input, select, textarea, canvas")) attrs(x, onAttr); return NodeFilter.FILTER_REJECT; } return NodeFilter.FILTER_ACCEPT; }
+    return NodeFilter.FILTER_ACCEPT; } });
+  if (root.nodeType === 1) attrs(root, onAttr);
+  let x; while ((x = tw.nextNode())) { if (x.nodeType === 1) attrs(x, onAttr); else if (x.parentElement && !own(x.parentElement)) onText(x); }
+}
+function attrs(el, onAttr) {
+  if (!onAttr || !el.getAttribute) return;
+  for (const a of ATTRS) { if (!el.hasAttribute(a)) continue; if (a === "alt" && el.closest(".nb-rich") && !el.closest(".nw")) continue; if (a !== "placeholder" && own(el)) continue; onAttr(el, a); }
+}
+
+/* translate / restore */
+function trText(n) {
+  const d = n.data; if (!hasLetter(d)) return;
+  const rec = ORIG.get(n);
+  const orig = rec && rec.out === d ? rec.orig : d; // the app changed it since: the new English is the original
+  const out = code === "en" ? orig : t(orig);
+  if (out !== d) { busy = true; n.data = out; busy = false; }
+  if (out !== orig) ORIG.set(n, { orig, out }); else ORIG.delete(n);
+}
+function trAttr(el, a) {
+  const v = el.getAttribute(a); if (v == null || !hasLetter(v)) return;
+  let m = AORIG.get(el); const rec = m && m[a];
+  const orig = rec && rec.out === v ? rec.orig : v, out = code === "en" ? orig : t(orig);
+  if (out !== v) { busy = true; el.setAttribute(a, out); busy = false; }
+  if (out !== orig) { if (!m) AORIG.set(el, m = {}); m[a] = { orig, out }; } else if (m) delete m[a];
+}
+function all() { walk(document.body, trText, trAttr); if (document.title) document.title = t(document.title.replace(/^.*$/, s => s)); }
+function observe() {
+  if (obs) return;
+  obs = new MutationObserver(list => {
+    if (busy) return;
+    for (const r of list) {
+      if (r.type === "childList") r.addedNodes.forEach(n => walk(n, trText, trAttr));
+      else if (r.type === "characterData") { const p = r.target.parentElement; if (p && !p.closest(SKIP) && !own(p)) trText(r.target); }
+      else if (r.type === "attributes" && r.target.nodeType === 1 && !r.target.closest(SKIP)) trAttr(r.target, r.attributeName);
+    }
+  });
+  obs.observe(document.documentElement, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ATTRS });
+}
+
+/* the dictionaries: cached per language with the build's hash, fetched from app/i18n/ */
+async function fetchDict(c) {
+  const cacheK = "notepath.i18n.cache", ver = VER[c] || "";
+  try { const o = JSON.parse(lsGet(cacheK) || "null"); if (o && o.c === c && o.v === ver && o.d) return o.d; } catch (e) {}
+  const r = await fetch("i18n/" + c + ".json", { cache: "no-cache" }); if (!r.ok) throw new Error("no dictionary for " + c);
+  const j = await r.json(), d = j.strings || j;
+  lsSet(cacheK, JSON.stringify({ c, v: ver, d }));
+  return d;
+}
+function cached(c) { try { const o = JSON.parse(lsGet("notepath.i18n.cache") || "null"); return o && o.c === c && o.v === (VER[c] || "") ? o.d : null; } catch (e) { return null; } }
+function mark() { const h = document.documentElement; h.lang = code === "en" ? "en" : (HTML_LANG[code] || code); h.dataset.lang = code; h.dir = code === "ar" ? "rtl" : "ltr"; }
+async function set(c) {
+  c = LANGS.some(l => l[0] === c) ? c : "en";
+  if (c === "en") { code = "en"; dict = null; mark(); all(); window.dispatchEvent(new CustomEvent("np:lang", { detail: c })); return true; }
+  const d = cached(c) || await fetchDict(c);
+  code = c; dict = d; compile(d); mark(); observe(); all();
+  window.dispatchEvent(new CustomEvent("np:lang", { detail: c }));
+  return true;
+}
+// start: the saved language, from the cache at once (no English flash), or fetched
+const start = (() => { try { return (JSON.parse(lsGet("notepath.settings") || "{}") || {}).lang || "en"; } catch (e) { return "en"; } })();
+let ready = Promise.resolve(true);
+if (start !== "en" && LANGS.some(l => l[0] === start)) {
+  const d = cached(start);
+  if (d) { code = start; dict = d; compile(d); mark(); observe(); document.addEventListener("DOMContentLoaded", all); }
+  else ready = set(start).catch(() => false);
+}
+/* the collector (tools/i18n-collect.js): every key the walk meets, once */
+if (typeof window.__npCollect === "function" || lsGet("notepath.i18n.collect")) {
+  const seen = new Set(); let q = [], tm = 0;
+  const push = (s, where) => { if (code !== "en" || !hasLetter(s)) return; /* only the English page is collected */ const k = norm(s).k; if (!k || seen.has(k)) return; seen.add(k); q.push([k, where]); if (!tm) tm = setTimeout(() => { tm = 0; const b = q; q = []; try { window.__npCollect && window.__npCollect(b); } catch (e) {} }, 200); };
+  const ctx = el => { const p = el.closest("[class]"); return p ? (p.className.baseVal != null ? p.className.baseVal : p.className).split(" ")[0] : ""; };
+  const colText = n => push(n.data, ctx(n.parentElement)), colAttr = (el, a) => push(el.getAttribute(a), a + "@" + ctx(el));
+  const go = () => { walk(document.body, colText, colAttr); new MutationObserver(list => list.forEach(r => { if (r.type === "childList") r.addedNodes.forEach(n => walk(n, colText, colAttr)); else if (r.type === "characterData") { const p = r.target.parentElement; if (p && !p.closest(SKIP) && !own(p)) colText(r.target); } else if (r.type === "attributes" && !r.target.closest(SKIP)) colAttr(r.target, r.attributeName); }))
+    .observe(document.documentElement, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ATTRS }); };
+  if (document.body) go(); else document.addEventListener("DOMContentLoaded", go);
+}
+window.NPI18N = { LANGS, set, t, norm, lang: () => code, get ready() { return ready; }, translateAll: all };
+})();
+
+</script>
 <script>/* web/lib/diag.js */
 /* NotePath diagnostics (v0.5.7). Everything stays on this computer: nothing is sent anywhere.
    - a ring of the last 30 page errors,
@@ -2365,7 +2773,7 @@ function fontToSpan(f, over) {
   const sp = document.createElement("span"); if (k) { sp.setAttribute("data-c", k); if (HEX.test(k)) sp.style.color = k; } if (s) sp.setAttribute("data-s", s); if (fv) sp.setAttribute("data-f", fv);
   sp.append(...f.childNodes); f.replaceWith(sp); return sp;
 }
-const WIDGETS = new Set(["code", "music", "video", "graph", "sheet", "map"]);
+const WIDGETS = new Set(["code", "music", "video", "graph", "sheet", "map", "audio", "sign"]);
 const DROP = new Set(["SCRIPT", "STYLE", "IFRAME", "OBJECT", "EMBED", "LINK", "META", "TEMPLATE", "SVG", "MATH", "NOSCRIPT", "TITLE", "HEAD", "FORM", "INPUT", "BUTTON", "TEXTAREA", "SELECT", "VIDEO", "AUDIO", "CANVAS"]);
 function clean(node) {
   [...node.childNodes].forEach(c => {
@@ -2429,7 +2837,7 @@ function toText(html) {
 const textToHtml = t => String(t || "").split("\n").map(l => `<div>${l ? esc(l) : "<br>"}</div>`).join("");
 const imgIds = html => [...String(html || "").matchAll(/data-img="([a-z0-9]+)"/gi)].map(m => m[1]);
 // photos and video files share the IndexedDB store; a video widget keeps its file id as "vid" in data-src (attribute-escaped JSON)
-const mediaIds = html => imgIds(html).concat([...String(html || "").matchAll(/&quot;vid&quot;:&quot;([a-z0-9]+)&quot;/gi)].map(m => m[1]));
+const mediaIds = html => imgIds(html).concat([...String(html || "").matchAll(/&quot;(?:vid|img)&quot;:&quot;([a-z0-9]+)&quot;/gi)].map(m => m[1])); // videos, recordings (vid) and signatures (img, v0.5.8)
 // every photo a note keeps: the ones in its text and its cover photo (v0.5.4)
 const COVER_ID = /^[a-z0-9]{4,40}$/i;
 const noteMedia = n => mediaIds(n && n.html).concat(n && n.cover && COVER_ID.test(n.cover) ? [n.cover] : []);
@@ -2894,6 +3302,12 @@ function mountEditor(host, id, o = {}) {
     for (const f of vids) { try { const vid = await putVideo(f); addWidget("video", { kind: "file", vid, title: String(f.name || "").replace(/\.[^.]+$/, "").slice(0, 80) }); nv++; } catch (e) { console.warn("Video not stored", e); if (o.onMessage) o.onMessage(f.size > VIDEO_MAX ? "That video is over 500 MB" : "That video could not be stored"); } }
     return ids.length + nv;
   }
+  // (v0.5.8) an audio recording: kept in IndexedDB (as video files are), then a player after the line the caret is on
+  async function addAudio(blob, o2 = {}) {
+    const vid = await putVideo(blob);
+    addWidget("audio", { vid, title: o2.title || "", dur: Math.round(o2.dur || 0), mime: String(blob.type || "").split(";")[0] });
+    return vid;
+  }
   // a video from a link: YouTube, Vimeo, or an https .mp4/.webm/.ogg/.mov file
   function addVideoLink(url) {
     const v = window.InquireWidgets && InquireWidgets.videoFrom(url); if (!v) return false;
@@ -3086,7 +3500,7 @@ function mountEditor(host, id, o = {}) {
     if (block) block.after(w, after); else ed.append(w, after);
     const s = getSelection(), r = document.createRange(); r.setStart(after, 0); r.collapse(true); s.removeAllRanges(); s.addRange(r); last = r.cloneRange();
     hydrate(ed); save();
-    const f = type === "video" || type === "graph" || type === "sheet" ? null : w.querySelector(type === "code" ? ".nw-ta" : type === "map" ? ".nm-q" : ".nw-piano button"); if (f) f.focus({ preventScroll: true });
+    const f = type === "video" || type === "audio" || type === "sign" || type === "graph" || type === "sheet" ? null : w.querySelector(type === "code" ? ".nw-ta" : type === "map" ? ".nm-q" : ".nw-piano button"); if (f) f.focus({ preventScroll: true });
     w.scrollIntoView({ block: "nearest" });
   }
   // a block (definition, quote) placed after the line that holds `range` (or the caret), never inside it
@@ -3372,6 +3786,23 @@ function mountEditor(host, id, o = {}) {
     save(); flush(); annLayout();
     return t.whole;
   }
+  // (v0.5.8, Devon) the format bar's Indent less / more: the line the caret is on (or every line selected), one 2em step;
+  // in a list the item moves a level in or out first (as Tab / Shift+Tab), and only uses a step when it can't
+  function indentLine(dir) {
+    api.focus();
+    const s = getSelection(); let r = s.rangeCount ? s.getRangeAt(0) : null;
+    if (!r || !ed.contains(r.commonAncestorContainer)) r = last && ed.contains(last.commonAncestorContainer) ? last : null;
+    if (!r || inWidget(r.startContainer)) return false;
+    const one = r.collapsed || !r.toString().replace(/[\s​]/g, "");
+    if (one) { const li = itemAt(); if (li) { const moved = dir > 0 ? (li.previousElementSibling && li.previousElementSibling.tagName === "LI" ? indentItem(li) : false) : outdentItem(li); if (moved) { save(); flush(); annLayout(); return true; } } }
+    let els;
+    if (one) { let el = lineOf(r.startContainer); if (!el) { const k = [r.startContainer, r.startOffset]; topBlocks(); el = lineOf(k[0]); try { const nr = document.createRange(); nr.setStart(k[0], k[1]); nr.collapse(true); s.removeAllRanges(); s.addRange(nr); last = nr.cloneRange(); } catch (e) {} } els = el ? [el] : []; }
+    else els = layoutTargets(false).els;
+    let changed = false;
+    els.forEach(el => { const cur = +(el.getAttribute("data-in") || 0), n = Math.max(0, Math.min(8, cur + (dir > 0 ? 1 : -1))); if (n === cur) return; changed = true; if (n) el.setAttribute("data-in", String(n)); else el.removeAttribute("data-in"); });
+    if (changed) { save(); flush(); annLayout(); }
+    return changed;
+  }
   // Chromium edits inline colours itself (it may clear or copy style="color"): keep data-c in step with what is shown
   function syncColors() {
     ed.querySelectorAll("span").forEach(sp => {
@@ -3387,11 +3818,11 @@ function mountEditor(host, id, o = {}) {
     openSide: noteId => { if (!o.openSide || !get(noteId)) return false; flush(); o.openSide(noteId); return true; },
     peek: noteId => { if (!o.peek) return false; flush(); o.peek(noteId); return true; },
     openNote: noteId => { if (!o.openNote || !get(noteId)) return false; flush(); o.openNote(noteId); return true; },
-    addFiles, addURL, addVideoLink, linkRange, insertNoteLink, insertWidgetAt, insertText, addWidget, insertBlock,
+    addFiles, addURL, addVideoLink, addAudio, linkRange, insertNoteLink, insertWidgetAt, insertText, addWidget, insertBlock,
     focus: () => { ed.focus({ preventScroll: true }); const s = getSelection(); if (last && (!s.rangeCount || !ed.contains(s.getRangeAt(0).commonAncestorContainer))) { s.removeAllRanges(); s.addRange(last); } },
     changed: () => save(),
     // kind "color" (a #hex, or "" for the normal colour), "size" (a number, or "" for normal), "font" (a key, or "" for the note's font)
-    blockStyle, layoutAt, clearFormat,
+    blockStyle, layoutAt, clearFormat, indentLine,
     format: (kind, v) => {
       api.focus(); document.execCommand("styleWithCSS", false, false);
       { const s0 = getSelection(), r0 = s0.rangeCount ? s0.getRangeAt(0) : null; // nothing selected: what is typed next gets it
@@ -3444,7 +3875,7 @@ function scope(sp) {
 // My Tasks (tasks.js) keeps its pictures and files in the same store
 async function putFile(blob) { if (blob.size > VIDEO_MAX) throw new Error("too big"); const id = uid(); await tx("readwrite", st => st.put({ blob, at: Date.now() }, id)); return id; }
 async function mediaBlob(id) { const rec = await tx("readonly", st => st.get(id)).catch(() => null); return rec && rec.blob ? rec.blob : null; } // (import / export: no fetch of blob: URLs, which the CSP refuses)
-window.InquireNotes = { scope, spaceOf, putImage, putFile, delMedia: delImages, mediaBlob, list, get, create, update, remove, trash, restore, purge, deleteWithUndo, toast, appendBlock, exportMedia, key, link, unlink, appendQuote,
+window.InquireNotes = { scope, spaceOf, putImage, putFile, putVideo, delMedia: delImages, mediaBlob, list, get, create, update, remove, trash, restore, purge, deleteWithUndo, toast, appendBlock, exportMedia, key, link, unlink, appendQuote,
   undo, redo, history, NSIZES, NFONTS, folders, addFolder, renameFolder, setFolderFav, removeFolder, moveFolder, subtree, setOrder, byOrder, sanitize, toText, mountEditor, editorFor, hydrate, pick, pickNote, imageURL, thumbURL, exportImages, importImages,
   readFolders: readF, writeFolders: writeF,
   // v0.5.6: the store is in IndexedDB and in memory; the page waits for `ready` before it draws
@@ -3559,6 +3990,25 @@ function mountVideo(el) {
   ti.addEventListener("input", e => { e.stopPropagation(); writeSrc(el, Object.assign(readSrc(el, {}), { title: ti.value.trim() })); });
   delButton(el);
 }
+/* ---------- (v0.5.8, Devon) audio recordings: the clip is kept in IndexedDB like a video file ("vid" in data-src, so it is
+   deleted, undone and backed up with the note); { vid, title, dur (seconds), mime } ---------- */
+const clock = s => { s = Math.max(0, Math.round(+s || 0)); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return (h ? h + ":" + String(m).padStart(2, "0") : m) + ":" + String(x).padStart(2, "0"); };
+function mountAudio(el) {
+  const d = readSrc(el, { title: "", dur: 0 });
+  const ext = /mp4|m4a|aac/.test(d.mime || "") ? "m4a" : /ogg/.test(d.mime || "") ? "ogg" : "webm";
+  el.innerHTML = `<div class="nw-h"><span class="nw-tag nw-atag" aria-hidden="true">${MIC_IC}</span><input class="nw-title" maxlength="80" placeholder="Audio recording" aria-label="Recording title" value="${esc(d.title)}">
+      <span class="nw-adur num" title="Length">${esc(clock(d.dur))}</span><a class="nw-b nw-asave" role="button" tabindex="0" title="Save the recording as a file" aria-label="Save the recording as a file">⤓</a><button type="button" class="nw-b nw-del" data-a="del" title="Remove this recording" aria-label="Remove recording">✕</button></div>
+    <div class="nw-abox"><audio controls preload="metadata"></audio></div>`;
+  const au = el.querySelector("audio"), sv = el.querySelector(".nw-asave");
+  if (d.vid && window.InquireNotes) InquireNotes.imageURL(d.vid).then(u => {
+    if (u) { au.src = u; sv.href = u; sv.download = (d.title || "Recording").replace(/[\\/:*?"<>|]+/g, " ").trim() + "." + ext; }
+    else el.querySelector(".nw-abox").innerHTML = `<p class="nw-vmiss">This recording's file is missing.</p>`; });
+  au.addEventListener("loadedmetadata", () => { if (isFinite(au.duration) && !d.dur) el.querySelector(".nw-adur").textContent = clock(au.duration); });
+  const ti = el.querySelector(".nw-title");
+  ti.addEventListener("input", e => { e.stopPropagation(); writeSrc(el, Object.assign(readSrc(el, {}), { title: ti.value.trim() })); });
+  delButton(el);
+}
+const MIC_IC = '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="5.5" y="1.5" width="5" height="8.5" rx="2.5"/><path d="M3 7.5a5 5 0 0 0 10 0M8 12.5V15M5.5 15h5"/></svg>';
 let vpanel = null;
 function closeVPanel() { if (vpanel) { vpanel.remove(); vpanel = null; document.removeEventListener("pointerdown", outV, true); document.removeEventListener("keydown", keyV, true); } }
 const outV = e => { if (vpanel && !vpanel.contains(e.target) && !e.target.closest(".nr-vid")) closeVPanel(); };
@@ -3591,15 +4041,15 @@ function toolbar(api) {
   const mod = /Mac/.test(navigator.platform) ? "⌘" : "Ctrl+";
   bar.innerHTML = `<button type="button" data-cmd="bold" title="Bold (${mod}B)" aria-label="Bold"><b>B</b></button><button type="button" data-cmd="italic" title="Italic (${mod}I)" aria-label="Italic"><i>I</i></button><button type="button" data-cmd="underline" title="Underline (${mod}U)" aria-label="Underline"><u>U</u></button><button type="button" data-cmd="strikeThrough" title="Strikethrough" aria-label="Strikethrough"><s>S</s></button>
     <span class="nr-sep"></span><button type="button" data-blk="ul" title="Bulleted list · press again to indent (Tab indents, Shift+Tab moves back, delete at the start takes the bullet off)" aria-label="Bulleted list">•≡</button><button type="button" data-blk="ol" title="Numbered list · delete at the start of a line takes the number off" aria-label="Numbered list">1.≡</button><button type="button" data-blk="ck" title="Checklist: click a box to tick an item off · press again to indent · delete at the start of a line takes the box off" aria-label="Checklist">☑</button>
-    <span class="nr-sep"></span><button type="button" class="nr-dd nr-font" data-dd="font" title="Font" aria-haspopup="listbox" aria-label="Font"><span class="nr-ddv">Default</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-dd nr-size" data-dd="size" title="Text size" aria-haspopup="listbox" aria-label="Text size"><span class="nr-ddv num">15</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-dd nr-colb" data-dd="color" title="Text colour" aria-haspopup="dialog" aria-label="Text colour"><span class="nr-cola" aria-hidden="true">A</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-dd nr-hlb" data-dd="hilite" title="Highlight colour" aria-haspopup="dialog" aria-label="Highlight colour"><span class="nr-hla" aria-hidden="true">ab</span><span class="nr-car" aria-hidden="true">▾</span></button>
-    <span class="nr-sep"></span><button type="button" class="nr-dd nr-head" data-dd="heads" title="Titles and headings: Title, Subtitle, Heading 1, 2, 3" aria-haspopup="menu" aria-label="Titles and headings" aria-pressed="false"><span class="nr-ddv">H</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-dd nr-alb" data-dd="align" title="Align &amp; indent: nothing selected = the whole note, words selected = only those" aria-haspopup="menu" aria-label="Align and indent"><span class="nr-ali" aria-hidden="true">${ALIGN_IC.left}</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-dd nr-spb" data-dd="spacing" title="Line &amp; paragraph spacing" aria-haspopup="menu" aria-label="Line and paragraph spacing"><span class="nr-ali" aria-hidden="true">${SPACE_IC}</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-clr" data-a="clear" title="Clear formatting: nothing selected = the whole note, words selected = only those" aria-label="Clear formatting">${CLEAR_IC}</button>
-    <span class="nr-sep"></span><button type="button" class="nr-sym" title="Emoji and symbols (Greek, maths, alchemical)" aria-haspopup="dialog">☺ Ω</button>
+    <span class="nr-sep"></span><button type="button" class="nr-dd nr-font" data-dd="font" title="Font" aria-haspopup="listbox" aria-label="Font"><span class="nr-ddv">Default</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-dd nr-size" data-dd="size" title="Text size" aria-haspopup="listbox" aria-label="Text size"><span class="nr-ddv num">15</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-dd nr-colb" data-dd="color" title="Text colour" aria-haspopup="dialog" aria-label="Text colour"><span class="nr-cola" aria-hidden="true">A</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-dd nr-hlb" data-dd="hilite" title="Highlight colour" aria-haspopup="dialog" aria-label="Highlight colour"><span class="nr-hla" aria-hidden="true">ab</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-sym" title="Emoji and symbols (Greek, maths, alchemical)" aria-haspopup="dialog">☺ Ω</button>
+    <span class="nr-sep nr-pro"></span><button type="button" class="nr-dd nr-head nr-pro" data-dd="heads" title="Titles and headings: Title, Subtitle, Heading 1, 2, 3" aria-haspopup="menu" aria-label="Titles and headings" aria-pressed="false"><span class="nr-ddv">H</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-dd nr-alb nr-pro" data-dd="align" title="Align &amp; indent: nothing selected = the whole note, words selected = only those" aria-haspopup="menu" aria-label="Align and indent"><span class="nr-ali" aria-hidden="true">${ALIGN_IC.left}</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-ind nr-pro" data-a="indent-" title="Decrease indent: the line you are on, or the lines selected (Shift+Tab in a list)" aria-label="Decrease indent">${IND_IC["-"]}</button><button type="button" class="nr-ind nr-pro" data-a="indent+" title="Increase indent: the line you are on, or the lines selected (Tab in a list)" aria-label="Increase indent">${IND_IC["+"]}</button><button type="button" class="nr-dd nr-spb nr-pro" data-dd="spacing" title="Line &amp; paragraph spacing" aria-haspopup="menu" aria-label="Line and paragraph spacing"><span class="nr-ali" aria-hidden="true">${SPACE_IC}</span><span class="nr-car" aria-hidden="true">▾</span></button><button type="button" class="nr-clr nr-pro" data-a="clear" title="Clear formatting: nothing selected = the whole note, words selected = only those" aria-label="Clear formatting">${CLEAR_IC}</button>
     `;
   bar.addEventListener("mousedown", e => e.preventDefault()); // keep the selection in the note
   bar.addEventListener("click", e => {
     const b = e.target.closest("button"); if (!b) return;
     if (b.dataset.cmd) { api.focus(); document.execCommand(b.dataset.cmd); sync(); api.changed(); }
     else if (b.dataset.blk) { api.focus(); block(b.dataset.blk, api); sync(); api.changed(); }
+    else if (b.dataset.a === "indent+" || b.dataset.a === "indent-") { closeDD(); if (api.indentLine) { api.indentLine(b.dataset.a === "indent+" ? 1 : -1); sync(); } }
     else if (b.dataset.a === "clear") { closeDD(); if (api.clearFormat) { const all = api.clearFormat(); sync(); if (window.InquireNotes && InquireNotes.toast) InquireNotes.toast(all ? "Formatting cleared from the whole note." : "Formatting cleared from the selected words.", null, 2500); } }
     else if (b.dataset.dd) ddPanel(b, b.dataset.dd, api, sync);
     else if (b.classList.contains("nr-sym")) symbolPanel(b, api);
@@ -3671,7 +4121,8 @@ const HTAGS = HEADS.map(x => x[0].toUpperCase()).join(",");
 function headAt(el) { const h = el && el.closest(HTAGS); return h ? HEADS.find(x => x[0] === h.tagName.toLowerCase()) : null; }
 /* v0.5.6 (Devon): the Music chart left the menu (the Lead sheet does more); Music charts already in notes still open and play */
 const WIDGET_MENU = [["code", "&lt;/&gt;", "Code box", "Code to show and explain: highlight lines, before / after, present it, copy it as a picture"],
-  ["sheet", "𝄞", "Lead sheet", "Bars with chord symbols and melody"], ["graph", "∿", "Graph", "Click points on a grid and get their equations"], ["map", "⌖", "Map", "Search an address and keep it on a map"]];
+  ["sheet", "𝄞", "Lead sheet", "Bars with chord symbols and melody"], ["graph", "∿", "Graph", "Click points on a grid and get their equations"], ["map", "⌖", "Map", "Search an address and keep it on a map"],
+  ["sign", "✍", "Signature", "Sign the note: draw, type or use a photo of your signature; it locks with your name and the date"]];
 function ddPanel(btn, kind, api, sync) {
   const was = dd && dd.dataset.kind; closeDD(); if (was === kind) return;
   const cur = fmtAt(fmtEl(api));
@@ -4300,13 +4751,15 @@ function mount(el) {
   if (el._nw) return; el._nw = true;
   el.contentEditable = "false";
   if (el.dataset.w === "code") mountCode(el); else if (el.dataset.w === "music") mountMusic(el); else if (el.dataset.w === "video") mountVideo(el);
+  else if (el.dataset.w === "audio") mountAudio(el);
   else if (el.dataset.w === "graph" && window.NPGraph) { NPGraph.mount(el); delButton(el); }
   else if (el.dataset.w === "sheet" && window.NPSheet) NPSheet.mount(el);
   else if (el.dataset.w === "map" && window.NPMap) { NPMap.mount(el); delButton(el); }
+  else if (el.dataset.w === "sign" && window.NPSign) NPSign.mount(el);
 }
 function create(type, data) {
   const el = document.createElement("div"); el.className = "nw"; el.dataset.w = type;
-  el.dataset.src = JSON.stringify(type === "sheet" ? Object.assign({}, window.NPSheet ? NPSheet.DEF : {}, data || {}) : type === "graph" ? Object.assign({}, window.NPGraph ? NPGraph.DEF : {}, data || {}) : type === "video" ? Object.assign({ title: "" }, data || {}) : type === "map" ? Object.assign({}, window.NPMap ? NPMap.DEF : {}, data || {}) : type === "code" ? Object.assign({ lang: "python", title: "", src: "" }, data || {}) : { title: "", clef: "treble", time: "4/4", tempo: 90, seq: "" });
+  el.dataset.src = JSON.stringify(type === "sheet" ? Object.assign({}, window.NPSheet ? NPSheet.DEF : {}, data || {}) : type === "graph" ? Object.assign({}, window.NPGraph ? NPGraph.DEF : {}, data || {}) : type === "video" || type === "audio" || type === "sign" ? Object.assign({ title: "" }, data || {}) : type === "map" ? Object.assign({}, window.NPMap ? NPMap.DEF : {}, data || {}) : type === "code" ? Object.assign({ lang: "python", title: "", src: "" }, data || {}) : { title: "", clef: "treble", time: "4/4", tempo: 90, seq: "" });
   return el;
 }
 // plain-text version for search, previews and .md export
@@ -4317,10 +4770,12 @@ function text(el) {
   if (el.dataset.w === "map") return window.NPMap ? NPMap.text(d) : "";
   if (el.dataset.w === "sheet") return window.NPSheet ? NPSheet.text(el) : "";
   if (el.dataset.w === "video") { const l = videoLink(d); return "\n▶ " + (d.title || "Video") + (l ? " (" + l + ")" : "") + "\n"; }
+  if (el.dataset.w === "sign") return window.NPSign ? NPSign.text(d) : "";
+  if (el.dataset.w === "audio") return "\n🎙 " + (d.title || "Audio recording") + (d.dur ? " (" + clock(d.dur) + ")" : "") + "\n";
   if (el.dataset.w === "music") return "\n♪ " + (d.title ? d.title + ": " : "") + (d.seq || "(empty)") + (d.time ? " [" + d.time + ", " + (d.clef || "treble") + " clef]" : "") + "\n";
   return "";
 }
-window.InquireWidgets = { WIDGETS: WIDGET_MENU, codeKit: { parseLines, formatLines, lineGroups, lineDiff, diffRows }, toolbar, mount, create, text, colorKey, COLORS, parseSeq, chordNotes, videoFrom, videoPanel,
+window.InquireWidgets = { WIDGETS: WIDGET_MENU, codeKit: { parseLines, formatLines, lineGroups, lineDiff, diffRows }, toolbar, mount, create, text, colorKey, COLORS, parseSeq, chordNotes, videoFrom, videoPanel, MIC_IC, clock,
   kit: { splinePath, G_CLEF, F_CLEF, delButton, len, UNITS } }; // shared with notes-sheet.js
 })();
 
@@ -4830,6 +5285,167 @@ function mount(el) {
   draw();
 }
 window.NPMap = { mount, text, DEF, recent };
+})();
+
+</script>
+<script type="text/plain" data-np-lazy="sign" data-np-global="NPSign">/* web/src/notes-sign.js */
+/* Signature widget (NotePath v0.5.8, Devon; Professional only: it is added from the Tool bar's Widgets):
+   <div class="nw" data-w="sign" data-src='{"name","at","img","how","hash"}'>.
+   Before signing: Draw (mouse, trackpad or pen), Type (your name in a handwriting font) or Photo (a picture of your
+   signature: the paper is made see-through), the signer's name, "Remember my signature on this computer", Sign.
+   Signing makes a PNG (navy ink, see-through, trimmed) kept in the notes' photo store (putImage; "img" in data-src, so it is
+   deleted, undone and backed up with the note), the name, the date and time, and a fingerprint (SHA-256) of the note's
+   words at that moment. Signed, it is locked: the picture, "Signed by … · date", and a seal that says whether the note's
+   words are still the ones that were signed. Only ✕ (twice) takes it away. The remembered signature is a small data URL in
+   notepath.signature (never in the notes' store, so tidying photos can't remove it). Exports show the picture and the line
+   (io.js). This is a signature drawn in NotePath on this computer: no identity check or certificate. */
+(function () {
+"use strict";
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const INK = "#1B2A57", SAVED = "notepath.signature";
+const FONTS = [["flow", "Flowing", '"Snell Roundhand", "Segoe Script", "Brush Script MT", "Apple Chancery", cursive'],
+  ["classic", "Classic", '"Lucida Handwriting", "Apple Chancery", "Segoe Print", "Bradley Hand", cursive'],
+  ["bold", "Bold", '"Brush Script MT", "Bradley Hand", "Segoe Script", "Marker Felt", cursive']];
+const DEF = { name: "", at: 0, img: "", how: "", hash: "" };
+const saved = () => { try { const o = JSON.parse(localStorage.getItem(SAVED) || "null"); return o && /^data:image\/png;base64,/.test(o.png || "") ? o : null; } catch (e) { return null; } };
+const stamp = t => { const d = new Date(t), p = n => String(n).padStart(2, "0"), h = d.getHours() % 12 || 12;
+  return `${p(d.getMonth() + 1)}/${p(d.getDate())}/${String(d.getFullYear()).slice(2)} ${p(h)}:${p(d.getMinutes())} ${d.getHours() < 12 ? "AM" : "PM"}`; };
+const line = d => `Signed by ${d.name || "(no name)"} · ${stamp(d.at)}`;
+function text(d) { d = Object.assign({}, DEF, d || {}); return d.at ? "\n✍ " + line(d) + "\n" : "\n✍ Signature (not signed yet)\n"; }
+
+// the note's words, without widgets (so the signature itself and other boxes don't change the fingerprint)
+function noteWords(ed) {
+  let t = ""; const tw = document.createTreeWalker(ed, NodeFilter.SHOW_TEXT, { acceptNode: x => x.parentElement && x.parentElement.closest(".nw, .nann-layer, .np-ck") ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
+  let x; while ((x = tw.nextNode())) t += x.data + " ";
+  return t.replace(/​/g, "").replace(/\s+/g, " ").trim();
+}
+async function fingerprint(s) {
+  try { if (!crypto.subtle) return ""; const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join(""); } catch (e) { return ""; }
+}
+// trim a canvas to its ink, with a little room
+function trimmed(cv) {
+  const g = cv.getContext("2d"), { width: W, height: H } = cv, px = g.getImageData(0, 0, W, H).data;
+  let x0 = W, y0 = H, x1 = -1, y1 = -1;
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (px[(y * W + x) * 4 + 3] > 16) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  if (x1 < 0) return null;
+  const pad = Math.round(Math.max(W, H) * 0.02) + 4; x0 = Math.max(0, x0 - pad); y0 = Math.max(0, y0 - pad); x1 = Math.min(W - 1, x1 + pad); y1 = Math.min(H - 1, y1 + pad);
+  const out = document.createElement("canvas"); out.width = x1 - x0 + 1; out.height = y1 - y0 + 1; out.getContext("2d").drawImage(cv, x0, y0, out.width, out.height, 0, 0, out.width, out.height);
+  return out;
+}
+const hostOf = el => el.closest(".nb-rich") || (el.parentElement && el.parentElement.closest('[contenteditable="true"]'));
+const toBlob = cv => new Promise(res => cv.toBlob(res, "image/png"));
+const dataURL = blob => new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(blob); });
+
+function mount(el) {
+  const read = () => { try { return Object.assign({}, DEF, JSON.parse(el.dataset.src || "{}")); } catch (e) { return Object.assign({}, DEF); } };
+  const write = o => { el.dataset.src = JSON.stringify(o); el.dispatchEvent(new Event("input", { bubbles: true })); };
+  const d = read();
+  if (d.at && d.img) return signedView(el, d);
+  padView(el, read, write);
+}
+
+function signedView(el, d) {
+  el.classList.add("ns-done");
+  el.innerHTML = `<div class="nw-h"><span class="nw-tag ns-tag" aria-hidden="true">✍</span><span class="ns-ht">Signature</span><span class="ns-lock" title="Signed signatures are locked">🔒 Locked</span><button type="button" class="nw-b nw-del" data-a="del" title="Remove this signature" aria-label="Remove signature">✕</button></div>
+    <div class="ns-card"><img class="ns-img" alt="Signature of ${esc(d.name)}"><div class="ns-rule"></div><p class="ns-by">${esc(line(d))}</p>
+      <p class="ns-seal" role="status"><span class="ns-sealic" aria-hidden="true">✓</span> <span class="ns-sealt">Signed</span></p></div>`;
+  const img = el.querySelector(".ns-img");
+  if (window.InquireNotes) InquireNotes.imageURL(d.img).then(u => { if (u) img.src = u; else img.replaceWith(Object.assign(document.createElement("p"), { className: "nw-vmiss", textContent: "This signature's picture is missing." })); });
+  if (window.InquireWidgets && InquireWidgets.kit && InquireWidgets.kit.delButton) InquireWidgets.kit.delButton(el);
+  // is the note still what was signed?
+  const seal = el.querySelector(".ns-seal"), check = async () => {
+    const ed = hostOf(el); if (!ed || !d.hash) { seal.querySelector(".ns-sealt").textContent = "Signed"; return; }
+    const same = (await fingerprint(noteWords(ed))) === d.hash;
+    seal.classList.toggle("bad", !same); seal.querySelector(".ns-sealic").textContent = same ? "✓" : "⚠";
+    seal.querySelector(".ns-sealt").textContent = same ? "Signed · the note's words are as they were when signed" : "The note's words have changed since it was signed";
+  };
+  setTimeout(check, 0);
+  setTimeout(() => { const e = hostOf(el); if (e && !e._nsWatch) { e._nsWatch = true; e.addEventListener("input", () => { clearTimeout(e._nsT); e._nsT = setTimeout(() => e.querySelectorAll(".nw[data-w=sign].ns-done").forEach(w => w._nsCheck && w._nsCheck()), 500); }); } }, 0);
+  el._nsCheck = check;
+}
+
+function padView(el, read, write) {
+  const sv = saved(); let how = sv ? "saved" : "draw", font = FONTS[0][0], photo = null, inked = false;
+  el.classList.remove("ns-done");
+  el.innerHTML = `<div class="nw-h"><span class="nw-tag ns-tag" aria-hidden="true">✍</span><span class="ns-ht">Signature</span><span class="ns-hint">Not signed yet</span><button type="button" class="nw-b nw-del" data-a="del" title="Remove this signature box" aria-label="Remove signature box">✕</button></div>
+    <div class="ns-pad">
+      <div class="ns-tabs" role="tablist" aria-label="How to sign">${sv ? `<button type="button" role="tab" data-how="saved">My saved signature</button>` : ""}<button type="button" role="tab" data-how="draw">Draw</button><button type="button" role="tab" data-how="type">Type</button><button type="button" role="tab" data-how="photo">Photo</button></div>
+      <div class="ns-stage"><canvas class="ns-cv" aria-label="Signature area: draw your signature here" role="img"></canvas><span class="ns-x" aria-hidden="true">✕</span><span class="ns-ph"></span></div>
+      <div class="ns-row ns-typ" hidden><input class="ns-in ns-tname" maxlength="60" placeholder="Type your name" aria-label="Name to write as your signature"><span class="ns-fonts" role="radiogroup" aria-label="Handwriting">${FONTS.map(([k, n, f]) => `<button type="button" role="radio" data-font="${k}" style="font-family:${esc(f)}">${n}</button>`).join("")}</span></div>
+      <div class="ns-row ns-pho" hidden><button type="button" class="btn-s" data-a="pick">Choose a photo of your signature…</button><small>Sign on white paper, take a photo, and the paper is taken out.</small><input type="file" accept="image/*" hidden></div>
+      <div class="ns-row"><label class="ns-lab">Signed by <input class="ns-in ns-name" maxlength="80" placeholder="Your full name" aria-label="Signed by" value="${esc((sv && sv.name) || "")}"></label>
+        <button type="button" class="btn-s" data-a="clear">Clear</button></div>
+      <div class="ns-row ns-go"><label class="ns-rem"><input type="checkbox" class="ns-keep"${sv ? " checked" : ""}> Remember my signature on this computer</label><button type="button" class="btn good ns-sign" data-a="sign" disabled>Sign</button></div>
+      <p class="ns-note">Signing locks it with your name, the date and time. NotePath also notes whether the note's words change afterwards. It is not a certified e-signature (there is no identity check).</p>
+    </div>`;
+  const $ = s => el.querySelector(s), cv = $(".ns-cv"), stage = $(".ns-stage"), nameIn = $(".ns-name"), tname = $(".ns-tname"), signB = $(".ns-sign"), ph = $(".ns-ph");
+  if (window.InquireWidgets && InquireWidgets.kit && InquireWidgets.kit.delButton) InquireWidgets.kit.delButton(el);
+  // keep typing in the fields to the fields (the note's editor must not take the keys)
+  el.querySelectorAll("input").forEach(i => { i.addEventListener("keydown", e => e.stopPropagation()); i.addEventListener("input", e => { e.stopPropagation(); ready(); }); });
+  const g = cv.getContext("2d");
+  const size = () => { const r = stage.getBoundingClientRect(), dpr = Math.min(3, window.devicePixelRatio || 1), w = Math.max(240, Math.round(r.width)), h = 170;
+    if (cv.width !== Math.round(w * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); cv.style.width = w + "px"; cv.style.height = h + "px"; redraw(); } };
+  const clear = () => { g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, cv.width, cv.height); };
+  let strokes = [];
+  function redraw() {
+    clear(); const dpr = cv.width / (parseFloat(cv.style.width) || cv.width); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const W = cv.width / dpr, H = cv.height / dpr;
+    if (how === "draw") { g.strokeStyle = INK; g.fillStyle = INK; g.lineCap = "round"; g.lineJoin = "round";
+      strokes.forEach(s => { if (s.length === 1) { g.beginPath(); g.arc(s[0].x, s[0].y, 1.6, 0, Math.PI * 2); g.fill(); return; }
+        for (let i = 1; i < s.length; i++) { const a = s[i - 1], b = s[i], mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2; g.lineWidth = b.w; g.beginPath(); g.moveTo(i > 1 ? (s[i - 2].x + a.x) / 2 : a.x, i > 1 ? (s[i - 2].y + a.y) / 2 : a.y); g.quadraticCurveTo(a.x, a.y, mx, my); g.stroke(); } }); }
+    else if (how === "type") { const t = tname.value.trim(); if (t) { const f = FONTS.find(x => x[0] === font)[2]; let fs = 64; g.font = `${fs}px ${f}`; while (fs > 18 && g.measureText(t).width > W - 40) { fs -= 4; g.font = `${fs}px ${f}`; } g.fillStyle = INK; g.textBaseline = "middle"; g.textAlign = "center"; g.fillText(t, W / 2, H / 2 + 4); } }
+    else if (how === "photo" && photo) { const s = Math.min((W - 20) / photo.width, (H - 20) / photo.height, 1); g.drawImage(photo, (W - photo.width * s) / 2, (H - photo.height * s) / 2, photo.width * s, photo.height * s); }
+    else if (how === "saved" && sv && sv._img) { const im = sv._img, s = Math.min((W - 20) / im.width, (H - 20) / im.height, 1); g.drawImage(im, (W - im.width * s) / 2, (H - im.height * s) / 2, im.width * s, im.height * s); }
+    inked = how === "draw" ? strokes.length > 0 : how === "type" ? !!tname.value.trim() : how === "photo" ? !!photo : how === "saved" ? !!(sv && sv._img) : false;
+    ph.textContent = inked ? "" : how === "draw" ? "Sign here with your mouse, trackpad or pen" : how === "type" ? "Type your name below" : how === "photo" ? "Choose a photo below" : "";
+    ready();
+  }
+  function ready() { signB.disabled = !(inked && nameIn.value.trim()); signB.title = !inked ? "Make your signature first" : !nameIn.value.trim() ? "Write the signer's name" : "Sign and lock it"; }
+  const tab = k => { how = k; el.querySelectorAll("[data-how]").forEach(b => { b.setAttribute("aria-selected", String(b.dataset.how === k)); b.tabIndex = b.dataset.how === k ? 0 : -1; });
+    $(".ns-typ").hidden = k !== "type"; $(".ns-pho").hidden = k !== "photo"; stage.classList.toggle("draw", k === "draw"); $('[data-a="clear"]').hidden = k === "saved"; redraw(); if (k === "type") tname.focus({ preventScroll: true }); };
+  el.querySelector(".ns-tabs").addEventListener("click", e => { const b = e.target.closest("[data-how]"); if (b) tab(b.dataset.how); });
+  el.querySelectorAll("[data-font]").forEach(b => b.onclick = () => { font = b.dataset.font; el.querySelectorAll("[data-font]").forEach(x => x.setAttribute("aria-checked", String(x === b))); redraw(); });
+  el.querySelector('[data-font="flow"]').setAttribute("aria-checked", "true");
+  tname.addEventListener("input", () => { redraw(); if (!nameIn.value.trim() || nameIn._auto) { nameIn.value = tname.value; nameIn._auto = true; ready(); } });
+  nameIn.addEventListener("input", () => { nameIn._auto = false; });
+  $('[data-a="clear"]').onclick = () => { if (how === "draw") strokes = []; else if (how === "type") tname.value = ""; else if (how === "photo") photo = null; redraw(); };
+  // drawing: pointer events; faster strokes are a little thinner, like ink
+  let cur = null;
+  cv.addEventListener("pointerdown", e => { if (how !== "draw" || e.button > 0) return; e.preventDefault(); cv.setPointerCapture(e.pointerId); const r = cv.getBoundingClientRect(); cur = [{ x: e.clientX - r.left, y: e.clientY - r.top, t: e.timeStamp, w: 2.6 }]; strokes.push(cur); redraw(); });
+  cv.addEventListener("pointermove", e => { if (!cur) return; const r = cv.getBoundingClientRect(), p = { x: e.clientX - r.left, y: e.clientY - r.top, t: e.timeStamp }, l = cur[cur.length - 1];
+    const dist = Math.hypot(p.x - l.x, p.y - l.y); if (dist < 1.2) return; const v = dist / Math.max(1, p.t - l.t);
+    p.w = Math.max(1.4, Math.min(3.6, (e.pressure && e.pointerType === "pen" ? 1.4 + e.pressure * 2.6 : 3.4 - v * 1.1))) * 0.6 + l.w * 0.4; cur.push(p); redraw(); });
+  const up = () => { cur = null; }; cv.addEventListener("pointerup", up); cv.addEventListener("pointercancel", up);
+  // a photo of a signature: the light paper becomes see-through, the ink becomes navy
+  const fin = $('input[type="file"]');
+  $('[data-a="pick"]').onclick = () => fin.click();
+  fin.onchange = () => { const f = fin.files[0]; fin.value = ""; if (!f || !/^image\//.test(f.type)) return;
+    const im = new Image(); im.onload = () => { const s = Math.min(1, 900 / im.width, 400 / im.height), c = document.createElement("canvas"); c.width = Math.max(1, Math.round(im.width * s)); c.height = Math.max(1, Math.round(im.height * s));
+      const x = c.getContext("2d"); x.drawImage(im, 0, 0, c.width, c.height); const id = x.getImageData(0, 0, c.width, c.height), p = id.data;
+      for (let i = 0; i < p.length; i += 4) { const lum = 0.299 * p[i] + 0.587 * p[i + 1] + 0.114 * p[i + 2], a = Math.max(0, Math.min(255, (200 - lum) * 2.2)); p[i] = 0x1B; p[i + 1] = 0x2A; p[i + 2] = 0x57; p[i + 3] = Math.round(a * p[i + 3] / 255); }
+      x.putImageData(id, 0, 0); photo = trimmed(c) || c; URL.revokeObjectURL(im.src); redraw(); };
+    im.src = URL.createObjectURL(f); };
+  if (sv) { const im = new Image(); im.onload = () => { sv._img = im; if (how === "saved") redraw(); }; im.src = sv.png; }
+  // sign: trim, keep the picture in the notes' store, fingerprint the words, lock
+  signB.onclick = async () => {
+    if (signB.disabled) return; signB.disabled = true; signB.textContent = "Signing…";
+    try {
+      const out = trimmed(cv); if (!out) throw new Error("empty");
+      const blob = await toBlob(out), N = window.InquireNotes; if (!N || !blob) throw new Error("no store");
+      const img = await N.putImage(blob), ed = hostOf(el), hash = ed ? await fingerprint(noteWords(ed)) : "";
+      const name = nameIn.value.trim();
+      if ($(".ns-keep").checked) { try { localStorage.setItem(SAVED, JSON.stringify({ png: await dataURL(blob), name })); } catch (e) {} }
+      else if (how === "saved") { try { localStorage.removeItem(SAVED); } catch (e) {} }
+      const d = Object.assign(read(), { name, at: Date.now(), img, how, hash });
+      write(d); signedView(el, d);
+      if (N.toast) N.toast("Signed and locked.", null, 2500);
+    } catch (e) { signB.textContent = "Sign"; ready(); if (window.InquireNotes && InquireNotes.toast) InquireNotes.toast("The signature could not be made. Draw or type it again.", null, 3500); }
+  };
+  if (window.ResizeObserver) { const ro = new ResizeObserver(() => { if (!el.isConnected) { ro.disconnect(); return; } size(); }); ro.observe(stage); }
+  tab(how); size();
+}
+
+window.NPSign = { mount, text, line, fingerprint, noteWords, FONTS, DEF };
 })();
 
 </script>
@@ -5581,6 +6197,52 @@ const $ = (s, r) => r.querySelector(s);
 const NS = () => window.InquireNotes;
 const enc = new TextEncoder(), dec = new TextDecoder();
 
+/* ---------- progress (v0.5.8, Devon): how big, how fast, how long, how far ----------
+   track(onProgress, size, plan): plan = [[phase, weight], …] (weights add up to 1); begin(phase, total bytes), tick(phase,
+   bytes, what), done(extra). Sends { f, pct, bytes (of size done), size, speed (bytes/s), eta (s, or null while it can't
+   tell yet), what, phase, finished } about 12 times a second, and lets the page paint now and then (yield) so the bar
+   moves while the notes are worked through. No onProgress = no reports and no pauses. */
+function track(on, size, plan) {
+  const t0 = performance.now(), ph = {}; let last = 0, lastYield = t0, what = "", cur = plan[0] && plan[0][0], fin = false;
+  plan.forEach(([k, w]) => ph[k] = { w, total: 0, done: 0 });
+  const frac = () => Math.min(1, plan.reduce((a, [k]) => a + (ph[k].total ? ph[k].w * Math.min(1, ph[k].done / ph[k].total) : 0), 0));
+  const emit = force => {
+    if (!on) return; const now = performance.now(); if (!force && now - last < 80) return; last = now;
+    const f = fin ? 1 : frac(), el = (now - t0) / 1000, bytes = Math.round(f * size), speed = el > 0.05 ? bytes / el : 0;
+    const eta = fin ? 0 : f >= 0.02 && el >= 0.3 ? Math.max(0, el * (1 - f) / f) : null;
+    try { on({ f, pct: Math.floor(f * 100), bytes, size, elapsed: el, speed, eta, what, phase: cur, finished: fin }); } catch (e) {}
+  };
+  return {
+    begin(k, total, w) { cur = k; if (ph[k]) ph[k].total = Math.max(1, total); if (w) what = w; emit(true); },
+    tick(k, bytes, w) { cur = k; if (ph[k]) ph[k].done += bytes || 0; if (w) what = w; emit(); },
+    done(w) { fin = true; if (w) what = w; emit(true); },
+    async yield() { if (!on) return; const now = performance.now(); if (now - lastYield < 40) return; lastYield = now; await new Promise(r => setTimeout(r, 0)); }
+  };
+}
+const fmtBytes = n => { n = +n || 0; if (n < 1024) return n + " B"; const u = ["KB", "MB", "GB"]; let i = -1; do { n /= 1024; i++; } while (n >= 1024 && i < 2); return (n >= 100 ? n.toFixed(0) : n.toFixed(1)) + " " + u[i]; };
+const fmtTime = s => s == null ? "" : s < 1 ? "less than a second" : s < 60 ? Math.round(s) + " s" : s < 3600 ? Math.floor(s / 60) + " min " + String(Math.round(s % 60)).padStart(2, "0") + " s" : Math.floor(s / 3600) + " h " + Math.round((s % 3600) / 60) + " min";
+// the bar in the window: size, speed, time left and a % meter (role=progressbar)
+function progUI(host, label) {
+  const el = document.createElement("div"); el.className = "io-prog"; el.hidden = true;
+  el.innerHTML = `<div class="io-prog-top"><span class="io-prog-t"></span><span class="io-prog-size num"></span></div>
+    <div class="io-prog-bar" role="progressbar" aria-label="${esc(label)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i class="io-prog-fill"></i><span class="io-prog-pct num">0%</span></div>
+    <div class="io-prog-stats num"><span class="io-prog-speed"></span><span class="io-prog-eta"></span></div><div class="io-prog-what"></div>`;
+  host.appendChild(el);
+  const q = c => el.querySelector(c), bar = q(".io-prog-bar");
+  return {
+    el,
+    start(title) { el.hidden = false; el.className = "io-prog run"; q(".io-prog-t").textContent = title; this.paint({ f: 0, pct: 0, bytes: 0, size: 0, speed: 0, eta: null, what: "" }); },
+    paint(p) {
+      q(".io-prog-fill").style.width = (p.f * 100).toFixed(1) + "%"; q(".io-prog-pct").textContent = p.pct + "%"; bar.setAttribute("aria-valuenow", String(p.pct));
+      q(".io-prog-size").textContent = p.size ? `${fmtBytes(p.bytes)} of ${fmtBytes(p.size)}` : "";
+      q(".io-prog-speed").textContent = p.finished ? (p.elapsed != null ? `Took ${fmtTime(p.elapsed)}` : "") + (p.speed ? ` · ${fmtBytes(p.speed)}/s on average` : "") : p.speed ? `${fmtBytes(p.speed)}/s` : "Starting…";
+      q(".io-prog-eta").textContent = p.finished ? "" : p.eta == null ? "Working out the time left…" : p.eta < 1 ? "Less than a second left" : `About ${fmtTime(p.eta)} left`;
+      q(".io-prog-what").textContent = p.what || "";
+    },
+    end(ok, title) { el.className = "io-prog " + (ok ? "ok" : "bad"); q(".io-prog-t").textContent = title; if (!ok) q(".io-prog-eta").textContent = ""; }
+  };
+}
+
 /* ---------- zip (store + deflate via CompressionStream; read via DecompressionStream) ---------- */
 const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
 const crc32 = b => { let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = CRC[(c ^ b[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
@@ -5588,7 +6250,7 @@ async function pipe(bytes, stream) { const r = new Response(new Blob([bytes]).st
 const deflate = b => pipe(b, new CompressionStream("deflate-raw")), inflate = b => pipe(b, new DecompressionStream("deflate-raw"));
 const toBytes = d => typeof d === "string" ? enc.encode(d) : d instanceof Uint8Array ? d : new Uint8Array(d);
 // entries: [{ name, data: string | Uint8Array }] → Blob (application/zip)
-async function zip(entries) {
+async function zip(entries, onEntry) {
   const parts = [], central = []; let off = 0;
   const now = new Date(), dtime = (now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1), ddate = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
   for (const e of entries) {
@@ -5604,6 +6266,7 @@ async function zip(entries) {
     c.setUint32(16, crc, true); c.setUint32(20, body.length, true); c.setUint32(24, raw.length, true); c.setUint16(28, name.length, true); c.setUint32(42, off, true);
     central.push(new Uint8Array(c.buffer), name);
     off += 30 + name.length + body.length;
+    if (onEntry) await onEntry(raw.length, e.name);
   }
   const csize = central.reduce((a, b) => a + b.length, 0), end = new DataView(new ArrayBuffer(22));
   end.setUint32(0, 0x06054b50, true); end.setUint16(8, entries.length, true); end.setUint16(10, entries.length, true); end.setUint32(12, csize, true); end.setUint32(16, off, true);
@@ -5682,6 +6345,8 @@ function ir(html) {
   const widget = el => { let d = {}; try { d = JSON.parse(el.getAttribute("data-src") || "{}"); } catch (e) {}
     if (el.getAttribute("data-w") === "code") return { t: "code", lang: d.lang || "", title: d.title || "", src: String(d.src || "") };
     let tx = ""; try { tx = window.InquireWidgets ? InquireWidgets.text(el).trim() : ""; } catch (e) {}
+    if (el.getAttribute("data-w") === "sign" && d.img && d.at && window.NPSign) return { t: "p", runs: [{ img: d.img, alt: "Signature of " + (d.name || "") }, { br: true }, { text: NPSign.line(d) }] }; // (v0.5.8) a signature: its picture and line
+    if (el.getAttribute("data-w") === "audio" && d.vid) return { t: "text", text: tx, aud: d.vid, title: d.title || "Audio recording" }; // (v0.5.8) a recording
     return { t: "text", text: tx }; };
   const list = (el, depth) => { const kind = el.tagName === "OL" ? "ol" : el.getAttribute("data-ck") === "1" ? "ck" : "ul";
     [...el.children].forEach(li => { if (li.tagName !== "LI") return; out.push({ t: "li", list: kind, done: li.getAttribute("data-done") === "1", depth, runs: runs(li, {}, true), lay: lay(li) });
@@ -5705,7 +6370,7 @@ function ir(html) {
 }
 const imgIdsOf = blocks => [...new Set(blocks.flatMap(b => (b.runs || []).filter(r => r.img).map(r => r.img)))];
 async function mediaBlob(id) { try { return NS() ? await NS().mediaBlob(id) : null; } catch (e) { return null; } }
-const extOf = type => ({ "image/png": "png", "image/jpeg": "jpg", "image/gif": "gif", "image/webp": "webp", "image/svg+xml": "svg" })[type] || "bin";
+const extOf = type => ({ "image/png": "png", "image/jpeg": "jpg", "image/gif": "gif", "image/webp": "webp", "image/svg+xml": "svg", "audio/webm": "webm", "audio/mp4": "m4a", "audio/ogg": "ogg", "audio/mpeg": "mp3", "audio/wav": "wav" })[String(type || "").split(";")[0]] || "bin";
 
 /* ---------- exporters ---------- */
 const safeName = s => (String(s || "").replace(/[\\/:*?"<>|#^\[\]\u0000-\u001F]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 100)) || "Untitled";
@@ -5727,7 +6392,7 @@ function toMD(n, ctx) {
     else if (b.t === "li") { if (prev !== "li" || (b.depth === 0 && prevList && prevList !== b.list)) gap(); prevList = b.depth === 0 ? b.list : prevList; lines.push("    ".repeat(b.depth) + (b.list === "ol" ? "1. " : b.list === "ck" ? (b.done ? "- [x] " : "- [ ] ") : "- ") + inl(b.runs)); }
     else if (b.t === "quote") { gap(); inl(b.runs).split("\n").forEach(l => lines.push("> " + l.replace(/ {2}$/, ""))); lines.push(""); }
     else if (b.t === "code") { gap(); lines.push("```" + (b.lang === "text" ? "" : b.lang || "") + (b.title ? " title=\"" + b.title + "\"" : ""), ...b.src.replace(/\n$/, "").split("\n"), "```"); lines.push(""); }
-    else if (b.t === "text") { gap(); lines.push(b.text); lines.push(""); }
+    else if (b.t === "text") { gap(); const ap = b.aud && ctx.img ? ctx.img(b.aud) : ""; lines.push(ap ? `🎙 [${mdEsc(b.title || "Audio recording")}](${encodeURI(ap)})` + (b.text.match(/\(([\d:]+)\)\s*$/) ? " (" + b.text.match(/\(([\d:]+)\)\s*$/)[1] + ")" : "") : b.text); lines.push(""); }
     prev = b.t;
   });
   const fm = ["---", "created: " + new Date(n.created).toISOString(), "updated: " + new Date(n.updated).toISOString()].concat(n.fav ? ["favourite: true"] : [], ["---", ""]);
@@ -5887,45 +6552,58 @@ async function exportNotes(scope, fmt, o = {}) {
   const rel = n => folderPath(n.folder, fs).slice(base.length);
   const used = new Set(), fileOf = {}, uniq = (dir, nm, ext) => { let f = (dir.length ? dir.join("/") + "/" : "") + nm + "." + ext, i = 2; while (used.has(f.toLowerCase())) f = (dir.length ? dir.join("/") + "/" : "") + nm + " " + i++ + "." + ext; used.add(f.toLowerCase()); return f; };
   notes.forEach(n => { fileOf[n.id] = uniq(rel(n), safeName(n.title), fmt === "pdf" ? "md" : FORMATS.find(f => f.k === fmt).ext); });
+  // (v0.5.8) progress: the size is the notes' text plus their photos; a .zip is packed in a second phase
+  const on = o.onProgress, many = fmt === "pdf" ? false : fmt === "enex" ? new Set(notes.map(n => rel(n).join(" - "))).size > 1 : !one || (fmt === "md" && notes.some(n => /data-img=|data-w="audio"/.test(n.html || "")));
+  const textOf = n => (n.html || n.body || "").length + (n.title || "").length, mediaSize = {};
+  if (on) for (const n of notes) for (const id of imgIdsOf(ir(n.html))) if (!(id in mediaSize)) { const b = await mediaBlob(id); mediaSize[id] = b ? b.size : 0; }
+  const seen = new Set(), noteBytes = n => textOf(n) + (on ? imgIdsOf(ir(n.html)).reduce((a, id) => { if (seen.has(id)) return a; seen.add(id); return a + (mediaSize[id] || 0); }, 0) : 0);
+  const size = notes.reduce((a, n) => a + textOf(n), 0) + Object.values(mediaSize).reduce((a, b) => a + b, 0);
+  const T = track(on, size, many ? [["notes", .6], ["zip", .4]] : fmt === "pdf" ? [["notes", .5], ["pdf", .5]] : [["notes", 1]]);
+  T.begin("notes", size, notes.length === 1 ? "Preparing " + notes[0].title : `Preparing ${notes.length} notes`);
+  let ni = 0; const step = async n => { ni++; T.tick("notes", noteBytes(n), `Note ${ni} of ${notes.length}: ${n.title || "Untitled"}`); await T.yield(); };
+  const packZip = async es => { T.begin("zip", es.reduce((a, e) => a + toBytes(e.data).length, 0) || 1, "Packing the .zip"); return zip(es, async (b, nm) => { T.tick("zip", b, "Packing " + nm.split("/").pop()); await T.yield(); }); };
   const titleOf = id => { const n = N.get(id); return n ? (fileOf[id] ? fileOf[id].replace(/^.*\//, "").replace(/\.[a-z]+$/, "") : safeName(n.title)) : null; };
   let blob, file;
   if (fmt === "md") {
     const atts = {}, entries = [];
     for (const n of notes) {
-      const imgs = imgIdsOf(ir(n.html));
+      const imgs = imgIdsOf(ir(n.html)).concat(ir(n.html).filter(b => b.aud).map(b => b.aud)); // photos and (v0.5.8) recordings
       for (const id of imgs) if (!atts[id]) { const b = await mediaBlob(id); if (b) atts[id] = { path: "attachments/" + id + "." + extOf(b.type), bytes: new Uint8Array(await b.arrayBuffer()) }; }
       const depth = fileOf[n.id].split("/").length - 1;
       entries.push({ name: fileOf[n.id], data: toMD(n, { img: id => atts[id] ? "../".repeat(depth) + atts[id].path : "", title: titleOf }) });
+      await step(n);
     }
     Object.values(atts).forEach(a => entries.push({ name: a.path, data: a.bytes }));
     if (one && !Object.keys(atts).length) { blob = new Blob([entries[0].data], { type: "text/markdown" }); file = stem + ".md"; }
-    else { blob = await zip(entries.map(e => one ? e : Object.assign({}, e, { name: stem + "/" + e.name }))); file = stem + ".zip"; }
+    else { blob = await packZip(entries.map(e => one ? e : Object.assign({}, e, { name: stem + "/" + e.name }))); file = stem + ".zip"; }
   } else if (fmt === "txt") {
-    const entries = notes.map(n => ({ name: fileOf[n.id], data: n.title + "\n\n" + N.toText(n.html) + "\n" }));
-    if (one) { blob = new Blob([entries[0].data], { type: "text/plain" }); file = stem + ".txt"; } else { blob = await zip(entries.map(e => Object.assign({}, e, { name: stem + "/" + e.name }))); file = stem + ".zip"; }
+    const entries = []; for (const n of notes) { entries.push({ name: fileOf[n.id], data: n.title + "\n\n" + N.toText(n.html) + "\n" }); await step(n); }
+    if (one) { blob = new Blob([entries[0].data], { type: "text/plain" }); file = stem + ".txt"; } else { blob = await packZip(entries.map(e => Object.assign({}, e, { name: stem + "/" + e.name }))); file = stem + ".zip"; }
   } else if (fmt === "docx") {
-    if (one) { blob = await toDOCX(notes[0]); file = stem + ".docx"; }
-    else { const entries = []; for (const n of notes) entries.push({ name: stem + "/" + fileOf[n.id], data: new Uint8Array(await (await toDOCX(n)).arrayBuffer()) }); blob = await zip(entries); file = stem + ".zip"; }
+    if (one) { blob = await toDOCX(notes[0]); file = stem + ".docx"; await step(notes[0]); }
+    else { const entries = []; for (const n of notes) { entries.push({ name: stem + "/" + fileOf[n.id], data: new Uint8Array(await (await toDOCX(n)).arrayBuffer()) }); await step(n); } blob = await packZip(entries); file = stem + ".zip"; }
   } else if (fmt === "html" || fmt === "pdf") {
-    const urls = {}; for (const n of notes) for (const id of imgIdsOf(ir(n.html))) if (!(id in urls)) urls[id] = await dataURL(id);
+    const urls = {}; for (const n of notes) { for (const id of imgIdsOf(ir(n.html))) if (!(id in urls)) urls[id] = await dataURL(id); await step(n); }
     const ctx = { src: id => urls[id] || "", href: id => fileOf[id] ? "#n-" + id : "", path: one ? null : n => rel(n).join(" › ") };
     if (fmt === "pdf" || one) {
       const page = htmlDoc(one ? notes[0].title : name || "NotePath notes", notes.map(n => article(n, ctx)).join("\n"));
-      if (fmt === "pdf") { blob = await pdf(page); file = stem + ".pdf"; if (!blob) return { printed: true, count: notes.length }; }
+      if (fmt === "pdf") { T.begin("pdf", 1, "Making the PDF"); blob = await pdf(page); T.tick("pdf", 1); file = stem + ".pdf"; if (!blob) { T.done("Sent to the print window"); return { printed: true, count: notes.length }; } }
       else { blob = new Blob([page], { type: "text/html" }); file = stem + ".html"; }
     } else {
       const entries = notes.map(n => { const depth = fileOf[n.id].split("/").length - 1;
         return { name: stem + "/" + fileOf[n.id], data: htmlDoc(n.title, article(n, Object.assign({}, ctx, { path: null, href: id => fileOf[id] ? "../".repeat(depth) + encodeURI(fileOf[id]) : "" }))) }; });
-      blob = await zip(entries); file = stem + ".zip";
+      blob = await packZip(entries); file = stem + ".zip";
     }
   } else if (fmt === "enex") {
     // one notebook per folder (Evernote) / one import per file (Apple Notes): the folder path is the file name, and a tag
     const groups = {}; notes.forEach(n => { const k = rel(n).join(" - ") || (one ? "" : name ? safeName(name) : "Notes"); (groups[k] = groups[k] || []).push(n); });
     const keys = Object.keys(groups);
-    if (keys.length === 1) { blob = new Blob([await toENEX(groups[keys[0]], n => rel(n).join("/"))], { type: "application/enex+xml" }); file = (one ? stem : safeName(keys[0] || stem)) + ".enex"; }
-    else { const entries = []; for (const k of keys) entries.push({ name: stem + "/" + safeName(k) + ".enex", data: await toENEX(groups[k], n => rel(n).join("/")) }); blob = await zip(entries); file = stem + ".zip"; }
+    const grp = async k => { const x = await toENEX(groups[k], n => rel(n).join("/")); for (const n of groups[k]) await step(n); return x; };
+    if (keys.length === 1) { blob = new Blob([await grp(keys[0])], { type: "application/enex+xml" }); file = (one ? stem : safeName(keys[0] || stem)) + ".enex"; }
+    else { const entries = []; for (const k of keys) entries.push({ name: stem + "/" + safeName(k) + ".enex", data: await grp(k) }); blob = await packZip(entries); file = stem + ".zip"; }
   }
   if (!o.noSave) save(blob, file);
+  T.done(`${file} · ${fmtBytes(blob.size)}`);
   return { file, count: notes.length, bytes: blob.size, blob };
 }
 /* ---------- Share → Email and Print (v0.5.6, Devon) ----------
@@ -6155,20 +6833,27 @@ const NOTION_ID = /\s[0-9a-f]{32}$/i, cleanName = s => s.replace(/\.[^.\/]+$/, "
 const SKIP = /(^|\/)(\.obsidian|\.trash|\.git|__MACOSX|\.DS_Store|Thumbs\.db)(\/|$)/i;
 const NOTE_EXT = /\.(md|markdown|txt|html?|docx|enex|json)$/i;
 // items: [{ path ("Vault/Projects/Idea.md"), bytes(), text(), size }] (zips are opened; a zip's own name becomes a folder)
-async function gather(files) {
+async function gather(files, T) {
   const items = [];
   for (const f of files) {
+    if (T && /\.zip$/i.test(f.name)) { T.tick("read", 0, "Opening " + f.name); await T.yield(); }
     const path = String(f.webkitRelativePath || f.relPath || f.name).replace(/\\/g, "/");
     if (/\.zip$/i.test(f.name)) {
       const ents = await unzip(f), stem = f.name.replace(/\.zip$/i, "");
       const tops = new Set(ents.map(e => e.name.split("/")[0])), single = tops.size === 1 && ents.every(e => e.name.includes("/"));
       ents.forEach(e => items.push({ path: (path.includes("/") ? path.replace(/[^/]+$/, "") : "") + (single ? e.name : stem + "/" + e.name), bytes: e.bytes, text: e.text, size: e.size, zip: true }));
     } else items.push({ path, size: f.size, bytes: async () => new Uint8Array(await f.arrayBuffer()), text: () => f.text(), file: f });
+    if (T) { T.tick("read", f.size || 0); await T.yield(); }
   }
   return items.filter(x => !SKIP.test(x.path));
 }
 async function importFiles(files, o = {}) {
-  const N = NS(), items = await gather(files), report = { notes: 0, folders: 0, photos: 0, skipped: [], made: [] };
+  // (v0.5.8) progress: the size is the files picked; a .zip is read first, then each note (and the photos it brings in)
+  const size = files.reduce((a, f) => a + (f.size || 0), 0), zipped = files.some(f => /\.zip$/i.test(f.name));
+  const T = track(o.onProgress, size, zipped ? [["read", .25], ["notes", .75]] : [["notes", 1]]);
+  if (zipped) T.begin("read", files.filter(f => /\.zip$/i.test(f.name)).reduce((a, f) => a + (f.size || 0), 0) + files.filter(f => !/\.zip$/i.test(f.name)).length, "Reading the files");
+  const N = NS(), items = await gather(files, zipped ? T : null), report = { notes: 0, folders: 0, photos: 0, skipped: [], made: [] };
+  let photoBytes = 0;
   const byPath = new Map(items.map(it => [it.path.toLowerCase(), it])), byBase = new Map();
   items.forEach(it => { const b = it.path.split("/").pop().toLowerCase(); if (!byBase.has(b)) byBase.set(b, it); });
   const findFile = (src, from) => { if (!src || /^[a-z]+:/i.test(src)) return null; let p = decodeURIComponent(src.split(/[?#]/)[0]); const dir = from.split("/").slice(0, -1);
@@ -6176,7 +6861,7 @@ async function importFiles(files, o = {}) {
     return byPath.get(norm.join("/").toLowerCase()) || byBase.get(p.split("/").pop().toLowerCase()) || null; };
   const stored = new Map(); // a photo used by several notes is stored once
   const storeBytes = async (bytes, name, mime) => { const type = mime || ({ png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", webp: "image/webp", svg: "image/svg+xml", bmp: "image/bmp" })[(name.match(/\.(\w+)$/) || [])[1] && name.match(/\.(\w+)$/)[1].toLowerCase()];
-    if (!/^image\//.test(type || "")) return null; const id = await N.putImage(new Blob([bytes], { type })); report.photos++; return id; };
+    if (!/^image\//.test(type || "")) return null; const id = await N.putImage(new Blob([bytes], { type })); report.photos++; photoBytes += bytes.length || 0; return id; };
   const ctxFor = it => {
     const pend = [];
     const imgTag = (id, alt) => id ? `<img data-img="${id}" alt="${esc(alt || "")}">` : "";
@@ -6207,7 +6892,11 @@ async function importFiles(files, o = {}) {
   };
   const notePaths = items.filter(it => NOTE_EXT.test(it.path));
   items.filter(it => !NOTE_EXT.test(it.path) && !/\.(png|jpe?g|gif|webp|svg|bmp|css|js|csv|ico)$/i.test(it.path)).forEach(it => report.skipped.push(it.path.split("/").pop() + (/\.pdf$/i.test(it.path) ? " (PDF import: coming soon)" : /\.(one|onepkg)$/i.test(it.path) ? " (OneNote: connect Microsoft in a later update)" : /\.(rtf|pages|doc)$/i.test(it.path) ? " (save it as .docx first)" : "")));
+  const IMG = /\.(png|jpe?g|gif|webp|svg|bmp)$/i, work = notePaths.reduce((a, it) => a + (it.size || 0), 0) + items.filter(it => IMG.test(it.path)).reduce((a, it) => a + (it.size || 0), 0);
+  T.begin("notes", work || 1, notePaths.length ? `Reading ${notePaths.length} file${notePaths.length === 1 ? "" : "s"}` : "Nothing to import");
+  let ii = 0;
   for (const it of notePaths) {
+    ii++; T.tick("notes", 0, `File ${ii} of ${notePaths.length}: ${it.path.split("/").pop()}`); photoBytes = 0;
     const dirs = it.path.split("/").slice(0, -1), ext = (it.path.match(/\.(\w+)$/) || [])[1].toLowerCase();
     try {
       if (ext === "md" || ext === "markdown") { const c = ctxFor(it), r = mdToHTML(await it.text(), c); r.html = await c.done(r.html); add(it, r, dirs); }
@@ -6224,6 +6913,7 @@ async function importFiles(files, o = {}) {
         const kd = dirs.map(d => /^keep$/i.test(d) ? "Google Keep" : d).filter(d => !/^takeout$/i.test(d)); add(it, n, n.label ? kd.concat(n.label) : kd);
       }
     } catch (e) { report.skipped.push(it.path.split("/").pop() + " (" + (e.message || "could not be read") + ")"); }
+    T.tick("notes", (it.size || 0) + photoBytes); await T.yield();
   }
   // links between the imported notes ([[Title]], [text](Other.md)) now that every note has its id
   const tmap = new Map(); made.forEach(m => { tmap.set(m.title.toLowerCase(), m.id); tmap.set(cleanName(m.path.split("/").pop()).toLowerCase(), m.id); });
@@ -6233,7 +6923,67 @@ async function importFiles(files, o = {}) {
     N.update(m.id, patch);
   });
   report.made = made.map(m => m.id);
+  T.done(`${report.notes} note${report.notes === 1 ? "" : "s"} · ${fmtBytes(size)}`);
   return report;
+}
+
+/* ---------- (v0.5.8, Devon) Check for duplicates ----------
+   findDuplicates(notes) → groups, each note in one group at most, in this order:
+     "exact"  same title and the same words;  "words" the same words under different titles;
+     "near"   nearly the same words (≥ NEAR alike: Jaccard of word 3-grams, word sets for short notes; candidates from MinHash +
+              LSH bands, so thousands of notes stay quick);  "title" the same title with different words.
+   Words = the note's text (photos, widgets' insides and formatting are not compared), lower case, spaces and punctuation
+   folded. Empty notes only match by title. Ignored groups are remembered (notepath.dupignore: the sorted ids). */
+const NEAR = 0.9, NH = 64, BANDS = 16;
+const normWords = t => String(t || "").toLowerCase().normalize("NFKC").replace(/[​]/g, "").replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+const normTitle = t => normWords(t);
+function hash32(str, seed) { let h = 2166136261 ^ seed; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } h ^= h >>> 13; h = Math.imul(h, 0x5bd1e995); h ^= h >>> 15; return h >>> 0; }
+function shingles(w) { const a = w ? w.split(" ") : []; if (a.length < 6) return new Set(a); const s = new Set(); for (let i = 0; i + 1 < a.length; i++) s.add(a[i] + " " + a[i + 1]); return s; }
+const bag = w => { const m = new Map(); (w ? w.split(" ") : []).forEach(x => m.set(x, (m.get(x) || 0) + 1)); return m; };
+// how alike two notes' words are: shared words (counting repeats) over all words of the longer one
+function alike(a, b) { let mn = 0, ta = 0, tb = 0; for (const v of a.values()) ta += v; for (const v of b.values()) tb += v; if (!ta && !tb) return 1; for (const [k, v] of a) { const u = b.get(k); if (u) mn += Math.min(u, v); } return mn / Math.max(ta, tb); }
+function findDuplicates(notes, o = {}) {
+  const near = o.near || NEAR, ign = new Set(o.ignored || []), info = notes.map(n => ({ n, w: normWords(n.body != null ? n.body : (NS() ? NS().toText(n.html) : "")), t: normTitle(n.title) }));
+  const ignSets = [...ign].map(k => new Set(k.split(","))), ignored = ids => ignSets.some(S => ids.every(id => S.has(id))); // "Not duplicates": those notes never group among themselves again
+  const used = new Set(), groups = [], add = (kind, list, score) => { const ids = list.map(x => x.n.id); if (list.length < 2 || ignored(ids)) return; list.forEach(x => used.add(x.n.id)); groups.push({ kind, ids, score }); };
+  const by = f => { const m = new Map(); info.forEach(x => { if (used.has(x.n.id)) return; const k = f(x); if (k == null) return; if (!m.has(k)) m.set(k, []); m.get(k).push(x); }); return [...m.values()]; };
+  // the same words: exact copies when every title matches too
+  by(x => x.w ? x.w : null).forEach(l => add(l.every(x => x.t === l[0].t) ? "exact" : "words", l, 1));
+  by(x => !x.w && x.t ? x.t : null).forEach(l => add("exact", l, 1)); // empty notes with one title
+  // nearly the same: MinHash over word pairs, LSH bands → candidate pairs → word-count likeness; groups only of notes that are all alike
+  const rest = info.filter(x => !used.has(x.n.id) && x.w), sh = rest.map(x => shingles(x.w)), bags = rest.map(x => bag(x.w)), len = rest.map(x => x.w.split(" ").length), buckets = new Map();
+  rest.forEach((x, i) => { const sig = new Array(NH).fill(0xffffffff); for (const g of sh[i]) for (let k = 0; k < NH; k++) { const v = hash32(g, k * 7919 + 1); if (v < sig[k]) sig[k] = v; }
+    const r = NH / BANDS; for (let b = 0; b < BANDS; b++) { const bk = b + ":" + sig.slice(b * r, b * r + r).join("."); if (!buckets.has(bk)) buckets.set(bk, []); buckets.get(bk).push(i); } });
+  const pairs = [], tried = new Set();
+  for (const l of buckets.values()) { if (l.length < 2 || l.length > 300) continue;
+    for (let a = 0; a < l.length; a++) for (let b = a + 1; b < l.length; b++) { const i = Math.min(l[a], l[b]), j = Math.max(l[a], l[b]), pk = i + ":" + j; if (tried.has(pk)) continue; tried.add(pk);
+      if (Math.min(len[i], len[j]) / Math.max(len[i], len[j]) < near) continue;
+      const v = alike(bags[i], bags[j]); if (v >= near) pairs.push([v, i, j]); } }
+  pairs.sort((a, b) => b[0] - a[0]);
+  const gOf = new Map(), gl = [];
+  for (const [v, i, j] of pairs) {
+    const gi = gOf.get(i), gj = gOf.get(j);
+    if (gi == null && gj == null) { const g = { m: [i, j], lo: v }; gl.push(g); gOf.set(i, g); gOf.set(j, g); continue; }
+    if (gi != null && gj != null) continue;
+    const g = gi != null ? gi : gj, x = gi != null ? j : i; if (g.m.length >= 20) continue;
+    let lo = g.lo, ok = true; for (const y of g.m) { const s2 = alike(bags[x], bags[y]); if (s2 < near) { ok = false; break; } lo = Math.min(lo, s2); }
+    if (ok) { g.m.push(x); g.lo = lo; gOf.set(x, g); }
+  }
+  gl.forEach(g => add("near", g.m.map(i => rest[i]), g.lo));
+  by(x => x.t ? x.t : null).forEach(l => add("title", l, 0));
+  const rank = { exact: 0, words: 1, near: 2, title: 3 };
+  return groups.sort((a, b) => rank[a.kind] - rank[b.kind] || b.ids.length - a.ids.length);
+}
+const DUPIGN = "notepath.dupignore";
+const dupIgnored = () => { try { const a = JSON.parse(localStorage.getItem(DUPIGN) || "[]"); return Array.isArray(a) ? a : []; } catch (e) { return []; } };
+function dupIgnore(ids) { try { const a = dupIgnored(); a.push(ids.slice().sort().join(",")); localStorage.setItem(DUPIGN, JSON.stringify(a.slice(-500))); } catch (e) {} }
+// merge: the first note keeps its title and place; the others' words go under it, each after a line naming it; then they are deleted
+function mergeNotes(ids) {
+  const N = NS(), list = ids.map(id => N.get(id)).filter(Boolean); if (list.length < 2) return null;
+  const [keep, ...rest] = list;
+  const html = keep.html + rest.map(n => `<div><br></div><div>— <i>merged from “${esc(n.title)}”</i> —</div>${n.html || ""}`).join("");
+  N.update(keep.id, { html, fav: list.some(n => n.fav) || keep.fav }); rest.forEach(n => N.trash(n.id));
+  return keep.id;
 }
 
 /* ---------- the window: My notes › ⇅ Import / Export ---------- */
@@ -6251,15 +7001,46 @@ function open(o = {}) {
         <button type="button" role="radio" data-s="folder"${fname && fcount ? "" : " disabled"}><b>This folder</b><small>${fname ? esc(fname) + " · " + fcount + " note" + (fcount === 1 ? "" : "s") : "Pick a folder first"}</small></button>
         <button type="button" role="radio" data-s="all"${all.length ? "" : " disabled"}><b>Everything</b><small>${all.length} note${all.length === 1 ? "" : "s"}, with their folders</small></button></div>
       <div class="io-fmts" role="radiogroup" aria-label="Format">${FORMATS.map(f => `<button type="button" role="radio" class="io-fmt" data-f="${f.k}"><span class="io-ext">.${f.ext}</span><b>${esc(f.name)}</b><small class="io-for">${esc(f.for)}</small><small>${esc(f.note)}</small></button>`).join("")}</div>
-      <div class="io-go"><button type="button" class="btn good" data-a="export">Export</button><p class="io-msg" role="status" aria-live="polite"></p></div></section>
+      <div class="io-go"><button type="button" class="btn good" data-a="export">Export</button><p class="io-msg" role="status" aria-live="polite"></p></div><div class="io-progx"></div></section>
     <section class="io-col"><h3 class="io-h">Import</h3>
       <div class="io-drop" tabindex="0" role="button" aria-label="Choose files to import">Drop files, a .zip or a whole folder here<br><small>or</small><span class="io-btns"><button type="button" class="btn-s" data-a="files">Choose files…</button><button type="button" class="btn-s" data-a="dir">Choose a folder…</button></span></div>
       <label class="io-into">Put them in <select class="io-sel" aria-label="Folder for imported notes"><option value="">Top level</option>${fs.map(f => `<option value="${f.id}"${f.id === fid ? " selected" : ""}>${"  ".repeat(f.depth)}${esc(f.name)}</option>`).join("")}</select></label>
       <ul class="io-works"><li><b>Obsidian</b> vault (pick its folder) or Markdown files, with [[links]] and attachments</li><li><b>Notion</b> export (.zip, Markdown &amp; CSV)</li><li><b>Word</b> and <b>Google Docs</b> (.docx; in Google Docs: File › Download › Word)</li>
         <li><b>Apple Notes</b> and <b>Evernote</b> (.enex), web pages (.html), plain text (.txt)</li><li><b>Google Keep</b> (Google Takeout .zip, or its .json files)</li><li class="io-soon">Coming later: PDF, and OneNote / Google Drive straight from your account</li></ul>
-      <p class="io-log" role="status" aria-live="polite"></p>
-      <input type="file" class="io-fin" multiple accept=".md,.markdown,.txt,.html,.htm,.docx,.enex,.json,.zip" hidden><input type="file" class="io-din" webkitdirectory multiple hidden></section></div>`;
+      <div class="io-progi"></div><p class="io-log" role="status" aria-live="polite"></p>
+      <input type="file" class="io-fin" multiple accept=".md,.markdown,.txt,.html,.htm,.docx,.enex,.json,.zip" hidden><input type="file" class="io-din" webkitdirectory multiple hidden></section>
+    <section class="io-col io-dup"><div class="io-duph"><h3 class="io-h">Check for duplicates</h3><p class="io-dupd">Finds notes that are copies of each other, nearly the same (90% or more of the same words), or share a title, so you can keep one, merge them or leave them.</p><button type="button" class="btn-s io-dupgo" data-a="dups">Check my notes</button></div><div class="io-dupr" role="region" aria-label="Duplicates found" aria-live="polite"></div></section></div>`;
   const b = w.body, msg = $(".io-msg", b), log = $(".io-log", b);
+  const px = progUI($(".io-progx", b), "Export progress"), pi = progUI($(".io-progi", b), "Import progress");
+  // duplicates (v0.5.8)
+  const dupR = $(".io-dupr", b), changed = () => { if (o.onChanged) try { o.onChanged(); } catch (e) {} };
+  const KIND = { exact: ["Exact copies", "Same title and the same words"], words: ["Same words", "The same words under different titles"], near: ["Nearly the same", ""], title: ["Same title", "The same title, different words"] };
+  const fsAll = () => N.folders(), where = n => { const p = folderPath(n.folder, fsAll()); return p.length ? p.join(" › ") : "Unfiled"; };
+  const when = t => { const d = new Date(t || 0); return isNaN(d) ? "" : d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }); };
+  const words = n => (normWords(n.body || "").match(/\S+/g) || []).length;
+  let undoMark = -1;
+  function runDups(focus) {
+    const groups = findDuplicates(N.list(), { ignored: dupIgnored() });
+    if (!groups.length) { dupR.innerHTML = `<p class="io-dupnone">✓ No duplicates found in ${N.list().length} notes.</p>`; return groups; }
+    const total = groups.reduce((a, g) => a + g.ids.length, 0);
+    dupR.innerHTML = `<p class="io-dupsum"><span>${groups.length} group${groups.length === 1 ? "" : "s"}</span> · <span>${total} notes</span></p>` + groups.map((g, gi) => {
+      const ns = g.ids.map(id => N.get(id)).filter(Boolean).sort((a, c) => (a.created || 0) - (c.created || 0));
+      return `<div class="io-dupg" data-g="${gi}" data-ids="${ns.map(n => n.id).join(",")}"><div class="io-dupgh"><b>${KIND[g.kind][0]}</b>${g.kind === "near" ? ` <span class="io-dupsc">${Math.round(g.score * 100)}% alike</span>` : `<span class="io-dupk">${KIND[g.kind][1]}</span>`}
+        <span class="io-dupga"><button type="button" class="btn-s" data-d="merge" title="Put them all into the oldest note, one after the other, and delete the rest">Merge into one</button><button type="button" class="btn-s" data-d="ignore" title="They are meant to be alike: don't show this group again">Not duplicates</button></span></div>`
+        + ns.map((n, i) => `<div class="io-dupn" data-id="${n.id}"><div class="io-dupt"><b class="no-i18n">${esc(n.title)}</b><small><span class="no-i18n">${esc(where(n))}</span> · <span>made ${esc(when(n.created))}</span> · <span>edited ${esc(when(n.updated))}</span> · <span>${words(n)} words</span>${i === 0 ? ` · <span>oldest</span>` : ""}</small><span class="io-dupp no-i18n">${esc((n.body || "").replace(/\s+/g, " ").trim().slice(0, 140) || "(no words)")}</span></div>
+          <span class="io-dupna"><button type="button" class="btn-s" data-d="open">Open</button><button type="button" class="btn-s io-dupkeep" data-d="keep" title="Keep this note and delete the others in this group">Keep this one</button></span></div>`).join("") + `</div>`; }).join("");
+    if (focus) { const f = dupR.querySelector("button"); if (f) f.focus({ preventScroll: true }); }
+    return groups;
+  }
+  const afterChange = (text, mark) => { changed(); runDups(); N.toast(esc(text), { label: "Undo", run: () => { if (N.history().undo !== mark) { N.toast("Use ↶ Undo in My notes to step back to it.", null, 4000); return; } if (N.undo()) { changed(); runDups(); } } }, 9000); };
+  $('[data-a="dups"]', b).onclick = () => { const gs = runDups(true); $('[data-a="dups"]', b).textContent = "Check again"; void gs; };
+  dupR.addEventListener("click", e => {
+    const btn = e.target.closest("[data-d]"); if (!btn) return; const g = btn.closest(".io-dupg"), ids = g.dataset.ids.split(","), d = btn.dataset.d;
+    if (d === "open") { const id = btn.closest(".io-dupn").dataset.id; if (window.InquireApp && InquireApp.openNoteLink) { if (w.close) w.close(); InquireApp.openNoteLink(id); } return; }
+    if (d === "ignore") { dupIgnore(ids); runDups(); return; }
+    if (d === "keep") { const keep = btn.closest(".io-dupn").dataset.id, gone = ids.filter(x => x !== keep); gone.forEach(x => N.trash(x)); undoMark = N.history().undo; afterChange(`Kept one, deleted ${gone.length}.`, undoMark); return; }
+    if (d === "merge") { const ns = ids.map(x => N.get(x)).filter(Boolean).sort((a, c) => (a.created || 0) - (c.created || 0)); mergeNotes(ns.map(n => n.id)); undoMark = N.history().undo; afterChange(`Merged ${ns.length} notes into “${ns[0].title}”.`, undoMark); }
+  });
   const paint = () => { b.querySelectorAll("[data-s]").forEach(x => x.setAttribute("aria-checked", String(x.dataset.s === scope))); b.querySelectorAll("[data-f]").forEach(x => x.setAttribute("aria-checked", String(x.dataset.f === fmt)));
     const n = pick(scope, { note: o.note, folder: fid }).notes.length; $('[data-a="export"]', b).textContent = `Export ${n} note${n === 1 ? "" : "s"} as ${FORMATS.find(f => f.k === fmt).name}`; };
   b.querySelectorAll("[data-s]").forEach(x => x.onclick = () => { scope = x.dataset.s; paint(); });
@@ -6267,21 +7048,27 @@ function open(o = {}) {
   paint();
   $('[data-a="export"]', b).onclick = async e => {
     const btn = e.currentTarget; btn.disabled = true; msg.className = "io-msg"; msg.textContent = "Exporting…";
-    try { const r = await exportNotes(scope, fmt, { note: o.note, folder: fid }); msg.classList.add("ok");
-      msg.textContent = r.printed ? "Choose “Save as PDF” in the print window." : `Saved ${r.file} (${r.count} note${r.count === 1 ? "" : "s"}).`; }
-    catch (err) { msg.classList.add("bad"); msg.textContent = err.message || "The export did not work."; }
+    px.start("Exporting as " + FORMATS.find(f => f.k === fmt).name);
+    try { const r = await exportNotes(scope, fmt, { note: o.note, folder: fid, onProgress: p => px.paint(p) }); msg.classList.add("ok");
+      px.end(true, r.printed ? "Ready to print" : "Export finished");
+      msg.textContent = r.printed ? "Choose “Save as PDF” in the print window." : `Saved ${r.file} (${r.count} note${r.count === 1 ? "" : "s"}, ${fmtBytes(r.bytes)}).`; }
+    catch (err) { px.end(false, "Export stopped"); msg.classList.add("bad"); msg.textContent = err.message || "The export did not work."; }
     btn.disabled = false;
   };
   const fin = $(".io-fin", b), din = $(".io-din", b), drop = $(".io-drop", b);
   const run = async files => {
     if (!files.length) return; log.className = "io-log"; log.textContent = "Importing…";
+    pi.start(`Importing ${files.length} file${files.length === 1 ? "" : "s"}`);
     try {
-      const r = await importFiles(files, { folder: $(".io-sel", b).value || null });
+      const r = await importFiles(files, { folder: $(".io-sel", b).value || null, onProgress: p => pi.paint(p) });
+      pi.end(!!r.notes, r.notes ? "Import finished" : "Nothing imported");
       log.classList.add(r.notes ? "ok" : "bad");
       log.innerHTML = (r.notes ? `Imported <b>${r.notes}</b> note${r.notes === 1 ? "" : "s"}${r.folders ? `, ${r.folders} folder${r.folders === 1 ? "" : "s"}` : ""}${r.photos ? `, ${r.photos} photo${r.photos === 1 ? "" : "s"}` : ""}.` : "Nothing to import there.")
         + (r.skipped.length ? `<br><span class="io-skip">Skipped: ${r.skipped.slice(0, 8).map(esc).join(", ")}${r.skipped.length > 8 ? ` and ${r.skipped.length - 8} more` : ""}</span>` : "");
       if (r.notes && o.onImported) o.onImported(r);
-    } catch (err) { log.classList.add("bad"); log.textContent = err.message || "The import did not work."; }
+      if (r.notes) { const made = new Set(r.made), dg = findDuplicates(N.list(), { ignored: dupIgnored() }).filter(g => g.ids.some(id => made.has(id)) && g.ids.some(id => !made.has(id)));
+        if (dg.length) { const k = dg.reduce((a, g) => a + g.ids.filter(id => made.has(id)).length, 0); log.insertAdjacentHTML("beforeend", `<br><span class="io-dupoff">${k} of the imported notes look like notes you already had. <button type="button" class="btn-s" data-a="dups2">Check for duplicates</button></span>`); $('[data-a="dups2"]', log).onclick = () => { runDups(true); $(".io-dup", b).scrollIntoView({ block: "start", behavior: "smooth" }); }; } }
+    } catch (err) { pi.end(false, "Import stopped"); log.classList.add("bad"); log.textContent = err.message || "The import did not work."; }
   };
   $('[data-a="files"]', b).onclick = e => { e.stopPropagation(); fin.click(); }; $('[data-a="dir"]', b).onclick = e => { e.stopPropagation(); din.click(); };
   drop.onclick = () => fin.click(); drop.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fin.click(); } };
@@ -6303,7 +7090,7 @@ async function droppedFiles(dt) {
   return out;
 }
 
-window.NPIO = { open, exportNotes, email, printNote, mailURL, hooks, importFiles, zip, unzip, md5, ir, toMD, toHTMLBody, toDOCX, toENEX, mdToHTML, htmlToNote, docxToNote, enexToNotes, keepToNote, FORMATS };
+window.NPIO = { open, exportNotes, findDuplicates, mergeNotes, track, fmtBytes, fmtTime, email, printNote, mailURL, hooks, importFiles, zip, unzip, md5, ir, toMD, toHTMLBody, toDOCX, toENEX, mdToHTML, htmlToNote, docxToNote, enexToNotes, keepToNote, FORMATS };
 })();
 
 </script>
@@ -6645,6 +7432,12 @@ function renderTasksPage(o = {}){
    NotePath (main.js registers notepath:// links). Notes stay on this computer, so for an associate it is Send a copy (a file
    anyone can open); their NotePath would say the note is not there. ---------- */
 const noteLink = id => "notepath://note/" + id;
+const folderLink = id => "notepath://folder/" + id; // (v0.5.8) right-click a folder → Copy link
+function openFolderLinkTo(id){
+  const NS = window.InquireNotes, f = NS && NS.scope("code").folders().concat(NS.folders()).find(x => x.id === id);
+  if (!f) { toastMsg("That folder is not on this computer.", 6000); return; }
+  go({ view: "notes", space: f.space === "code" ? "code" : "notes", folder: id });
+}
 async function copyText(t){
   try { await navigator.clipboard.writeText(t); return true; } catch (e) {}
   const ta = h("textarea", { style: "position:fixed;left:-9999px;top:0" }); ta.value = t; document.body.appendChild(ta); ta.select();
@@ -6885,8 +7678,28 @@ function noteKind(n){
   if (n.space === "code") { const l = window.NPCode ? NPCode.lang(n.code.lang) : null; return (l ? l.name : "Code") + " file"; }
   const h = String(n.html || "");
   if (/data-w="sheet"/.test(h)) return "Music chart"; if (/data-w="code"/.test(h)) return "Code note"; if (/data-w="music"/.test(h)) return "Music note";
-  if (/data-w="graph"/.test(h)) return "Graph note"; if (/<ul data-ck/.test(h)) return "Checklist"; if (/data-img=|class="nimg"/.test(h) || /data-w="video"/.test(h)) return "Note · media";
+  if (/data-w="graph"/.test(h)) return "Graph note"; if (/<ul data-ck/.test(h)) return "Checklist"; if (/data-img=|class="nimg"/.test(h) || /data-w="(video|audio)"/.test(h)) return "Note · media";
   return "Note";
+}
+/* (v0.5.8, Devon) the ✦ AI Chat button's figure: a holographic woman's head and shoulders made of coloured light (after his
+   reference picture, without its halo rings), drawn in the theme's colour (var(--frame)) so it follows every theme. Ids are
+   made per copy (the main note and the side-by-side note each draw one). */
+let AIFIG_N = 0;
+function aiFigure(){
+  const k = "aif" + (++AIFIG_N), B = "M20 4C25.2 4 27.4 8 27.2 12.6c-.2 3.8-1.8 6.8-3.8 8.2l.3 5.2c3.6 1.6 8.6 3.4 11.3 8.4L36.6 40H3.4l1.6-5.6c2.7-5 7.7-6.8 11.3-8.4l.3-5.2c-2-1.4-3.6-4.4-3.8-8.2C12.6 8 14.8 4 20 4z";
+  return `<svg class="nb-aifig" viewBox="0 0 40 40" width="34" height="34" aria-hidden="true" focusable="false"><defs>`
+    + `<linearGradient id="${k}g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="s0"/><stop offset=".5" class="s1"/><stop offset=".95" class="s2"/></linearGradient>`
+    + `<linearGradient id="${k}s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="e0"/><stop offset=".6" class="e1"/><stop offset="1" class="e2"/></linearGradient>`
+    + `<radialGradient id="${k}r"><stop offset="0" class="c0"/><stop offset="1" class="c1"/></radialGradient>`
+    + `<pattern id="${k}p" width="4" height="1.8" patternUnits="userSpaceOnUse"><rect width="4" height=".4" class="scan"/></pattern>`
+    + `<clipPath id="${k}c"><path d="${B}"/></clipPath></defs>`
+    + `<path class="body" fill="url(#${k}g)" stroke="url(#${k}s)" d="${B}"/>`
+    + `<rect class="scans" x="0" y="-2" width="40" height="44" fill="url(#${k}p)" clip-path="url(#${k}c)"/>`
+    + `<g class="hair"><path d="M20 3.2C13.2 3.2 10.8 8.6 11.2 13.8c.4 4.6 2 7.8 2.4 10.6.3 2.4-1.6 4.4-5 6"/><path d="M20 3.2c6.8 0 9.2 5.4 8.8 10.6-.4 4.6-2 7.8-2.4 10.6-.3 2.4 1.6 4.4 5 6"/><path class="thin" d="M12.4 9.4c-.8 3.6.2 7.4 2 10.6M27.6 9.4c.8 3.6-.2 7.4-2 10.6"/>`
+    + `<path class="thin" d="M20 4.2c-3.6.4-5.6 2.8-6.2 5.8M20 4.2c3.6.4 5.6 2.8 6.2 5.8M18 4.5c-2 1.6-2.8 3.4-3 5M22 4.5c2 1.6 2.8 3.4 3 5M20 4v3.4"/></g>`
+    + `<g class="face"><path d="M15.4 10.9q1.8-.8 3.4 0M21.2 10.9q1.8-.8 3.4 0"/><path class="eye" d="M15.6 12.8q1.7 1.1 3.3 0M21.1 12.8q1.7 1.1 3.3 0"/><path d="M20 13.6v2.4q-.5.5-.9.5"/><path class="lip" d="M18.3 18.2q1.7.9 3.4 0M18.3 18.2q.8-.5 1.7-.1.9-.4 1.7.1"/></g>`
+    + `<g class="neck"><path d="M17.6 21.6v4.4M22.4 21.6v4.4M14.4 30.2q3 1.4 5.6.8M25.6 30.2q-3 1.4-5.6.8"/></g>`
+    + `<circle cx="20" cy="4.2" r="3" fill="url(#${k}r)"/></svg>`;
 }
 const NOTE_IC = '<svg viewBox="0 0 24 28" width="30" height="34" aria-hidden="true"><path d="M3 2h12l6 6v18H3z" class="pg"/><path d="M15 2v6h6" class="fd"/><path d="M7 13h10M7 17h10M7 21h6" class="ln"/></svg>';
 /* the Tool bar (v0.5.5, Devon; where the notes list was): tools that change what the note area is for. Note and Code now;
@@ -6898,13 +7711,23 @@ const TOOLS = [["note", "✎", "Note", "Write: text, lists, photos and widgets"]
 /* v0.5.5 (Devon): the ▦ Widgets menu moved out of the note's formatting bar into the Tool bar, in its own section above the
    tools: a click puts the widget into the note you were writing in (after the line you were on). Widgets that connect to
    other apps and services (APIs) will join this section. */
-const WIDGET_SHORT = { code: "Code box", music: "Music", sheet: "Lead sheet", graph: "Graph", map: "Map" };
+const WIDGET_SHORT = { code: "Code box", music: "Music", sheet: "Lead sheet", graph: "Graph", map: "Map", audio: "Audio", sign: "Sign" };
 const railHTML = code => `<div class="nb-railh">Widgets</div>` + ((window.InquireWidgets && InquireWidgets.WIDGETS) || []).map(([w, g, n, d]) =>
     `<button type="button" class="nb-tool nb-wtool${code ? " soon" : ""}" data-widget="${w}" data-name="${n}"${code ? ' aria-disabled="true"' : ""} title="${code ? `${n}: widgets go into notes (My notes)` : `${n}: ${d}. Goes in after the line you are on`}"><span class="nb-tooli" aria-hidden="true">${g}</span><span class="nb-tooln">${WIDGET_SHORT[w] || n}</span></button>`).join("")
   + `<button type="button" class="nb-tool nb-wtool nb-wmore soon" data-widget="more" aria-disabled="true" data-name="App widgets" title="Widgets that connect to other apps and services: coming soon"><span class="nb-tooli" aria-hidden="true">＋</span><span class="nb-tooln">More</span><small>Soon</small></button>`
   + `<div class="nb-railh">Tools</div>` + TOOLS.map(([k, ic, n, d]) => { const soon = !d, on = (k === "note" && !code) || (k === "code" && code);
   return `<button type="button" class="nb-tool${on ? " on" : ""}${soon ? " soon" : ""}" data-tool="${k}" data-name="${n}" aria-pressed="${on}"${soon ? ' aria-disabled="true"' : ""} title="${n}${soon ? ": coming soon" : ": " + d}"><span class="nb-tooli" aria-hidden="true">${ic}</span><span class="nb-tooln">${n === "Spreadsheets" ? "Sheets" : n === "Note Trees" ? "Trees" : n}</span>${soon ? '<small>Soon</small>' : ""}</button>`; }).join("");
 const NOTE_MINI = '<svg viewBox="0 0 12 14" width="11" height="13"><path d="M1.5 1h6l3 3v9h-9z" class="pg"/><path d="M7.5 1v3h3" class="fd"/></svg>';
+/* (v0.5.8, Devon) My notes comes in two versions, picked in the header: Simple = the Folders & Files bar (notes only) and the
+   note (formatting without headings, align, indent and spacing, clear formatting; Grammar check and audio recording stay);
+   Professional = everything. Kept in notepath.notemode; My Code is always Professional. */
+/* (v0.5.8, Devon) 🎙 audio recording: one recording at a time, for the note it was started in (even if another note is
+   opened meanwhile); kept while My notes is open, saved into its note when stopped or when My notes closes. */
+const REC = { on: false };
+const REC_MAX = 3 * 3600; // seconds
+function recMime(){ const M = window.MediaRecorder; if (!M || !M.isTypeSupported) return ""; return ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus"].find(t => M.isTypeSupported(t)) || ""; }
+function recSecs(){ return !REC.on ? 0 : (REC.acc + (REC.paused ? 0 : (performance.now() - REC.t0))) / 1000; }
+const noteMode = () => store.get("notemode", "pro") === "simple" ? "simple" : "pro";
 function renderNotes(m, focusBody, space = "notes"){
   const NS = window.InquireNotes.scope(space), NOTES = SPACES[space], CODE = space === "code", SK = SKEYS[space];
   const ALLNS = window.InquireNotes, CS = window.InquireNotes.scope("code");
@@ -6951,8 +7774,20 @@ function renderNotes(m, focusBody, space = "notes"){
   const realFolder = () => NS.folders().some(f => f.id === NOTES.folder) ? NOTES.folder : null;
   const newHere = () => { flushEd(); (CODE ? newCode : newNote)({ folder: realFolder(), fav: NOTES.folder === "fav" }); };
   $('[data-a="newnote"]', m.head).onclick = newHere;
+  const SIMPLE = () => !CODE && noteMode() === "simple";
+  if (!CODE) {
+    m.head.insertAdjacentHTML("afterbegin", `<span class="np-mode" role="radiogroup" aria-label="Version of My notes"><button type="button" role="radio" data-mode="simple" title="Simple: your notes and folders, and the everyday formatting">Simple</button><button type="button" role="radio" data-mode="pro" title="Professional: every tool, widget and panel">Professional</button></span>`);
+    const mb = $(".np-mode", m.head), paintMode = () => { const md = noteMode(); nbEl.dataset.mode = md; mb.querySelectorAll("[data-mode]").forEach(b => { b.setAttribute("aria-checked", String(b.dataset.mode === md)); b.tabIndex = b.dataset.mode === md ? 0 : -1; }); };
+    mb.addEventListener("click", e => { const b = e.target.closest("[data-mode]"); if (!b || b.dataset.mode === noteMode()) return; setMode(b.dataset.mode); });
+    mb.addEventListener("keydown", e => { if (!/^Arrow(Left|Right|Up|Down)$/.test(e.key)) return; e.preventDefault(); const md = noteMode() === "simple" ? "pro" : "simple"; setMode(md); $(`[data-mode="${md}"]`, mb).focus(); });
+    var setMode = md => { flushEd(); store.set("notemode", md); paintMode();
+      if (md === "simple") { if (typeof holoClose === "function") { holoClose(); indClose(); if (AS.open === "ai") asClose(); peekClose(); } }
+      drawAll(); msg(md === "simple" ? "Simple: just your notes and folders. Professional brings back every tool." : "Professional: every tool, widget and panel is back."); };
+    paintMode();
+  }
   // ⇅ Import / Export (io.js): the note open now and the folder being viewed are offered first
-  const openIO = scope => { flushEd(); if (window.NPIO) NPIO.open({ note: NOTES.sel, folder: NOTES.folder, scope, onImported: r => { NOTES.folder = "all"; if (r.made[0]) NOTES.sel = r.made[0]; drawAll(); } }); };
+  const openIO = scope => { flushEd(); if (window.NPIO) NPIO.open({ note: NOTES.sel, folder: NOTES.folder, scope, onImported: r => { NOTES.folder = "all"; if (r.made[0]) NOTES.sel = r.made[0]; drawAll(); },
+    onChanged: () => { if (NOTES.sel && !NS.get(NOTES.sel)) { if (rich) { rich.destroy(); rich = null; } NOTES.sel = null; } drawAll(); } }); };
   const shb = $('[data-a="share"]', m.head); if (shb) shb.onclick = () => shareMenu(shb, { id: NOTES.sel, flush: flushEd, openIO });
   // undo / redo (notes.js keeps the steps): save what is being typed, step, redraw everything from the store
   const hb = { undo: $('[data-a="undo"]', m.head), redo: $('[data-a="redo"]', m.head) };
@@ -7072,15 +7907,15 @@ function renderNotes(m, focusBody, space = "notes"){
       const frow = (f, sp, list) => `<button type="button" class="nb-sfd" data-sf="${f.id}" data-sp="${sp}" title="Show the folder ${esc(f.name)}">${folderIcon(false)}<span class="nb-fnm">${esc(f.name)}</span>${path(f, list) ? `<span class="nb-spath">in ${esc(path(f, list))}</span>` : ""}</button>`;
       const crowS = n => `<div class="nb-fnote nb-cfile" role="button" tabindex="0" draggable="true" data-cid="${n.id}" style="--d:0" title="${esc(n.title)}: click to open it in My Code"><span class="nb-fni nb-cfi" data-lang="${esc(n.code.lang)}">${esc(LG(n.code.lang).short)}</span><span class="nb-fnt">${esc(n.title)}</span></div>`;
       const sec = (k, cls, label, body, n) => n ? `<div class="nb-sech ${cls}" data-sec="${k}">${label} <span class="num">${n}</span></div>${body}` : "";
-      const total = fl.length + nl.length + cfl.length + cnl.length;
+      const total = fl.length + nl.length + (SIMPLE() ? 0 : cfl.length + cnl.length);
       fold.innerHTML = `<div class="nb-sres">${dhead}<div class="nb-sres-h">${total ? `${total} found for “${esc(NOTES.q.trim())}”` : `Nothing matches “${esc(NOTES.q.trim())}”`}</div>`
         + sec("folders", "", CODE ? "Code folders" : "Folders", fl.map(f => frow(f, CODE ? "code" : "notes", fs)).join(""), fl.length)
         + sec("files", CODE ? "is-code" : "is-notes", CODE ? "Code files" : "Notes", files(nl, 0, "q"), nl.length)
-        + sec("code", "is-code", "My Code", cfl.map(f => frow(f, "code", cf)).join("") + cnl.map(crowS).join(""), cfl.length + cnl.length) + `</div>`;
+        + (SIMPLE() ? "" : sec("code", "is-code", "My Code", cfl.map(f => frow(f, "code", cf)).join("") + cnl.map(crowS).join(""), cfl.length + cnl.length)) + `</div>`;
     } else {
       fold.innerHTML = (CODE ? "" : `<div class="nb-fmain">`) + dhead + `<div class="nb-sech ${CODE ? "is-code" : "is-notes"}">${CODE ? "Code" : "Notes"}</div>` + (FILTER ? libRows() : libHTML)
-        + (FILTER ? "" : `<div class="nb-fh nb-ftop" data-top>${CODE ? "Code folders" : "Folders"}</div>` + tree(null)
-        + `<button type="button" class="nb-fadd" data-a="addf">＋ New folder</button>`) + (CODE ? "" : `</div><div class="nb-fsplit" role="separator" aria-orientation="horizontal" tabindex="0" aria-label="Share the bar between notes and code (drag, or ↑/↓; double-click resets)" title="Drag to give the Code section more or less room · double-click resets"></div><div class="nb-fcode">${codeSection(shut, FILTER)}<div class="nb-sech is-music nb-music" title="My Music is coming soon">Music <span class="nb-soon">Coming soon</span></div></div>`);
+        + (FILTER ? "" : `<div class="nb-fh nb-ftop" data-top>${CODE ? "Code folders" : "Folders"}</div>` + tree(null))
+        + `<button type="button" class="nb-fadd" data-a="addf" title="Make a new folder">＋ New folder</button>` + (CODE ? "" : `</div><div class="nb-fsplit" role="separator" aria-orientation="horizontal" tabindex="0" aria-label="Share the bar between notes and code (drag, or ↑/↓; double-click resets)" title="Drag to give the Code section more or less room · double-click resets"></div><div class="nb-fcode">${codeSection(shut, FILTER)}<div class="nb-sech is-music nb-music" title="My Music is coming soon">Music <span class="nb-soon">Coming soon</span></div></div>`);
     }
     fold.classList.toggle("is-search", !!qq); if (qq) fold.classList.remove("has-fsplit", "code-shut");
     fold.dataset.filter = FILTER && !qq ? FILTER : "";
@@ -7099,7 +7934,7 @@ function renderNotes(m, focusBody, space = "notes"){
       NOTES.q = ""; q.value = ""; NOTES.folder = b.dataset.sf; drawFolders();
       const rowEl = fold.querySelector(`.nb-fd[data-f="${b.dataset.sf}"]`); if (rowEl) { rowEl.scrollIntoView({ block: "nearest" }); const fb = rowEl.querySelector(".nb-fdb"); if (fb) fb.focus({ preventScroll: true }); } });
     // pick, open/close, rename, delete
-    fold.querySelectorAll(".nb-fdb").forEach(b => b.onclick = () => { NOTES.folder = b.dataset.f; drawFolders(); });
+    fold.querySelectorAll(".nb-fdb").forEach(b => b.onclick = e => { if (b.closest(".nb-fd.user") && pickClick(e, "f", b.dataset.f)) return; NOTES.folder = b.dataset.f; drawFolders(); });
     fold.querySelectorAll(".nb-fd.user").forEach(d => d.addEventListener("click", e => { if (e.target.closest("button,input,form")) return; const b = d.querySelector(".nb-fdb"); if (b) b.click(); }));
     fold.querySelectorAll("[data-car]").forEach(b => b.onclick = e => { e.stopPropagation(); const c = closed(), id = b.dataset.car; c.has(id) ? c.delete(id) : c.add(id); store.set("notefold", [...c]); drawFolders(); });
     fold.querySelectorAll("[data-sub]").forEach(b => b.onclick = () => { const id = b.dataset.sub, c = closed(); c.delete(id); store.set("notefold", [...c]);
@@ -7122,12 +7957,118 @@ function renderNotes(m, focusBody, space = "notes"){
       d.addEventListener("dragend", () => { DRAG = null; d.classList.remove("dragging"); clearDrop(); nbEl.classList.remove("dragfolder"); hideCaret(); });
     });
     const addf = $('[data-a="addf"]', fold); if (addf) addf.onclick = e => nameBox(e.target, "", v => { const f = NS.addFolder(v); NOTES.folder = f.id; drawAll(); });
+    pickPaint();
   }
+  /* ----- (v0.5.8, Devon) Select and the right-click menu in the Folders & Files bar. Ctrl+click (⌘+click on a Mac) adds a
+     note or folder to the selection or takes it out, Shift+click selects everything between, Esc or a plain click clears it.
+     Right-click a note, a folder or Unfiled / Favourites / All notes: Copy link · Select · Select all · Delete. Delete on a
+     selected item deletes the whole selection (asks once more for more than one item or a folder), with Undo. Deleting a
+     folder keeps its notes and folders (they move up a level), as the ✕ on the row does. ----- */
+  const PICK = NOTES.pick || (NOTES.pick = { n: new Set(), f: new Set(), anchor: null });
+  const MODK = /Mac/.test(navigator.platform) ? "⌘" : "Ctrl+";
+  const pickCount = () => PICK.n.size + PICK.f.size;
+  function pickPaint(){
+    fold.querySelectorAll(".nb-fnote[data-id]:not(.nb-cfile)").forEach(r => { const on = PICK.n.has(r.dataset.id); r.classList.toggle("is-picked", on); });
+    fold.querySelectorAll(".nb-fd.user[data-f]").forEach(r => r.classList.toggle("is-picked", PICK.f.has(r.dataset.f)));
+    let bar = $(".nb-pickbar", nbEl.querySelector(".nb-folders")); const k = pickCount();
+    if (!k) { if (bar) bar.remove(); return; }
+    if (!bar) { bar = h("div", { class: "nb-pickbar", role: "status" }); nbEl.querySelector(".nb-folders").insertBefore(bar, fold); }
+    const parts = []; if (PICK.n.size) parts.push(`${PICK.n.size} ${CODE ? "file" : "note"}${PICK.n.size === 1 ? "" : "s"}`); if (PICK.f.size) parts.push(`${PICK.f.size} folder${PICK.f.size === 1 ? "" : "s"}`);
+    bar.innerHTML = `<span class="nb-pickn"><span>${parts.join(" and ")}</span> <span>selected</span></span><button type="button" class="nb-pickx" data-p="del" title="Delete the selected items">Delete</button><button type="button" class="nb-pickx" data-p="clear" title="Clear the selection (Esc)" aria-label="Clear the selection">✕</button>`;
+    bar.onclick = e => { const b = e.target.closest("[data-p]"); if (!b) return; if (b.dataset.p === "clear") pickClear(); else { if (b.dataset.armed) { pickDelete([...PICK.n], [...PICK.f]); return; } b.dataset.armed = "1"; b.textContent = "Delete " + k + "?"; b.classList.add("armed"); setTimeout(() => { if (b.isConnected) { delete b.dataset.armed; b.textContent = "Delete"; b.classList.remove("armed"); } }, 3500); } };
+  }
+  function pickClear(){ PICK.n.clear(); PICK.f.clear(); PICK.anchor = null; pickPaint(); }
+  const pickSet = kind => kind === "n" ? PICK.n : PICK.f;
+  function pickToggle(kind, id){ const S = pickSet(kind); S.has(id) ? S.delete(id) : S.add(id); PICK.anchor = { kind, id }; pickPaint(); }
+  // a modified click: true when it was a selection click (the caller then does nothing else)
+  function pickClick(e, kind, id){
+    if (e.metaKey || e.ctrlKey) { e.preventDefault(); pickToggle(kind, id); return true; }
+    if (e.shiftKey) { e.preventDefault();
+      const sel = kind === "n" ? ".nb-fnote[data-id]:not(.nb-cfile)" : ".nb-fd.user[data-f]", key = kind === "n" ? "id" : "f";
+      const ids = [...new Set([...fold.querySelectorAll(sel)].map(x => x.dataset[key]))];
+      const a = PICK.anchor && PICK.anchor.kind === kind ? ids.indexOf(PICK.anchor.id) : -1, b = ids.indexOf(id);
+      if (a < 0) { // no start yet: the open note / folder is the start
+        const st = kind === "n" ? ids.indexOf(NOTES.sel) : ids.indexOf(NOTES.folder); if (st >= 0) { ids.slice(Math.min(st, b), Math.max(st, b) + 1).forEach(x => pickSet(kind).add(x)); } else pickSet(kind).add(id);
+      } else ids.slice(Math.min(a, b), Math.max(a, b) + 1).forEach(x => pickSet(kind).add(x));
+      pickPaint(); return true; }
+    if (pickCount()) pickClear();
+    return false;
+  }
+  // the notes a "Select all" on this row means: its folder's notes, Unfiled, Favourites, everything, or what Search shows
+  function groupNotes(g){
+    const all = NS.list();
+    if (g === "none") return all.filter(n => !n.folder).map(n => n.id);
+    if (g === "fav") return all.filter(n => n.fav).map(n => n.id);
+    if (g === "all") return all.map(n => n.id);
+    if (g === "q") return [...new Set([...fold.querySelectorAll('.nb-fnote[data-g="q"]')].map(x => x.dataset.id))];
+    return all.filter(n => n.folder === g).map(n => n.id);
+  }
+  const groupName = g => g === "none" ? "Unfiled" : g === "fav" ? "Favourites" : g === "all" ? (CODE ? "all files" : "All notes") : g === "q" ? "the search results" : (NS.folders().find(f => f.id === g) || {}).name || "this folder";
+  async function pickDelete(nids, fids){
+    nids = nids.filter(id => NS.get(id)); fids = fids.filter(id => NS.folders().some(f => f.id === id));
+    if (!nids.length && !fids.length) return;
+    flushEd();
+    if (nids.includes(NOTES.sel)) { if (rich) { rich.destroy(); rich = null; } NOTES.sel = null; }
+    if (SPLIT.id && nids.includes(SPLIT.id)) closeSplit(true);
+    nids.forEach(id => NS.trash(id));
+    const fs0 = NS.folders(), depth = id => (fs0.find(f => f.id === id) || {}).depth || 0;
+    fids.slice().sort((a, b) => depth(b) - depth(a)).forEach(id => NS.removeFolder(id)); // inner folders first
+    if (fids.includes(NOTES.folder)) NOTES.folder = "all";
+    PICK.n.clear(); PICK.f.clear(); PICK.anchor = null;
+    drawAll();
+    const mark = NS.history().undo, parts = [];
+    if (nids.length) parts.push(`${nids.length} ${CODE ? "file" : "note"}${nids.length === 1 ? "" : "s"}`); if (fids.length) parts.push(`${fids.length} folder${fids.length === 1 ? "" : "s"}`);
+    NS.toast(`Deleted ${parts.join(" and ")}${fids.length ? ". What was in the folders moved up a level" : ""}`, { label: "Undo", run: () => {
+      if (NS.history().undo !== mark) { msg("Use ↶ Undo at the top to step back to it."); return; }
+      if (NS.undo()) drawAll(); } }, 9000);
+  }
+  let fmenu = null;
+  function fmenuClose(){ if (!fmenu) return; fmenu.remove(); fmenu = null; document.removeEventListener("pointerdown", fmenuOut, true); window.removeEventListener("keydown", fmenuKey, true); window.removeEventListener("blur", fmenuClose); }
+  const fmenuOut = e => { if (fmenu && !fmenu.contains(e.target)) fmenuClose(); };
+  const fmenuKey = e => { if (e.key === "Escape" && fmenu) { e.preventDefault(); e.stopPropagation(); fmenuClose(); } };
+  fold.addEventListener("contextmenu", e => {
+    const nr = e.target.closest(".nb-fnote[data-id]:not(.nb-cfile)"), fr = !nr && e.target.closest(".nb-fd[data-f]");
+    if (!nr && !fr) return;
+    e.preventDefault(); fmenuClose();
+    const lib = fr && !fr.classList.contains("user"), kind = nr ? "n" : "f", id = nr ? nr.dataset.id : fr.dataset.f, g = nr ? nr.dataset.g : id;
+    const item = kind === "n" ? NS.get(id) : NS.folders().find(f => f.id === id);
+    if (!lib && !item) return;
+    const inSel = !lib && pickSet(kind).has(id), many = inSel && pickCount() > 1;
+    const name = lib ? groupName(id) : kind === "n" ? item.title : item.name, short = t => esc(String(t || "").length > 34 ? String(t).slice(0, 32).trim() + "…" : t || "");
+    const delN = many ? [...PICK.n] : kind === "n" ? [id] : [], delF = many ? [...PICK.f] : kind === "f" && !lib ? [id] : [];
+    const delWhat = many ? `${pickCount()} selected items` : kind === "n" ? `“${short(name)}”` : `the folder “${short(name)}”`;
+    const all = lib ? groupNotes(id) : kind === "n" ? groupNotes(g) : NS.folders().map(f => f.id);
+    fmenu = h("div", { class: "tm-menu win nb-fmenu", role: "menu", "aria-label": lib ? name : kind === "n" ? (CODE ? "File" : "Note") : "Folder" });
+    fmenu.innerHTML = (lib ? "" : `<button type="button" role="menuitem" data-m="copy"><span class="tm-ic">⧉</span><span>${many ? `Copy ${pickCount()} links` : "Copy link"}<small>${many ? "One per line, to paste into a note, a calendar or an email to yourself" : kind === "n" ? `Opens “${short(name)}” in NotePath on this computer` : `Opens the folder “${short(name)}” in NotePath on this computer`}</small></span></button>
+      <button type="button" role="menuitem" data-m="pick"><span class="tm-ic">${inSel ? "☒" : "☐"}</span><span>${inSel ? "Unselect" : "Select"}<small>${MODK}click also selects · Shift+click selects a run</small></span><kbd>${MODK}click</kbd></button>`)
+      + `<button type="button" role="menuitem" data-m="all"${all.length ? "" : " disabled"}><span class="tm-ic">▦</span><span>${kind === "f" && !lib ? "Select all folders" : (CODE ? "Select all files in " : "Select all notes in ") + esc(lib || g === "none" || g === "fav" || g === "all" || g === "q" ? groupName(g) : "“" + groupName(g) + "”")}<small>${all.length} ${kind === "f" && !lib ? "folder" : CODE ? "file" : "note"}${all.length === 1 ? "" : "s"}</small></span></button>`
+      + (lib ? "" : `<div class="nb-fmsep" role="separator"></div><button type="button" role="menuitem" class="nb-fmdel" data-m="del"><span class="tm-ic">✕</span><span>${many ? `Delete ${pickCount()} selected items` : "Delete"}<small>${delF.length ? "Notes and folders inside a folder move up a level" : "Undo is offered right after"}</small></span></button>`);
+    document.body.appendChild(fmenu);
+    const W = fmenu.offsetWidth, H = fmenu.offsetHeight;
+    fmenu.style.left = Math.max(6, Math.min(innerWidth - W - 6, e.clientX)) + "px"; fmenu.style.top = Math.max(6, Math.min(innerHeight - H - 6, e.clientY)) + "px";
+    fmenu.addEventListener("click", async ev => {
+      const b = ev.target.closest("button[data-m]"); if (!b || b.disabled) return; const m = b.dataset.m;
+      if (m === "copy") { const ids = many ? [...PICK.n].map(x => ["n", x]).concat([...PICK.f].map(x => ["f", x])) : [[kind, id]];
+        const lines = ids.map(([k, x]) => { const o = k === "n" ? NS.get(x) : NS.folders().find(f => f.id === x); return o ? (ids.length > 1 ? (k === "n" ? o.title : o.name) + " — " : "") + (k === "n" ? noteLink(x) : folderLink(x)) : ""; }).filter(Boolean);
+        fmenuClose(); msg((await copyText(lines.join("\n"))) ? (lines.length > 1 ? `Copied ${lines.length} links.` : "Link copied. It opens this in NotePath on this computer.") : "Copying did not work."); return; }
+      if (m === "pick") { fmenuClose(); pickToggle(kind, id); return; }
+      if (m === "all") { fmenuClose(); all.forEach(x => pickSet(kind === "f" && !lib ? "f" : "n").add(x)); PICK.anchor = null; pickPaint(); msg(`Selected ${all.length}. Right-click one of them → Delete to delete them all.`); return; }
+      if (m === "del") {
+        const big = delN.length + delF.length > 1 || delF.length;
+        if (big && !b.dataset.armed) { b.dataset.armed = "1"; b.classList.add("armed"); b.querySelector("span:not(.tm-ic)").firstChild.textContent = `Click again to delete ${delWhat}`; return; }
+        fmenuClose(); if (!big && delN.length === 1) { const n = NS.get(delN[0]); flushEd(); if (NOTES.sel === delN[0]) { if (rich) { rich.destroy(); rich = null; } NOTES.sel = null; } PICK.n.delete(delN[0]); NS.deleteWithUndo(delN[0], x => { if (s.isConnected) { NOTES.sel = x; drawAll(); } }); drawAll(); void n; return; }
+        pickDelete(delN, delF); }
+    });
+    document.addEventListener("pointerdown", fmenuOut, true); window.addEventListener("keydown", fmenuKey, true); window.addEventListener("blur", fmenuClose);
+    setTimeout(() => { const f = fmenu && fmenu.querySelector("button:not([disabled])"); if (f) f.focus({ preventScroll: true }); }, 0);
+  });
+  const pickEsc = e => { if (e.key !== "Escape" || !pickCount() || fmenu || document.querySelector(".tm-menu, .np-pop, .ask-ov, .np-holo, .np-peek, .nw-present, .set-ov:not([hidden])")) return; const t = e.target; if (t && t.closest && t.closest("input, textarea, select, [contenteditable=true]")) return; e.preventDefault(); e.stopPropagation(); pickClear(); };
+  window.addEventListener("keydown", pickEsc, true); m.cleanup.push(() => { window.removeEventListener("keydown", pickEsc, true); fmenuClose(); });
   // one note row in the bar: open, keyboard, drag (v0.5.6: on its own, so a saved note's row can be redrawn alone)
   function wireRow(r){
       const mine = NOTES.sort !== "recent";
       const open = () => { if (NOTES.sel === r.dataset.id) return; flushEd(); NOTES.sel = r.dataset.id; const n = NS.get(r.dataset.id); if (n && !inView(n)) NOTES.folder = n.folder || "all"; drawAll(); };
-      r.onclick = open;
+      r.onclick = e => { if (pickClick(e, "n", r.dataset.id)) return; open(); };
       r.onkeydown = e => {
         if ((e.key === "Enter" || e.key === " ") && e.target === r) { e.preventDefault(); open(); return; }
         // Alt+↑/↓ moves the note among the notes listed with it (My order)
@@ -7143,7 +8084,7 @@ function renderNotes(m, focusBody, space = "notes"){
     const n = NS.get(id); if (!n || !ROWFN) return;
     fold.querySelectorAll(`.nb-fnote[data-id="${id}"]:not(.nb-cfile)`).forEach(el => {
       const t = document.createElement("template"); t.innerHTML = ROWFN(n, el); const nr = t.content.firstElementChild; if (!nr) return;
-      el.replaceWith(nr); wireRow(nr);
+      el.replaceWith(nr); wireRow(nr); nr.classList.toggle("is-picked", PICK.n.has(id));
       const im = nr.querySelector("img[data-cov]"); if (im) window.InquireNotes.thumbURL(im.dataset.cov, 160).then(u => { if (u) im.src = u; });
     });
   }
@@ -7332,7 +8273,7 @@ function renderNotes(m, focusBody, space = "notes"){
     $('[data-a="purl"]', ed).onclick = () => { urlRow.hidden = !urlRow.hidden; if (!urlRow.hidden) urlIn.focus(); };
     $('[data-a="purlx"]', ed).onclick = () => { urlRow.hidden = true; };
     urlRow.onsubmit = e => { e.preventDefault(); if (rich.addURL(urlIn.value)) { urlIn.value = ""; urlRow.hidden = true; } else $(".nb-urlmsg", urlRow).textContent = "Use an https:// address of an image."; };
-    holoButton(n); saveLine(); { const sl = $(".nb-save", ed); if (sl && !sl.classList.contains("is-error")) sl.classList.add("quiet"); }
+    holoButton(n); recButton(n); wordCount(); saveLine(); { const sl = $(".nb-save", ed); if (sl && !sl.classList.contains("is-error")) sl.classList.add("quiet"); }
     // delete at once, with Undo in a message for 8 s (photos and videos are only removed once that time is up)
     $('[data-a="del"]', ed).onclick = () => { flushEd(); if (rich) { rich.destroy(); rich = null; } NOTES.sel = null; NS.deleteWithUndo(n.id, id => { if (s.isConnected) { NOTES.sel = id; drawAll(); } }); drawAll(); };
     if (focusBody) setTimeout(() => {
@@ -7363,7 +8304,7 @@ function renderNotes(m, focusBody, space = "notes"){
     const b = h("button", { type: "button", class: "nb-holob", "aria-label": "Tags, links and source of this note", title: "Tags · Links · Source", "aria-expanded": "false" }, `<span aria-hidden="true">◈</span>`);
     ed.appendChild(b);
     b.onclick = () => { HOLO.open = !HOLO.open; if (HOLO.open) { if (AS.open) asClose(); holoOpen(n.id); } else holoClose(); };
-    if (HOLO.open) holoOpen(n.id);
+    if (HOLO.open && !SIMPLE()) holoOpen(n.id);
     indButton(n); asButtons(n);
     // short names that show on hover and keyboard focus (v0.5.6, Devon: the symbols alone were not enough)
     [[".nb-holob:not(.nb-indb):not(.nb-aib):not(.nb-gramb)", "Links"], [".nb-indb", "Paranotes"], [".nb-aib", "AI Chat"], [".nb-gramb", "Grammar"]].forEach(([q, l]) => { const x = $(q, ed); if (x) x.dataset.label = l; });
@@ -7378,7 +8319,7 @@ function renderNotes(m, focusBody, space = "notes"){
     const b = h("button", { type: "button", class: "nb-holob nb-indb", "aria-label": "Paranotes", title: "Paranotes: your own notes under the words they explain", "aria-expanded": "false" }, `<span aria-hidden="true">↳</span>`);
     ed.appendChild(b);
     b.onclick = () => { IND.open = !IND.open; if (IND.open) { if (AS.open) asClose(); indOpen(n.id); } else indClose(); };
-    if (IND.open) indOpen(n.id);
+    if (IND.open && !SIMPLE()) indOpen(n.id);
   }
   function indClose(){ IND.open = false; IND.edit = null; if (indEl) { indEl.remove(); indEl = null; } if (indKey) { window.removeEventListener("keydown", indKey, true); indKey = null; } const b = $(".nb-indb", ed); if (b) b.setAttribute("aria-expanded", "false"); }
   function indFit(){
@@ -7433,13 +8374,131 @@ function renderNotes(m, focusBody, space = "notes"){
   const AS = NOTES.as || (NOTES.as = { open: null, box: Object.assign({ r: 16, b: 70, w: 400, h: 460 }, store.get("asbox", {})), chats: {}, g: null });
   let asEl = null, asKey = null;
   const GST = () => Object.assign({ def: "school", lang: "en-US", notes: {} }, store.get("grammar", {}));
+  /* ----- Word count (v0.5.8, Devon): a slim line at the bottom of the note, between 🎙 and the corner buttons: words,
+     characters, reading time; with words selected, the count of the selection. Widgets and paranotes are not counted;
+     Chinese and Japanese characters count one word each. ----- */
+  function countText(root, range){
+    let t = ""; const tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: x => x.parentElement && x.parentElement.closest(".nw, .nann-layer, .np-ck") ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
+    let x; while ((x = tw.nextNode())) { if (range && !range.intersectsNode(x)) continue; let v = x.data;
+      if (range) v = v.slice(x === range.startContainer ? range.startOffset : 0, x === range.endContainer ? range.endOffset : v.length);
+      t += v + (x.parentElement && /^(DIV|P|LI|H\d)$/.test(x.parentElement.tagName) ? " " : ""); }
+    t = t.replace(/\u200b/g, "");
+    const cjk = (t.match(/[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/g) || []).length;
+    const words = (t.replace(/[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/g, " ").match(/[\p{L}\p{N}][\p{L}\p{N}\p{M}'’_-]*/gu) || []).length + cjk;
+    const chars = [...t.replace(/\s+$/, "").replace(/^\s+/, "")].filter(c => c !== "\n").length, bare = [...t].filter(c => !/\s/.test(c)).length;
+    return { words, chars, bare };
+  }
+  function wordCount(){
+    if (CODE || !rich) return;
+    const bar = h("div", { class: "nb-wc num", role: "status", "aria-live": "off", title: "Word count" });
+    // (v0.5.8, Devon) a switch in front of it shows or hides the count; kept in notepath.wordcount (on by default)
+    const sw = h("button", { type: "button", class: "nb-wct", role: "switch" }, `<span class="nb-wcti" aria-hidden="true"></span><span class="nb-wctl">Word count</span>`);
+    const setOn = on => { store.set("wordcount", on); sw.setAttribute("aria-checked", String(on)); sw.title = on ? "Hide the word count" : "Show the word count"; sw.setAttribute("aria-label", sw.title); bar.hidden = !on; ed.classList.toggle("wc-off", !on); if (on) paint(); };
+    sw.onclick = () => setOn(!store.get("wordcount", true));
+    ed.appendChild(sw); ed.appendChild(bar);
+    const plural = (n, w) => `${n.toLocaleString()} ${w}${n === 1 ? "" : "s"}`;
+    const paint = () => { if (!rich || !bar.isConnected || bar.hidden) return;
+      const all = countText(rich.el), sel = getSelection(), r = sel.rangeCount && !sel.isCollapsed && rich.el.contains(sel.getRangeAt(0).commonAncestorContainer) ? sel.getRangeAt(0) : null;
+      const mins = all.words / 238, read = all.words ? (mins < 1 ? "under 1 min read" : `${Math.round(mins)} min read`) : "";
+      if (r) { const c = countText(rich.el, r); bar.classList.add("sel"); bar.innerHTML = `<b>${c.words.toLocaleString()}</b> <span>of ${plural(all.words, "word")} selected</span><span class="nb-wcx"> <span>· ${plural(c.chars, "character")}</span></span>`; }
+      else { bar.classList.remove("sel"); bar.innerHTML = `<b>${plural(all.words, "word")}</b><span class="nb-wcx"> <span>· ${plural(all.chars, "character")}</span>${read ? ` · <span>${read}</span>` : ""}</span>`; } // one phrase per span, so each translates (i18n.js)
+      bar.title = `${plural(all.words, "word")} · ${plural(all.chars, "character")} (${all.bare.toLocaleString()} without spaces)${read ? " · " + read : ""}`; };
+    let t = 0; const later = ms => { clearTimeout(t); t = setTimeout(paint, ms); };
+    rich.el.addEventListener("input", () => later(200));
+    const ro = new MutationObserver(() => later(250)); ro.observe(rich.el, { childList: true, subtree: false });
+    const onSel = () => { if (bar.isConnected) later(120); else { document.removeEventListener("selectionchange", onSel); ro.disconnect(); } };
+    document.addEventListener("selectionchange", onSel); m.cleanup.push(() => { document.removeEventListener("selectionchange", onSel); ro.disconnect(); });
+    setOn(store.get("wordcount", true));
+  }
+  /* ----- 🎙 Record (v0.5.8, Devon): bottom left of the note, in Simple and Professional ----- */
+  function recButton(n){
+    if (CODE) return;
+    const old = $(".nb-rec", ed); if (old) old.remove();
+    const box = h("div", { class: "nb-rec", role: "group", "aria-label": "Audio recording" });
+    ed.appendChild(box); recPaint(box, n);
+  }
+  function recPaint(box, n){
+    box = box || $(".nb-rec", ed); if (!box) return;
+    const MIC = window.InquireWidgets ? InquireWidgets.MIC_IC : "🎙";
+    if (!REC.on) {
+      box.className = "nb-rec";
+      box.innerHTML = `<button type="button" class="nb-recb" data-label="Record" title="Record audio into this note (your microphone)" aria-label="Record audio into this note">${MIC}</button>`;
+      $(".nb-recb", box).onclick = () => recStart(n);
+      return;
+    }
+    const other = REC.noteId !== NOTES.sel, nt = NS.get(REC.noteId);
+    box.className = "nb-rec on" + (REC.paused ? " paused" : "");
+    box.innerHTML = `<span class="nb-recdot" aria-hidden="true"></span><span class="nb-rect num" role="timer" aria-live="off">${InquireWidgets.clock(recSecs())}</span><span class="nb-reclv" aria-hidden="true"><i></i></span>`
+      + `<span class="nb-recs">${REC.paused ? "Paused" : "Recording"}${other && nt ? ` into “${esc(nt.title)}”` : ""}</span>`
+      + `<button type="button" class="nb-recx" data-r="pause" title="${REC.paused ? "Carry on recording" : "Pause"}" aria-label="${REC.paused ? "Resume" : "Pause"}">${REC.paused ? "▶" : "❚❚"}</button>`
+      + `<button type="button" class="nb-recx nb-recstop" data-r="stop" title="Stop and put the recording in the note" aria-label="Stop and save">■ Save</button>`
+      + `<button type="button" class="nb-recx" data-r="cancel" title="Throw this recording away" aria-label="Discard the recording">✕</button>`;
+    box.onclick = e => { const b = e.target.closest("[data-r]"); if (!b) return; if (b.dataset.r === "pause") recPause(); else if (b.dataset.r === "stop") recStop(true); else recStop(false); };
+  }
+  async function recStart(n){
+    if (REC.on) return;
+    const md = navigator.mediaDevices;
+    if (!md || !md.getUserMedia || !window.MediaRecorder) { msg("Recording needs a microphone, and this window can't reach one."); return; }
+    let stream;
+    try { stream = await md.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); }
+    catch (e) { msg(/NotAllowed|Security|Permission/i.test(e && e.name || "") ? (/Mac/.test(navigator.platform) ? "NotePath may not use the microphone. Turn it on in System Settings › Privacy & Security › Microphone, then try again." : "NotePath may not use the microphone. Allow it in your system's privacy settings, then try again.") : "No microphone was found."); return; }
+    const mime = recMime(); let mr;
+    try { mr = new MediaRecorder(stream, mime ? { mimeType: mime, audioBitsPerSecond: 64000 } : undefined); } catch (e) { stream.getTracks().forEach(t => t.stop()); msg("This computer can't record audio here."); return; }
+    Object.assign(REC, { on: true, mr, stream, chunks: [], noteId: n.id, paused: false, acc: 0, t0: performance.now(), mime: mr.mimeType || mime || "audio/webm", started: new Date() });
+    mr.ondataavailable = e => { if (e.data && e.data.size) REC.chunks.push(e.data); };
+    mr.start(1000);
+    // a small level meter (≈ 12 updates a second)
+    try { const AC = window.AudioContext || window.webkitAudioContext; REC.ac = new AC(); const an = REC.ac.createAnalyser(); an.fftSize = 512; REC.ac.createMediaStreamSource(stream).connect(an); REC.an = an; REC.buf = new Uint8Array(an.fftSize); } catch (e) {}
+    REC.tick = setInterval(recTick, 80);
+    window.__npRec = () => ({ on: REC.on, paused: REC.paused, secs: recSecs(), level: REC.lv || 0, note: REC.noteId }); // for the tests
+    if (REC.ac && REC.ac.resume) REC.ac.resume().catch(() => {});
+    recPaint(null, n); const sb = $(".nb-recstop", ed); if (sb) sb.focus({ preventScroll: true });
+  }
+  function recTick(){
+    if (!REC.on) return;
+    const box = $(".nb-rec.on", ed); if (box) {
+      const t = $(".nb-rect", box); if (t) t.textContent = InquireWidgets.clock(recSecs());
+      const lv = $(".nb-reclv i", box); if (lv && REC.an && !REC.paused) { REC.an.getByteTimeDomainData(REC.buf); let pk = 0; for (let i = 0; i < REC.buf.length; i += 4) pk = Math.max(pk, Math.abs(REC.buf[i] - 128)); REC.lv = Math.max(REC.lv || 0, pk); lv.style.transform = `scaleX(${Math.min(1, pk / 90).toFixed(2)})`; }
+    }
+    if (recSecs() >= REC_MAX) { recStop(true); msg("Recordings stop at 3 hours: this one is saved."); }
+  }
+  function recPause(){
+    if (!REC.on) return;
+    if (REC.paused) { REC.mr.resume(); REC.paused = false; REC.t0 = performance.now(); }
+    else { REC.mr.pause(); REC.paused = true; REC.acc += performance.now() - REC.t0; }
+    recPaint();
+  }
+  function recStop(keep){
+    if (!REC.on) return Promise.resolve();
+    const R = Object.assign({}, REC), dur = recSecs();
+    clearInterval(REC.tick); REC.on = false;
+    try { if (R.ac) R.ac.close(); } catch (e) {}
+    const done = new Promise(res => { R.mr.onstop = res; });
+    try { R.mr.stop(); } catch (e) {}
+    R.stream.getTracks().forEach(t => t.stop());
+    const box = $(".nb-rec", ed); if (box) recPaint(box, NS.get(NOTES.sel) || { id: NOTES.sel });
+    return done.then(async () => {
+      if (!keep) { msg("Recording thrown away."); return; }
+      const blob = new Blob(R.chunks, { type: R.mime.split(";")[0] || "audio/webm" });
+      if (!blob.size) { msg("Nothing was recorded."); return; }
+      const d = R.started, title = "Recording · " + d.toLocaleDateString(undefined, { month: "short", day: "numeric" }) + ", " + d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+      try {
+        if (rich && rich.id === R.noteId && rich.addAudio && s.isConnected) { await rich.addAudio(blob, { title, dur }); }
+        else { const nt = NS.get(R.noteId); if (!nt) { msg("The note for that recording is gone."); return; }
+          const vid = await NS.putVideo(blob), w = InquireWidgets.create("audio", { vid, title, dur: Math.round(dur), mime: blob.type });
+          NS.update(R.noteId, { html: (nt.html || "") + w.outerHTML + "<div><br></div>" }); }
+        msg(`Saved the recording (${InquireWidgets.clock(dur)}) in the note.`);
+      } catch (e) { msg("The recording could not be saved."); }
+    });
+  }
+  m.cleanup.push(() => { if (REC.on) recStop(true); });
   function asButtons(n){
-    [["ai", "nb-aib", "AI Chat", "AI Chat: ask about this note, or have it write, sum up or explain", `<span aria-hidden="true">✦</span>`],
+    [["ai", "nb-aib", "AI Chat", "AI Chat: ask about this note, or have it write, sum up or explain", aiFigure()],
      ["gram", "nb-gramb", "Grammar check", "Grammar check: spelling, grammar and style, set to the kind of note you are writing", `<span aria-hidden="true" class="nb-gramg">A<small>✓</small></span>`]].forEach(([k, cls, label, title, ic]) => {
       const b = h("button", { type: "button", class: "nb-holob " + cls, "aria-label": label, title, "aria-expanded": String(AS.open === k) }, ic);
       ed.appendChild(b); b.onclick = () => { if (AS.open === k) asClose(); else asOpen(k, n.id); };
     });
-    if (AS.open) asOpen(AS.open, n.id);
+    if (AS.open && !(SIMPLE() && AS.open === "ai")) asOpen(AS.open, n.id);
   }
   function asClose(){ AS.open = null; if (asEl) { asEl.remove(); asEl = null; } if (asKey) { window.removeEventListener("keydown", asKey, true); asKey = null; } ed.querySelectorAll(".nb-aib, .nb-gramb").forEach(b => b.setAttribute("aria-expanded", "false")); }
   function asFit(){
@@ -7628,7 +8687,7 @@ function renderNotes(m, focusBody, space = "notes"){
     $(".np-peek-m", peekEl).textContent = (f ? f.name : "Unfiled") + " · edited " + stampShort(n.updated);
     if (n.space === "code") { body.innerHTML = `<pre class="np-peek-code"></pre>`; body.firstChild.textContent = (n.code && n.code.src) || ""; return; }
     const t = document.createElement("template"); t.innerHTML = ALLNS.sanitize(n.html || "");
-    t.content.querySelectorAll("div.nw").forEach(w => { const k = w.getAttribute("data-w"); const p = document.createElement("div"); p.className = "np-peek-w"; p.textContent = "▦ " + ({ code: "Code box", music: "Music chart", sheet: "Lead sheet", graph: "Graph", video: "Video" }[k] || "Widget") + " · open the note to see it"; w.replaceWith(p); });
+    t.content.querySelectorAll("div.nw").forEach(w => { const k = w.getAttribute("data-w"); const p = document.createElement("div"); p.className = "np-peek-w"; p.textContent = "▦ " + ({ code: "Code box", music: "Music chart", sheet: "Lead sheet", graph: "Graph", video: "Video", map: "Map", audio: "Audio recording", sign: "Signature" }[k] || "Widget") + " · open the note to see it"; w.replaceWith(p); });
     t.content.querySelectorAll("span[data-ann]").forEach(sp => sp.removeAttribute("data-ann"));
     body.innerHTML = ""; body.appendChild(t.content);
     if (!body.textContent.trim() && !body.querySelector("img")) body.innerHTML = `<p class="np-hl-none">This note is empty.</p>`;
@@ -7682,9 +8741,9 @@ function renderNotes(m, focusBody, space = "notes"){
     if (rich2) { rich2.destroy(); rich2 = null; }
     const n = SPLIT.id && NS.get(SPLIT.id);
     if (!n) { SPLIT.id = null; SPLIT.min = false; }
-    const show = !!n && !SPLIT.min;
+    const show = !!n && !SPLIT.min && !SIMPLE(); // Simple has one note at a time; Professional brings the second one back
     ed2.hidden = !show; edSec.classList.toggle("split", show);
-    tabs.hidden = !(n && SPLIT.min);
+    tabs.hidden = !(n && SPLIT.min) || SIMPLE();
     tabs.innerHTML = n && SPLIT.min ? `<div class="nb-tab"><button type="button" class="nb-tab-t" data-a="max" title="Bring ${esc(n.title)} back beside this note">▣ <span>${esc(n.title)}</span></button><button type="button" class="nb-tab-b" data-a="max" title="Maximise: open it side by side again" aria-label="Maximise ${esc(n.title)}">⤢</button><button type="button" class="nb-tab-b" data-a="close" title="Close" aria-label="Close ${esc(n.title)}">✕</button></div>` : "";
     tabs.querySelectorAll('[data-a="max"]').forEach(b => b.onclick = () => { SPLIT.min = false; drawSplit(); });
     const tx = $('[data-a="close"]', tabs); if (tx) tx.onclick = () => closeSplit();
@@ -7773,7 +8832,7 @@ let DESK_VERSION = "";
 if (window.inquireDesktop) {
   const D = window.inquireDesktop;
   document.documentElement.classList.add("desktop", "os-" + D.platform);
-  if (D.onRoute) D.onRoute(r => { if (r && r.note) return openNoteLink(r.note); if (r && r.view) go(r); }); // tray menu: Open My Tasks, the next reminder
+  if (D.onRoute) D.onRoute(r => { if (r && r.note) return openNoteLink(r.note); if (r && r.folderLink) return openFolderLinkTo(r.folderLink); if (r && r.view) go(r); }); // tray menu: Open My Tasks, the next reminder
   D.version().then(v => { DESK_VERSION = v; const el = document.querySelector("#verline .num"); if (el) el.textContent = "v" + v; });
   const bar = $("#upd");
   let hideT = null;
@@ -7797,7 +8856,7 @@ if (window.inquireDesktop) {
 
 /* ---------- hooks for settings.js and textmenu.js ---------- */
 window.InquireApp = {
-  noteLink, openNoteLink, coverButton,
+  noteLink, openNoteLink, folderLink, openFolderLinkTo, coverButton,
   context(){ return { view: S.view }; },
   openNotes: id => go({ view: "notes", space: "notes", folder: "all", sel: id || null }),
   newNote,
@@ -8889,7 +9948,7 @@ window.InquireDocs = Object.assign(window.InquireDocs || {}, {
 const KEY = "notepath.settings";
 // tabs: colours of the My notes, My Code and My Music buttons on the Main Menu (amber-orange, blue, magenta); only their glyphs take them
 const TABDEF = { notes: "#F2B84B", code: "#4FA3F7", music: "#D97AE6" };
-const DEF = { theme: "capsuleer", uiScale: 1, textSize: 1, reduceMotion: false, perf: "auto", escKey: true, invertScroll: false, noteLink: "#B49BFF", indent: "#B5D65A", tabs: TABDEF };
+const DEF = { theme: "capsuleer", uiScale: 1, textSize: 1, reduceMotion: false, perf: "auto", escKey: true, invertScroll: false, noteLink: "#B49BFF", indent: "#B5D65A", tabs: TABDEF, cvd: "off", lang: "en" };
 const load = () => {
   let o = {}; try { o = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) {}
   if (o.uiScale == null && typeof o.textScale === "number") o.uiScale = o.textScale; // the old single "Text & interface size" was a zoom
@@ -9051,6 +10110,11 @@ function jankWatch() {
     }
   }, "Auto watch, first 90 s");
 }
+// colour-blind mode (v0.5.8, Devon): which signal colours to use (notepath.css "colour-blind mode" block)
+const CVDS = [["off", "Off", "Colours as the theme has them."],
+  ["rg", "Red-green", "For protanopia and deuteranopia (the most common kinds): good is blue, warnings yellow, errors vermilion."],
+  ["by", "Blue-yellow", "For tritanopia: good is teal, warnings pink, errors crimson."],
+  ["mono", "No colour", "For full colour blindness (achromatopsia): signals differ by brightness, and every one has a shape or word."]];
 const PERFS_SET = () => PERFS.includes(S.perf) ? S.perf : "auto";
 const PERFS = ["lite", "moderate", "full"];
 const osReduced = () => { try { return !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches); } catch (e) { return false; } };
@@ -9063,6 +10127,7 @@ function applyAll() {
   Object.keys(TABDEF).forEach(k => document.documentElement.style.setProperty("--tab-" + k, hexOk(S.tabs[k]) ? S.tabs[k] : TABDEF[k]));
   applySizes();
   document.documentElement.toggleAttribute("data-reduce-motion", !!S.reduceMotion || osReduced()); // the system setting counts too (v0.5.7)
+  if (CVDS.some(c => c[0] === S.cvd) && S.cvd !== "off") document.documentElement.dataset.cvd = S.cvd; else delete document.documentElement.dataset.cvd; // colour-blind mode (v0.5.8)
   window.dispatchEvent(new CustomEvent("inquire:theme")); // canvases that paint with the theme (Note Office) repaint
 }
 applyAll();
@@ -9151,7 +10216,9 @@ function swatch(t) {
     <i class="set-swp"></i><i class="set-sws"></i><i class="set-swd"></i></span>`;
 }
 function paneLook() {
-  const wrap = h(`<div><p class="set-lede">Pick the colours of the console. Each square shows the theme's <b>primary</b> (background), <b>secondary</b> (panels) and <b>detail</b> (frames and glow) colours. Topic colours stay the same in every theme so diagrams keep their meaning. To make your own, scroll to <b>Your colours</b> below.</p></div>`);
+  // (v0.5.8, Devon) two parts, each under a bold header with a solid line: the app's own look, then the colours of tools and features
+  const sect = (t, d) => h(`<div class="set-sect" role="group" aria-label="${t}"><h3 class="set-secth">${t}</h3><p class="set-sectd">${d}</p></div>`);
+  const wrap = h(`<div>${""}<p class="set-lede">Pick the colours of the console. Each square shows the theme's <b>primary</b> (background), <b>secondary</b> (panels) and <b>detail</b> (frames and glow) colours. Topic colours stay the same in every theme so diagrams keep their meaning. To make your own, scroll to <b>Your colours</b> below.</p></div>`);
   FAMS.forEach(([fam, label]) => {
     const g = h(`<div class="set-thfam"><h3>${label}</h3><div class="set-thgrid" role="radiogroup" aria-label="${label}"></div></div>`);
     THEMES.filter(t => t.fam === fam).forEach(t => {
@@ -9161,6 +10228,7 @@ function paneLook() {
       b.onclick = () => { S.theme = t.id; save(); applyTheme(t.id); wrap.querySelectorAll(".set-th").forEach(x => x.setAttribute("aria-checked", String(x.dataset.id === t.id))); if (wrap._cust) wrap._cust(t); };
       g.querySelector(".set-thgrid").appendChild(b);
     });
+    if (!wrap.querySelector(".set-sect")) wrap.insertBefore(sect("Application colours &amp; themes", "The look of NotePath itself: its theme, your own colours, the Main Menu and colour-blind mode."), wrap.querySelector(".set-lede"));
     wrap.appendChild(g);
   });
   wrap.appendChild(customLook(wrap));
@@ -9174,7 +10242,7 @@ function paneLook() {
   const pick = lc.querySelector('input[type="color"]');
   pick.oninput = () => { S.noteLink = pick.value; applyAll(); mark(); };
   pick.onchange = () => { S.noteLink = pick.value; save(); };
-  wrap.appendChild(lc);
+  const lcLater = lc;
   // colour of paranotes (your own notes under the words they explain)
   const ic = h(`<div class="set-thfam"><h3>Paranotes</h3><div class="set-item set-lcitem"><div><p>Colour of your paranotes: the notes you add under words in a note (↳ at the bottom right of a note).
       <span class="set-lcdemo set-inddemo">Example: <span class="set-indw">photosynthesis</span><span class="set-indt">how plants turn light into food</span></span></p></div>
@@ -9185,7 +10253,7 @@ function paneLook() {
   const ipick = ic.querySelector('input[type="color"]');
   ipick.oninput = () => { S.indent = ipick.value; applyAll(); imark(); };
   ipick.onchange = () => { S.indent = ipick.value; save(); };
-  wrap.appendChild(ic);
+  const icLater = ic;
   // colours of the My notes / My Code / My Music Main Menu buttons
   const tc = h(`<div class="set-thfam"><h3>Main Menu colours</h3><div class="set-item"><div><p>Colours of the My notes, My Code and My Music buttons on the Main Menu. Only their icons change colour; the rest keeps your theme.</p></div>
     <div class="set-tabc">${[["notes", "My notes"], ["code", "My Code"], ["music", "My Music"]].map(([k, n]) => `<label class="set-tabcl" style="--c:${S.tabs[k]}"><input type="color" data-tab="${k}" value="${hexOk(S.tabs[k]) ? S.tabs[k] : TABDEF[k]}" aria-label="${n} tab colour"><span>${n}</span></label>`).join("")}
@@ -9196,6 +10264,16 @@ function paneLook() {
   });
   tc.querySelector('[data-a="tabreset"]').onclick = () => { S.tabs = Object.assign({}, TABDEF); save(); applyAll(); tc.querySelectorAll('input[type="color"]').forEach(inp => { inp.value = TABDEF[inp.dataset.tab]; inp.parentElement.style.setProperty("--c", inp.value); }); };
   wrap.appendChild(tc);
+  // colour-blind mode (v0.5.8, Devon)
+  const cv = h(`<div class="set-thfam"><h3>Colour-blind mode</h3><div class="set-item"><div><p class="set-cvdd"></p>
+      <div class="set-cvdp" aria-hidden="true"><span class="g">✓ Done</span><span class="w">◷ Due soon</span><span class="r">⚠ Overdue</span></div></div>
+    <div class="set-seg" role="radiogroup" aria-label="Colour-blind mode">${CVDS.map(([k, n]) => `<button type="button" role="radio" data-cvd="${k}" aria-checked="${(S.cvd || "off") === k}">${n}</button>`).join("")}</div></div></div>`);
+  const cvText = () => { const c = CVDS.find(x => x[0] === (S.cvd || "off")) || CVDS[0]; cv.querySelector(".set-cvdd").textContent = c[2] + (c[0] === "off" ? " Pick the kind of colour blindness to change done, warning and error colours and add shapes to them." : ""); };
+  cvText();
+  cv.querySelectorAll("[data-cvd]").forEach(b => b.onclick = () => { S.cvd = b.dataset.cvd; save(); applyAll(); cv.querySelectorAll("[data-cvd]").forEach(x => x.setAttribute("aria-checked", String(x === b))); cvText(); });
+  wrap.appendChild(cv);
+  wrap.appendChild(sect("Tool &amp; feature colours", "Colours used inside your notes: linked words and paranotes."));
+  wrap.appendChild(lcLater); wrap.appendChild(icLater);
   pane.appendChild(wrap);
 }
 
@@ -9273,7 +10351,10 @@ function fader(key, label, desc, min, max, step, marks) {
     </div></div>`;
 }
 function paneDisplay() {
+  const L = window.NPI18N ? NPI18N.LANGS : [["en", "English", "English"]];
   const w = h(`<div>
+    <div class="set-item set-langitem"><div><h3>App language</h3><p class="set-langp">The language of NotePath's menus, buttons and messages. Your notes stay as you wrote them.</p></div>
+      <select class="set-in set-lang no-i18n" aria-label="Language of NotePath">${L.map(([k, n, en]) => `<option value="${k}"${(S.lang || "en") === k ? " selected" : ""}>${esc(n)}${k === "en" ? "" : " · " + esc(en)}</option>`).join("")}</select></div>
     ${fader("textSize", "Text size", "Only the words: notes, menus and labels. Layout keeps its size.", .8, 1.5, .05, [.8, 1, 1.25, 1.5])}
     ${fader("uiScale", "Interface size", "Scales the whole console: panels, buttons and lists, with their text.", .75, 1.4, .05, [.75, 1, 1.2, 1.4])}
     <div class="set-item"><div><h3>Performance</h3><p class="set-perfp"></p></div>
@@ -9303,6 +10384,10 @@ function paneDisplay() {
   perfText();
   w.querySelectorAll("[data-perf]").forEach(b => b.onclick = () => { S.perf = b.dataset.perf; save(); applyAll(); w.querySelectorAll("[data-perf]").forEach(x => x.setAttribute("aria-checked", String(x === b))); perfText(); });
   w.querySelectorAll(".set-tog input").forEach(i => i.onchange = () => { S[i.dataset.k] = i.checked; save(); applyAll(); });
+  // the language (v0.5.8, Devon): NPI18N translates the page in place; the choice is S.lang
+  const ls = w.querySelector(".set-lang"), lp = w.querySelector(".set-langp");
+  ls.onchange = () => { const v = ls.value; S.lang = v; save(); ls.disabled = true;
+    (window.NPI18N ? NPI18N.set(v) : Promise.resolve()).then(() => { ls.disabled = false; }).catch(() => { ls.disabled = false; lp.textContent = "That language could not be loaded. Try again, or reinstall NotePath."; }); };
   pane.appendChild(w);
 }
 
