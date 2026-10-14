@@ -65,7 +65,7 @@ pre.code .out{color:var(--pink)}
    radial-gradient(900px 700px at -10% 110%, var(--tint-2), transparent 60%),
    var(--void)}
 .topbar{display:flex;align-items:center;gap:16px;padding:8px 16px;padding-top:calc(8px + env(safe-area-inset-top,0px));
-  border-bottom:1px solid var(--line);background:linear-gradient(180deg,var(--chrome-1),var(--chrome-2));min-height:44px;backdrop-filter:blur(var(--blur))}
+  border-bottom:1px solid var(--line);background:linear-gradient(180deg,var(--chrome-1),var(--chrome-2));min-height:44px}
 .brand{display:flex;align-items:center;gap:10px;cursor:pointer;background:none;border:0;padding:0}
 .brand-mark{width:26px;height:26px;border:1px solid var(--frame);display:grid;place-items:center;font:600 14px/1 var(--math);color:var(--frame);
   clip-path:polygon(0 0,80% 0,100% 20%,100% 100%,20% 100%,0 80%);background:color-mix(in srgb,var(--frame) 8%,transparent)}
@@ -83,14 +83,14 @@ pre.code .out{color:var(--pink)}
 .topstat.tracked{color:var(--text)}
 .stat-star{color:var(--amber);margin-right:6px;letter-spacing:0}
 /* screen transition (go() in app.js): the same fade-in as the Settings window */
-@keyframes vt-in{from{opacity:0;filter:blur(3px) brightness(.8)}to{opacity:1;filter:none}}
+@keyframes vt-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 .vt-in{animation:vt-in .45s cubic-bezier(.2,.7,.2,1)}
 .meter{width:120px;height:6px;background:var(--panel-3);border:1px solid var(--line);position:relative}
 .meter>i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,var(--green),#B8F0C4);width:0}
 .view{min-height:0;position:relative}
 
 /* EVE window panel */
-.win{background:linear-gradient(180deg,var(--win-1),var(--win-2));border:1px solid var(--line);position:relative;backdrop-filter:blur(var(--blur))}
+.win{background:linear-gradient(180deg,var(--win-1),var(--win-2));border:1px solid var(--line);position:relative}
 .win::before{content:"";position:absolute;left:-1px;top:-1px;width:14px;height:14px;border-left:2px solid var(--frame);border-top:2px solid var(--frame);opacity:.7;pointer-events:none}
 .win::after{content:"";position:absolute;right:-1px;bottom:-1px;width:14px;height:14px;border-right:2px solid var(--frame);border-bottom:2px solid var(--frame);opacity:.35;pointer-events:none}
 .win-h{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,rgba(255,255,255,.04),transparent);
@@ -106,7 +106,7 @@ pre.code .out{color:var(--pink)}
 .slots{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
 .subj-group .slots{grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
 .slot{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center;padding:18px;min-height:112px;
-  background:linear-gradient(180deg,var(--slot-1),var(--slot-2));border:1px solid var(--line-2);position:relative;backdrop-filter:blur(var(--blur));transition:border-color .2s,background .2s}
+  background:linear-gradient(180deg,var(--slot-1),var(--slot-2));border:1px solid var(--line-2);position:relative;transition:border-color .2s,background .2s}
 .slot:hover{border-color:var(--frame);background:linear-gradient(180deg,var(--slot-h1),var(--slot-h2))}
 .slot:focus-visible{outline:2px solid var(--frame);outline-offset:2px}
 .slot .glyph{width:56px;height:56px;display:grid;place-items:center;font:400 28px/1 var(--math);color:var(--frame);border:1px solid var(--line-2);border-radius:50%;
@@ -158,14 +158,14 @@ pre.code .out{color:var(--pink)}
 .topstat+.gear{margin-left:0}
 
 /* the app behind the window fogs and eases back */
-#app,.inqi-stage,.inqi-corner{transition:filter .35s ease,transform .35s ease}
-body.set-open #app,body.set-open .inqi-stage,body.set-open .inqi-corner,body.ask-open #app,body.mw-open #app{filter:blur(3px) saturate(.75) brightness(.72);transform:scale(.985)}
+/* v0.5.7 (speed): the app behind a window is no longer blurred and scaled (that re-drew the whole screen every frame on
+   integrated graphics); a darker scrim fades in instead (opacity only). Glass blur: see Performance mode (notepath.css). */
 .set-ov{position:fixed;inset:0;z-index:2000;display:grid;place-items:center;padding:16px;
-  background:radial-gradient(ellipse at 50% 40%,rgba(200,220,255,.06),rgba(3,6,11,.55));opacity:0;transition:opacity .3s ease}
+  background:radial-gradient(ellipse at 50% 40%,rgba(200,220,255,.06),rgba(3,6,11,.72));opacity:0;transition:opacity .3s ease}
 body.set-open .set-ov{opacity:1}
 .set-win{width:min(880px,100%);height:min(640px,calc(100dvh - 32px));display:flex;flex-direction:column;
   box-shadow:0 24px 80px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.03),0 0 40px var(--glow);
-  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);transform:translateY(10px) scale(.98);transition:transform .35s cubic-bezier(.2,.7,.2,1)}
+  transform:translateY(10px) scale(.98);transition:transform .35s cubic-bezier(.2,.7,.2,1)}
 body.set-open .set-win{transform:none}
 .set-win.is-doc{width:min(760px,100%)}
 .set-h{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,rgba(255,255,255,.05),transparent)}
@@ -317,11 +317,11 @@ a.btn-s{text-decoration:none;display:inline-block}
 
 /* small dialog in the same style (askText in app.js: New note title) */
 .ask-ov{position:fixed;inset:0;z-index:2000;display:grid;place-items:center;padding:16px;
-  background:radial-gradient(ellipse at 50% 40%,rgba(200,220,255,.06),rgba(3,6,11,.55));opacity:0;transition:opacity .25s ease}
+  background:radial-gradient(ellipse at 50% 40%,rgba(200,220,255,.06),rgba(3,6,11,.72));opacity:0;transition:opacity .25s ease}
 body.ask-open .ask-ov{opacity:1}
 .ask-ov.out{opacity:0}
 .ask-win{width:min(460px,100%);margin:0;box-shadow:0 24px 80px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.03),0 0 40px var(--glow);
-  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);transform:translateY(10px) scale(.98);transition:transform .3s cubic-bezier(.2,.7,.2,1)}
+  transform:translateY(10px) scale(.98);transition:transform .3s cubic-bezier(.2,.7,.2,1)}
 body.ask-open .ask-win{transform:none}
 .ask-body{display:grid;gap:10px;padding:18px 20px 20px}
 .ask-l{font:600 12px/1 var(--ui);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
@@ -733,12 +733,12 @@ a.nw-open{text-decoration:none}
 
 /* ---------- windows over the app: My notes, Achievements (modalWin in app.js; fog rule in settings.css) ---------- */
 .mw-ov{position:fixed;inset:0;z-index:1600;display:grid;place-items:center;padding:16px;
-  background:radial-gradient(ellipse at 50% 40%,rgba(200,220,255,.06),rgba(3,6,11,.55));opacity:0;transition:opacity .3s ease}
+  background:radial-gradient(ellipse at 50% 40%,rgba(200,220,255,.06),rgba(3,6,11,.72));opacity:0;transition:opacity .3s ease}
 body.mw-open .mw-ov{opacity:1}
 .mw-ov.out{opacity:0;pointer-events:none}
 .mw-win{width:min(1080px,100%);height:min(760px,calc(100dvh - 32px));display:flex;flex-direction:column;outline:none;
   box-shadow:0 24px 80px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.03),0 0 40px var(--glow);
-  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);transform:translateY(10px) scale(.98);transition:transform .35s cubic-bezier(.2,.7,.2,1)}
+  transform:translateY(10px) scale(.98);transition:transform .35s cubic-bezier(.2,.7,.2,1)}
 body.mw-open .mw-win{transform:none}
 .mw-ov.out .mw-win{transform:translateY(10px) scale(.98)}
 .mw-h{flex-wrap:wrap;row-gap:6px}
@@ -1971,11 +1971,32 @@ div.nb{--nb-lw:64px}
 @media (prefers-reduced-motion:reduce){ .np-new{animation:none} }
 @media (max-width:760px){ .np-new{position:fixed;top:auto;left:12px;right:12px;bottom:12px;width:auto;max-height:60vh;overflow:auto} }
 
+/* ---------- v0.5.7 Performance mode (settings.js sets html[data-perf="lite|moderate|full"], html[data-glass]) ----------
+   Lite = plain and light. Moderate = glows, shadows, soft motion; glass blur for glass themes; never a blurred page behind a window.
+   Full = the look before 0.5.7 (blur + dim + scale of the app behind windows, always-blurred overlays, blur in the page-in fade).
+   A blur layer over a moving page is the costliest thing on integrated graphics, hence the tiers. */
+:root[data-glass][data-perf="moderate"] .win,:root[data-glass][data-perf="moderate"] .slot,:root[data-glass][data-perf="moderate"] .topbar,
+:root[data-glass][data-perf="full"] .win,:root[data-glass][data-perf="full"] .slot,:root[data-glass][data-perf="full"] .topbar{backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur))}
+:root[data-glass][data-perf="moderate"] .set-win,:root[data-glass][data-perf="moderate"] .mw-win,:root[data-glass][data-perf="moderate"] .ask-win,
+:root[data-perf="full"] .set-win,:root[data-perf="full"] .mw-win,:root[data-perf="full"] .ask-win{backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+:root[data-glass][data-perf="moderate"] .mw-win.mw-office,:root[data-perf="full"] .mw-win.mw-office{backdrop-filter:none;-webkit-backdrop-filter:none}
+/* Full only: the old fog behind windows */
+:root[data-perf="full"] #app,:root[data-perf="full"] .inqi-stage,:root[data-perf="full"] .inqi-corner{transition:filter .35s ease,transform .35s ease}
+:root[data-perf="full"] body.set-open #app,:root[data-perf="full"] body.set-open .inqi-stage,:root[data-perf="full"] body.set-open .inqi-corner,:root[data-perf="full"] body.ask-open #app,:root[data-perf="full"] body.mw-open #app{filter:blur(3px) saturate(.75) brightness(.72);transform:scale(.985)}
+:root[data-perf="full"] .set-ov,:root[data-perf="full"] .mw-ov,:root[data-perf="full"] .ask-ov{background:radial-gradient(ellipse at 50% 40%,rgba(200,220,255,.06),rgba(3,6,11,.55))}
+@keyframes vt-in-full{from{opacity:0;filter:blur(3px) brightness(.8)}to{opacity:1;filter:none}}
+:root[data-perf="full"] .vt-in{animation-name:vt-in-full}
+/* Lite */
+:root[data-perf="lite"]{--glow:transparent!important}
+:root[data-perf="lite"] .vt-in{animation:none}
+:root[data-perf="lite"] .set-win,:root[data-perf="lite"] .mw-win,:root[data-perf="lite"] .ask-win,:root[data-perf="lite"] .np-pop,:root[data-perf="lite"] .tm-menu,:root[data-perf="lite"] .nr-panel,:root[data-perf="lite"] .nk-pick{box-shadow:0 6px 18px rgba(0,0,0,.5);transition-property:opacity;transform:none}
+:root[data-perf="lite"] .set-sw.set-glass .set-sws{backdrop-filter:none}
+
 </style>
 </head><body>
 <script>window.NP_MONACO_BASE = "vendor/monaco/vs";</script>
 <div id="app">
-  <header class="topbar">
+  <header class="topbar" aria-label="NotePath">
     <button type="button" class="brand" id="brand" aria-label="NotePath main menu"><span class="brand-mark"><img src="data:image/png;base64,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" alt="" width="30" height="30"></span><span class="brand-name">NotePath</span></button>
     <nav class="crumbs" id="crumbs" aria-label="Breadcrumb"></nav>
     <button type="button" class="gear" id="gear" title="Settings (Esc)">Settings</button>
@@ -1983,6 +2004,90 @@ div.nb{--nb-lw:64px}
   <main class="view" id="view" tabindex="-1"></main>
   <div class="upd" id="upd" role="status" hidden></div>
 </div>
+<script>/* web/lib/lazy.js */
+/* NotePath lazy modules (v0.5.7). Big, rarely used scripts (Note Office, Import & Export, Sheet, Graph, Map, AI Chat helpers) sit in the
+   page as inert <script type="text/plain" data-np-lazy="name"> text and run the first time something touches their global
+   (window.NoteOffice, NPIO, NPSheet, NPGraph, NPMap, NPAssist). Until then they cost no parse, no memory and no start-up time.
+   The global is an accessor: the first read runs the script (synchronously, so callers see no difference); the script's own
+   `window.X = {…}` then replaces the accessor with a plain value. tools/build-web.js decides which files are lazy (LAZY). */
+(function () {
+  const done = Object.create(null);
+  function load(name) {
+    if (done[name]) return;
+    done[name] = 1;
+    const el = document.querySelector('script[data-np-lazy="' + name + '"]');
+    if (!el) return;
+    const s = document.createElement("script");
+    s.textContent = el.textContent;
+    el.remove();                       // the source text is no longer kept in the page
+    (document.head || document.documentElement).appendChild(s);
+    s.remove();
+  }
+  function lazy(name, glob) {
+    Object.defineProperty(window, glob, {
+      configurable: true, enumerable: true,
+      get() { load(name); const d = Object.getOwnPropertyDescriptor(window, glob); return d && "value" in d ? d.value : undefined; },
+      set(v) { Object.defineProperty(window, glob, { value: v, writable: true, configurable: true, enumerable: true }); }
+    });
+  }
+  window.NPLazy = { load, lazy, loaded: () => Object.keys(done) };
+})();
+
+</script>
+<script>NPLazy.lazy("office", "NoteOffice"); NPLazy.lazy("io", "NPIO"); NPLazy.lazy("sheet", "NPSheet"); NPLazy.lazy("graph", "NPGraph"); NPLazy.lazy("map", "NPMap"); NPLazy.lazy("assist", "NPAssist");</script>
+<script>/* web/lib/diag.js */
+/* NotePath diagnostics (v0.5.7). Everything stays on this computer: nothing is sent anywhere.
+   - a ring of the last 30 page errors,
+   - a frame sampler (sample(ms, onSlow)): counts frames slower than 50 ms while the window is visible. It runs only when asked
+     (the first 90 s of Auto mode, settings.js; "Run a frame test" in Settings → About), because an always-on loop would cost the energy it measures,
+   - report(): the text behind Settings → About → Copy diagnostics (version, system, performance mode, sizes, errors, frame stats). */
+(function () {
+  const errs = [];
+  const add = (k, m) => { errs.push({ t: new Date().toISOString().slice(11, 19), k, m: String(m).slice(0, 300) }); if (errs.length > 30) errs.shift(); };
+  window.addEventListener("error", e => add("error", (e.message || "") + (e.filename ? " @ " + String(e.filename).split("/").pop() + ":" + e.lineno : "")));
+  window.addEventListener("unhandledrejection", e => add("promise", (e.reason && e.reason.message) || e.reason));
+  const stats = { frames: 0, slow: 0, worst: 0, ms: 0, label: "not run" };
+  let running = null, cur = null; // cur = the sample in progress, so a report made during the 90 s watch still shows its numbers
+  function sample(ms, onSlow, label) {
+    if (running) running.stop();
+    const s = { frames: 0, slow: 0, worst: 0, ms: 0, label: label || "sample" }; let last = 0, t0 = 0, stopped = false, done;
+    const p = new Promise(r => { done = r; });
+    const stop = () => { if (stopped) return; stopped = true; s.ms = Math.round(performance.now() - t0); Object.assign(stats, s); running = null; cur = null; done(s); };
+    const tick = ts => {
+      if (stopped) return;
+      if (!t0) { t0 = performance.now(); s.t0 = t0; }
+      const vis = document.visibilityState === "visible";
+      if (vis && last) { const g = ts - last; if (g < 1500) { s.frames++; if (g > s.worst) s.worst = Math.round(g); if (g > 50) { s.slow++; if (onSlow) onSlow(g, ts); } } }
+      last = vis ? ts : 0;
+      if (performance.now() - t0 >= ms) { stop(); return; }
+      requestAnimationFrame(tick);
+    };
+    running = { stop }; cur = s; requestAnimationFrame(tick);
+    return p;
+  }
+  async function report() {
+    const D = window.inquireDesktop, NS = window.InquireNotes, L = [];
+    let ver = ""; try { if (D && D.version) ver = await D.version(); } catch (e) {}
+    let est = null; try { est = navigator.storage && navigator.storage.estimate ? await navigator.storage.estimate() : null; } catch (e) {}
+    let auto = {}; try { auto = JSON.parse(localStorage.getItem("notepath.perf.auto") || "{}") || {}; } catch (e) {}
+    const S = window.InquireSettings ? InquireSettings.get() : {}, mb = n => (n / 1048576).toFixed(0) + " MB";
+    L.push("NotePath diagnostics (kept on this computer; nothing was sent)");
+    L.push("Version: " + (ver ? "v" + ver : "web preview") + " · " + new Date().toISOString());
+    L.push("System: " + (D ? D.platform : navigator.platform) + " · " + (navigator.hardwareConcurrency || "?") + " cores · " + (navigator.deviceMemory ? navigator.deviceMemory + " GB (rounded down by the browser)" : "memory unknown"));
+    L.push("Graphics: " + (auto.gpu || "not read yet") + " · screen " + screen.width + "×" + screen.height + " @" + (window.devicePixelRatio || 1) + "x");
+    L.push("Performance: setting " + (S.perf || "auto") + " → running " + document.documentElement.dataset.perf + (auto.reason ? " (" + auto.reason + ")" : "") + " · reduce motion " + (document.documentElement.hasAttribute("data-reduce-motion") ? "on" : "off") + " · glass theme " + document.documentElement.hasAttribute("data-glass"));
+    if (NS && NS.readAll) { try { L.push("Notes: " + NS.readAll().length + " notes, " + NS.readFolders().length + " folders"); } catch (e) {} }
+    if (est) L.push("Storage: " + mb(est.usage || 0) + " used of " + mb(est.quota || 0) + " available");
+    L.push("Loaded on demand so far: " + ((window.NPLazy && NPLazy.loaded().join(", ")) || "none") + (window.monaco ? " · code editor loaded" : ""));
+    const st = cur && cur.t0 ? Object.assign({}, cur, { ms: Math.round(performance.now() - cur.t0) }) : stats;
+    L.push("Frames (" + st.label + (cur ? ", still running" : "") + "): " + (st.frames ? st.frames + " frames, " + st.slow + " slower than 50 ms, worst " + st.worst + " ms, over " + (st.ms / 1000).toFixed(1) + " s" : "no sample yet"));
+    L.push("Recent errors: " + (errs.length ? "\n" + errs.map(e => "  " + e.t + " " + e.k + ": " + e.m).join("\n") : "none"));
+    return L.join("\n");
+  }
+  window.NPDiag = { sample, report, errors: () => errs.slice(), stats: () => Object.assign({}, stats) };
+})();
+
+</script>
 <script>/* web/lib/python-tokens.js */
 /* ============ Subject kit: Computer Science (Programming Fundamentals onward) ============
    Every program a lab shows is REAL Python: write it in web/cs-src/<topic-id>.py and run
@@ -2208,10 +2313,11 @@ window.InquireKeys = {
 
 /* Notes: the store, folders, photos and the rich note editor (cloned from Inquire's notes.js).
    Loaded before app.js (the start menu and My notes read it).
-   Notes live in localStorage "notepath.notes.<username>" (lower-case), or "notepath.notes._local" with nobody signed in.
+   Notes live in IndexedDB "notepath-notes" › "notes" since v0.5.6 (in memory while running; see "the store" below). Before that
+   they were in localStorage "notepath.notes.<username>" (lower-case) or "notepath.notes._local"; 0.5.6 moves them on its first start.
    Each note: { id, title, html (sanitised rich text), body (plain text made from html: search, previews, .md),
      created, updated, fav, folder (folder id | null), links: ["s:<subject>", "f:<field>", "t:<topic>"], src: { topic, title } | null }.
-   Older notes (body only) get html on read. Folders: "notepath.notefolders.<username>" = [{ id, name, parent, order, fav? }] (nested; drag to move/reorder). Notes may carry `order` (My order).
+   Older notes (body only) get html on read. Folders: IndexedDB "kv" under "notepath.notefolders.<username>" (localStorage before 0.5.6) = [{ id, name, parent, order, fav? }] (nested; drag to move/reorder). Notes may carry `order` (My order).
    Photos: IndexedDB "notepath-notes" / "images" (Blob by id); a note holds <img data-img="id">, a linked photo <img src="https://…">.
    Links inside a note: <a class="nlink" data-note="id"> (another note) or data-topic="id" (a lesson); colour = --note-link (Settings).
    Every change fires "inquire:notes-changed" so open views redraw. */
@@ -2634,6 +2740,35 @@ async function imageURL(id) {
   const rec = await tx("readonly", st => st.get(id)).catch(() => null);
   return rec && rec.blob ? (urls[id] = URL.createObjectURL(rec.blob)) : null;
 }
+/* v0.5.7 (memory): the notes list shows covers 38–56 px wide; decoding the stored 1800 px photo for each (~10 MB a piece) was the
+   biggest memory cost of a long list. thumbURL makes a small copy once per session (one at a time, so opening a big list does not spike). */
+const turls = {}, tq = []; let tbusy = false;
+function thumbURL(id, px) {
+  px = px || 160; const k = id + ":" + px;
+  if (turls[k]) return Promise.resolve(turls[k]);
+  return new Promise(res => { tq.push({ id, px, k, res }); thumbPump(); });
+}
+async function thumbPump() {
+  if (tbusy) return; tbusy = true;
+  while (tq.length) {
+    const j = tq.shift();
+    if (turls[j.k]) { j.res(turls[j.k]); continue; }
+    try {
+      const rec = await tx("readonly", st => st.get(j.id)), b = rec && rec.blob;
+      if (!b) { j.res(null); continue; }
+      if (!/^image\/(png|jpeg|webp)$/.test(b.type) || !window.createImageBitmap) { j.res(await imageURL(j.id)); continue; }
+      const bm = await createImageBitmap(b), sc = Math.min(1, j.px / Math.min(bm.width, bm.height));
+      if (sc === 1) { if (bm.close) bm.close(); j.res(await imageURL(j.id)); continue; }
+      const c = document.createElement("canvas"); c.width = Math.max(1, Math.round(bm.width * sc)); c.height = Math.max(1, Math.round(bm.height * sc));
+      c.getContext("2d").drawImage(bm, 0, 0, c.width, c.height); if (bm.close) bm.close();
+      const tb = await new Promise(r => c.toBlob(r, "image/jpeg", .8));
+      c.width = c.height = 0;
+      j.res(tb ? (turls[j.k] = URL.createObjectURL(tb)) : await imageURL(j.id));
+    } catch (e) { j.res(null); }
+  }
+  tbusy = false;
+}
+function dropThumbs(id) { Object.keys(turls).forEach(k => { if (k.startsWith(id + ":")) { URL.revokeObjectURL(turls[k]); delete turls[k]; } }); }
 // backups: the photos a set of notes uses, as data URLs, and back
 const fromDataURL = u => { const m = String(u).match(/^data:([^;,]+)(;base64)?,(.*)$/); if (!m) throw new Error("bad data URL"); const bin = m[2] ? atob(m[3]) : decodeURIComponent(m[3]); const a = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return new Blob([a], { type: m[1] }); };
 const toDataURL = blob => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(r.error); r.readAsDataURL(blob); });
@@ -2661,7 +2796,7 @@ async function importImages(map) {
   }
   return n;
 }
-function delImages(ids) { if (ids.length) tx("readwrite", st => { ids.forEach(i => { st.delete(i); if (urls[i]) { URL.revokeObjectURL(urls[i]); delete urls[i]; } }); return null; }).catch(() => {}); }
+function delImages(ids) { if (ids.length) tx("readwrite", st => { ids.forEach(i => { st.delete(i); dropThumbs(i); if (urls[i]) { URL.revokeObjectURL(urls[i]); delete urls[i]; } }); return null; }).catch(() => {}); }
 function hydrate(root) {
   if (window.InquireWidgets) root.querySelectorAll("div.nw").forEach(w => InquireWidgets.mount(w));
   root.querySelectorAll("img[data-img]").forEach(im => { if (im.src) return; imageURL(im.dataset.img).then(u => { if (u) im.src = u; else { im.alt = "Photo missing"; im.classList.add("missing"); } }); });
@@ -3310,7 +3445,7 @@ function scope(sp) {
 async function putFile(blob) { if (blob.size > VIDEO_MAX) throw new Error("too big"); const id = uid(); await tx("readwrite", st => st.put({ blob, at: Date.now() }, id)); return id; }
 async function mediaBlob(id) { const rec = await tx("readonly", st => st.get(id)).catch(() => null); return rec && rec.blob ? rec.blob : null; } // (import / export: no fetch of blob: URLs, which the CSP refuses)
 window.InquireNotes = { scope, spaceOf, putImage, putFile, delMedia: delImages, mediaBlob, list, get, create, update, remove, trash, restore, purge, deleteWithUndo, toast, appendBlock, exportMedia, key, link, unlink, appendQuote,
-  undo, redo, history, NSIZES, NFONTS, folders, addFolder, renameFolder, setFolderFav, removeFolder, moveFolder, subtree, setOrder, byOrder, sanitize, toText, mountEditor, editorFor, hydrate, pick, pickNote, imageURL, exportImages, importImages,
+  undo, redo, history, NSIZES, NFONTS, folders, addFolder, renameFolder, setFolderFav, removeFolder, moveFolder, subtree, setOrder, byOrder, sanitize, toText, mountEditor, editorFor, hydrate, pick, pickNote, imageURL, thumbURL, exportImages, importImages,
   readFolders: readF, writeFolders: writeF,
   // v0.5.6: the store is in IndexedDB and in memory; the page waits for `ready` before it draws
   ready, isReady: () => MEM.ready, saveState: () => ({ state: MEM.state, error: MEM.error }), flushSaves: () => flush(), readAll: () => read(), writeAll: all => write(all) };
@@ -4190,7 +4325,7 @@ window.InquireWidgets = { WIDGETS: WIDGET_MENU, codeKit: { parseLines, formatLin
 })();
 
 </script>
-<script>/* web/src/notes-graph.js */
+<script type="text/plain" data-np-lazy="graph" data-np-global="NPGraph">/* web/src/notes-graph.js */
 /* Graph widget (NotePath): <div class="nw" data-w="graph" data-src='{"title","pts":[[x,y]…],"fit","snap","view"}'>.
    Click the grid to add a point, drag a point to move it, click a point (without dragging) to remove it, or type "x, y".
    The grid sizes itself to the points (unless zoomed with − / +; "Fit" goes back to automatic) and the side panel writes the
@@ -4402,7 +4537,7 @@ window.NPGraph = { mount, text, analyse, fmt, polyStr, solve, DEF };
 })();
 
 </script>
-<script>/* web/src/notes-sheet.js */
+<script type="text/plain" data-np-lazy="sheet" data-np-global="NPSheet">/* web/src/notes-sheet.js */
 /* Lead sheet widget (NotePath): <div class="nw" data-w="sheet" data-src='{"title","composer","clef","key","time","tempo","bars","mel":[…],"chd":[…]}'>.
    A blank chart of bars, four to a line, like a jazz lead sheet: chord symbols above the staff, melody on it. Click a bar
    to pick it, then type its chords ("D-7 G7": spread evenly over the bar) and add melody notes with the keyboard, the
@@ -4615,7 +4750,7 @@ window.NPSheet = { mount, text, DEF, read, playable, keyMap };
 })();
 
 </script>
-<script>/* web/src/notes-map.js */
+<script type="text/plain" data-np-lazy="map" data-np-global="NPMap">/* web/src/notes-map.js */
 /* Map widget (NotePath v0.5.6, Devon): <div class="nw" data-w="map" data-src='{"title","q","label","lat","lon","zoom"}'>.
    Search an address or place (OpenStreetMap Nominatim: the same lookup as My Tasks' Place, through main.js "dict:lookup"),
    pick one of the answers and the widget keeps it: the place, a small map (OpenStreetMap tiles, ＋ / −, the zoom is kept)
@@ -4870,6 +5005,15 @@ function loadMonaco() {
   monacoP.catch(() => {});
   return monacoP;
 }
+/* v0.5.7 Performance mode: in Lite the editor drops its animations (smooth scrolling, gliding caret), the minimap and sticky scroll, and the
+   JavaScript language service (a ~5 MB worker for completions and error squiggles) stays off; running, highlighting, bracket colours and
+   everything else stay. Moderate and Full keep all of it. Followed live through inquire:theme (settings.js applyAll). */
+const perfLite = () => document.documentElement.dataset.perf === "lite";
+function perfOpts() { const l = perfLite(); return { smoothScrolling: !l, cursorSmoothCaretAnimation: l ? "off" : "on", cursorBlinking: l ? "blink" : "smooth", minimap: { enabled: !l, scale: 1, renderCharacters: false }, stickyScroll: { enabled: !l } }; }
+function perfLang(m) {
+  try { const on = !perfLite(), d = (m.languages.typescript || m.typescript).javascriptDefaults;
+    d.setModeConfiguration({ completionItems: on, hovers: on, documentSymbols: on, definitions: on, references: on, documentHighlights: on, rename: on, diagnostics: on, documentRangeFormattingEdits: on, signatureHelp: on, onTypeFormattingEdits: on, codeActions: on, inlayHints: on }); } catch (e) {}
+}
 // the editor's colours follow the NotePath theme (Settings → Appearance)
 const cx = document.createElement("canvas").getContext("2d");
 function hexA(v, a) { cx.fillStyle = "#000"; cx.fillStyle = String(v || "").trim() || "#000"; let s = cx.fillStyle;
@@ -4918,13 +5062,15 @@ function editor(host, o) {
     });
     host.dataset.ready = "1"; ev.ready.forEach(f => f());
   };
+  const onPerf = () => { if (ed && window.monaco) { perfLang(window.monaco); ed.updateOptions(perfOpts()); } };
   loadMonaco().then(m => {
     if (dead) return;
-    host.innerHTML = ""; host.dataset.kind = "monaco";
-    ed = m.editor.create(host, { value: val, language: L(lang).monaco, theme: "notepath", automaticLayout: true, fontFamily: '"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace',
-      fontSize: 13.5, lineHeight: 21, tabSize: lang === "javascript" ? 2 : 4, insertSpaces: true, minimap: { enabled: true, scale: 1, renderCharacters: false }, scrollBeyondLastLine: false,
-      smoothScrolling: true, cursorBlinking: "smooth", cursorSmoothCaretAnimation: "on", bracketPairColorization: { enabled: true }, guides: { bracketPairs: true, indentation: true },
-      renderLineHighlight: "all", padding: { top: 10, bottom: 10 }, fixedOverflowWidgets: true, stickyScroll: { enabled: true }, wordWrap: "off", mouseWheelZoom: true, ariaLabel: "Code" });
+    host.innerHTML = ""; host.dataset.kind = "monaco"; perfLang(m);
+    ed = m.editor.create(host, Object.assign({ value: val, language: L(lang).monaco, theme: "notepath", automaticLayout: true, fontFamily: '"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace',
+      fontSize: 13.5, lineHeight: 21, tabSize: lang === "javascript" ? 2 : 4, insertSpaces: true, scrollBeyondLastLine: false,
+      bracketPairColorization: { enabled: true }, guides: { bracketPairs: true, indentation: true },
+      renderLineHighlight: "all", padding: { top: 10, bottom: 10 }, fixedOverflowWidgets: true, wordWrap: "off", mouseWheelZoom: true, ariaLabel: "Code" }, perfOpts()));
+    window.addEventListener("inquire:theme", onPerf);
     ed.onDidChangeModelContent(() => { val = ed.getValue(); if (o.onChange) o.onChange(val); });
     ed.onDidChangeCursorPosition(e => { if (o.onCursor) o.onCursor(e.position.lineNumber, e.position.column); });
     ed.addCommand(m.KeyMod.CtrlCmd | m.KeyCode.Enter, () => { if (o.onRun) o.onRun(); });
@@ -4938,7 +5084,7 @@ function editor(host, o) {
     focus: () => { if (ed) ed.focus(); else if (ta) ta.focus({ preventScroll: true }); else ev.ready.push(() => api.focus()); },
     layout: () => { if (ed) ed.layout(); },
     onReady: f => { if (host.dataset.ready) f(); else ev.ready.push(f); },
-    destroy: () => { dead = true; if (ed) { const md = ed.getModel(); ed.dispose(); if (md) md.dispose(); ed = null; } }
+    destroy: () => { dead = true; window.removeEventListener("inquire:theme", onPerf); if (ed) { const md = ed.getModel(); ed.dispose(); if (md) md.dispose(); ed = null; } }
   };
   return api;
 }
@@ -5218,7 +5364,9 @@ const sorters = {
   new: (a, b) => (a.done - b.done) || (b.created - a.created) };
 const priIcon = (p, cls) => `<i class="nt-pri ${cls || ""}" data-pri="${p}" title="${PRI[p].name} priority" aria-label="${PRI[p].name} priority">${PRI[p].glyph}</i>`;
 const imgURL = id => (NS() && id ? NS().imageURL(id) : Promise.resolve(null));
-function hydratePics(root) { root.querySelectorAll("[data-pic]").forEach(el => imgURL(el.dataset.pic).then(u => { if (u) el.style.backgroundImage = `url("${u}")`; })); }
+// v0.5.7: pictures in the list and overview are drawn from a 360 px copy (made once per session), not the stored 1800 px photo; the lightbox still opens the original
+const thumbURL = (id, px) => (NS() && id ? (NS().thumbURL ? NS().thumbURL(id, px) : NS().imageURL(id)) : Promise.resolve(null));
+function hydratePics(root) { root.querySelectorAll("[data-pic]").forEach(el => thumbURL(el.dataset.pic, 360).then(u => { if (u) el.style.backgroundImage = `url("${u}")`; })); }
 
 function render(m, o = {}) {
   if (o.sel) ST.sel = o.sel;
@@ -5255,6 +5403,7 @@ function render(m, o = {}) {
     if (!ST.sel || !every.some(t => t.id === ST.sel)) ST.sel = list[0] ? list[0].id : null;
     const open = every.filter(t => !t.done).length, od = every.filter(overdue).length;
     sum.innerHTML = every.length ? `${open} open${od ? ` · <b class="nt-od">${od} overdue</b>` : ""}${every.length - open ? ` · ${every.length - open} done` : ""}` : "";
+    if (list.length) items.setAttribute("role", "listbox"); else items.removeAttribute("role"); // a listbox with no options is invalid (v0.5.7)
     items.innerHTML = list.length ? list.map(t => `<div role="option" tabindex="0" class="nb-it nt-it${t.done ? " done" : ""}" data-id="${t.id}" data-pri="${t.pri}" aria-selected="${t.id === ST.sel}">
         <button type="button" class="nt-ck" role="checkbox" aria-checked="${t.done}" aria-label="${t.done ? "Mark not done" : "Mark done"}: ${esc(t.title)}" title="${t.repeat !== "none" ? "Done (it comes back " + (t.repeat === "daily" ? "tomorrow" : "next week") + ")" : t.done ? "Not done yet" : "Done"}"></button>
         ${t.pic ? `<span class="nt-thumb" data-pic="${t.pic}" aria-hidden="true"></span>` : ""}
@@ -5412,7 +5561,7 @@ window.NPTasks = { all, get, create, update, remove, setDone, render, upcoming, 
 })();
 
 </script>
-<script>/* web/src/io.js */
+<script type="text/plain" data-np-lazy="io" data-np-global="NPIO">/* web/src/io.js */
 /* Import & export for My notes (NotePath, Oct 2026): window.NPIO.
    Export one note, a folder (with its subfolders) or everything, as:
      Markdown / Obsidian (.md; several notes → a .zip that keeps the folders, [[links]] between notes, photos in attachments/),
@@ -6158,7 +6307,7 @@ window.NPIO = { open, exportNotes, email, printNote, mailURL, hooks, importFiles
 })();
 
 </script>
-<script>/* web/src/assist.js */
+<script type="text/plain" data-np-lazy="assist" data-np-global="NPAssist">/* web/src/assist.js */
 /* AI Chat and Grammar check (NotePath v0.5.6, Devon). window.NPAssist: the parts with no page layout, so tools/unit.js can
    check them; the two boxes at the bottom right of a note are drawn by renderNotes in app.js, and the right-click
    "Ask AI…" box by textmenu.js.
@@ -6396,7 +6545,7 @@ function modalWin(id, o = {}){
   const last = document.activeElement;
   const ov = h("div", { class: "mw-ov", "data-mw": id });
   ov.innerHTML = `<div class="mw-win win ${o.cls || ""}" role="dialog" aria-modal="true" aria-labelledby="mw-t-${id}">
-    <header class="set-h mw-h">${o.back ? `<button type="button" class="np-back" data-a="back" title="Back to the Main Menu" aria-label="Back to the Main Menu"><span aria-hidden="true">‹</span> Back</button>` : ""}<span class="dot"></span><h2 id="mw-t-${id}">${esc(o.title || "")}</h2>${o.sub ? `<span class="mw-sub">${o.sub}</span>` : ""}<span class="mw-hx"></span>${o.back ? "" : `<button type="button" class="set-x" aria-label="Close ${esc(o.title || "window")}">✕</button>`}</header>
+    <header role="group" class="set-h mw-h">${o.back ? `<button type="button" class="np-back" data-a="back" title="Back to the Main Menu" aria-label="Back to the Main Menu"><span aria-hidden="true">‹</span> Back</button>` : ""}<span class="dot"></span><h2 id="mw-t-${id}">${esc(o.title || "")}</h2>${o.sub ? `<span class="mw-sub">${o.sub}</span>` : ""}<span class="mw-hx"></span>${o.back ? "" : `<button type="button" class="set-x" aria-label="Close ${esc(o.title || "window")}">✕</button>`}</header>
     <div class="mw-body"></div></div>`;
   document.body.appendChild(ov);
   const m = { id, ov, win: $(".mw-win", ov), body: $(".mw-body", ov), head: $(".mw-hx", ov), cleanup: [], closed: false,
@@ -6455,7 +6604,7 @@ function renderNotesPage(o = {}){
   if (o.sel) ST.sel = o.sel;
   const pg = h("div", { class: "npage" });
   pg.innerHTML = `<div class="np-wrap"><section class="np-win win" aria-labelledby="np-t">
-    <header class="set-h mw-h"><button type="button" class="np-back" data-a="back" title="Back to the Main Menu" aria-label="Back to the Main Menu"><span aria-hidden="true">‹</span> Back</button><span class="dot"></span><h2 id="np-t">My notes</h2><span class="mw-sub"></span><span class="mw-hx"></span></header>
+    <header role="group" class="set-h mw-h"><button type="button" class="np-back" data-a="back" title="Back to the Main Menu" aria-label="Back to the Main Menu"><span aria-hidden="true">‹</span> Back</button><span class="dot"></span><h2 id="np-t" aria-level="1">My notes</h2><span class="mw-sub"></span><span class="mw-hx"></span></header>
     <div class="nb-info" role="status" aria-live="polite"></div>
     <div class="mw-body"></div></section></div>`;
   viewEl.appendChild(pg);
@@ -6482,7 +6631,7 @@ let TPAGE = null;
 function renderTasksPage(o = {}){
   const pg = h("div", { class: "npage tpage" });
   pg.innerHTML = `<section class="np-win win nt-win" aria-labelledby="nt-t">
-    <header class="set-h mw-h"><button type="button" class="np-back" data-a="back" title="Back to the Main Menu" aria-label="Back to the Main Menu"><span aria-hidden="true">‹</span> Back</button><span class="dot"></span><h2 id="nt-t">My Tasks</h2><span class="mw-sub">Saved on this computer. Reminders show as notifications while NotePath is running.</span><span class="mw-hx"></span></header>
+    <header role="group" class="set-h mw-h"><button type="button" class="np-back" data-a="back" title="Back to the Main Menu" aria-label="Back to the Main Menu"><span aria-hidden="true">‹</span> Back</button><span class="dot"></span><h2 id="nt-t" aria-level="1">My Tasks</h2><span class="mw-sub">Saved on this computer. Reminders show as notifications while NotePath is running.</span><span class="mw-hx"></span></header>
     <div class="mw-body"></div></section>`;
   viewEl.appendChild(pg);
   $(".np-back", pg).onclick = () => goBack();
@@ -6613,13 +6762,13 @@ function renderMenu(){
   s.innerHTML = `<div class="screen-in">
     <div class="hello"><p class="eyebrow">NotePath</p><h1>Main Menu</h1></div>
     <section class="npn win" aria-labelledby="npn-t">
-      <header class="win-h npn-h"><span class="dot"></span><span id="npn-t">Notes</span><span class="npn-count num"></span></header>
+      <header role="group" class="win-h npn-h"><span class="dot"></span><span id="npn-t">Notes</span><span class="npn-count num"></span></header>
       <div class="slots npn-acts">
-        <button type="button" class="slot big" data-a="open"><span class="glyph">▤</span><span><h3>My notes</h3><p>Every note, folder and photo, with search and your own order. Start a new note there with ＋ New Note.</p></span><span class="tag num" data-n="all"></span></button>
-        <button type="button" class="slot big npn-tasks" data-a="tasks"><span class="glyph">☑</span><span><h3>My Tasks</h3><p>To-dos with priorities, due dates and reminders, places on a map, photos and files.</p></span><span class="tag num" data-n="tasks"></span></button>
-        <button type="button" class="slot big npn-code" data-a="code"><span class="glyph">&lt;/&gt;</span><span><h3>My Code</h3><p>Code files in Python, C, C++, JavaScript and Java, with their own folders. ▶ Run them right here.</p></span><span class="tag num" data-n="code"></span></button>
-        <button type="button" class="slot big locked npn-soon npn-music" aria-disabled="true" tabindex="-1"><span class="glyph">𝄞</span><span><h3>My Music</h3><p>Coming soon</p></span></button>
-        <button type="button" class="slot big npn-office" data-a="office"><span class="glyph">⌂</span><span><h3>Note Office</h3><p>Your notes as a little office: a sheet for every note, a box for every folder. Someone works there.</p></span></button>
+        <button type="button" class="slot big" data-a="open"><span class="glyph">▤</span><span><h3 aria-level="2">My notes</h3><p>Every note, folder and photo, with search and your own order. Start a new note there with ＋ New Note.</p></span><span class="tag num" data-n="all"></span></button>
+        <button type="button" class="slot big npn-tasks" data-a="tasks"><span class="glyph">☑</span><span><h3 aria-level="2">My Tasks</h3><p>To-dos with priorities, due dates and reminders, places on a map, photos and files.</p></span><span class="tag num" data-n="tasks"></span></button>
+        <button type="button" class="slot big npn-code" data-a="code"><span class="glyph">&lt;/&gt;</span><span><h3 aria-level="2">My Code</h3><p>Code files in Python, C, C++, JavaScript and Java, with their own folders. ▶ Run them right here.</p></span><span class="tag num" data-n="code"></span></button>
+        <button type="button" class="slot big locked npn-soon npn-music" aria-disabled="true" tabindex="-1"><span class="glyph">𝄞</span><span><h3 aria-level="2">My Music</h3><p>Coming soon</p></span></button>
+        <button type="button" class="slot big npn-office" data-a="office"><span class="glyph">⌂</span><span><h3 aria-level="2">Note Office</h3><p>Your notes as a little office: a sheet for every note, a box for every folder. Someone works there.</p></span></button>
       </div>
       <div class="npn-recent"><h2 class="npn-sub">Recent</h2><div class="mnotes-list"></div></div>
     </section>
@@ -6694,7 +6843,7 @@ function askText(o = {}){
     document.querySelectorAll(".ask-ov").forEach(x => x.remove());
     const last = document.activeElement;
     const ov = h("div", { class: "ask-ov" }, `<form class="ask-win win" role="dialog" aria-modal="true" aria-labelledby="ask-t">
-      <header class="set-h"><span class="dot"></span><h2 id="ask-t">${esc(o.title || "Name")}</h2><button type="button" class="set-x" data-x aria-label="Cancel">✕</button></header>
+      <header role="group" class="set-h"><span class="dot"></span><h2 id="ask-t">${esc(o.title || "Name")}</h2><button type="button" class="set-x" data-x aria-label="Cancel">✕</button></header>
       <div class="ask-body">${o.kinds ? `<div class="ask-kinds" role="radiogroup" aria-label="Kind of note">${o.kinds.map((k, i) => `<button type="button" role="radio" class="ask-kind" data-k="${k.k}" aria-checked="${o.kind ? k.k === o.kind : i === 0}"><span class="ask-kg" aria-hidden="true">${k.glyph}</span><b>${esc(k.name)}</b><small>${esc(k.desc)}</small></button>`).join("")}</div>` : ""}${o.foot || ""}<label class="ask-l" for="ask-in">${esc(o.label || "Name")}</label>
         <input id="ask-in" class="ask-in" maxlength="${o.max || 140}" placeholder="${esc(o.placeholder || "")}" value="${esc(o.value || "")}" autocomplete="off">
         ${o.cover ? `<div class="ask-cov"><button type="button" class="ask-covb" title="Choose a cover photo (optional): it shows in the notes list and as the icon">${COVER_IC}<span>Cover photo</span></button><span class="ask-covn">Optional</span><button type="button" class="ask-covx" hidden aria-label="No cover photo">✕</button><input type="file" accept="image/*" hidden class="ask-covin"></div>` : ""}<div class="ask-btns"><button type="button" class="btn-s" data-x>Cancel</button><button type="submit" class="btn good">${esc(o.ok || "OK")}</button></div></div></form>`);
@@ -6761,8 +6910,8 @@ function renderNotes(m, focusBody, space = "notes"){
   const ALLNS = window.InquireNotes, CS = window.InquireNotes.scope("code");
   const s = m.body;
   s.innerHTML = `    <div class="nb-sbar"><label class="search nb-search"><span aria-hidden="true">⌕</span><input type="search" placeholder="Search" aria-label="${CODE ? "Search every code file" : "Search every note"}"></label></div>
-    <div class="nb"><nav class="nb-folders" aria-label="${CODE ? "Folders and code files" : "Folders and files"}"><div class="nb-tools nb-ftools">${viewSwitch(viewOf(CODE ? "codeview" : "noteview"), CODE ? "Show the code files as" : "Show the notes as")}<select class="nb-sort" aria-label="${CODE ? "Order of code files" : "Order of notes"}"><option value="mine">My order</option><option value="recent">Recently edited</option></select><button type="button" class="nb-favtop" aria-pressed="false" title="Keep favourites at the top of the list">★ first</button><button type="button" class="nb-hide" data-p="f" title="Hide the Folders &amp; Files bar (a strip on the left brings it back)" aria-label="Hide the Folders and Files bar"><span aria-hidden="true">◀</span> Hide</button></div><div class="nb-ftree" role="tree" aria-label="${CODE ? "Code folders and files" : "Folders and files"}"></div></nav>
-    <aside class="nb-rail" role="toolbar" aria-orientation="vertical" aria-label="Tools"><button type="button" class="nb-hide nb-hidel" data-p="l" title="Hide the Tool bar (a strip brings it back)" aria-label="Hide the Tool bar"><span class="nb-tooli" aria-hidden="true">◀</span><span class="nb-tooln">Hide</span></button>${railHTML(CODE)}</aside>
+    <div class="nb"><nav class="nb-folders" aria-label="${CODE ? "Folders and code files" : "Folders and files"}"><div class="nb-tools nb-ftools">${viewSwitch(viewOf(CODE ? "codeview" : "noteview"), CODE ? "Show the code files as" : "Show the notes as")}<select class="nb-sort" aria-label="${CODE ? "Order of code files" : "Order of notes"}"><option value="mine">My order</option><option value="recent">Recently edited</option></select><button type="button" class="nb-favtop" aria-pressed="false" title="Keep favourites at the top of the list">★ first</button><button type="button" class="nb-hide" data-p="f" title="Hide the Folders &amp; Files bar (a strip on the left brings it back)" aria-label="Hide the Folders and Files bar"><span aria-hidden="true">◀</span> Hide</button></div><div class="nb-ftree" role="group" aria-label="${CODE ? "Code folders and files" : "Folders and files"}"></div></nav>
+    <aside class="nb-rail" aria-label="Tools"><button type="button" class="nb-hide nb-hidel" data-p="l" title="Hide the Tool bar (a strip brings it back)" aria-label="Hide the Tool bar"><span class="nb-tooli" aria-hidden="true">◀</span><span class="nb-tooln">Hide</span></button>${railHTML(CODE)}</aside>
     <section class="nb-ed"><div class="nb-tabs" hidden></div><div class="nb-panes"><div class="nb-pane p1"></div><div class="nb-pane p2" hidden></div></div></section>
     <button type="button" class="nb-fold" data-p="f"></button><button type="button" class="nb-fold" data-p="l"></button>
     <div class="nb-rzf" role="separator" aria-orientation="vertical" tabindex="0" aria-label="Resize the folders column (drag, or ←/→; double-click resets)" title="Drag to resize the folders · double-click resets"></div>
@@ -6793,7 +6942,7 @@ function renderNotes(m, focusBody, space = "notes"){
     if (b.getAttribute("aria-disabled") === "true") { msg(`${b.dataset.name} is coming soon.`); return; }
     if ((t === "note" && !CODE) || (t === "code" && CODE)) return;
     flushEd(); go({ view: "notes", space: t === "code" ? "code" : "notes" }); });
-  { const bar = $(".nb-sbar", s), fcol = $(".nb-folders", s), fit = () => { const w = fcol.offsetWidth; if (w > 60) bar.style.setProperty("--sbw", Math.max(200, w - 20) + "px"); };
+  { const bar = $(".nb-sbar", s), fcol = $(".nb-folders", s), fit = () => { const w = fcol.offsetWidth; if (w > 60) bar.style.setProperty("--sbw", Math.max(200, w - 20) + "px"); const rz = $(".nb-rzf", s); if (rz) { rz.setAttribute("aria-valuemin", "180"); rz.setAttribute("aria-valuemax", "620"); rz.setAttribute("aria-valuenow", String(Math.round(w))); } };
     if (window.ResizeObserver) { const ro = new ResizeObserver(fit); ro.observe(fcol); m.cleanup.push(() => ro.disconnect()); } fit(); }
   sortSel.value = NOTES.sort === "recent" ? "recent" : "mine";
   sortSel.onchange = () => { NOTES.sort = sortSel.value; store.set(SK.sort, NOTES.sort); drawList(); };
@@ -6889,7 +7038,7 @@ function renderNotes(m, focusBody, space = "notes"){
     const star = n => n.fav ? '<i class="nb-star" aria-label="Favourite">★</i>' : "";
     const fic = n => CODE ? `<i class="nc-badge nb-fbadge" data-lang="${esc(n.code.lang)}">${esc(LG(n.code.lang).short)}</i>` : `<span class="nb-fni" aria-hidden="true">${NOTE_MINI}</span>`;
     const fileRow = (n, d, g) => {
-      const a = x => `class="nb-fnote nb-it${x}${n.id === NOTES.sel ? " sel" : ""}" role="option" tabindex="0" draggable="true" aria-selected="${n.id === NOTES.sel}" data-id="${n.id}" data-g="${g}" style="--d:${d}"`;
+      const a = x => `class="nb-fnote nb-it${x}${n.id === NOTES.sel ? " sel" : ""}" role="button" tabindex="0" draggable="true" aria-pressed="${n.id === NOTES.sel}" data-id="${n.id}" data-g="${g}" style="--d:${d}"`;
       const cov = n.cover && /^[a-z0-9]{4,40}$/i.test(n.cover) ? n.cover : null, inF = g === "q" || g === "all" || g === "fav" ? (n.folder && fname[n.folder] ? esc(fname[n.folder]) + " · " : "") : "";
       if (view === "icons") return `<div ${a(" nb-tile")} title="${esc(n.title)} · ${esc(noteKind(n))} · edited ${esc(stampShort(n.updated))}"><span class="nb-tic${cov ? " has-cov" : ""}">${cov ? `<img class="nb-cov nb-tcov" data-cov="${cov}" alt="">` : CODE ? `<i class="nc-badge nb-tbadge" data-lang="${esc(n.code.lang)}">${esc(LG(n.code.lang).short)}</i>` : NOTE_IC}${n.fav ? '<i class="nb-star nb-tstar" aria-label="Favourite">★</i>' : ""}</span><span class="nb-t">${esc(n.title)}</span><span class="nb-m">${when(n.updated)}</span></div>`;
       if (view === "details") return `<div ${a(" nb-row")}><span class="nb-t">${fic(n)}${star(n)}${esc(n.title)}</span><span class="nb-dc num">${esc(stampShort(n.updated))}</span><span class="nb-dc num">${esc(stampShort(n.created))}</span><span class="nb-dc">${esc(noteKind(n))}</span></div>`;
@@ -6938,7 +7087,7 @@ function renderNotes(m, focusBody, space = "notes"){
     if (!CODE && !qq) wireFsplit();
     drawInfo();
     if (!CODE) wireCodeSection();
-    fold.querySelectorAll("img[data-cov]").forEach(im => window.InquireNotes.imageURL(im.dataset.cov).then(u => { if (u) im.src = u; else im.classList.add("missing"); }));
+    fold.querySelectorAll("img[data-cov]").forEach(im => window.InquireNotes.thumbURL(im.dataset.cov, 160).then(u => { if (u) im.src = u; else im.classList.add("missing"); }));
     if (view === "details") wireDcols();
     fold.title = mine ? "Drag notes onto folders to file them, or up and down among notes to put them in your own order" : "Choose My order to arrange notes by dragging";
     fold.querySelectorAll("[data-more]").forEach(b => b.onclick = () => { SHOWALL.add(b.dataset.more); drawFolders(); });
@@ -6995,7 +7144,7 @@ function renderNotes(m, focusBody, space = "notes"){
     fold.querySelectorAll(`.nb-fnote[data-id="${id}"]:not(.nb-cfile)`).forEach(el => {
       const t = document.createElement("template"); t.innerHTML = ROWFN(n, el); const nr = t.content.firstElementChild; if (!nr) return;
       el.replaceWith(nr); wireRow(nr);
-      const im = nr.querySelector("img[data-cov]"); if (im) window.InquireNotes.imageURL(im.dataset.cov).then(u => { if (u) im.src = u; });
+      const im = nr.querySelector("img[data-cov]"); if (im) window.InquireNotes.thumbURL(im.dataset.cov, 160).then(u => { if (u) im.src = u; });
     });
   }
   /* ----- Notes tab: the Code section under the folders (a divider, then the Code folders and files). A code file opens in
@@ -7009,7 +7158,7 @@ function renderNotes(m, focusBody, space = "notes"){
     const cnt = id => { const sub = ALLNS.subtree(id); return cn.filter(n => sub.has(n.folder)).length; };
     const cfrow = f => `<div class="nb-cfd" style="--d:${f.depth}"><button type="button" class="nb-fcar" data-ccar="${f.id}" aria-expanded="${!shut.has(f.id)}" title="${shut.has(f.id) ? "Show" : "Hide"} the files in ${esc(f.name)}" aria-label="${shut.has(f.id) ? "Show" : "Hide"} the files in ${esc(f.name)}">${folderIcon(!shut.has(f.id))}</button><span class="nb-cfdn">${esc(f.name)}</span><span class="nb-fn num">${cnt(f.id)}</span></div>`;
     const tree = parent => cf.filter(f => (f.parent || null) === parent).map(f => cfrow(f) + (shut.has(f.id) ? "" : tree(f.id) + (byF[f.id] || []).map(n => crow(n, f.depth + 1)).join(""))).join("");
-    return `<div class="nb-codeh" role="separator"><button type="button" class="nb-codet" aria-expanded="${open}" title="${open ? "Hide" : "Show"} your code files">${folderIcon(open)} Code</button><span class="nb-fn num">${fl ? fl.length : cn.length}</span><button type="button" class="nb-codego" data-a="gocode" title="Open My Code" aria-label="Open My Code">↗</button></div>`
+    return `<div class="nb-codeh" role="group" aria-label="Code files"><button type="button" class="nb-codet" aria-expanded="${open}" title="${open ? "Hide" : "Show"} your code files">${folderIcon(open)} Code</button><span class="nb-fn num">${fl ? fl.length : cn.length}</span><button type="button" class="nb-codego" data-a="gocode" title="Open My Code" aria-label="Open My Code">↗</button></div>`
       + (open ? `<div class="nb-codetree">${fl ? (fl.length ? fl.map(n => crow(n, 0)).join("") : `<p class="nb-codeempty">${filter === "fav" ? "No favourite code files." : "No unfiled code files."}</p>`) // v0.5.6: the filter reaches the Code section (files only, no folders)
         : cn.length || cf.length ? tree(null) + (byF._ || []).map(n => crow(n, 0)).join("") : `<p class="nb-codeempty">No code files yet. Make one in <b>My Code</b> on the Main Menu.</p>`}</div>` : "");
   }
@@ -7018,7 +7167,7 @@ function renderNotes(m, focusBody, space = "notes"){
   function wireFsplit(){
     const sp = $(".nb-fsplit", fold), main = $(".nb-fmain", fold), code = $(".nb-fcode", fold); if (!sp || !code) return;
     const open = !store.get("codesecfold", false); fold.classList.add("has-fsplit"); fold.classList.toggle("code-shut", !open);
-    const total = () => fold.clientHeight, set = (hgt, keep) => { const H = total(); if (!H) return; hgt = Math.round(Math.max(44, Math.min(H - 120, hgt))); code.style.height = hgt + "px"; if (keep) store.set("codesech", hgt); };
+    const total = () => fold.clientHeight, set = (hgt, keep) => { const H = total(); if (!H) return; hgt = Math.round(Math.max(44, Math.min(H - 120, hgt))); code.style.height = hgt + "px"; sp.setAttribute("aria-valuemin", "44"); sp.setAttribute("aria-valuemax", String(Math.max(44, H - 120))); sp.setAttribute("aria-valuenow", String(hgt)); if (keep) store.set("codesech", hgt); };
     if (open) requestAnimationFrame(() => { if (fold.isConnected) set(store.get("codesech", Math.round(total() * .34))); });
     sp.addEventListener("pointerdown", e => { if (!open) return; e.preventDefault(); sp.setPointerCapture(e.pointerId); sp.classList.add("on"); const y0 = e.clientY, h0 = code.offsetHeight;
       const mv = ev => set(h0 - (ev.clientY - y0)), up = () => { sp.classList.remove("on"); sp.removeEventListener("pointermove", mv); sp.removeEventListener("pointerup", up); set(code.offsetHeight, true); };
@@ -7491,7 +7640,7 @@ function renderNotes(m, focusBody, space = "notes"){
     if (!id) return;
     if (!peekEl) {
       peekEl = h("section", { class: "np-peek win", role: "dialog", "aria-label": "Peek at a note" });
-      peekEl.innerHTML = `<header class="np-peek-h" title="Drag to move · double-click to dock"><button type="button" class="np-peek-x np-peek-back" title="Back to the note before" aria-label="Back" hidden>‹</button><div class="np-peek-tt"><span class="np-peek-gem" aria-hidden="true"></span>Peek</div><span class="np-peek-grip" aria-hidden="true">⠿</span>
+      peekEl.innerHTML = `<header role="group" class="np-peek-h" title="Drag to move · double-click to dock"><button type="button" class="np-peek-x np-peek-back" title="Back to the note before" aria-label="Back" hidden>‹</button><div class="np-peek-tt"><span class="np-peek-gem" aria-hidden="true"></span>Peek</div><span class="np-peek-grip" aria-hidden="true">⠿</span>
         <div class="np-peek-hr"><button type="button" class="np-peek-x np-peek-home" title="Dock at the bottom right" aria-label="Dock at the bottom right">⇲</button><button type="button" class="np-peek-x np-peek-close" title="Close" aria-label="Close">✕</button></div></header>
         <div class="np-peek-in"><h3 class="np-peek-t"></h3><p class="np-peek-m num"></p><div class="np-peek-b nb-rich" tabindex="0"></div></div>
         <div class="np-peek-f"><button type="button" class="btn-s" data-a="open" title="Open it in place of this note">↗ Open</button><button type="button" class="btn-s" data-a="side" title="Open it side by side with this note">⧉ Side by side</button></div>`;
@@ -7675,7 +7824,7 @@ if (window.InquireNotes && InquireNotes.ready && !InquireNotes.isReady()) Inquir
 })();
 
 </script>
-<script>/* web/src/office.js */
+<script type="text/plain" data-np-lazy="office" data-np-global="NoteOffice">/* web/src/office.js */
 /* Note Office (NotePath): Main Menu → Note Office opens a window (the usual fogged window) with a little office where a
    stick figure works. Based on the "Stickman v2" prototype, now at its v2.3 motion (connected arms with a real elbow, 5 px neck, heel-to-toe
    stroll, underhand ball toss, cocked-elbow plane throw, authored singing / desk beat / wave), wired
@@ -8257,7 +8406,9 @@ function mount(host, o = {}) {
     const dt = lastFrame ? Math.min((ts - lastFrame) / 1000, .04) : 0;
     // an idle office needs fewer frames: ~30 fps when nothing much is moving
     const calm = act === "idle" && !arrivals.length && !gaze.active;
-    if (calm && lastFrame && ts - lastFrame < 31) { frameId = requestAnimationFrame(frame); return; }
+    // v0.5.7: Lite draws ~24 fps while calm and ~30 fps otherwise (60 elsewhere), enough for the stick figure and half the work
+    const gap = document.documentElement.dataset.perf === "lite" ? (calm ? 41 : 32) : (calm ? 31 : 0);
+    if (gap && lastFrame && ts - lastFrame < gap) { frameId = requestAnimationFrame(frame); return; }
     lastFrame = ts;
     if (playing && !document.hidden) { advance(dt); dirty = true; }
     if (dirty || cacheDirty) { draw(); dirty = false; }
@@ -8738,7 +8889,7 @@ window.InquireDocs = Object.assign(window.InquireDocs || {}, {
 const KEY = "notepath.settings";
 // tabs: colours of the My notes, My Code and My Music buttons on the Main Menu (amber-orange, blue, magenta); only their glyphs take them
 const TABDEF = { notes: "#F2B84B", code: "#4FA3F7", music: "#D97AE6" };
-const DEF = { theme: "capsuleer", uiScale: 1, textSize: 1, reduceMotion: false, escKey: true, invertScroll: false, noteLink: "#B49BFF", indent: "#B5D65A", tabs: TABDEF };
+const DEF = { theme: "capsuleer", uiScale: 1, textSize: 1, reduceMotion: false, perf: "auto", escKey: true, invertScroll: false, noteLink: "#B49BFF", indent: "#B5D65A", tabs: TABDEF };
 const load = () => {
   let o = {}; try { o = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) {}
   if (o.uiScale == null && typeof o.textScale === "number") o.uiScale = o.textScale; // the old single "Text & interface size" was a zoom
@@ -8757,6 +8908,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;"
 const THEMES = [
   { id: "capsuleer", fam: "Dark", name: "Deep Space", bg: "#070A10", surface: "#111827", accent: "#5CC8E0", tint: "#B49BFF", note: "The original console, out among the stars" },
   { id: "obsidian", fam: "Dark", name: "Obsidian", bg: "#050506", surface: "#151517", accent: "#F2B84B", tint: "#8A6A22", text: "#E8E4DC", note: "Neutral black, brass trim" },
+  { id: "high-contrast", fam: "Dark", name: "High Contrast", bg: "#000000", surface: "#0B0B0B", accent: "#FFD400", tint: "#00E5FF", text: "#FFFFFF", muted: "#EDEDED", faint: "#CFCFCF", note: "Pure black, white words, yellow trim: easiest to read" },
   { id: "old-growth", fam: "Nature", name: "Old Growth", bg: "#060D09", surface: "#11211A", accent: "#7BD88F", tint: "#3F7A4F", text: "#DCEBDF", note: "Deep forest canopy" },
   { id: "moss", fam: "Nature", name: "Moss & Lichen", bg: "#0B0F08", surface: "#1C2515", accent: "#B5D65A", tint: "#C9B458", text: "#E5EAD8", note: "Olive, moss and sunlit lichen" },
   { id: "abyssal", fam: "Water", name: "Abyssal", bg: "#030B14", surface: "#0B1F32", accent: "#4FC3F7", tint: "#2C5DA8", text: "#D8E8F4", note: "Open ocean at depth" },
@@ -8856,23 +9008,73 @@ function applySizes() {
 window.addEventListener("inquire:route", () => { if (textOn) scaleText(); }); // style sheets a screen or lab adds later
 const LINKCOL = [["#B49BFF", "Violet"], ["#5CC8E0", "Cyan"], ["#F2B84B", "Amber"], ["#F07CA0", "Pink"], ["#7BD88F", "Green"], ["#D97AE6", "Magenta"], ["#B5D65A", "Lime"], ["#FFFFFF", "White"]];
 const hexOk = c => /^#[0-9a-f]{6}$/i.test(c);
+/* Performance mode (v0.5.7): Auto / Lite / Moderate / Full. **Lite** switches off the glass blur, glows, big shadows and the page-in motion, so
+   integrated graphics (Intel UHD / HD) and software rendering stay smooth. **Moderate** keeps glows, shadows, soft motion and the glass blur of glass
+   themes, but never blurs or scales the whole app behind a window. **Full** is NotePath as it was before 0.5.7: the app behind a window is blurred,
+   dimmed and scaled, window overlays always blur, the page fades in with a blur. Every tool and layout is the same in all of them. Auto reads the
+   cores, the memory and the graphics chip once (kept in notepath.perf.auto) and picks Lite or Moderate, never Full. The result is on
+   <html data-perf="lite|moderate|full">; glass themes also set data-glass. */
+let PERF_AUTO = null;
+function gpuName() {
+  try {
+    const c = document.createElement("canvas"), gl = c.getContext("webgl") || c.getContext("experimental-webgl");
+    if (!gl) return "none";
+    const e = gl.getExtension("WEBGL_debug_renderer_info");
+    const n = String(e ? gl.getParameter(e.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER) || "");
+    const lose = gl.getExtension("WEBGL_lose_context"); if (lose) lose.loseContext();
+    return n;
+  } catch (e) { return ""; }
+}
+function autoPerf() {
+  if (PERF_AUTO) return PERF_AUTO;
+  const cores = navigator.hardwareConcurrency || 4, mem = navigator.deviceMemory || 8, sig = cores + "/" + mem;
+  try { const o = JSON.parse(localStorage.getItem("notepath.perf.auto") || "null"); if (o && o.sig === sig && (o.v === "lite" || o.v === "moderate")) return (PERF_AUTO = o.v); } catch (e) {}
+  const g = gpuName();
+  const weak = g === "none" || /swiftshader|llvmpipe|software|basic render|intel.*(uhd|hd graphics|iris plus|iris pro|iris graphics)/i.test(g);
+  PERF_AUTO = (weak || cores <= 4 || mem <= 4) ? "lite" : "moderate";
+  try { localStorage.setItem("notepath.perf.auto", JSON.stringify({ sig, v: PERF_AUTO, gpu: g })); } catch (e) {}
+  return PERF_AUTO;
+}
+/* Auto watches the frames for the first 90 s: 10 frames slower than 50 ms inside 6 s (about 20 fps or worse) = this computer is not keeping
+   up, so Auto drops to Lite for good (kept in notepath.perf.auto with the reason) and says so once. One long task (an import, a big note) is
+   one slow frame and does not count. Only Auto, and only from Moderate: a person who picked Full or Moderate keeps it. */
+function jankWatch() {
+  if (!window.NPDiag || PERFS_SET() !== "auto" || perfNow() !== "moderate") return;
+  const T = window.__npJankTest || { gap: 50, count: 10, win: 6000, ms: 90000 }, bad = [];
+  NPDiag.sample(T.ms, (g, ts) => {
+    bad.push(ts); while (bad.length && ts - bad[0] > T.win) bad.shift();
+    if (bad.length >= T.count && PERFS_SET() === "auto" && perfNow() === "moderate") {
+      bad.length = 0; PERF_AUTO = "lite";
+      try { const o = JSON.parse(localStorage.getItem("notepath.perf.auto") || "{}"); o.v = "lite"; o.reason = "slow frames, switched by Auto"; localStorage.setItem("notepath.perf.auto", JSON.stringify(o)); } catch (e) {}
+      applyAll();
+      if (window.InquireNotes && InquireNotes.toast) InquireNotes.toast("NotePath switched to Lite mode to keep things smooth on this computer. You can change it in Settings → Display &amp; comfort → Performance.", null, 9000);
+    }
+  }, "Auto watch, first 90 s");
+}
+const PERFS_SET = () => PERFS.includes(S.perf) ? S.perf : "auto";
+const PERFS = ["lite", "moderate", "full"];
+const osReduced = () => { try { return !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches); } catch (e) { return false; } };
+const perfNow = () => PERFS.includes(S.perf) ? S.perf : osReduced() ? "lite" : autoPerf(); // Auto: the system's "reduce motion" also means Lite
 function applyAll() {
   applyTheme(S.theme);
+  { const th = findTheme(S.theme); document.documentElement.toggleAttribute("data-glass", !!(th && th.glass)); document.documentElement.dataset.perf = perfNow(); }
   document.documentElement.style.setProperty("--note-link", hexOk(S.noteLink) ? S.noteLink : DEF.noteLink);
   document.documentElement.style.setProperty("--note-indent", hexOk(S.indent) ? S.indent : DEF.indent); // paranotes (notes.js)
   Object.keys(TABDEF).forEach(k => document.documentElement.style.setProperty("--tab-" + k, hexOk(S.tabs[k]) ? S.tabs[k] : TABDEF[k]));
   applySizes();
-  document.documentElement.toggleAttribute("data-reduce-motion", !!S.reduceMotion);
+  document.documentElement.toggleAttribute("data-reduce-motion", !!S.reduceMotion || osReduced()); // the system setting counts too (v0.5.7)
   window.dispatchEvent(new CustomEvent("inquire:theme")); // canvases that paint with the theme (Note Office) repaint
 }
 applyAll();
+try { if (window.matchMedia) matchMedia("(prefers-reduced-motion: reduce)").addEventListener("change", () => applyAll()); } catch (e) {}
+setTimeout(jankWatch, 2500); // after start-up has settled
 
 /* ---------- window ---------- */
 const TABS = [["look", "Appearance"], ["display", "Display & comfort"], ["keys", "Shortcuts"], ["usage", "Usage"], ["code", "Code"], ["data", "Data & backups"], ["about", "About"]];
 const ov = document.createElement("div");
 ov.className = "set-ov"; ov.hidden = true;
 ov.innerHTML = `<div class="set-win win" role="dialog" aria-modal="true" aria-labelledby="set-title">
-  <header class="set-h"><span class="dot"></span><h2 id="set-title">Settings</h2><button type="button" class="set-x" aria-label="Close settings">✕</button></header>
+  <header role="group" class="set-h"><span class="dot"></span><h2 id="set-title">Settings</h2><button type="button" class="set-x" aria-label="Close settings">✕</button></header>
   <div class="set-body"><nav class="set-tabs" role="tablist" aria-label="Settings sections"></nav><section class="set-pane" tabindex="-1"></section></div>
 </div>`;
 document.body.appendChild(ov);
@@ -8936,6 +9138,8 @@ function show(id) {
   tabsEl.querySelectorAll(".set-tab").forEach(b => b.setAttribute("aria-selected", String(b.dataset.tab === id)));
   pane.innerHTML = ""; pane.scrollTop = 0;
   ({ look: paneLook, display: paneDisplay, keys: paneKeys, usage: paneUsage, code: paneCode, data: paneData, about: paneAbout })[id]();
+  // every switch is named by the heading beside it (screen readers; v0.5.7)
+  pane.querySelectorAll(".set-tog input:not([aria-label])").forEach(i => { const h3 = i.closest(".set-item") && i.closest(".set-item").querySelector("h3"); if (h3) i.setAttribute("aria-label", h3.textContent.trim()); });
 }
 const h = html => { const d = document.createElement("div"); d.innerHTML = html; return d.firstElementChild; };
 const msgEl = () => h(`<p class="set-msg" role="status" aria-live="polite"></p>`);
@@ -9072,6 +9276,8 @@ function paneDisplay() {
   const w = h(`<div>
     ${fader("textSize", "Text size", "Only the words: notes, menus and labels. Layout keeps its size.", .8, 1.5, .05, [.8, 1, 1.25, 1.5])}
     ${fader("uiScale", "Interface size", "Scales the whole console: panels, buttons and lists, with their text.", .75, 1.4, .05, [.75, 1, 1.2, 1.4])}
+    <div class="set-item"><div><h3>Performance</h3><p class="set-perfp"></p></div>
+      <div class="set-seg" role="radiogroup" aria-label="Performance mode">${[["auto", "Auto"], ["lite", "Lite"], ["moderate", "Moderate"], ["full", "Full"]].map(([k, n]) => `<button type="button" role="radio" data-perf="${k}" aria-checked="${(S.perf || "auto") === k}">${n}</button>`).join("")}</div></div>
     <div class="set-item"><div><h3>Reduce motion</h3><p>Turns off animations, fades and slides.</p></div>
       <label class="set-tog"><input type="checkbox" data-k="reduceMotion"${S.reduceMotion ? " checked" : ""}><span></span></label></div>
   </div>`);
@@ -9089,6 +9295,13 @@ function paneDisplay() {
     row.querySelectorAll(".set-fstep").forEach(b => b.onclick = () => set(S[key] + step * +b.dataset.d, true));
     rs.onclick = () => set(1, true);
   });
+  const perfText = () => { const m = S.perf || "auto", now = perfNow(), name = { lite: "Lite", moderate: "Moderate", full: "Full" };
+    const what = { lite: "Lite: no glass blur, glows or extra motion. Smoothest on lighter computers; every tool stays.",
+      moderate: "Moderate: glows, shadows and soft motion, and glass blur on glass themes, but the app behind a window is not blurred. A good balance for most computers.",
+      full: "Full: the original look. The app behind a window is blurred, dimmed and scaled, and the glass effects are on. Needs a stronger graphics chip." };
+    w.querySelector(".set-perfp").textContent = m === "auto" ? `Auto: this computer runs in ${name[now]} mode (Auto picks Lite or Moderate; choose Full yourself). ` + what[now] : what[m]; };
+  perfText();
+  w.querySelectorAll("[data-perf]").forEach(b => b.onclick = () => { S.perf = b.dataset.perf; save(); applyAll(); w.querySelectorAll("[data-perf]").forEach(x => x.setAttribute("aria-checked", String(x === b))); perfText(); });
   w.querySelectorAll(".set-tog input").forEach(i => i.onchange = () => { S[i.dataset.k] = i.checked; save(); applyAll(); });
   pane.appendChild(w);
 }
@@ -9274,24 +9487,56 @@ function paneKeys() {
    is lost), restores the photos under their own ids and replaces the settings. */
 const K = () => window.InquireKeys || { notes: () => "notepath.notes._local" };
 const readJ = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } };
+/* One backup file (format 3). withMedia = false leaves the photos and videos out (the daily automatic backup does that for big libraries). */
+async function buildBackup(withMedia) {
+  const NS = window.InquireNotes, notes = NS && NS.readAll ? NS.readAll() : readJ(K().notes(), []); // v0.5.6: notes live in IndexedDB
+  const T = window.NPTasks, tasks = T ? T.readRaw() : [];
+  // the tasks' pictures and files go in with the notes' photos (as if one note held them all)
+  const holders = NS ? NS.list().concat(tasks.length ? [{ title: "My Tasks", html: T.media().map(i => `data-img="${i}"`).join(" ") }] : []) : [];
+  let images = {}, skipped = []; try { if (NS && withMedia) ({ map: images, skipped } = await NS.exportMedia(holders)); } catch (err) {}
+  const data = { notes, folders: NS ? NS.readFolders() : [], tasks, images, settings: readJ("notepath.settings", {}) };
+  return { text: JSON.stringify({ app: "NotePath", kind: "notes-backup", version: 3, saved: new Date().toISOString(), data }), notes, images, skipped };
+}
+/* Daily automatic backup (v0.5.7, desktop app): Settings → Data & backups → Automatic backup (on by default). Once a day, when something changed
+   since the last one, a backup goes to <userData>/backups (main.js backup:save; the newest 7 stay). Photos and videos are included unless this
+   computer's storage for NotePath is over 120 MB (then notes, folders, tasks and settings only, and the line in Settings says so), so a big
+   library never makes a huge file or a memory spike. Runs a while after start-up, when the page is idle. */
+const BK = { get last() { try { return JSON.parse(localStorage.getItem("notepath.backup.last") || "null"); } catch (e) { return null; } } };
+const bkSig = () => { const NS = window.InquireNotes, T = window.NPTasks; try { const n = NS.readAll(); let mx = 0; n.forEach(x => { if ((x.updated || 0) > mx) mx = x.updated || 0; }); return [n.length, mx, NS.readFolders().length, T ? T.readRaw().length : 0, localStorage.getItem("notepath.settings") ? localStorage.getItem("notepath.settings").length : 0].join("/"); } catch (e) { return ""; } };
+const dayKey = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+async function autoBackup(force) {
+  const D = window.inquireDesktop; if (!D || !D.backup || !window.InquireNotes || (!force && S.autoBackup === false)) return null;
+  const last = BK.last, sig = bkSig(); if (!sig) return null;
+  if (!force && last && last.day === dayKey()) return null;          // one a day
+  if (!force && last && last.sig === sig) return null;               // nothing changed since the last one
+  let big = false; try { const e = await navigator.storage.estimate(); big = (e.usage || 0) > 120e6; } catch (e) {}
+  const b = await buildBackup(!big);
+  const r = await D.backup.save({ name: "notepath-auto-" + dayKey() + ".json", data: b.text });
+  if (r && r.file) { const o = { day: dayKey(), at: Date.now(), sig, notes: b.notes.length, media: !big, bytes: r.bytes, file: r.file }; try { localStorage.setItem("notepath.backup.last", JSON.stringify(o)); } catch (e) {} window.dispatchEvent(new CustomEvent("np:backup")); return o; }
+  if (window.InquireNotes.toast) InquireNotes.toast(r && r.error === "disk-full" ? "NotePath could not make today's automatic backup because this computer's disk is full. Your notes are not affected: free some space." : "NotePath could not make today's automatic backup.", null, 9000);
+  return null;
+}
+setTimeout(() => { try { (window.requestIdleCallback || setTimeout)(() => autoBackup().catch(() => {}), { timeout: 8000 }); } catch (e) {} }, 25000);
 function paneData() {
   const nn = window.InquireNotes && InquireNotes.readAll ? InquireNotes.readAll().length : readJ(K().notes(), []).length, NS0 = window.InquireNotes, nf = NS0 ? NS0.readFolders().length : 0;
   const w = h(`<div>
     <p class="set-lede">Saved on this computer: <b>${nn}</b> note${nn === 1 ? "" : "s"} in <b>${nf}</b> folder${nf === 1 ? "" : "s"}.</p>
     <div class="set-item"><div><h3>Back up</h3><p>Saves your notes (with their folders, photos, code boxes, music charts and videos up to 25 MB), code files, tasks (with their pictures and files up to 25 MB) and settings to one file. Bigger video files stay on this computer only: the backup tells you which.</p></div><button type="button" class="btn-s" data-a="exp">Export…</button></div>
+    ${window.inquireDesktop && window.inquireDesktop.backup ? `<div class="set-item"><div><h3>Automatic backup</h3><p class="set-abp"></p></div><span class="set-diagb"><label class="set-tog"><input type="checkbox" data-k="autoBackup"${S.autoBackup === false ? "" : " checked"}><span></span></label> <button type="button" class="btn-s" data-a="abnow">Back up now</button> <button type="button" class="btn-s" data-a="abopen">Open folder</button></span></div>` : ""}
     <div class="set-item"><div><h3>Restore a backup</h3><p>Loads a file made with Export, on this or another computer. Adds the backup's notes, folders and photos to yours and restores its settings.</p></div><label class="btn-s set-file">Import…<input type="file" accept=".json,application/json" hidden></label></div>
   </div>`);
   const m = msgEl(); w.appendChild(m);
+  { const abp = w.querySelector(".set-abp"); if (abp) {
+      const draw = () => { const l = BK.last, on = S.autoBackup !== false; abp.textContent = (on ? "Once a day, if something changed, the last 7 are kept in a folder on this computer. " : "Off. ") + (l ? `Last: ${new Date(l.at).toLocaleString()} (${l.notes} notes${l.media ? "" : ", without photos and videos: your storage is large"}, ${(l.bytes / 1048576).toFixed(1)} MB).` : "None yet."); };
+      draw(); window.addEventListener("np:backup", draw);
+      w.querySelector('[data-k="autoBackup"]').onchange = e => { S.autoBackup = e.target.checked; save(); draw(); };
+      w.querySelector('[data-a="abopen"]').onclick = () => window.inquireDesktop.backup.open();
+      w.querySelector('[data-a="abnow"]').onclick = async e => { const b = e.currentTarget; b.disabled = true; const o = await autoBackup(true).catch(() => null); b.disabled = false; say(m, o ? "Backed up now." : "The backup could not be made.", !!o); draw(); }; } }
   w.querySelector('[data-a="exp"]').onclick = async e => {
     const btn = e.currentTarget; btn.disabled = true; btn.textContent = "Saving…";
-    const NS = window.InquireNotes, notes = NS && NS.readAll ? NS.readAll() : readJ(K().notes(), []); // v0.5.6: notes live in IndexedDB
-    const T = window.NPTasks, tasks = T ? T.readRaw() : [];
-    // the tasks' pictures and files go in with the notes' photos (as if one note held them all)
-    const holders = NS ? NS.list().concat(tasks.length ? [{ title: "My Tasks", html: T.media().map(i => `data-img="${i}"`).join(" ") }] : []) : [];
-    let images = {}, skipped = []; try { if (NS) ({ map: images, skipped } = await NS.exportMedia(holders)); } catch (err) {}
-    const data = { notes, folders: NS ? NS.readFolders() : [], tasks, images, settings: readJ("notepath.settings", {}) };
+    const { text, notes, images, skipped } = await buildBackup(true);
     btn.disabled = false; btn.textContent = "Export…";
-    const blob = new Blob([JSON.stringify({ app: "NotePath", kind: "notes-backup", version: 3, saved: new Date().toISOString(), data })], { type: "application/json" });
+    const blob = new Blob([text], { type: "application/json" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "notepath-backup-" + new Date().toISOString().slice(0, 10) + ".json";
     document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
     const np = Object.keys(images).length;
@@ -9328,10 +9573,14 @@ function paneAbout() {
   const w = h(`<div>
     <p class="set-lede"><b>NotePath</b> <span class="set-ver">${D ? "" : "web preview"}</span>: a notes console for everything you would use a notepad for.</p>
     ${D ? `<div class="set-item set-upd"><div><h3>Updates</h3><p class="set-upd-msg">NotePath checks at launch and every 4 hours.</p></div><div class="set-upd-btns"></div></div>` : ""}
+    <div class="set-item"><div><h3>Diagnostics</h3><p class="set-diagp">Copies a short report (version, computer, performance mode, sizes, recent errors) to paste when something is slow or broken. Nothing is sent anywhere.</p></div><span class="set-diagb"><button type="button" class="btn-s" data-a="diagtest">Run a frame test</button> <button type="button" class="btn-s" data-a="diag">Copy diagnostics</button></span></div>
     <div class="set-item"><div><h3>End-user licence agreement</h3><p>The terms for using NotePath.</p></div><button type="button" class="btn-s" data-a="eula">Read</button></div>
     <div class="set-item"><div><h3>Source &amp; release notes</h3><p>github.com/InquiringOwl/notepath-desktop</p></div><a class="btn-s" href="https://github.com/InquiringOwl/notepath-desktop/releases" target="_blank" rel="noopener">Open ↗</a></div>
     <p class="set-small">Fonts: STIX Two Text, IBM Plex Sans &amp; Mono, Saira Semi Condensed (SIL Open Font License).</p>
   </div>`);
+  { const p = w.querySelector(".set-diagp"), p0 = p.textContent, say2 = t => { p.textContent = t; setTimeout(() => { p.textContent = p0; }, 6000); };
+    w.querySelector('[data-a="diag"]').onclick = async () => { try { const t = await NPDiag.report(); let okc = false; try { await navigator.clipboard.writeText(t); okc = true; } catch (e) { const ta = document.createElement("textarea"); ta.value = t; document.body.appendChild(ta); ta.select(); try { okc = document.execCommand("copy"); } catch (e2) {} ta.remove(); } say2(okc ? "Copied. Paste it where you need it." : "Could not copy it."); } catch (e) { say2("Could not make the report."); } };
+    w.querySelector('[data-a="diagtest"]').onclick = async e => { const b = e.currentTarget; b.disabled = true; say2("Measuring for 5 seconds: move the mouse, scroll a list or open a window…"); const r = await NPDiag.sample(5000, null, "frame test, 5 s"); b.disabled = false; say2(`${r.frames} frames, ${r.slow} slower than 50 ms, worst ${r.worst} ms. “Copy diagnostics” includes this.`); }; }
   if (D) {
     D.version().then(v => { const el = w.querySelector(".set-ver"); if (el) el.textContent = "v" + v; }).catch(() => {});
     drawUpd(w.querySelector(".set-upd"));
@@ -9374,7 +9623,7 @@ if (window.inquireDesktop) {
 /* top-bar gear */
 const gear = document.getElementById("gear");
 if (gear) gear.onclick = () => open();
-window.InquireSettings = { open, openDoc, close, get: () => Object.assign({}, S), themes: THEMES };
+window.InquireSettings = { open, openDoc, close, get: () => Object.assign({}, S), themes: THEMES, perf: perfNow, autoBackup };
 })();
 
 </script>

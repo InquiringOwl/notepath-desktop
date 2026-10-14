@@ -44,7 +44,14 @@ function writePrefs(p) { try { fs.writeFileSync(PREFS_FILE(), JSON.stringify(p))
 const USE_TRAY = () => !IS_MAC && readPrefs().tray;
 let tray = null, quitting = false, nextRem = [];
 const startHidden = process.argv.includes('--hidden');
-function showWin() { if (!win || win.isDestroyed()) createWindow(); if (win.isMinimized()) win.restore(); win.show(); win.focus(); }
+/* v0.5.7 (memory): a window hidden in the tray gives its renderer back after a short while (a hidden page still holds ~150–300 MB);
+   reminders live here in the main process, so they still arrive, and one that fires with no window wakes it hidden for a moment so
+   the page can plan the next ones (repeats, reminders more than 24 days away). Opening NotePath again rebuilds the window (~1 s). */
+let idleKill = null, bgLoad = false;
+function cancelIdleKill() { if (idleKill) { clearTimeout(idleKill); idleKill = null; } }
+function scheduleIdleKill(ms) { cancelIdleKill(); idleKill = setTimeout(() => { idleKill = null; if (quitting || !win || win.isDestroyed() || win.isVisible()) return; flushStorage(); try { win.destroy(); } catch (e) {} win = null; }, ms); }
+function wakeHidden() { if (win && !win.isDestroyed()) return; bgLoad = true; createWindow(); scheduleIdleKill(25000); }
+function showWin() { cancelIdleKill(); bgLoad = false; if (!win || win.isDestroyed()) createWindow(); if (win.isMinimized()) win.restore(); win.show(); win.focus(); }
 function openIn(route) { showWin(); const go = () => win.webContents.send('app:route', route); if (win.webContents.isLoading()) win.webContents.once('did-finish-load', go); else go(); }
 /* ---------------- note links (v0.5.4): Share → Copy link gives notepath://note/<id>; clicked in another file, an email to
    yourself or a calendar, it opens that note here. Notes live only on this computer, so on someone else's computer the link
@@ -93,11 +100,11 @@ function createWindow() {
   // Windows / Linux: the ✕ hides NotePath to the tray instead of quitting (Settings → Usage can turn this off)
   win.on('close', e => {
     if (quitting || !USE_TRAY() || !tray) return;
-    e.preventDefault(); win.hide();
+    e.preventDefault(); win.hide(); scheduleIdleKill(15000);
     const p = readPrefs();
     if (!p.hinted && Notification.isSupported()) { writePrefs(Object.assign(p, { hinted: true })); new Notification({ title: 'NotePath is still running', body: 'It stays in the notification area so task reminders still arrive. Right-click its icon to quit.' }).show(); }
   });
-  win.once('ready-to-show', () => { if (!(startHidden && USE_TRAY())) win.show(); });
+  win.once('ready-to-show', () => { if (!(startHidden && USE_TRAY()) && !bgLoad) win.show(); else if (USE_TRAY() && tray) scheduleIdleKill(25000); });
 }
 
 /* ---------------- automatic updates ---------------- */
@@ -248,6 +255,7 @@ app.whenReady().then(() => {
       }
     } catch (err) { log.warn('reminder', err); }
     if (win && !win.isDestroyed()) win.webContents.send('tasks:fired', { key: r.key, id: r.id, title: r.title, body: r.body });
+    else if (USE_TRAY() && tray) wakeHidden();
   }
   // Settings → Usage: keep running in the tray (Windows/Linux), start when you sign in (Windows/macOS)
   ipcMain.handle('app:prefs', () => { const p = readPrefs(); return { tray: p.tray, login: p.login, trayAvailable: !IS_MAC, loginAvailable: IS_MAC || process.platform === 'win32' }; });
@@ -294,6 +302,23 @@ app.whenReady().then(() => {
   });
   ipcMain.handle('update:reveal', () => { if (updateState.fallback) shell.showItemInFolder(updateState.fallback); });
   ipcMain.handle('app:version', () => app.getVersion());
+  /* v0.5.7 automatic backups: the page (settings.js autoBackup) sends the backup text once a day; it is kept as
+     <userData>/backups/notepath-auto-YYYY-MM-DD.json, the newest 7 stay. Written to a temp file first, so a full disk never leaves half a backup. */
+  const BK_DIR = () => path.join(app.getPath('userData'), 'backups');
+  const BK_RE = /^notepath-auto-\d{4}-\d{2}-\d{2}\.json$/;
+  ipcMain.handle('backup:save', async (_e, q) => {
+    try {
+      if (!q || typeof q.name !== 'string' || !BK_RE.test(q.name) || typeof q.data !== 'string' || q.data.length > 900e6) return { error: 'bad' };
+      fs.mkdirSync(BK_DIR(), { recursive: true });
+      const f = path.join(BK_DIR(), q.name), tmp = f + '.tmp';
+      await fs.promises.writeFile(tmp, q.data, 'utf8'); await fs.promises.rename(tmp, f);
+      const all = fs.readdirSync(BK_DIR()).filter(n => BK_RE.test(n)).sort();
+      all.slice(0, Math.max(0, all.length - 7)).forEach(n => { try { fs.unlinkSync(path.join(BK_DIR(), n)); } catch (e) {} });
+      return { file: q.name, bytes: Buffer.byteLength(q.data), kept: Math.min(all.length, 7) };
+    } catch (err) { try { fs.unlinkSync(path.join(BK_DIR(), q.name + '.tmp')); } catch (e) {} return { error: err && err.code === 'ENOSPC' ? 'disk-full' : 'failed' }; }
+  });
+  ipcMain.handle('backup:open', async () => { try { fs.mkdirSync(BK_DIR(), { recursive: true }); await shell.openPath(BK_DIR()); return true; } catch (e) { return false; } });
+  ipcMain.handle('backup:list', () => { try { return fs.readdirSync(BK_DIR()).filter(n => BK_RE.test(n)).sort().reverse().map(n => ({ name: n, bytes: fs.statSync(path.join(BK_DIR(), n)).size })); } catch (e) { return []; } });
 
   Menu.setApplicationMenu(Menu.buildFromTemplate([
     ...(IS_MAC ? [{ label: 'NotePath', submenu: [

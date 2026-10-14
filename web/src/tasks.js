@@ -165,7 +165,9 @@ const sorters = {
   new: (a, b) => (a.done - b.done) || (b.created - a.created) };
 const priIcon = (p, cls) => `<i class="nt-pri ${cls || ""}" data-pri="${p}" title="${PRI[p].name} priority" aria-label="${PRI[p].name} priority">${PRI[p].glyph}</i>`;
 const imgURL = id => (NS() && id ? NS().imageURL(id) : Promise.resolve(null));
-function hydratePics(root) { root.querySelectorAll("[data-pic]").forEach(el => imgURL(el.dataset.pic).then(u => { if (u) el.style.backgroundImage = `url("${u}")`; })); }
+// v0.5.7: pictures in the list and overview are drawn from a 360 px copy (made once per session), not the stored 1800 px photo; the lightbox still opens the original
+const thumbURL = (id, px) => (NS() && id ? (NS().thumbURL ? NS().thumbURL(id, px) : NS().imageURL(id)) : Promise.resolve(null));
+function hydratePics(root) { root.querySelectorAll("[data-pic]").forEach(el => thumbURL(el.dataset.pic, 360).then(u => { if (u) el.style.backgroundImage = `url("${u}")`; })); }
 
 function render(m, o = {}) {
   if (o.sel) ST.sel = o.sel;
@@ -202,6 +204,7 @@ function render(m, o = {}) {
     if (!ST.sel || !every.some(t => t.id === ST.sel)) ST.sel = list[0] ? list[0].id : null;
     const open = every.filter(t => !t.done).length, od = every.filter(overdue).length;
     sum.innerHTML = every.length ? `${open} open${od ? ` · <b class="nt-od">${od} overdue</b>` : ""}${every.length - open ? ` · ${every.length - open} done` : ""}` : "";
+    if (list.length) items.setAttribute("role", "listbox"); else items.removeAttribute("role"); // a listbox with no options is invalid (v0.5.7)
     items.innerHTML = list.length ? list.map(t => `<div role="option" tabindex="0" class="nb-it nt-it${t.done ? " done" : ""}" data-id="${t.id}" data-pri="${t.pri}" aria-selected="${t.id === ST.sel}">
         <button type="button" class="nt-ck" role="checkbox" aria-checked="${t.done}" aria-label="${t.done ? "Mark not done" : "Mark done"}: ${esc(t.title)}" title="${t.repeat !== "none" ? "Done (it comes back " + (t.repeat === "daily" ? "tomorrow" : "next week") + ")" : t.done ? "Not done yet" : "Done"}"></button>
         ${t.pic ? `<span class="nt-thumb" data-pic="${t.pic}" aria-hidden="true"></span>` : ""}

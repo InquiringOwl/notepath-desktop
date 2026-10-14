@@ -113,7 +113,7 @@ function modalWin(id, o = {}){
   const last = document.activeElement;
   const ov = h("div", { class: "mw-ov", "data-mw": id });
   ov.innerHTML = `<div class="mw-win win ${o.cls || ""}" role="dialog" aria-modal="true" aria-labelledby="mw-t-${id}">
-    <header class="set-h mw-h">${o.back ? `<button type="button" class="np-back" data-a="back" title="Back to the Main Menu" aria-label="Back to the Main Menu"><span aria-hidden="true">‹</span> Back</button>` : ""}<span class="dot"></span><h2 id="mw-t-${id}">${esc(o.title || "")}</h2>${o.sub ? `<span class="mw-sub">${o.sub}</span>` : ""}<span class="mw-hx"></span>${o.back ? "" : `<button type="button" class="set-x" aria-label="Close ${esc(o.title || "window")}">✕</button>`}</header>
+    <header role="group" class="set-h mw-h">${o.back ? `<button type="button" class="np-back" data-a="back" title="Back to the Main Menu" aria-label="Back to the Main Menu"><span aria-hidden="true">‹</span> Back</button>` : ""}<span class="dot"></span><h2 id="mw-t-${id}">${esc(o.title || "")}</h2>${o.sub ? `<span class="mw-sub">${o.sub}</span>` : ""}<span class="mw-hx"></span>${o.back ? "" : `<button type="button" class="set-x" aria-label="Close ${esc(o.title || "window")}">✕</button>`}</header>
     <div class="mw-body"></div></div>`;
   document.body.appendChild(ov);
   const m = { id, ov, win: $(".mw-win", ov), body: $(".mw-body", ov), head: $(".mw-hx", ov), cleanup: [], closed: false,
@@ -172,7 +172,7 @@ function renderNotesPage(o = {}){
   if (o.sel) ST.sel = o.sel;
   const pg = h("div", { class: "npage" });
   pg.innerHTML = `<div class="np-wrap"><section class="np-win win" aria-labelledby="np-t">
-    <header class="set-h mw-h"><button type="button" class="np-back" data-a="back" title="Back to the Main Menu" aria-label="Back to the Main Menu"><span aria-hidden="true">‹</span> Back</button><span class="dot"></span><h2 id="np-t">My notes</h2><span class="mw-sub"></span><span class="mw-hx"></span></header>
+    <header role="group" class="set-h mw-h"><button type="button" class="np-back" data-a="back" title="Back to the Main Menu" aria-label="Back to the Main Menu"><span aria-hidden="true">‹</span> Back</button><span class="dot"></span><h2 id="np-t" aria-level="1">My notes</h2><span class="mw-sub"></span><span class="mw-hx"></span></header>
     <div class="nb-info" role="status" aria-live="polite"></div>
     <div class="mw-body"></div></section></div>`;
   viewEl.appendChild(pg);
@@ -199,7 +199,7 @@ let TPAGE = null;
 function renderTasksPage(o = {}){
   const pg = h("div", { class: "npage tpage" });
   pg.innerHTML = `<section class="np-win win nt-win" aria-labelledby="nt-t">
-    <header class="set-h mw-h"><button type="button" class="np-back" data-a="back" title="Back to the Main Menu" aria-label="Back to the Main Menu"><span aria-hidden="true">‹</span> Back</button><span class="dot"></span><h2 id="nt-t">My Tasks</h2><span class="mw-sub">Saved on this computer. Reminders show as notifications while NotePath is running.</span><span class="mw-hx"></span></header>
+    <header role="group" class="set-h mw-h"><button type="button" class="np-back" data-a="back" title="Back to the Main Menu" aria-label="Back to the Main Menu"><span aria-hidden="true">‹</span> Back</button><span class="dot"></span><h2 id="nt-t" aria-level="1">My Tasks</h2><span class="mw-sub">Saved on this computer. Reminders show as notifications while NotePath is running.</span><span class="mw-hx"></span></header>
     <div class="mw-body"></div></section>`;
   viewEl.appendChild(pg);
   $(".np-back", pg).onclick = () => goBack();
@@ -330,13 +330,13 @@ function renderMenu(){
   s.innerHTML = `<div class="screen-in">
     <div class="hello"><p class="eyebrow">NotePath</p><h1>Main Menu</h1></div>
     <section class="npn win" aria-labelledby="npn-t">
-      <header class="win-h npn-h"><span class="dot"></span><span id="npn-t">Notes</span><span class="npn-count num"></span></header>
+      <header role="group" class="win-h npn-h"><span class="dot"></span><span id="npn-t">Notes</span><span class="npn-count num"></span></header>
       <div class="slots npn-acts">
-        <button type="button" class="slot big" data-a="open"><span class="glyph">▤</span><span><h3>My notes</h3><p>Every note, folder and photo, with search and your own order. Start a new note there with ＋ New Note.</p></span><span class="tag num" data-n="all"></span></button>
-        <button type="button" class="slot big npn-tasks" data-a="tasks"><span class="glyph">☑</span><span><h3>My Tasks</h3><p>To-dos with priorities, due dates and reminders, places on a map, photos and files.</p></span><span class="tag num" data-n="tasks"></span></button>
-        <button type="button" class="slot big npn-code" data-a="code"><span class="glyph">&lt;/&gt;</span><span><h3>My Code</h3><p>Code files in Python, C, C++, JavaScript and Java, with their own folders. ▶ Run them right here.</p></span><span class="tag num" data-n="code"></span></button>
-        <button type="button" class="slot big locked npn-soon npn-music" aria-disabled="true" tabindex="-1"><span class="glyph">𝄞</span><span><h3>My Music</h3><p>Coming soon</p></span></button>
-        <button type="button" class="slot big npn-office" data-a="office"><span class="glyph">⌂</span><span><h3>Note Office</h3><p>Your notes as a little office: a sheet for every note, a box for every folder. Someone works there.</p></span></button>
+        <button type="button" class="slot big" data-a="open"><span class="glyph">▤</span><span><h3 aria-level="2">My notes</h3><p>Every note, folder and photo, with search and your own order. Start a new note there with ＋ New Note.</p></span><span class="tag num" data-n="all"></span></button>
+        <button type="button" class="slot big npn-tasks" data-a="tasks"><span class="glyph">☑</span><span><h3 aria-level="2">My Tasks</h3><p>To-dos with priorities, due dates and reminders, places on a map, photos and files.</p></span><span class="tag num" data-n="tasks"></span></button>
+        <button type="button" class="slot big npn-code" data-a="code"><span class="glyph">&lt;/&gt;</span><span><h3 aria-level="2">My Code</h3><p>Code files in Python, C, C++, JavaScript and Java, with their own folders. ▶ Run them right here.</p></span><span class="tag num" data-n="code"></span></button>
+        <button type="button" class="slot big locked npn-soon npn-music" aria-disabled="true" tabindex="-1"><span class="glyph">𝄞</span><span><h3 aria-level="2">My Music</h3><p>Coming soon</p></span></button>
+        <button type="button" class="slot big npn-office" data-a="office"><span class="glyph">⌂</span><span><h3 aria-level="2">Note Office</h3><p>Your notes as a little office: a sheet for every note, a box for every folder. Someone works there.</p></span></button>
       </div>
       <div class="npn-recent"><h2 class="npn-sub">Recent</h2><div class="mnotes-list"></div></div>
     </section>
@@ -411,7 +411,7 @@ function askText(o = {}){
     document.querySelectorAll(".ask-ov").forEach(x => x.remove());
     const last = document.activeElement;
     const ov = h("div", { class: "ask-ov" }, `<form class="ask-win win" role="dialog" aria-modal="true" aria-labelledby="ask-t">
-      <header class="set-h"><span class="dot"></span><h2 id="ask-t">${esc(o.title || "Name")}</h2><button type="button" class="set-x" data-x aria-label="Cancel">✕</button></header>
+      <header role="group" class="set-h"><span class="dot"></span><h2 id="ask-t">${esc(o.title || "Name")}</h2><button type="button" class="set-x" data-x aria-label="Cancel">✕</button></header>
       <div class="ask-body">${o.kinds ? `<div class="ask-kinds" role="radiogroup" aria-label="Kind of note">${o.kinds.map((k, i) => `<button type="button" role="radio" class="ask-kind" data-k="${k.k}" aria-checked="${o.kind ? k.k === o.kind : i === 0}"><span class="ask-kg" aria-hidden="true">${k.glyph}</span><b>${esc(k.name)}</b><small>${esc(k.desc)}</small></button>`).join("")}</div>` : ""}${o.foot || ""}<label class="ask-l" for="ask-in">${esc(o.label || "Name")}</label>
         <input id="ask-in" class="ask-in" maxlength="${o.max || 140}" placeholder="${esc(o.placeholder || "")}" value="${esc(o.value || "")}" autocomplete="off">
         ${o.cover ? `<div class="ask-cov"><button type="button" class="ask-covb" title="Choose a cover photo (optional): it shows in the notes list and as the icon">${COVER_IC}<span>Cover photo</span></button><span class="ask-covn">Optional</span><button type="button" class="ask-covx" hidden aria-label="No cover photo">✕</button><input type="file" accept="image/*" hidden class="ask-covin"></div>` : ""}<div class="ask-btns"><button type="button" class="btn-s" data-x>Cancel</button><button type="submit" class="btn good">${esc(o.ok || "OK")}</button></div></div></form>`);
@@ -478,8 +478,8 @@ function renderNotes(m, focusBody, space = "notes"){
   const ALLNS = window.InquireNotes, CS = window.InquireNotes.scope("code");
   const s = m.body;
   s.innerHTML = `    <div class="nb-sbar"><label class="search nb-search"><span aria-hidden="true">⌕</span><input type="search" placeholder="Search" aria-label="${CODE ? "Search every code file" : "Search every note"}"></label></div>
-    <div class="nb"><nav class="nb-folders" aria-label="${CODE ? "Folders and code files" : "Folders and files"}"><div class="nb-tools nb-ftools">${viewSwitch(viewOf(CODE ? "codeview" : "noteview"), CODE ? "Show the code files as" : "Show the notes as")}<select class="nb-sort" aria-label="${CODE ? "Order of code files" : "Order of notes"}"><option value="mine">My order</option><option value="recent">Recently edited</option></select><button type="button" class="nb-favtop" aria-pressed="false" title="Keep favourites at the top of the list">★ first</button><button type="button" class="nb-hide" data-p="f" title="Hide the Folders &amp; Files bar (a strip on the left brings it back)" aria-label="Hide the Folders and Files bar"><span aria-hidden="true">◀</span> Hide</button></div><div class="nb-ftree" role="tree" aria-label="${CODE ? "Code folders and files" : "Folders and files"}"></div></nav>
-    <aside class="nb-rail" role="toolbar" aria-orientation="vertical" aria-label="Tools"><button type="button" class="nb-hide nb-hidel" data-p="l" title="Hide the Tool bar (a strip brings it back)" aria-label="Hide the Tool bar"><span class="nb-tooli" aria-hidden="true">◀</span><span class="nb-tooln">Hide</span></button>${railHTML(CODE)}</aside>
+    <div class="nb"><nav class="nb-folders" aria-label="${CODE ? "Folders and code files" : "Folders and files"}"><div class="nb-tools nb-ftools">${viewSwitch(viewOf(CODE ? "codeview" : "noteview"), CODE ? "Show the code files as" : "Show the notes as")}<select class="nb-sort" aria-label="${CODE ? "Order of code files" : "Order of notes"}"><option value="mine">My order</option><option value="recent">Recently edited</option></select><button type="button" class="nb-favtop" aria-pressed="false" title="Keep favourites at the top of the list">★ first</button><button type="button" class="nb-hide" data-p="f" title="Hide the Folders &amp; Files bar (a strip on the left brings it back)" aria-label="Hide the Folders and Files bar"><span aria-hidden="true">◀</span> Hide</button></div><div class="nb-ftree" role="group" aria-label="${CODE ? "Code folders and files" : "Folders and files"}"></div></nav>
+    <aside class="nb-rail" aria-label="Tools"><button type="button" class="nb-hide nb-hidel" data-p="l" title="Hide the Tool bar (a strip brings it back)" aria-label="Hide the Tool bar"><span class="nb-tooli" aria-hidden="true">◀</span><span class="nb-tooln">Hide</span></button>${railHTML(CODE)}</aside>
     <section class="nb-ed"><div class="nb-tabs" hidden></div><div class="nb-panes"><div class="nb-pane p1"></div><div class="nb-pane p2" hidden></div></div></section>
     <button type="button" class="nb-fold" data-p="f"></button><button type="button" class="nb-fold" data-p="l"></button>
     <div class="nb-rzf" role="separator" aria-orientation="vertical" tabindex="0" aria-label="Resize the folders column (drag, or ←/→; double-click resets)" title="Drag to resize the folders · double-click resets"></div>
@@ -510,7 +510,7 @@ function renderNotes(m, focusBody, space = "notes"){
     if (b.getAttribute("aria-disabled") === "true") { msg(`${b.dataset.name} is coming soon.`); return; }
     if ((t === "note" && !CODE) || (t === "code" && CODE)) return;
     flushEd(); go({ view: "notes", space: t === "code" ? "code" : "notes" }); });
-  { const bar = $(".nb-sbar", s), fcol = $(".nb-folders", s), fit = () => { const w = fcol.offsetWidth; if (w > 60) bar.style.setProperty("--sbw", Math.max(200, w - 20) + "px"); };
+  { const bar = $(".nb-sbar", s), fcol = $(".nb-folders", s), fit = () => { const w = fcol.offsetWidth; if (w > 60) bar.style.setProperty("--sbw", Math.max(200, w - 20) + "px"); const rz = $(".nb-rzf", s); if (rz) { rz.setAttribute("aria-valuemin", "180"); rz.setAttribute("aria-valuemax", "620"); rz.setAttribute("aria-valuenow", String(Math.round(w))); } };
     if (window.ResizeObserver) { const ro = new ResizeObserver(fit); ro.observe(fcol); m.cleanup.push(() => ro.disconnect()); } fit(); }
   sortSel.value = NOTES.sort === "recent" ? "recent" : "mine";
   sortSel.onchange = () => { NOTES.sort = sortSel.value; store.set(SK.sort, NOTES.sort); drawList(); };
@@ -606,7 +606,7 @@ function renderNotes(m, focusBody, space = "notes"){
     const star = n => n.fav ? '<i class="nb-star" aria-label="Favourite">★</i>' : "";
     const fic = n => CODE ? `<i class="nc-badge nb-fbadge" data-lang="${esc(n.code.lang)}">${esc(LG(n.code.lang).short)}</i>` : `<span class="nb-fni" aria-hidden="true">${NOTE_MINI}</span>`;
     const fileRow = (n, d, g) => {
-      const a = x => `class="nb-fnote nb-it${x}${n.id === NOTES.sel ? " sel" : ""}" role="option" tabindex="0" draggable="true" aria-selected="${n.id === NOTES.sel}" data-id="${n.id}" data-g="${g}" style="--d:${d}"`;
+      const a = x => `class="nb-fnote nb-it${x}${n.id === NOTES.sel ? " sel" : ""}" role="button" tabindex="0" draggable="true" aria-pressed="${n.id === NOTES.sel}" data-id="${n.id}" data-g="${g}" style="--d:${d}"`;
       const cov = n.cover && /^[a-z0-9]{4,40}$/i.test(n.cover) ? n.cover : null, inF = g === "q" || g === "all" || g === "fav" ? (n.folder && fname[n.folder] ? esc(fname[n.folder]) + " · " : "") : "";
       if (view === "icons") return `<div ${a(" nb-tile")} title="${esc(n.title)} · ${esc(noteKind(n))} · edited ${esc(stampShort(n.updated))}"><span class="nb-tic${cov ? " has-cov" : ""}">${cov ? `<img class="nb-cov nb-tcov" data-cov="${cov}" alt="">` : CODE ? `<i class="nc-badge nb-tbadge" data-lang="${esc(n.code.lang)}">${esc(LG(n.code.lang).short)}</i>` : NOTE_IC}${n.fav ? '<i class="nb-star nb-tstar" aria-label="Favourite">★</i>' : ""}</span><span class="nb-t">${esc(n.title)}</span><span class="nb-m">${when(n.updated)}</span></div>`;
       if (view === "details") return `<div ${a(" nb-row")}><span class="nb-t">${fic(n)}${star(n)}${esc(n.title)}</span><span class="nb-dc num">${esc(stampShort(n.updated))}</span><span class="nb-dc num">${esc(stampShort(n.created))}</span><span class="nb-dc">${esc(noteKind(n))}</span></div>`;
@@ -655,7 +655,7 @@ function renderNotes(m, focusBody, space = "notes"){
     if (!CODE && !qq) wireFsplit();
     drawInfo();
     if (!CODE) wireCodeSection();
-    fold.querySelectorAll("img[data-cov]").forEach(im => window.InquireNotes.imageURL(im.dataset.cov).then(u => { if (u) im.src = u; else im.classList.add("missing"); }));
+    fold.querySelectorAll("img[data-cov]").forEach(im => window.InquireNotes.thumbURL(im.dataset.cov, 160).then(u => { if (u) im.src = u; else im.classList.add("missing"); }));
     if (view === "details") wireDcols();
     fold.title = mine ? "Drag notes onto folders to file them, or up and down among notes to put them in your own order" : "Choose My order to arrange notes by dragging";
     fold.querySelectorAll("[data-more]").forEach(b => b.onclick = () => { SHOWALL.add(b.dataset.more); drawFolders(); });
@@ -712,7 +712,7 @@ function renderNotes(m, focusBody, space = "notes"){
     fold.querySelectorAll(`.nb-fnote[data-id="${id}"]:not(.nb-cfile)`).forEach(el => {
       const t = document.createElement("template"); t.innerHTML = ROWFN(n, el); const nr = t.content.firstElementChild; if (!nr) return;
       el.replaceWith(nr); wireRow(nr);
-      const im = nr.querySelector("img[data-cov]"); if (im) window.InquireNotes.imageURL(im.dataset.cov).then(u => { if (u) im.src = u; });
+      const im = nr.querySelector("img[data-cov]"); if (im) window.InquireNotes.thumbURL(im.dataset.cov, 160).then(u => { if (u) im.src = u; });
     });
   }
   /* ----- Notes tab: the Code section under the folders (a divider, then the Code folders and files). A code file opens in
@@ -726,7 +726,7 @@ function renderNotes(m, focusBody, space = "notes"){
     const cnt = id => { const sub = ALLNS.subtree(id); return cn.filter(n => sub.has(n.folder)).length; };
     const cfrow = f => `<div class="nb-cfd" style="--d:${f.depth}"><button type="button" class="nb-fcar" data-ccar="${f.id}" aria-expanded="${!shut.has(f.id)}" title="${shut.has(f.id) ? "Show" : "Hide"} the files in ${esc(f.name)}" aria-label="${shut.has(f.id) ? "Show" : "Hide"} the files in ${esc(f.name)}">${folderIcon(!shut.has(f.id))}</button><span class="nb-cfdn">${esc(f.name)}</span><span class="nb-fn num">${cnt(f.id)}</span></div>`;
     const tree = parent => cf.filter(f => (f.parent || null) === parent).map(f => cfrow(f) + (shut.has(f.id) ? "" : tree(f.id) + (byF[f.id] || []).map(n => crow(n, f.depth + 1)).join(""))).join("");
-    return `<div class="nb-codeh" role="separator"><button type="button" class="nb-codet" aria-expanded="${open}" title="${open ? "Hide" : "Show"} your code files">${folderIcon(open)} Code</button><span class="nb-fn num">${fl ? fl.length : cn.length}</span><button type="button" class="nb-codego" data-a="gocode" title="Open My Code" aria-label="Open My Code">↗</button></div>`
+    return `<div class="nb-codeh" role="group" aria-label="Code files"><button type="button" class="nb-codet" aria-expanded="${open}" title="${open ? "Hide" : "Show"} your code files">${folderIcon(open)} Code</button><span class="nb-fn num">${fl ? fl.length : cn.length}</span><button type="button" class="nb-codego" data-a="gocode" title="Open My Code" aria-label="Open My Code">↗</button></div>`
       + (open ? `<div class="nb-codetree">${fl ? (fl.length ? fl.map(n => crow(n, 0)).join("") : `<p class="nb-codeempty">${filter === "fav" ? "No favourite code files." : "No unfiled code files."}</p>`) // v0.5.6: the filter reaches the Code section (files only, no folders)
         : cn.length || cf.length ? tree(null) + (byF._ || []).map(n => crow(n, 0)).join("") : `<p class="nb-codeempty">No code files yet. Make one in <b>My Code</b> on the Main Menu.</p>`}</div>` : "");
   }
@@ -735,7 +735,7 @@ function renderNotes(m, focusBody, space = "notes"){
   function wireFsplit(){
     const sp = $(".nb-fsplit", fold), main = $(".nb-fmain", fold), code = $(".nb-fcode", fold); if (!sp || !code) return;
     const open = !store.get("codesecfold", false); fold.classList.add("has-fsplit"); fold.classList.toggle("code-shut", !open);
-    const total = () => fold.clientHeight, set = (hgt, keep) => { const H = total(); if (!H) return; hgt = Math.round(Math.max(44, Math.min(H - 120, hgt))); code.style.height = hgt + "px"; if (keep) store.set("codesech", hgt); };
+    const total = () => fold.clientHeight, set = (hgt, keep) => { const H = total(); if (!H) return; hgt = Math.round(Math.max(44, Math.min(H - 120, hgt))); code.style.height = hgt + "px"; sp.setAttribute("aria-valuemin", "44"); sp.setAttribute("aria-valuemax", String(Math.max(44, H - 120))); sp.setAttribute("aria-valuenow", String(hgt)); if (keep) store.set("codesech", hgt); };
     if (open) requestAnimationFrame(() => { if (fold.isConnected) set(store.get("codesech", Math.round(total() * .34))); });
     sp.addEventListener("pointerdown", e => { if (!open) return; e.preventDefault(); sp.setPointerCapture(e.pointerId); sp.classList.add("on"); const y0 = e.clientY, h0 = code.offsetHeight;
       const mv = ev => set(h0 - (ev.clientY - y0)), up = () => { sp.classList.remove("on"); sp.removeEventListener("pointermove", mv); sp.removeEventListener("pointerup", up); set(code.offsetHeight, true); };
@@ -1208,7 +1208,7 @@ function renderNotes(m, focusBody, space = "notes"){
     if (!id) return;
     if (!peekEl) {
       peekEl = h("section", { class: "np-peek win", role: "dialog", "aria-label": "Peek at a note" });
-      peekEl.innerHTML = `<header class="np-peek-h" title="Drag to move · double-click to dock"><button type="button" class="np-peek-x np-peek-back" title="Back to the note before" aria-label="Back" hidden>‹</button><div class="np-peek-tt"><span class="np-peek-gem" aria-hidden="true"></span>Peek</div><span class="np-peek-grip" aria-hidden="true">⠿</span>
+      peekEl.innerHTML = `<header role="group" class="np-peek-h" title="Drag to move · double-click to dock"><button type="button" class="np-peek-x np-peek-back" title="Back to the note before" aria-label="Back" hidden>‹</button><div class="np-peek-tt"><span class="np-peek-gem" aria-hidden="true"></span>Peek</div><span class="np-peek-grip" aria-hidden="true">⠿</span>
         <div class="np-peek-hr"><button type="button" class="np-peek-x np-peek-home" title="Dock at the bottom right" aria-label="Dock at the bottom right">⇲</button><button type="button" class="np-peek-x np-peek-close" title="Close" aria-label="Close">✕</button></div></header>
         <div class="np-peek-in"><h3 class="np-peek-t"></h3><p class="np-peek-m num"></p><div class="np-peek-b nb-rich" tabindex="0"></div></div>
         <div class="np-peek-f"><button type="button" class="btn-s" data-a="open" title="Open it in place of this note">↗ Open</button><button type="button" class="btn-s" data-a="side" title="Open it side by side with this note">⧉ Side by side</button></div>`;

@@ -324,12 +324,12 @@ a.nw-open{text-decoration:none}
 
 /* ---------- windows over the app: My notes, Achievements (modalWin in app.js; fog rule in settings.css) ---------- */
 .mw-ov{position:fixed;inset:0;z-index:1600;display:grid;place-items:center;padding:16px;
-  background:radial-gradient(ellipse at 50% 40%,rgba(200,220,255,.06),rgba(3,6,11,.55));opacity:0;transition:opacity .3s ease}
+  background:radial-gradient(ellipse at 50% 40%,rgba(200,220,255,.06),rgba(3,6,11,.72));opacity:0;transition:opacity .3s ease}
 body.mw-open .mw-ov{opacity:1}
 .mw-ov.out{opacity:0;pointer-events:none}
 .mw-win{width:min(1080px,100%);height:min(760px,calc(100dvh - 32px));display:flex;flex-direction:column;outline:none;
   box-shadow:0 24px 80px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.03),0 0 40px var(--glow);
-  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);transform:translateY(10px) scale(.98);transition:transform .35s cubic-bezier(.2,.7,.2,1)}
+  transform:translateY(10px) scale(.98);transition:transform .35s cubic-bezier(.2,.7,.2,1)}
 body.mw-open .mw-win{transform:none}
 .mw-ov.out .mw-win{transform:translateY(10px) scale(.98)}
 .mw-h{flex-wrap:wrap;row-gap:6px}

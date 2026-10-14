@@ -14,6 +14,11 @@ for (const f of files) { try { new vm.Script(read(f), { filename: f }); ok(true,
 { const fsx = require('fs'), px = require('path'), all = fsx.readdirSync(px.join(__dirname, '../web/src')).filter(f => f.endsWith('.js')).map(f => 'web/src/' + f), miss = all.filter(f => !files.includes(f));
   ok(!miss.length, 'every web/src script is in the page', miss); }
 
+// v0.5.7: lazy modules (web/lib/lazy.js): each lazy file must set the window global that wakes it, and none may be needed at start-up
+{ const { LAZY } = require('./build-web.js');
+  for (const [f, [name, glob]] of Object.entries(LAZY)) ok(new RegExp('window\\.' + glob + ' *=').test(read(f)), 'lazy module ' + name + ' sets window.' + glob);
+  ok(Object.keys(LAZY).every(f => files.includes(f)) && files[0] === 'web/lib/lazy.js', 'lazy.js comes first and every lazy file is in the page'); }
+
 // 2. identity: one name, one app id, one repo, one scheme, one storage prefix
 const pkg = JSON.parse(read('package.json')), main = read('main.js'), rel = read('tools/release.js'), wf = read('.github/workflows/release.yml');
 const pub = pkg.build.publish[0];

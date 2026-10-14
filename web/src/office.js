@@ -579,7 +579,9 @@ function mount(host, o = {}) {
     const dt = lastFrame ? Math.min((ts - lastFrame) / 1000, .04) : 0;
     // an idle office needs fewer frames: ~30 fps when nothing much is moving
     const calm = act === "idle" && !arrivals.length && !gaze.active;
-    if (calm && lastFrame && ts - lastFrame < 31) { frameId = requestAnimationFrame(frame); return; }
+    // v0.5.7: Lite draws ~24 fps while calm and ~30 fps otherwise (60 elsewhere), enough for the stick figure and half the work
+    const gap = document.documentElement.dataset.perf === "lite" ? (calm ? 41 : 32) : (calm ? 31 : 0);
+    if (gap && lastFrame && ts - lastFrame < gap) { frameId = requestAnimationFrame(frame); return; }
     lastFrame = ts;
     if (playing && !document.hidden) { advance(dt); dirty = true; }
     if (dirty || cacheDirty) { draw(); dirty = false; }

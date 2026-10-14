@@ -14,5 +14,6 @@ contextBridge.exposeInMainWorld('inquireDesktop', {
   share: { mail: url => ipcRenderer.invoke('share:mail', url), file: q => ipcRenderer.invoke('share:file', q), print: html => ipcRenderer.invoke('share:print', html) }, // v0.5.6: Share → Email, Print
   installUpdate: () => ipcRenderer.invoke('update:install'),
   revealUpdate: () => ipcRenderer.invoke('update:reveal'),
+  backup: { save: q => ipcRenderer.invoke('backup:save', q), open: () => ipcRenderer.invoke('backup:open'), list: () => ipcRenderer.invoke('backup:list') }, // v0.5.7: daily automatic backup
   version: () => ipcRenderer.invoke('app:version')
 });

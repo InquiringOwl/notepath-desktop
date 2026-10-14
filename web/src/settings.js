@@ -13,7 +13,7 @@
 const KEY = "notepath.settings";
 // tabs: colours of the My notes, My Code and My Music buttons on the Main Menu (amber-orange, blue, magenta); only their glyphs take them
 const TABDEF = { notes: "#F2B84B", code: "#4FA3F7", music: "#D97AE6" };
-const DEF = { theme: "capsuleer", uiScale: 1, textSize: 1, reduceMotion: false, escKey: true, invertScroll: false, noteLink: "#B49BFF", indent: "#B5D65A", tabs: TABDEF };
+const DEF = { theme: "capsuleer", uiScale: 1, textSize: 1, reduceMotion: false, perf: "auto", escKey: true, invertScroll: false, noteLink: "#B49BFF", indent: "#B5D65A", tabs: TABDEF };
 const load = () => {
   let o = {}; try { o = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) {}
   if (o.uiScale == null && typeof o.textScale === "number") o.uiScale = o.textScale; // the old single "Text & interface size" was a zoom
@@ -32,6 +32,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;"
 const THEMES = [
   { id: "capsuleer", fam: "Dark", name: "Deep Space", bg: "#070A10", surface: "#111827", accent: "#5CC8E0", tint: "#B49BFF", note: "The original console, out among the stars" },
   { id: "obsidian", fam: "Dark", name: "Obsidian", bg: "#050506", surface: "#151517", accent: "#F2B84B", tint: "#8A6A22", text: "#E8E4DC", note: "Neutral black, brass trim" },
+  { id: "high-contrast", fam: "Dark", name: "High Contrast", bg: "#000000", surface: "#0B0B0B", accent: "#FFD400", tint: "#00E5FF", text: "#FFFFFF", muted: "#EDEDED", faint: "#CFCFCF", note: "Pure black, white words, yellow trim: easiest to read" },
   { id: "old-growth", fam: "Nature", name: "Old Growth", bg: "#060D09", surface: "#11211A", accent: "#7BD88F", tint: "#3F7A4F", text: "#DCEBDF", note: "Deep forest canopy" },
   { id: "moss", fam: "Nature", name: "Moss & Lichen", bg: "#0B0F08", surface: "#1C2515", accent: "#B5D65A", tint: "#C9B458", text: "#E5EAD8", note: "Olive, moss and sunlit lichen" },
   { id: "abyssal", fam: "Water", name: "Abyssal", bg: "#030B14", surface: "#0B1F32", accent: "#4FC3F7", tint: "#2C5DA8", text: "#D8E8F4", note: "Open ocean at depth" },
@@ -131,23 +132,73 @@ function applySizes() {
 window.addEventListener("inquire:route", () => { if (textOn) scaleText(); }); // style sheets a screen or lab adds later
 const LINKCOL = [["#B49BFF", "Violet"], ["#5CC8E0", "Cyan"], ["#F2B84B", "Amber"], ["#F07CA0", "Pink"], ["#7BD88F", "Green"], ["#D97AE6", "Magenta"], ["#B5D65A", "Lime"], ["#FFFFFF", "White"]];
 const hexOk = c => /^#[0-9a-f]{6}$/i.test(c);
+/* Performance mode (v0.5.7): Auto / Lite / Moderate / Full. **Lite** switches off the glass blur, glows, big shadows and the page-in motion, so
+   integrated graphics (Intel UHD / HD) and software rendering stay smooth. **Moderate** keeps glows, shadows, soft motion and the glass blur of glass
+   themes, but never blurs or scales the whole app behind a window. **Full** is NotePath as it was before 0.5.7: the app behind a window is blurred,
+   dimmed and scaled, window overlays always blur, the page fades in with a blur. Every tool and layout is the same in all of them. Auto reads the
+   cores, the memory and the graphics chip once (kept in notepath.perf.auto) and picks Lite or Moderate, never Full. The result is on
+   <html data-perf="lite|moderate|full">; glass themes also set data-glass. */
+let PERF_AUTO = null;
+function gpuName() {
+  try {
+    const c = document.createElement("canvas"), gl = c.getContext("webgl") || c.getContext("experimental-webgl");
+    if (!gl) return "none";
+    const e = gl.getExtension("WEBGL_debug_renderer_info");
+    const n = String(e ? gl.getParameter(e.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER) || "");
+    const lose = gl.getExtension("WEBGL_lose_context"); if (lose) lose.loseContext();
+    return n;
+  } catch (e) { return ""; }
+}
+function autoPerf() {
+  if (PERF_AUTO) return PERF_AUTO;
+  const cores = navigator.hardwareConcurrency || 4, mem = navigator.deviceMemory || 8, sig = cores + "/" + mem;
+  try { const o = JSON.parse(localStorage.getItem("notepath.perf.auto") || "null"); if (o && o.sig === sig && (o.v === "lite" || o.v === "moderate")) return (PERF_AUTO = o.v); } catch (e) {}
+  const g = gpuName();
+  const weak = g === "none" || /swiftshader|llvmpipe|software|basic render|intel.*(uhd|hd graphics|iris plus|iris pro|iris graphics)/i.test(g);
+  PERF_AUTO = (weak || cores <= 4 || mem <= 4) ? "lite" : "moderate";
+  try { localStorage.setItem("notepath.perf.auto", JSON.stringify({ sig, v: PERF_AUTO, gpu: g })); } catch (e) {}
+  return PERF_AUTO;
+}
+/* Auto watches the frames for the first 90 s: 10 frames slower than 50 ms inside 6 s (about 20 fps or worse) = this computer is not keeping
+   up, so Auto drops to Lite for good (kept in notepath.perf.auto with the reason) and says so once. One long task (an import, a big note) is
+   one slow frame and does not count. Only Auto, and only from Moderate: a person who picked Full or Moderate keeps it. */
+function jankWatch() {
+  if (!window.NPDiag || PERFS_SET() !== "auto" || perfNow() !== "moderate") return;
+  const T = window.__npJankTest || { gap: 50, count: 10, win: 6000, ms: 90000 }, bad = [];
+  NPDiag.sample(T.ms, (g, ts) => {
+    bad.push(ts); while (bad.length && ts - bad[0] > T.win) bad.shift();
+    if (bad.length >= T.count && PERFS_SET() === "auto" && perfNow() === "moderate") {
+      bad.length = 0; PERF_AUTO = "lite";
+      try { const o = JSON.parse(localStorage.getItem("notepath.perf.auto") || "{}"); o.v = "lite"; o.reason = "slow frames, switched by Auto"; localStorage.setItem("notepath.perf.auto", JSON.stringify(o)); } catch (e) {}
+      applyAll();
+      if (window.InquireNotes && InquireNotes.toast) InquireNotes.toast("NotePath switched to Lite mode to keep things smooth on this computer. You can change it in Settings → Display &amp; comfort → Performance.", null, 9000);
+    }
+  }, "Auto watch, first 90 s");
+}
+const PERFS_SET = () => PERFS.includes(S.perf) ? S.perf : "auto";
+const PERFS = ["lite", "moderate", "full"];
+const osReduced = () => { try { return !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches); } catch (e) { return false; } };
+const perfNow = () => PERFS.includes(S.perf) ? S.perf : osReduced() ? "lite" : autoPerf(); // Auto: the system's "reduce motion" also means Lite
 function applyAll() {
   applyTheme(S.theme);
+  { const th = findTheme(S.theme); document.documentElement.toggleAttribute("data-glass", !!(th && th.glass)); document.documentElement.dataset.perf = perfNow(); }
   document.documentElement.style.setProperty("--note-link", hexOk(S.noteLink) ? S.noteLink : DEF.noteLink);
   document.documentElement.style.setProperty("--note-indent", hexOk(S.indent) ? S.indent : DEF.indent); // paranotes (notes.js)
   Object.keys(TABDEF).forEach(k => document.documentElement.style.setProperty("--tab-" + k, hexOk(S.tabs[k]) ? S.tabs[k] : TABDEF[k]));
   applySizes();
-  document.documentElement.toggleAttribute("data-reduce-motion", !!S.reduceMotion);
+  document.documentElement.toggleAttribute("data-reduce-motion", !!S.reduceMotion || osReduced()); // the system setting counts too (v0.5.7)
   window.dispatchEvent(new CustomEvent("inquire:theme")); // canvases that paint with the theme (Note Office) repaint
 }
 applyAll();
+try { if (window.matchMedia) matchMedia("(prefers-reduced-motion: reduce)").addEventListener("change", () => applyAll()); } catch (e) {}
+setTimeout(jankWatch, 2500); // after start-up has settled
 
 /* ---------- window ---------- */
 const TABS = [["look", "Appearance"], ["display", "Display & comfort"], ["keys", "Shortcuts"], ["usage", "Usage"], ["code", "Code"], ["data", "Data & backups"], ["about", "About"]];
 const ov = document.createElement("div");
 ov.className = "set-ov"; ov.hidden = true;
 ov.innerHTML = `<div class="set-win win" role="dialog" aria-modal="true" aria-labelledby="set-title">
-  <header class="set-h"><span class="dot"></span><h2 id="set-title">Settings</h2><button type="button" class="set-x" aria-label="Close settings">✕</button></header>
+  <header role="group" class="set-h"><span class="dot"></span><h2 id="set-title">Settings</h2><button type="button" class="set-x" aria-label="Close settings">✕</button></header>
   <div class="set-body"><nav class="set-tabs" role="tablist" aria-label="Settings sections"></nav><section class="set-pane" tabindex="-1"></section></div>
 </div>`;
 document.body.appendChild(ov);
@@ -211,6 +262,8 @@ function show(id) {
   tabsEl.querySelectorAll(".set-tab").forEach(b => b.setAttribute("aria-selected", String(b.dataset.tab === id)));
   pane.innerHTML = ""; pane.scrollTop = 0;
   ({ look: paneLook, display: paneDisplay, keys: paneKeys, usage: paneUsage, code: paneCode, data: paneData, about: paneAbout })[id]();
+  // every switch is named by the heading beside it (screen readers; v0.5.7)
+  pane.querySelectorAll(".set-tog input:not([aria-label])").forEach(i => { const h3 = i.closest(".set-item") && i.closest(".set-item").querySelector("h3"); if (h3) i.setAttribute("aria-label", h3.textContent.trim()); });
 }
 const h = html => { const d = document.createElement("div"); d.innerHTML = html; return d.firstElementChild; };
 const msgEl = () => h(`<p class="set-msg" role="status" aria-live="polite"></p>`);
@@ -347,6 +400,8 @@ function paneDisplay() {
   const w = h(`<div>
     ${fader("textSize", "Text size", "Only the words: notes, menus and labels. Layout keeps its size.", .8, 1.5, .05, [.8, 1, 1.25, 1.5])}
     ${fader("uiScale", "Interface size", "Scales the whole console: panels, buttons and lists, with their text.", .75, 1.4, .05, [.75, 1, 1.2, 1.4])}
+    <div class="set-item"><div><h3>Performance</h3><p class="set-perfp"></p></div>
+      <div class="set-seg" role="radiogroup" aria-label="Performance mode">${[["auto", "Auto"], ["lite", "Lite"], ["moderate", "Moderate"], ["full", "Full"]].map(([k, n]) => `<button type="button" role="radio" data-perf="${k}" aria-checked="${(S.perf || "auto") === k}">${n}</button>`).join("")}</div></div>
     <div class="set-item"><div><h3>Reduce motion</h3><p>Turns off animations, fades and slides.</p></div>
       <label class="set-tog"><input type="checkbox" data-k="reduceMotion"${S.reduceMotion ? " checked" : ""}><span></span></label></div>
   </div>`);
@@ -364,6 +419,13 @@ function paneDisplay() {
     row.querySelectorAll(".set-fstep").forEach(b => b.onclick = () => set(S[key] + step * +b.dataset.d, true));
     rs.onclick = () => set(1, true);
   });
+  const perfText = () => { const m = S.perf || "auto", now = perfNow(), name = { lite: "Lite", moderate: "Moderate", full: "Full" };
+    const what = { lite: "Lite: no glass blur, glows or extra motion. Smoothest on lighter computers; every tool stays.",
+      moderate: "Moderate: glows, shadows and soft motion, and glass blur on glass themes, but the app behind a window is not blurred. A good balance for most computers.",
+      full: "Full: the original look. The app behind a window is blurred, dimmed and scaled, and the glass effects are on. Needs a stronger graphics chip." };
+    w.querySelector(".set-perfp").textContent = m === "auto" ? `Auto: this computer runs in ${name[now]} mode (Auto picks Lite or Moderate; choose Full yourself). ` + what[now] : what[m]; };
+  perfText();
+  w.querySelectorAll("[data-perf]").forEach(b => b.onclick = () => { S.perf = b.dataset.perf; save(); applyAll(); w.querySelectorAll("[data-perf]").forEach(x => x.setAttribute("aria-checked", String(x === b))); perfText(); });
   w.querySelectorAll(".set-tog input").forEach(i => i.onchange = () => { S[i.dataset.k] = i.checked; save(); applyAll(); });
   pane.appendChild(w);
 }
@@ -549,24 +611,56 @@ function paneKeys() {
    is lost), restores the photos under their own ids and replaces the settings. */
 const K = () => window.InquireKeys || { notes: () => "notepath.notes._local" };
 const readJ = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } };
+/* One backup file (format 3). withMedia = false leaves the photos and videos out (the daily automatic backup does that for big libraries). */
+async function buildBackup(withMedia) {
+  const NS = window.InquireNotes, notes = NS && NS.readAll ? NS.readAll() : readJ(K().notes(), []); // v0.5.6: notes live in IndexedDB
+  const T = window.NPTasks, tasks = T ? T.readRaw() : [];
+  // the tasks' pictures and files go in with the notes' photos (as if one note held them all)
+  const holders = NS ? NS.list().concat(tasks.length ? [{ title: "My Tasks", html: T.media().map(i => `data-img="${i}"`).join(" ") }] : []) : [];
+  let images = {}, skipped = []; try { if (NS && withMedia) ({ map: images, skipped } = await NS.exportMedia(holders)); } catch (err) {}
+  const data = { notes, folders: NS ? NS.readFolders() : [], tasks, images, settings: readJ("notepath.settings", {}) };
+  return { text: JSON.stringify({ app: "NotePath", kind: "notes-backup", version: 3, saved: new Date().toISOString(), data }), notes, images, skipped };
+}
+/* Daily automatic backup (v0.5.7, desktop app): Settings → Data & backups → Automatic backup (on by default). Once a day, when something changed
+   since the last one, a backup goes to <userData>/backups (main.js backup:save; the newest 7 stay). Photos and videos are included unless this
+   computer's storage for NotePath is over 120 MB (then notes, folders, tasks and settings only, and the line in Settings says so), so a big
+   library never makes a huge file or a memory spike. Runs a while after start-up, when the page is idle. */
+const BK = { get last() { try { return JSON.parse(localStorage.getItem("notepath.backup.last") || "null"); } catch (e) { return null; } } };
+const bkSig = () => { const NS = window.InquireNotes, T = window.NPTasks; try { const n = NS.readAll(); let mx = 0; n.forEach(x => { if ((x.updated || 0) > mx) mx = x.updated || 0; }); return [n.length, mx, NS.readFolders().length, T ? T.readRaw().length : 0, localStorage.getItem("notepath.settings") ? localStorage.getItem("notepath.settings").length : 0].join("/"); } catch (e) { return ""; } };
+const dayKey = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+async function autoBackup(force) {
+  const D = window.inquireDesktop; if (!D || !D.backup || !window.InquireNotes || (!force && S.autoBackup === false)) return null;
+  const last = BK.last, sig = bkSig(); if (!sig) return null;
+  if (!force && last && last.day === dayKey()) return null;          // one a day
+  if (!force && last && last.sig === sig) return null;               // nothing changed since the last one
+  let big = false; try { const e = await navigator.storage.estimate(); big = (e.usage || 0) > 120e6; } catch (e) {}
+  const b = await buildBackup(!big);
+  const r = await D.backup.save({ name: "notepath-auto-" + dayKey() + ".json", data: b.text });
+  if (r && r.file) { const o = { day: dayKey(), at: Date.now(), sig, notes: b.notes.length, media: !big, bytes: r.bytes, file: r.file }; try { localStorage.setItem("notepath.backup.last", JSON.stringify(o)); } catch (e) {} window.dispatchEvent(new CustomEvent("np:backup")); return o; }
+  if (window.InquireNotes.toast) InquireNotes.toast(r && r.error === "disk-full" ? "NotePath could not make today's automatic backup because this computer's disk is full. Your notes are not affected: free some space." : "NotePath could not make today's automatic backup.", null, 9000);
+  return null;
+}
+setTimeout(() => { try { (window.requestIdleCallback || setTimeout)(() => autoBackup().catch(() => {}), { timeout: 8000 }); } catch (e) {} }, 25000);
 function paneData() {
   const nn = window.InquireNotes && InquireNotes.readAll ? InquireNotes.readAll().length : readJ(K().notes(), []).length, NS0 = window.InquireNotes, nf = NS0 ? NS0.readFolders().length : 0;
   const w = h(`<div>
     <p class="set-lede">Saved on this computer: <b>${nn}</b> note${nn === 1 ? "" : "s"} in <b>${nf}</b> folder${nf === 1 ? "" : "s"}.</p>
     <div class="set-item"><div><h3>Back up</h3><p>Saves your notes (with their folders, photos, code boxes, music charts and videos up to 25 MB), code files, tasks (with their pictures and files up to 25 MB) and settings to one file. Bigger video files stay on this computer only: the backup tells you which.</p></div><button type="button" class="btn-s" data-a="exp">Export…</button></div>
+    ${window.inquireDesktop && window.inquireDesktop.backup ? `<div class="set-item"><div><h3>Automatic backup</h3><p class="set-abp"></p></div><span class="set-diagb"><label class="set-tog"><input type="checkbox" data-k="autoBackup"${S.autoBackup === false ? "" : " checked"}><span></span></label> <button type="button" class="btn-s" data-a="abnow">Back up now</button> <button type="button" class="btn-s" data-a="abopen">Open folder</button></span></div>` : ""}
     <div class="set-item"><div><h3>Restore a backup</h3><p>Loads a file made with Export, on this or another computer. Adds the backup's notes, folders and photos to yours and restores its settings.</p></div><label class="btn-s set-file">Import…<input type="file" accept=".json,application/json" hidden></label></div>
   </div>`);
   const m = msgEl(); w.appendChild(m);
+  { const abp = w.querySelector(".set-abp"); if (abp) {
+      const draw = () => { const l = BK.last, on = S.autoBackup !== false; abp.textContent = (on ? "Once a day, if something changed, the last 7 are kept in a folder on this computer. " : "Off. ") + (l ? `Last: ${new Date(l.at).toLocaleString()} (${l.notes} notes${l.media ? "" : ", without photos and videos: your storage is large"}, ${(l.bytes / 1048576).toFixed(1)} MB).` : "None yet."); };
+      draw(); window.addEventListener("np:backup", draw);
+      w.querySelector('[data-k="autoBackup"]').onchange = e => { S.autoBackup = e.target.checked; save(); draw(); };
+      w.querySelector('[data-a="abopen"]').onclick = () => window.inquireDesktop.backup.open();
+      w.querySelector('[data-a="abnow"]').onclick = async e => { const b = e.currentTarget; b.disabled = true; const o = await autoBackup(true).catch(() => null); b.disabled = false; say(m, o ? "Backed up now." : "The backup could not be made.", !!o); draw(); }; } }
   w.querySelector('[data-a="exp"]').onclick = async e => {
     const btn = e.currentTarget; btn.disabled = true; btn.textContent = "Saving…";
-    const NS = window.InquireNotes, notes = NS && NS.readAll ? NS.readAll() : readJ(K().notes(), []); // v0.5.6: notes live in IndexedDB
-    const T = window.NPTasks, tasks = T ? T.readRaw() : [];
-    // the tasks' pictures and files go in with the notes' photos (as if one note held them all)
-    const holders = NS ? NS.list().concat(tasks.length ? [{ title: "My Tasks", html: T.media().map(i => `data-img="${i}"`).join(" ") }] : []) : [];
-    let images = {}, skipped = []; try { if (NS) ({ map: images, skipped } = await NS.exportMedia(holders)); } catch (err) {}
-    const data = { notes, folders: NS ? NS.readFolders() : [], tasks, images, settings: readJ("notepath.settings", {}) };
+    const { text, notes, images, skipped } = await buildBackup(true);
     btn.disabled = false; btn.textContent = "Export…";
-    const blob = new Blob([JSON.stringify({ app: "NotePath", kind: "notes-backup", version: 3, saved: new Date().toISOString(), data })], { type: "application/json" });
+    const blob = new Blob([text], { type: "application/json" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "notepath-backup-" + new Date().toISOString().slice(0, 10) + ".json";
     document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
     const np = Object.keys(images).length;
@@ -603,10 +697,14 @@ function paneAbout() {
   const w = h(`<div>
     <p class="set-lede"><b>NotePath</b> <span class="set-ver">${D ? "" : "web preview"}</span>: a notes console for everything you would use a notepad for.</p>
     ${D ? `<div class="set-item set-upd"><div><h3>Updates</h3><p class="set-upd-msg">NotePath checks at launch and every 4 hours.</p></div><div class="set-upd-btns"></div></div>` : ""}
+    <div class="set-item"><div><h3>Diagnostics</h3><p class="set-diagp">Copies a short report (version, computer, performance mode, sizes, recent errors) to paste when something is slow or broken. Nothing is sent anywhere.</p></div><span class="set-diagb"><button type="button" class="btn-s" data-a="diagtest">Run a frame test</button> <button type="button" class="btn-s" data-a="diag">Copy diagnostics</button></span></div>
     <div class="set-item"><div><h3>End-user licence agreement</h3><p>The terms for using NotePath.</p></div><button type="button" class="btn-s" data-a="eula">Read</button></div>
     <div class="set-item"><div><h3>Source &amp; release notes</h3><p>github.com/InquiringOwl/notepath-desktop</p></div><a class="btn-s" href="https://github.com/InquiringOwl/notepath-desktop/releases" target="_blank" rel="noopener">Open ↗</a></div>
     <p class="set-small">Fonts: STIX Two Text, IBM Plex Sans &amp; Mono, Saira Semi Condensed (SIL Open Font License).</p>
   </div>`);
+  { const p = w.querySelector(".set-diagp"), p0 = p.textContent, say2 = t => { p.textContent = t; setTimeout(() => { p.textContent = p0; }, 6000); };
+    w.querySelector('[data-a="diag"]').onclick = async () => { try { const t = await NPDiag.report(); let okc = false; try { await navigator.clipboard.writeText(t); okc = true; } catch (e) { const ta = document.createElement("textarea"); ta.value = t; document.body.appendChild(ta); ta.select(); try { okc = document.execCommand("copy"); } catch (e2) {} ta.remove(); } say2(okc ? "Copied. Paste it where you need it." : "Could not copy it."); } catch (e) { say2("Could not make the report."); } };
+    w.querySelector('[data-a="diagtest"]').onclick = async e => { const b = e.currentTarget; b.disabled = true; say2("Measuring for 5 seconds: move the mouse, scroll a list or open a window…"); const r = await NPDiag.sample(5000, null, "frame test, 5 s"); b.disabled = false; say2(`${r.frames} frames, ${r.slow} slower than 50 ms, worst ${r.worst} ms. “Copy diagnostics” includes this.`); }; }
   if (D) {
     D.version().then(v => { const el = w.querySelector(".set-ver"); if (el) el.textContent = "v" + v; }).catch(() => {});
     drawUpd(w.querySelector(".set-upd"));
@@ -649,5 +747,5 @@ if (window.inquireDesktop) {
 /* top-bar gear */
 const gear = document.getElementById("gear");
 if (gear) gear.onclick = () => open();
-window.InquireSettings = { open, openDoc, close, get: () => Object.assign({}, S), themes: THEMES };
+window.InquireSettings = { open, openDoc, close, get: () => Object.assign({}, S), themes: THEMES, perf: perfNow, autoBackup };
 })();

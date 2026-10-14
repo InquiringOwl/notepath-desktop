@@ -456,6 +456,13 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await c.keyboard.type('greet'); await c.keyboard.press('Enter');
     await c.waitForSelector('.p1 .nc-edhost[data-ready]', { timeout: 15000 }); await wait(400);
     ok(await c.$eval('.p1 .nc-edhost', e => e.dataset.kind) === 'monaco' && !!(await c.$('.p1 .monaco-editor')), 'the code editor is Monaco (VS Code)');
+    { // v0.5.7: Lite drops the editor's minimap, sticky scroll and smooth scrolling; Moderate / Full keep them (followed live)
+      const st = () => c.evaluate(() => { const e = monaco.editor.getEditors()[0], O = monaco.editor.EditorOption; return [e.getOption(O.minimap).enabled, e.getOption(O.stickyScroll).enabled, e.getOption(O.smoothScrolling)].join(); });
+      await c.evaluate(() => { document.documentElement.dataset.perf = 'lite'; window.dispatchEvent(new CustomEvent('inquire:theme')); }); await wait(100);
+      ok(await st() === 'false,false,false', 'Lite: the code editor has no minimap, sticky scroll or smooth scrolling');
+      await c.evaluate(() => { document.documentElement.dataset.perf = 'moderate'; window.dispatchEvent(new CustomEvent('inquire:theme')); }); await wait(100);
+      ok(await st() === 'true,true,true', 'Moderate: the code editor has them back, live');
+      await c.evaluate(() => { document.documentElement.dataset.perf = 'lite'; window.dispatchEvent(new CustomEvent('inquire:theme')); }); }
     ok(await c.evaluate(() => { const n = InquireNotes.scope('code').list()[0]; return n.code.lang === 'python' && /input\(/.test(n.code.src) && n.title === 'greet'; }), 'a new Python file starts with a small program');
     await c.click('.p1 .nc-pt[data-p=in]'); await c.fill('.p1 .nc-in', 'Ada'); await wait(700);
     await c.click('.p1 [data-a=run]'); await c.waitForFunction(() => /■/.test(document.querySelector('.p1 .nc-out').textContent), null, { timeout: 8000 });
@@ -1193,7 +1200,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await q.setInputFiles('.ask-covin', pic); await wait(100);
     ok(await q.$eval('.ask-covb', e => e.classList.contains('set') && !!e.querySelector('img')), 'the chosen photo shows in the dialog');
     await q.fill('#ask-in', 'Gamma with cover'); await q.click('.ask-btns .btn.good'); await wait(700);
-    ok(await q.evaluate(() => { const n = InquireNotes.list().find(x => x.title === 'Gamma with cover'); return !!(n && n.cover); }) && !!(await q.$('.nb-it[aria-selected=true] .nb-lcov')), 'a note made with a cover photo shows it in the list');
+    ok(await q.evaluate(() => { const n = InquireNotes.list().find(x => x.title === 'Gamma with cover'); return !!(n && n.cover); }) && !!(await q.$('.nb-it.sel .nb-lcov')), 'a note made with a cover photo shows it in the list');
     // My Code files too
     await q.evaluate(() => InquireNotes.scope('code').create({ title: 'cov.py', code: { lang: 'python', src: 'print(1)' } })); await q.evaluate(() => InquireApp.go({ view: 'notes', space: 'code', folder: 'all' })); await wait(800);
     ok(!!(await q.$('.p1 .nb-trow .nb-covb')), 'code files have the cover button by their name too');
@@ -1608,6 +1615,62 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     await q.evaluate(() => { IDBObjectStore.prototype.put = window.__put; });
     await q.click('.p1 .nb-save-retry'); await wait(800);
     ok(/Saved/.test(await q.$eval('.p1 .nb-save', e => e.textContent)) && await q.evaluate(() => InquireNotes.saveState().state) === 'saved', 'Try again saves it: Saved ✓');
+    // v0.5.7 speed: lazy modules, Performance mode, no blurred page behind windows, cover thumbnails
+    { const lp = await page(); await lp.goto(URL0 + '#notes'); await lp.waitForSelector('.npage .nb'); await wait(500);
+      ok((await lp.evaluate(() => NPLazy.loaded())).length === 0, 'start-up and My notes run none of the lazy modules (Office, Import & Export, Sheet, Graph, Map, AI helpers)');
+      ok(await lp.evaluate(() => typeof NPIO.open === 'function' && NPLazy.loaded().join() === 'io'), 'the first touch of NPIO runs its script (only that one) and it works');
+      await lp.keyboard.press('Escape'); await wait(500);
+      ok(await lp.evaluate(() => document.body.classList.contains('set-open') && getComputedStyle(document.querySelector('#app')).filter === 'none' && getComputedStyle(document.querySelector('#app')).transform === 'none'), 'a window over the app no longer blurs or scales the page behind it');
+      await lp.click('.set-tab[data-tab=display]'); await wait(200);
+      ok(JSON.stringify(await lp.$$eval('.set-seg [data-perf]', b => b.map(x => x.dataset.perf + ':' + x.getAttribute('aria-checked')))) === '["auto:true","lite:false","moderate:false","full:false"]', 'Settings → Display & comfort: Performance Auto · Lite · Moderate · Full, Auto picked');
+      const flt = () => lp.evaluate(() => { const a = getComputedStyle(document.querySelector('#app')); return a.filter + '|' + a.transform; });
+      await lp.click('.set-seg [data-perf=moderate]'); await wait(500);
+      ok(await lp.evaluate(() => document.documentElement.dataset.perf === 'moderate' && JSON.parse(localStorage.getItem('notepath.settings')).perf === 'moderate') && await flt() === 'none|none', 'Moderate is applied and kept: no blur or scale behind the window');
+      await lp.click('.set-seg [data-perf=full]'); await wait(600);
+      ok(await lp.evaluate(() => document.documentElement.dataset.perf === 'full') && /blur\(3px\)/.test(await flt()) && /matrix/.test((await flt()).split('|')[1]), 'Full is the original look: the app behind the window is blurred, dimmed and scaled', await flt());
+      await lp.click('.set-seg [data-perf=lite]'); await wait(600);
+      ok(await lp.evaluate(() => document.documentElement.dataset.perf === 'lite' && getComputedStyle(document.documentElement).getPropertyValue('--glow').trim() === 'transparent') && await flt() === 'none|none', 'Lite is applied: glows off, nothing blurred');
+      await lp.click('.set-tab[data-tab=look]'); await wait(200);
+      await lp.click('.set-th[data-id=high-contrast]'); await wait(200);
+      ok(await lp.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--text').trim().toLowerCase() === '#ffffff' && getComputedStyle(document.documentElement).getPropertyValue('--frame').trim().toLowerCase() === '#ffd400'), 'the High Contrast theme: pure white words, yellow trim');
+      await lp.click('.set-th[data-id=capsuleer]'); await wait(100);
+      await lp.click('.set-tab[data-tab=display]'); await wait(150);
+      await lp.click('.set-seg [data-perf=auto]'); await wait(150);
+      ok(await lp.evaluate(() => ['lite', 'moderate'].includes(document.documentElement.dataset.perf)), 'Auto resolves to Lite or Moderate (never Full)');
+      await lp.close(); }
+    { // v0.5.7: Auto watches the frames and drops to Lite when the computer cannot keep up; the system's reduce-motion counts; diagnostics
+      const seed = () => { try { localStorage.setItem('notepath.perf.auto', JSON.stringify({ sig: (navigator.hardwareConcurrency || 4) + '/' + (navigator.deviceMemory || 8), v: 'moderate', gpu: 'test' })); window.__npJankTest = { gap: 50, count: 3, win: 6000, ms: 20000 }; } catch (e) {} };
+      const jp = await page(seed); await jp.goto(URL0 + '#menu'); await wait(300);
+      ok(await jp.evaluate(() => document.documentElement.dataset.perf) === 'moderate', 'Auto starts in Moderate when the computer looks capable (seeded)');
+      await wait(2600);
+      await jp.evaluate(() => { let n = 0; const burn = () => { const t = performance.now(); while (performance.now() - t < 130); if (++n < 8) setTimeout(burn, 0); }; burn(); }); await wait(2500);
+      ok(await jp.evaluate(() => document.documentElement.dataset.perf) === 'lite' && await jp.evaluate(() => JSON.parse(localStorage.getItem('notepath.perf.auto')).reason) === 'slow frames, switched by Auto', 'ten-ish slow frames in a row: Auto drops to Lite and keeps the reason');
+      ok(await jp.evaluate(() => /switched to Lite mode/.test(document.body.textContent)), 'and says so once');
+      const rep = await jp.evaluate(() => NPDiag.report());
+      ok(/NotePath diagnostics/.test(rep) && /Performance: setting auto → running lite \(slow frames/.test(rep) && /Frames \(Auto watch/.test(rep) && /Recent errors: none/.test(rep), 'Copy diagnostics report: version, system, performance, frames, errors', rep.slice(0, 400));
+      await jp.close();
+      const rp = await page(seed); await rp.goto(URL0 + '#menu'); await wait(300);
+      await rp.emulateMedia({ reducedMotion: 'reduce' }); await wait(300);
+      ok(await rp.evaluate(() => document.documentElement.hasAttribute('data-reduce-motion') && document.documentElement.dataset.perf === 'lite'), 'the system\'s reduce-motion turns reduce motion on and Auto to Lite');
+      await rp.keyboard.press('Escape'); await wait(400); await rp.click('.set-tab[data-tab=about]'); await wait(200);
+      ok(!!(await rp.$('[data-a=diag]')) && !!(await rp.$('[data-a=diagtest]')), 'Settings → About has Copy diagnostics and Run a frame test');
+      await rp.click('[data-a=diagtest]'); await wait(5600);
+      ok(/frames, \d+ slower than 50 ms/.test(await rp.$eval('.set-diagp', e => e.textContent)), 'Run a frame test reports frames');
+      await rp.close(); }
+    { // v0.5.7: daily automatic backup (fake desktop bridge)
+      const bp = await page(); await bp.goto(URL0 + '#menu'); await wait(400);
+      await bp.evaluate(() => { window.__bk = []; window.inquireDesktop = Object.assign(window.inquireDesktop || {}, { platform: 'darwin', version: async () => '0.5.7', backup: { save: async q => { window.__bk.push(q); return { file: q.name, bytes: q.data.length, kept: window.__bk.length }; }, open: async () => true, list: async () => [] } }); InquireNotes.create({ title: 'Backed up note', html: '<div>words</div>' }); });
+      await wait(400);
+      const o = await bp.evaluate(() => InquireSettings.autoBackup(false));
+      ok(!!o && await bp.evaluate(() => window.__bk.length) === 1 && /^notepath-auto-\d{4}-\d{2}-\d{2}\.json$/.test(await bp.evaluate(() => window.__bk[0].name)), 'the daily automatic backup is sent to the main process, named by date');
+      const j = await bp.evaluate(() => JSON.parse(window.__bk[0].data));
+      ok(j.app === 'NotePath' && j.kind === 'notes-backup' && j.data.notes.some(n => n.title === 'Backed up note') && o.media === true, 'it is a normal NotePath backup (restorable with Import…) with the notes, folders, tasks, settings and photos');
+      ok(await bp.evaluate(async () => (await InquireSettings.autoBackup(false)) === null) && await bp.evaluate(() => window.__bk.length) === 1, 'a second run the same day, with nothing changed, makes no new backup');
+      await bp.keyboard.press('Escape'); await wait(400); await bp.click('.set-tab[data-tab=data]'); await wait(250);
+      ok(/Last: .*Backed up|Last:/.test(await bp.$eval('.set-abp', e => e.textContent)) && !!(await bp.$('[data-a=abopen]')), 'Settings → Data & backups: Automatic backup shows the last one and Open folder');
+      await bp.$eval('[data-k=autoBackup]', e => e.click()); await wait(150);
+      ok(await bp.evaluate(() => JSON.parse(localStorage.getItem('notepath.settings')).autoBackup === false) && /^Off\./.test(await bp.$eval('.set-abp', e => e.textContent)), 'Automatic backup can be turned off');
+      await bp.close(); }
     // the round corner buttons have names on hover and focus
     ok(JSON.stringify(await q.$$eval('.p1 .nb-holob', b => b.map(x => x.dataset.label))) === '["Links","Paranotes","AI Chat","Grammar"]', 'the corner buttons are named: Links, Paranotes, AI Chat, Grammar');
     await q.hover('.p1 .nb-aib'); await wait(250);

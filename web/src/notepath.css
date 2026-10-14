@@ -1214,3 +1214,24 @@ div.nb{--nb-lw:64px}
 .npage{position:relative}
 @media (prefers-reduced-motion:reduce){ .np-new{animation:none} }
 @media (max-width:760px){ .np-new{position:fixed;top:auto;left:12px;right:12px;bottom:12px;width:auto;max-height:60vh;overflow:auto} }
+
+/* ---------- v0.5.7 Performance mode (settings.js sets html[data-perf="lite|moderate|full"], html[data-glass]) ----------
+   Lite = plain and light. Moderate = glows, shadows, soft motion; glass blur for glass themes; never a blurred page behind a window.
+   Full = the look before 0.5.7 (blur + dim + scale of the app behind windows, always-blurred overlays, blur in the page-in fade).
+   A blur layer over a moving page is the costliest thing on integrated graphics, hence the tiers. */
+:root[data-glass][data-perf="moderate"] .win,:root[data-glass][data-perf="moderate"] .slot,:root[data-glass][data-perf="moderate"] .topbar,
+:root[data-glass][data-perf="full"] .win,:root[data-glass][data-perf="full"] .slot,:root[data-glass][data-perf="full"] .topbar{backdrop-filter:blur(var(--blur));-webkit-backdrop-filter:blur(var(--blur))}
+:root[data-glass][data-perf="moderate"] .set-win,:root[data-glass][data-perf="moderate"] .mw-win,:root[data-glass][data-perf="moderate"] .ask-win,
+:root[data-perf="full"] .set-win,:root[data-perf="full"] .mw-win,:root[data-perf="full"] .ask-win{backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+:root[data-glass][data-perf="moderate"] .mw-win.mw-office,:root[data-perf="full"] .mw-win.mw-office{backdrop-filter:none;-webkit-backdrop-filter:none}
+/* Full only: the old fog behind windows */
+:root[data-perf="full"] #app,:root[data-perf="full"] .inqi-stage,:root[data-perf="full"] .inqi-corner{transition:filter .35s ease,transform .35s ease}
+:root[data-perf="full"] body.set-open #app,:root[data-perf="full"] body.set-open .inqi-stage,:root[data-perf="full"] body.set-open .inqi-corner,:root[data-perf="full"] body.ask-open #app,:root[data-perf="full"] body.mw-open #app{filter:blur(3px) saturate(.75) brightness(.72);transform:scale(.985)}
+:root[data-perf="full"] .set-ov,:root[data-perf="full"] .mw-ov,:root[data-perf="full"] .ask-ov{background:radial-gradient(ellipse at 50% 40%,rgba(200,220,255,.06),rgba(3,6,11,.55))}
+@keyframes vt-in-full{from{opacity:0;filter:blur(3px) brightness(.8)}to{opacity:1;filter:none}}
+:root[data-perf="full"] .vt-in{animation-name:vt-in-full}
+/* Lite */
+:root[data-perf="lite"]{--glow:transparent!important}
+:root[data-perf="lite"] .vt-in{animation:none}
+:root[data-perf="lite"] .set-win,:root[data-perf="lite"] .mw-win,:root[data-perf="lite"] .ask-win,:root[data-perf="lite"] .np-pop,:root[data-perf="lite"] .tm-menu,:root[data-perf="lite"] .nr-panel,:root[data-perf="lite"] .nk-pick{box-shadow:0 6px 18px rgba(0,0,0,.5);transition-property:opacity;transform:none}
+:root[data-perf="lite"] .set-sw.set-glass .set-sws{backdrop-filter:none}

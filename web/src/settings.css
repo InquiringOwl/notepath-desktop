@@ -5,14 +5,14 @@
 .topstat+.gear{margin-left:0}
 
 /* the app behind the window fogs and eases back */
-#app,.inqi-stage,.inqi-corner{transition:filter .35s ease,transform .35s ease}
-body.set-open #app,body.set-open .inqi-stage,body.set-open .inqi-corner,body.ask-open #app,body.mw-open #app{filter:blur(3px) saturate(.75) brightness(.72);transform:scale(.985)}
+/* v0.5.7 (speed): the app behind a window is no longer blurred and scaled (that re-drew the whole screen every frame on
+   integrated graphics); a darker scrim fades in instead (opacity only). Glass blur: see Performance mode (notepath.css). */
 .set-ov{position:fixed;inset:0;z-index:2000;display:grid;place-items:center;padding:16px;
-  background:radial-gradient(ellipse at 50% 40%,rgba(200,220,255,.06),rgba(3,6,11,.55));opacity:0;transition:opacity .3s ease}
+  background:radial-gradient(ellipse at 50% 40%,rgba(200,220,255,.06),rgba(3,6,11,.72));opacity:0;transition:opacity .3s ease}
 body.set-open .set-ov{opacity:1}
 .set-win{width:min(880px,100%);height:min(640px,calc(100dvh - 32px));display:flex;flex-direction:column;
   box-shadow:0 24px 80px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.03),0 0 40px var(--glow);
-  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);transform:translateY(10px) scale(.98);transition:transform .35s cubic-bezier(.2,.7,.2,1)}
+  transform:translateY(10px) scale(.98);transition:transform .35s cubic-bezier(.2,.7,.2,1)}
 body.set-open .set-win{transform:none}
 .set-win.is-doc{width:min(760px,100%)}
 .set-h{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,rgba(255,255,255,.05),transparent)}
@@ -164,11 +164,11 @@ a.btn-s{text-decoration:none;display:inline-block}
 
 /* small dialog in the same style (askText in app.js: New note title) */
 .ask-ov{position:fixed;inset:0;z-index:2000;display:grid;place-items:center;padding:16px;
-  background:radial-gradient(ellipse at 50% 40%,rgba(200,220,255,.06),rgba(3,6,11,.55));opacity:0;transition:opacity .25s ease}
+  background:radial-gradient(ellipse at 50% 40%,rgba(200,220,255,.06),rgba(3,6,11,.72));opacity:0;transition:opacity .25s ease}
 body.ask-open .ask-ov{opacity:1}
 .ask-ov.out{opacity:0}
 .ask-win{width:min(460px,100%);margin:0;box-shadow:0 24px 80px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.03),0 0 40px var(--glow);
-  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);transform:translateY(10px) scale(.98);transition:transform .3s cubic-bezier(.2,.7,.2,1)}
+  transform:translateY(10px) scale(.98);transition:transform .3s cubic-bezier(.2,.7,.2,1)}
 body.ask-open .ask-win{transform:none}
 .ask-body{display:grid;gap:10px;padding:18px 20px 20px}
 .ask-l{font:600 12px/1 var(--ui);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}

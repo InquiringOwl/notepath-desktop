@@ -12,12 +12,16 @@ const css = ['web/src/style.css', 'web/src/settings.css', 'web/src/menu.css', 'w
 // Top-bar mark, inlined so the page works anywhere.
 const markUri = 'data:image/png;base64,' + fs.readFileSync(path.join(R, 'app/brand/np-mark-64.png')).toString('base64');
 // Order matters: helper rules (Python highlighting, music theory) → notes engine → widgets → app → right-click menu → documents → settings.
-const files = ['web/lib/python-tokens.js', 'web/lib/music-theory.js', 'web/src/notes.js', 'web/src/notes-widgets.js', 'web/src/notes-graph.js', 'web/src/notes-sheet.js', 'web/src/notes-map.js', 'web/src/code.js', 'web/src/tasks.js', 'web/src/io.js', 'web/src/assist.js', 'web/src/app.js', 'web/src/office.js', 'web/src/textmenu.js', 'web/src/eula.js', 'web/src/settings.js'];
+const files = ['web/lib/lazy.js', 'web/lib/diag.js', 'web/lib/python-tokens.js', 'web/lib/music-theory.js', 'web/src/notes.js', 'web/src/notes-widgets.js', 'web/src/notes-graph.js', 'web/src/notes-sheet.js', 'web/src/notes-map.js', 'web/src/code.js', 'web/src/tasks.js', 'web/src/io.js', 'web/src/assist.js', 'web/src/app.js', 'web/src/office.js', 'web/src/textmenu.js', 'web/src/eula.js', 'web/src/settings.js'];
+// v0.5.7: these run on first use (web/lib/lazy.js); the rest run at start. [name, the window global that wakes it]
+const LAZY = { 'web/src/office.js': ['office', 'NoteOffice'], 'web/src/io.js': ['io', 'NPIO'], 'web/src/notes-sheet.js': ['sheet', 'NPSheet'], 'web/src/notes-graph.js': ['graph', 'NPGraph'], 'web/src/notes-map.js': ['map', 'NPMap'], 'web/src/assist.js': ['assist', 'NPAssist'] };
 const scripts = files.map(f => {
   const src = read(f);
   if (/<\/script/i.test(src)) throw new Error(f + ' contains </script>, which would break the page.');
   try { new vm.Script(src, { filename: f }); } catch (e) { throw new Error(f + ': ' + e.message); }
-  return `<script>/* ${f} */\n${src}\n</script>`;
+  if (LAZY[f]) return `<script type="text/plain" data-np-lazy="${LAZY[f][0]}" data-np-global="${LAZY[f][1]}">/* ${f} */\n${src}\n</script>`;
+  const reg = f === 'web/lib/lazy.js' ? `\n<script>${Object.values(LAZY).map(([n, g]) => `NPLazy.lazy(${JSON.stringify(n)}, ${JSON.stringify(g)});`).join(' ')}</script>` : '';
+  return `<script>/* ${f} */\n${src}\n</script>` + reg;
 }).join('\n');
 
 // The Code tab's editor is Monaco (the editor inside VS Code). Its files are copied from node_modules into app/vendor/monaco
@@ -50,7 +54,7 @@ function copyMonaco() {
 const monacoTag = base => `<script>window.NP_MONACO_BASE = ${JSON.stringify(base)};</script>`;
 
 const body = `<div id="app">
-  <header class="topbar">
+  <header class="topbar" aria-label="NotePath">
     <button type="button" class="brand" id="brand" aria-label="NotePath main menu"><span class="brand-mark"><img src="${markUri}" alt="" width="30" height="30"></span><span class="brand-name">NotePath</span></button>
     <nav class="crumbs" id="crumbs" aria-label="Breadcrumb"></nav>
     <button type="button" class="gear" id="gear" title="Settings (Esc)">Settings</button>
@@ -94,7 +98,7 @@ ${body}
 </body></html>
 `;
 
-module.exports = { files, desktop, R, copyMonaco };
+module.exports = { files, LAZY, desktop, R, copyMonaco };
 if (require.main !== module) return;
 copyMonaco();
 fs.writeFileSync(path.join(R, 'app/index.html'), desktop);

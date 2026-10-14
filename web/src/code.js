@@ -169,6 +169,15 @@ function loadMonaco() {
   monacoP.catch(() => {});
   return monacoP;
 }
+/* v0.5.7 Performance mode: in Lite the editor drops its animations (smooth scrolling, gliding caret), the minimap and sticky scroll, and the
+   JavaScript language service (a ~5 MB worker for completions and error squiggles) stays off; running, highlighting, bracket colours and
+   everything else stay. Moderate and Full keep all of it. Followed live through inquire:theme (settings.js applyAll). */
+const perfLite = () => document.documentElement.dataset.perf === "lite";
+function perfOpts() { const l = perfLite(); return { smoothScrolling: !l, cursorSmoothCaretAnimation: l ? "off" : "on", cursorBlinking: l ? "blink" : "smooth", minimap: { enabled: !l, scale: 1, renderCharacters: false }, stickyScroll: { enabled: !l } }; }
+function perfLang(m) {
+  try { const on = !perfLite(), d = (m.languages.typescript || m.typescript).javascriptDefaults;
+    d.setModeConfiguration({ completionItems: on, hovers: on, documentSymbols: on, definitions: on, references: on, documentHighlights: on, rename: on, diagnostics: on, documentRangeFormattingEdits: on, signatureHelp: on, onTypeFormattingEdits: on, codeActions: on, inlayHints: on }); } catch (e) {}
+}
 // the editor's colours follow the NotePath theme (Settings → Appearance)
 const cx = document.createElement("canvas").getContext("2d");
 function hexA(v, a) { cx.fillStyle = "#000"; cx.fillStyle = String(v || "").trim() || "#000"; let s = cx.fillStyle;
@@ -217,13 +226,15 @@ function editor(host, o) {
     });
     host.dataset.ready = "1"; ev.ready.forEach(f => f());
   };
+  const onPerf = () => { if (ed && window.monaco) { perfLang(window.monaco); ed.updateOptions(perfOpts()); } };
   loadMonaco().then(m => {
     if (dead) return;
-    host.innerHTML = ""; host.dataset.kind = "monaco";
-    ed = m.editor.create(host, { value: val, language: L(lang).monaco, theme: "notepath", automaticLayout: true, fontFamily: '"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace',
-      fontSize: 13.5, lineHeight: 21, tabSize: lang === "javascript" ? 2 : 4, insertSpaces: true, minimap: { enabled: true, scale: 1, renderCharacters: false }, scrollBeyondLastLine: false,
-      smoothScrolling: true, cursorBlinking: "smooth", cursorSmoothCaretAnimation: "on", bracketPairColorization: { enabled: true }, guides: { bracketPairs: true, indentation: true },
-      renderLineHighlight: "all", padding: { top: 10, bottom: 10 }, fixedOverflowWidgets: true, stickyScroll: { enabled: true }, wordWrap: "off", mouseWheelZoom: true, ariaLabel: "Code" });
+    host.innerHTML = ""; host.dataset.kind = "monaco"; perfLang(m);
+    ed = m.editor.create(host, Object.assign({ value: val, language: L(lang).monaco, theme: "notepath", automaticLayout: true, fontFamily: '"IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace',
+      fontSize: 13.5, lineHeight: 21, tabSize: lang === "javascript" ? 2 : 4, insertSpaces: true, scrollBeyondLastLine: false,
+      bracketPairColorization: { enabled: true }, guides: { bracketPairs: true, indentation: true },
+      renderLineHighlight: "all", padding: { top: 10, bottom: 10 }, fixedOverflowWidgets: true, wordWrap: "off", mouseWheelZoom: true, ariaLabel: "Code" }, perfOpts()));
+    window.addEventListener("inquire:theme", onPerf);
     ed.onDidChangeModelContent(() => { val = ed.getValue(); if (o.onChange) o.onChange(val); });
     ed.onDidChangeCursorPosition(e => { if (o.onCursor) o.onCursor(e.position.lineNumber, e.position.column); });
     ed.addCommand(m.KeyMod.CtrlCmd | m.KeyCode.Enter, () => { if (o.onRun) o.onRun(); });
@@ -237,7 +248,7 @@ function editor(host, o) {
     focus: () => { if (ed) ed.focus(); else if (ta) ta.focus({ preventScroll: true }); else ev.ready.push(() => api.focus()); },
     layout: () => { if (ed) ed.layout(); },
     onReady: f => { if (host.dataset.ready) f(); else ev.ready.push(f); },
-    destroy: () => { dead = true; if (ed) { const md = ed.getModel(); ed.dispose(); if (md) md.dispose(); ed = null; } }
+    destroy: () => { dead = true; window.removeEventListener("inquire:theme", onPerf); if (ed) { const md = ed.getModel(); ed.dispose(); if (md) md.dispose(); ed = null; } }
   };
   return api;
 }

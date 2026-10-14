@@ -12,10 +12,11 @@ window.InquireKeys = {
 
 /* Notes: the store, folders, photos and the rich note editor (cloned from Inquire's notes.js).
    Loaded before app.js (the start menu and My notes read it).
-   Notes live in localStorage "notepath.notes.<username>" (lower-case), or "notepath.notes._local" with nobody signed in.
+   Notes live in IndexedDB "notepath-notes" › "notes" since v0.5.6 (in memory while running; see "the store" below). Before that
+   they were in localStorage "notepath.notes.<username>" (lower-case) or "notepath.notes._local"; 0.5.6 moves them on its first start.
    Each note: { id, title, html (sanitised rich text), body (plain text made from html: search, previews, .md),
      created, updated, fav, folder (folder id | null), links: ["s:<subject>", "f:<field>", "t:<topic>"], src: { topic, title } | null }.
-   Older notes (body only) get html on read. Folders: "notepath.notefolders.<username>" = [{ id, name, parent, order, fav? }] (nested; drag to move/reorder). Notes may carry `order` (My order).
+   Older notes (body only) get html on read. Folders: IndexedDB "kv" under "notepath.notefolders.<username>" (localStorage before 0.5.6) = [{ id, name, parent, order, fav? }] (nested; drag to move/reorder). Notes may carry `order` (My order).
    Photos: IndexedDB "notepath-notes" / "images" (Blob by id); a note holds <img data-img="id">, a linked photo <img src="https://…">.
    Links inside a note: <a class="nlink" data-note="id"> (another note) or data-topic="id" (a lesson); colour = --note-link (Settings).
    Every change fires "inquire:notes-changed" so open views redraw. */
@@ -438,6 +439,35 @@ async function imageURL(id) {
   const rec = await tx("readonly", st => st.get(id)).catch(() => null);
   return rec && rec.blob ? (urls[id] = URL.createObjectURL(rec.blob)) : null;
 }
+/* v0.5.7 (memory): the notes list shows covers 38–56 px wide; decoding the stored 1800 px photo for each (~10 MB a piece) was the
+   biggest memory cost of a long list. thumbURL makes a small copy once per session (one at a time, so opening a big list does not spike). */
+const turls = {}, tq = []; let tbusy = false;
+function thumbURL(id, px) {
+  px = px || 160; const k = id + ":" + px;
+  if (turls[k]) return Promise.resolve(turls[k]);
+  return new Promise(res => { tq.push({ id, px, k, res }); thumbPump(); });
+}
+async function thumbPump() {
+  if (tbusy) return; tbusy = true;
+  while (tq.length) {
+    const j = tq.shift();
+    if (turls[j.k]) { j.res(turls[j.k]); continue; }
+    try {
+      const rec = await tx("readonly", st => st.get(j.id)), b = rec && rec.blob;
+      if (!b) { j.res(null); continue; }
+      if (!/^image\/(png|jpeg|webp)$/.test(b.type) || !window.createImageBitmap) { j.res(await imageURL(j.id)); continue; }
+      const bm = await createImageBitmap(b), sc = Math.min(1, j.px / Math.min(bm.width, bm.height));
+      if (sc === 1) { if (bm.close) bm.close(); j.res(await imageURL(j.id)); continue; }
+      const c = document.createElement("canvas"); c.width = Math.max(1, Math.round(bm.width * sc)); c.height = Math.max(1, Math.round(bm.height * sc));
+      c.getContext("2d").drawImage(bm, 0, 0, c.width, c.height); if (bm.close) bm.close();
+      const tb = await new Promise(r => c.toBlob(r, "image/jpeg", .8));
+      c.width = c.height = 0;
+      j.res(tb ? (turls[j.k] = URL.createObjectURL(tb)) : await imageURL(j.id));
+    } catch (e) { j.res(null); }
+  }
+  tbusy = false;
+}
+function dropThumbs(id) { Object.keys(turls).forEach(k => { if (k.startsWith(id + ":")) { URL.revokeObjectURL(turls[k]); delete turls[k]; } }); }
 // backups: the photos a set of notes uses, as data URLs, and back
 const fromDataURL = u => { const m = String(u).match(/^data:([^;,]+)(;base64)?,(.*)$/); if (!m) throw new Error("bad data URL"); const bin = m[2] ? atob(m[3]) : decodeURIComponent(m[3]); const a = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return new Blob([a], { type: m[1] }); };
 const toDataURL = blob => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(r.error); r.readAsDataURL(blob); });
@@ -465,7 +495,7 @@ async function importImages(map) {
   }
   return n;
 }
-function delImages(ids) { if (ids.length) tx("readwrite", st => { ids.forEach(i => { st.delete(i); if (urls[i]) { URL.revokeObjectURL(urls[i]); delete urls[i]; } }); return null; }).catch(() => {}); }
+function delImages(ids) { if (ids.length) tx("readwrite", st => { ids.forEach(i => { st.delete(i); dropThumbs(i); if (urls[i]) { URL.revokeObjectURL(urls[i]); delete urls[i]; } }); return null; }).catch(() => {}); }
 function hydrate(root) {
   if (window.InquireWidgets) root.querySelectorAll("div.nw").forEach(w => InquireWidgets.mount(w));
   root.querySelectorAll("img[data-img]").forEach(im => { if (im.src) return; imageURL(im.dataset.img).then(u => { if (u) im.src = u; else { im.alt = "Photo missing"; im.classList.add("missing"); } }); });
@@ -1114,7 +1144,7 @@ function scope(sp) {
 async function putFile(blob) { if (blob.size > VIDEO_MAX) throw new Error("too big"); const id = uid(); await tx("readwrite", st => st.put({ blob, at: Date.now() }, id)); return id; }
 async function mediaBlob(id) { const rec = await tx("readonly", st => st.get(id)).catch(() => null); return rec && rec.blob ? rec.blob : null; } // (import / export: no fetch of blob: URLs, which the CSP refuses)
 window.InquireNotes = { scope, spaceOf, putImage, putFile, delMedia: delImages, mediaBlob, list, get, create, update, remove, trash, restore, purge, deleteWithUndo, toast, appendBlock, exportMedia, key, link, unlink, appendQuote,
-  undo, redo, history, NSIZES, NFONTS, folders, addFolder, renameFolder, setFolderFav, removeFolder, moveFolder, subtree, setOrder, byOrder, sanitize, toText, mountEditor, editorFor, hydrate, pick, pickNote, imageURL, exportImages, importImages,
+  undo, redo, history, NSIZES, NFONTS, folders, addFolder, renameFolder, setFolderFav, removeFolder, moveFolder, subtree, setOrder, byOrder, sanitize, toText, mountEditor, editorFor, hydrate, pick, pickNote, imageURL, thumbURL, exportImages, importImages,
   readFolders: readF, writeFolders: writeF,
   // v0.5.6: the store is in IndexedDB and in memory; the page waits for `ready` before it draws
   ready, isReady: () => MEM.ready, saveState: () => ({ state: MEM.state, error: MEM.error }), flushSaves: () => flush(), readAll: () => read(), writeAll: all => write(all) };
