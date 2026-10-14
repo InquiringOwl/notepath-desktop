@@ -1086,6 +1086,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     const qh = () => q.$eval('.p1 .nb-rich', e => e.innerHTML);
     const selWord = w => q.evaluate(w => { const ed = document.querySelector('.p1 .nb-rich'), tw = document.createTreeWalker(ed, NodeFilter.SHOW_TEXT); let n; while ((n = tw.nextNode())) { const i = n.data.indexOf(w); if (i >= 0) { ed.focus(); const r = document.createRange(); r.setStart(n, i); r.setEnd(n, i + w.length); getSelection().removeAllRanges(); getSelection().addRange(r); return true; } } return false; }, w);
     // clear formatting
+    await wait(1100); // (v0.5.7) undo steps merge writes less than 700 ms apart: let the notes' creation settle, or on a slow runner Undo would also remove the new notes
     ok(!!(await q.$('.p1 .nr-tools .nr-clr[data-a=clear]')), 'a Clear formatting button is in the toolbar');
     await selWord('bold'); await q.click('.p1 .nr-clr'); await wait(150);
     let hh = await qh();
