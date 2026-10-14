@@ -189,15 +189,17 @@ function theme(m) {
   if (!m) return;
   const cs = getComputedStyle(document.documentElement), v = n => cs.getPropertyValue(n).trim();
   const bg = hexA(v("--ink") || "#070A10"), fr = v("--frame") || "#5CC8E0";
-  m.editor.defineTheme("notepath", { base: "vs-dark", inherit: true,
-    rules: [{ token: "comment", foreground: hexA(v("--faint") || "#6b7790").slice(1, 7), fontStyle: "italic" }, { token: "keyword", foreground: "B49BFF" }, { token: "string", foreground: "7BD88F" },
-      { token: "number", foreground: "F2B84B" }, { token: "type", foreground: "5CC8E0" }, { token: "type.identifier", foreground: "5CC8E0" }, { token: "delimiter", foreground: hexA(v("--muted") || "#a0aec0").slice(1, 7) },
-      { token: "regexp", foreground: "F07CA0" }, { token: "annotation", foreground: "D97AE6" }],
+  const light = document.documentElement.dataset.tone === "light"; // Paper, Sepia, light Your colours (Oct 14, 2026): the light editor and darker words
+  const K = light ? { kw: "6747CF", str: "1C7A38", num: "A86400", ty: "0B7487", re: "BE3463", an: "9C33AF" } : { kw: "B49BFF", str: "7BD88F", num: "F2B84B", ty: "5CC8E0", re: "F07CA0", an: "D97AE6" };
+  m.editor.defineTheme("notepath", { base: light ? "vs" : "vs-dark", inherit: true,
+    rules: [{ token: "comment", foreground: hexA(v("--faint") || "#6b7790").slice(1, 7), fontStyle: "italic" }, { token: "keyword", foreground: K.kw }, { token: "string", foreground: K.str },
+      { token: "number", foreground: K.num }, { token: "type", foreground: K.ty }, { token: "type.identifier", foreground: K.ty }, { token: "delimiter", foreground: hexA(v("--muted") || "#a0aec0").slice(1, 7) },
+      { token: "regexp", foreground: K.re }, { token: "annotation", foreground: K.an }],
     colors: { "editor.background": bg, "editor.foreground": hexA(v("--text") || "#e6edf7"), "editorLineNumber.foreground": hexA(v("--faint") || "#56627a"),
       "editorLineNumber.activeForeground": hexA(fr), "editorCursor.foreground": hexA(fr), "editor.selectionBackground": hexA(fr, .28), "editor.inactiveSelectionBackground": hexA(fr, .14),
-      "editor.lineHighlightBackground": "#ffffff08", "editor.lineHighlightBorder": "#00000000", "editorIndentGuide.background1": "#ffffff12", "editorIndentGuide.activeBackground1": hexA(fr, .45),
+      "editor.lineHighlightBackground": light ? "#00000008" : "#ffffff08", "editor.lineHighlightBorder": "#00000000", "editorIndentGuide.background1": light ? "#00000014" : "#ffffff12", "editorIndentGuide.activeBackground1": hexA(fr, .45),
       "editorWidget.background": hexA(v("--panel") || "#111827"), "editorWidget.border": hexA(v("--line-2") || "#2a3446"), "editorSuggestWidget.selectedBackground": hexA(fr, .22),
-      "minimap.background": bg, "scrollbarSlider.background": "#ffffff14", "scrollbarSlider.hoverBackground": hexA(fr, .3), "editorBracketMatch.border": hexA(fr, .7) } });
+      "minimap.background": bg, "scrollbarSlider.background": light ? "#0000001a" : "#ffffff14", "scrollbarSlider.hoverBackground": hexA(fr, .3), "editorBracketMatch.border": hexA(fr, .7) } });
   m.editor.setTheme("notepath");
 }
 window.addEventListener("inquire:theme", () => { if (window.monaco && monaco.editor) theme(window.monaco); });

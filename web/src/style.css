@@ -117,14 +117,14 @@ pre.code .out{color:var(--pink)}
 .search input::placeholder{color:var(--faint)}
 .search svg{flex:none}
 /* buttons */
-.btn{font:600 13px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--ink);background:var(--amber);border:0;border-radius:2px;padding:10px 14px;cursor:pointer;min-width:84px}
+.btn{font:600 13px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--on-sig,var(--ink));background:var(--amber);border:0;border-radius:2px;padding:10px 14px;cursor:pointer;min-width:84px}
 .btn:hover{filter:brightness(1.1)}
 .btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line-2)}
 .btn.ghost:hover{border-color:var(--frame);color:var(--frame)}
 .btn.good{background:var(--green)}
 .btn-s{font:600 11px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);background:var(--panel-2);border:1px solid var(--line-2);border-radius:2px;padding:6px 9px;cursor:pointer}
 .btn-s:hover{color:var(--text);border-color:var(--frame)}
-.btn-s[aria-pressed="true"]{color:var(--ink);background:var(--amber);border-color:var(--amber)}
+.btn-s[aria-pressed="true"]{color:var(--on-sig,var(--ink));background:var(--amber);border-color:var(--amber)}
 
 .num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 /* ---------- desktop app chrome ---------- */

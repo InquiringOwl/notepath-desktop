@@ -26,7 +26,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   copyMonaco(); srv = await require('./serve.js')(R, desktop); URL0 = srv.url;
   const b = await chromium.launch();
   const errs = [];
-  const page = async (init) => { const p = await b.newPage({ viewport: { width: 1440, height: 900 }, acceptDownloads: true }); p.setDefaultTimeout(6000); p.on('pageerror', e => errs.push(e.message));
+  const page = async (init) => { const p = await b.newPage({ viewport: { width: 1440, height: 900 }, acceptDownloads: true, colorScheme: 'dark' }); p.setDefaultTimeout(6000); p.on('pageerror', e => errs.push(e.message));
     await p.addInitScript(() => { try { if (!sessionStorage.getItem('np-new-test')) localStorage.setItem('notepath.seen056', 'true'); } catch (e) {} }); // (v0.5.6) the What's new card is checked once, on its own
     if (init) await p.addInitScript(init); return p; };
 
@@ -1634,7 +1634,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
       await lp.click('.set-tab[data-tab=look]'); await wait(200);
       await lp.click('.set-th[data-id=high-contrast]'); await wait(200);
       ok(await lp.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--text').trim().toLowerCase() === '#ffffff' && getComputedStyle(document.documentElement).getPropertyValue('--frame').trim().toLowerCase() === '#ffd400'), 'the High Contrast theme: pure white words, yellow trim');
-      await lp.click('.set-th[data-id=capsuleer]'); await wait(100);
+      await lp.click('.set-th[data-id=system]'); await wait(100);
       await lp.click('.set-tab[data-tab=display]'); await wait(150);
       await lp.click('.set-seg [data-perf=auto]'); await wait(150);
       ok(await lp.evaluate(() => ['lite', 'moderate'].includes(document.documentElement.dataset.perf)), 'Auto resolves to Lite or Moderate (never Full)');
@@ -1735,7 +1735,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
   {
     // v0.5.8 batch 2 (Devon): Emoji after Highlight, Simple / Professional, Indent less / more, 🎙 audio recording
     const b2 = await chromium.launch({ args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] });
-    const q = await b2.newPage({ viewport: { width: 1440, height: 900 } }); q.setDefaultTimeout(6000); q.on('pageerror', e => errs.push(e.message));
+    const q = await b2.newPage({ viewport: { width: 1440, height: 900 }, colorScheme: 'dark' }); q.setDefaultTimeout(6000); q.on('pageerror', e => errs.push(e.message));
     await q.addInitScript(() => { localStorage.setItem('notepath.seen056', 'true'); });
     await q.goto(URL0 + '#menu'); await wait(500);
     const ids = await q.evaluate(() => { const N = InquireNotes, a = N.create({ title: 'Indent me', html: '<div>Line one</div><div>Line two</div><ul><li>Item A</li><li>Item B</li></ul>' }), b = N.create({ title: 'Other note', html: '<div>Other</div>' });
@@ -1975,6 +1975,93 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     ok(/look like notes you already had/.test(await q.$eval('.io-log', e => e.textContent)) && !!(await q.$('.io-log [data-a=dups2]')), 'after an import that brought copies, NotePath offers to check for duplicates');
     await q.keyboard.press('Escape'); await wait(200);
     await q.close();
+  }
+  { // Theme packs Phase 1 (Devon, Oct 14, 2026): the plain style, the four minimal presets, Follow the system, Holographic themes, packs
+    const fresh = await b.newContext({ viewport: { width: 1440, height: 900 }, colorScheme: 'light' }); const f = await fresh.newPage(); f.setDefaultTimeout(6000); f.on('pageerror', e => errs.push(e.message));
+    await f.goto(URL0 + '#menu'); await wait(500);
+    const look = q => q.evaluate(() => { const d = document.documentElement.dataset, st = JSON.parse(localStorage.getItem('notepath.settings') || '{}'); return { theme: d.theme, style: d.style || '', tone: d.tone, saved: st.theme, tv: st.tv, keep: !!st.holoKeep }; });
+    let L = await look(f);
+    ok(L.saved === 'system' && L.theme === 'paper' && L.style === 'plain' && L.tone === 'light' && L.tv === 1 && !L.keep, 'a new install follows the system: Paper in light mode (plain style, light tone), not grandfathered', L);
+    await f.emulateMedia({ colorScheme: 'dark' }); await wait(300); L = await look(f);
+    ok(L.theme === 'graphite' && L.tone === 'dark' && L.saved === 'system', 'switching the computer to dark mode turns it to Graphite at once', L);
+    await f.emulateMedia({ colorScheme: 'light' }); await wait(200);
+    ok(await f.evaluate(() => { const cs = getComputedStyle(document.documentElement), g = cs.getPropertyValue('--green').trim().toLowerCase(), nl = cs.getPropertyValue('--note-link').trim();
+      const L = c => { const v = [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16) / 255).map(x => x <= .03928 ? x / 12.92 : Math.pow((x + .055) / 1.055, 2.4)); return .2126 * v[0] + .7152 * v[1] + .0722 * v[2]; };
+      return g === '#1c7a38' && (1.05 / (L(nl) + .05)) >= 4.5; }), 'on a light theme the signal colours are the darker set and the note link colour reads at 4.5:1 on white');
+    ok(await f.evaluate(() => { const w = document.querySelector('.win'), h = document.querySelector('.win-h'); return getComputedStyle(w, '::before').display === 'none' && getComputedStyle(h).textTransform === 'none' && getComputedStyle(w).borderTopLeftRadius === '10px'; }), 'the plain style: no corner ticks, normal-case labels, rounded panels');
+    await f.evaluate(() => InquireSettings.open('look')); await wait(300);
+    ok(JSON.stringify(await f.$$eval('.set-thfam:first-of-type .set-th, .set-thgrid[aria-label=Themes] .set-th', e => [...new Set(e.map(x => x.dataset.id))])) === '["system","paper","sepia","graphite","midnight","high-contrast"]', 'Appearance: Follow the system, Paper, Sepia, Graphite, Midnight, High Contrast');
+    ok(await f.$eval('.set-th[data-id=system]', e => e.getAttribute('aria-checked')) === 'true', 'Follow the system is the one picked');
+    await f.click('.set-th[data-id=sepia]'); await wait(200); L = await look(f);
+    ok(L.theme === 'sepia' && L.saved === 'sepia' && L.tone === 'light' && L.style === 'plain', 'picking Sepia applies it and keeps it', L);
+    ok(!(await f.$('.set-th[data-id=capsuleer]')) && !!(await f.$('.set-holob')), 'the console themes are not on the main page; a Holographic themes button is');
+    await f.click('.set-holob'); await wait(250);
+    const holo = await f.$$eval('.set-holo .set-th', e => e.map(x => x.dataset.id));
+    ok(holo.length === 12 && holo[0] === 'capsuleer' && !holo.includes('high-contrast') && holo.includes('aurora'), 'Themes › Holographic lists the 12 console themes (High Contrast stays on the main page)', holo);
+    ok(await f.evaluate(() => document.activeElement && document.activeElement.matches('.set-back')), 'the ‹ Appearance button has the focus');
+    await f.click('.set-holo .set-th[data-id=ember]'); await wait(200); L = await look(f);
+    ok(L.theme === 'ember' && L.style === '' && await f.evaluate(() => getComputedStyle(document.querySelector('.win-h')).textTransform === 'uppercase'), 'a Holographic theme brings back the console look (uppercase labels, no plain style)', L);
+    await f.click('.set-back'); await wait(200);
+    ok(/In use: Ember/.test(await f.$eval('.set-holob', e => e.textContent)), 'back on Appearance, the button says which Holographic theme is in use');
+    await f.click('.set-holob'); await wait(150); await f.click('.set-tab[data-tab=display]'); await wait(100); await f.click('.set-tab[data-tab=look]'); await wait(150);
+    ok(!(await f.$('.set-holo')) && !!(await f.$('.set-holob')), 'leaving the tab and coming back opens Appearance, not the Holographic page');
+    // Your colours: plain looks; an old preset keeps the console look
+    await f.click('.set-th[data-id=paper]'); await wait(150);
+    await f.fill('.set-hex[data-h=accent]', '#B03A2E'); await wait(150); L = await look(f);
+    ok(L.theme === 'custom' && L.style === 'plain' && L.tone === 'light' && !(await f.$('[data-glass]')), 'Your colours start from Paper and make a plain light look (no Glass box)', L);
+    await f.fill('.set-cname', 'Brick'); await f.click('[data-save="0"]'); await wait(250);
+    ok(await f.evaluate(() => { const p = JSON.parse(localStorage.getItem('notepath.settings')).presets[0]; return p.name === 'Brick' && p.plain === true && p.accent === '#b03a2e' && document.documentElement.dataset.theme === 'preset-1' && document.documentElement.dataset.style === 'plain'; }) && !!(await f.$('.set-presets .set-swpl')), 'saving it keeps a plain preset with a plain swatch');
+    await f.evaluate(() => InquireSettings.close()); await f.close(); await fresh.close();
+    // existing installs keep their look and get Holographic for good
+    const oldA = await page(() => { if (!sessionStorage.getItem('t-old')) { sessionStorage.setItem('t-old', '1'); localStorage.setItem('notepath.nbw', '260'); localStorage.removeItem('notepath.settings'); } });
+    await oldA.goto(URL0 + '#menu'); await wait(400); L = await look(oldA);
+    ok(L.saved === 'capsuleer' && L.theme === 'capsuleer' && L.keep && L.style === '', 'an install from before (NotePath data, no theme saved) keeps Deep Space and is grandfathered for Holographic', L);
+    await oldA.reload(); await wait(300); L = await look(oldA);
+    ok(L.saved === 'capsuleer' && L.keep, 'and that decision is made once', L); await oldA.close();
+    const oldB = await page(() => { if (!sessionStorage.getItem('t-old')) { sessionStorage.setItem('t-old', '1'); localStorage.setItem('notepath.settings', JSON.stringify({ theme: 'obsidian', presets: [{ name: 'Mine', bg: '#101010', surface: '#202020', accent: '#ff8800', glass: true }] })); } });
+    await oldB.goto(URL0 + '#menu'); await wait(400); L = await look(oldB);
+    ok(L.theme === 'obsidian' && L.keep, 'one who picked Obsidian before keeps it (and Holographic)', L);
+    await oldB.evaluate(() => InquireSettings.open('look')); await wait(250); await oldB.click('.set-th[data-id=preset-1]'); await wait(200); L = await look(oldB);
+    ok(L.theme === 'preset-1' && L.style === '' && await oldB.evaluate(() => document.documentElement.hasAttribute('data-glass')), 'a preset saved before keeps its console look and glass', L);
+    await oldB.close();
+    // installed packs, with a fake desktop bridge (the real main process side: unit.js + tools/themes-e2e.js)
+    const pk = { id: 'demo-dusk', name: 'Demo Dusk', author: 'NotePath', version: '1.0.0', weight: 'light', family: 'Dark', style: 'plain', license: 'free', bytes: 2150, colors: { bg: '#14121C', surface: '#1E1B2A', accent: '#E0A458', tint: '#8C7AE6', text: '#ECE8F4', muted: '#B5AEC8', faint: '#8E87A3' } };
+    const pp = await page(); await pp.addInitScript(pk2 => { window.__packs = window.__packs || JSON.parse(sessionStorage.getItem('packs') || '[]'); window.__rm = [];
+      const keep = () => sessionStorage.setItem('packs', JSON.stringify(window.__packs));
+      window.inquireDesktop = { platform: 'darwin', onUpdate: () => {}, checkForUpdates: async () => {}, updateState: async () => ({ status: 'idle' }), installUpdate: async () => {}, revealUpdate: async () => {}, version: async () => '0.6.0', lookupWord: async () => ({ status: 0 }),
+        themes: { list: async () => ({ ok: true, signing: true, packs: window.__packs }), installFile: async () => { if (window.__refuse) return { ok: false, error: 'Couldn\'t verify this pack, so it wasn\'t installed: the signature does not match NotePath\'s key.' }; window.__packs = [pk2]; keep(); return { ok: true, pack: pk2, replaced: null }; },
+          remove: async id => { window.__rm.push(id); window.__packs = window.__packs.filter(x => x.id !== id); keep(); return { ok: true }; } } }; }, pk);
+    await pp.goto(URL0 + '#menu'); await wait(400);
+    await pp.evaluate(() => InquireSettings.open('look')); await wait(300);
+    ok(/No theme packs installed/.test(await pp.$eval('.set-packs', e => e.textContent)) && !!(await pp.$('[data-a=packfile]')), 'Appearance → Theme packs: none yet, and Install a pack from a file…');
+    await pp.evaluate(() => { window.__refuse = true; }); await pp.click('[data-a=packfile]'); await wait(250);
+    ok(/Couldn't verify this pack/.test(await pp.$eval('.set-packs .set-msg', e => e.textContent)), 'a pack that fails its check is refused with the reason');
+    await pp.evaluate(() => { window.__refuse = false; }); await pp.click('[data-a=packfile]'); await wait(300);
+    ok(/Installed “Demo Dusk”/.test(await pp.$eval('.set-packs .set-msg', e => e.textContent)) && /Light pack · 2\.1 KB/.test(await pp.$eval('.set-th[data-id="pack:demo-dusk"]', e => e.textContent)) && /Theme packs use 2\.1 KB/.test(await pp.$eval('.set-packs', e => e.textContent)), 'an installed pack shows its card, weight, size and the storage line');
+    await pp.click('.set-th[data-id="pack:demo-dusk"]'); await wait(250); L = await look(pp);
+    ok(L.theme === 'pack:demo-dusk' && L.style === 'plain' && await pp.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--frame').trim().toLowerCase() === '#e0a458'), 'picking a pack applies its colours', L);
+    ok(/Applied “Demo Dusk”/.test(await pp.$eval('.tm-toast', e => e.textContent)), 'with an Undo one tap away');
+    await pp.click('.tm-toast button'); await wait(200); L = await look(pp);
+    ok(L.saved === 'system', 'Undo goes back to the theme before', L);
+    await pp.click('.set-th[data-id="pack:demo-dusk"]'); await wait(200);
+    await pp.reload(); await wait(500); L = await look(pp);
+    ok(L.theme === 'pack:demo-dusk', 'the pack is still on after a restart', L);
+    await pp.evaluate(() => { window.__packs = [Object.assign({}, window.__packs[0], { broken: 'missing' })]; sessionStorage.setItem('packs', JSON.stringify(window.__packs)); });
+    await pp.reload(); await wait(1200); L = await look(pp);
+    ok(L.theme !== 'pack:demo-dusk' && /couldn’t be loaded/.test(await pp.$eval('.tm-toast', e => e.textContent).catch(() => '')), 'a pack that fails to load falls back to a built-in theme with a message', L);
+    await pp.evaluate(() => { window.__packs = []; sessionStorage.setItem('packs', JSON.stringify([])); });
+    await pp.close();
+    const pr = await page(); await pr.addInitScript(pk2 => { window.__packs = [pk2]; window.__rm = []; window.inquireDesktop = { platform: 'darwin', onUpdate: () => {}, checkForUpdates: async () => {}, updateState: async () => ({ status: 'idle' }), installUpdate: async () => {}, revealUpdate: async () => {}, version: async () => '0.6.0', lookupWord: async () => ({ status: 0 }),
+      themes: { list: async () => ({ ok: true, signing: true, packs: window.__packs }), installFile: async () => ({ ok: false, canceled: true }), remove: async id => { window.__rm.push(id); window.__packs = []; return { ok: true }; } } };
+      if (!sessionStorage.getItem('t-pr')) { sessionStorage.setItem('t-pr', '1'); localStorage.setItem('notepath.settings', JSON.stringify({ theme: 'pack:demo-dusk', lastBuilt: 'midnight', tv: 1, packs: [pk2] })); } }, pk);
+    await pr.goto(URL0 + '#menu'); await wait(500); await pr.evaluate(() => InquireSettings.open('look')); await wait(300);
+    await pr.click('[data-premove="demo-dusk"]'); await wait(100);
+    ok(await pr.$eval('[data-premove="demo-dusk"]', e => e.textContent) === 'Remove?' && (await look(pr)).theme === 'pack:demo-dusk', 'Remove asks once more first');
+    await pr.click('[data-premove="demo-dusk"]'); await wait(300); L = await look(pr);
+    ok(L.theme === 'midnight' && JSON.stringify(await pr.evaluate(() => window.__rm)) === '["demo-dusk"]' && !(await pr.$('.set-th[data-id="pack:demo-dusk"]')) && /Removed “Demo Dusk”/.test(await pr.$eval('.set-packs .set-msg', e => e.textContent)), 'removing the pack in use goes back to the built-in theme before it (Midnight)', L);
+    await pr.close();
+    const web = await page(); await web.goto(URL0 + '#menu'); await wait(300); await web.evaluate(() => InquireSettings.open('look')); await wait(200);
+    ok(!(await web.$('.set-packs')), 'the browser preview (no desktop app) has no Theme packs section'); await web.close();
   }
   {
     // What's new in 0.5.6: once, the first time My notes opens

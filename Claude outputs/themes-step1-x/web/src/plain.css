@@ -1,0 +1,47 @@
+/* Plain style (theme packs Phase 1, Devon Oct 14, 2026): the minimal presets (Paper, Sepia, Graphite, Midnight) and plain Your
+   colours set html[data-style="plain"] (settings.js applyTheme). Flat solid panels, no corner ticks, glows or tints, normal-case labels
+   in the body font, softly rounded corners: the look of a typical document or note app. The console look (Holographic themes) is the
+   rest of the stylesheets, untouched. Light themes also set html[data-tone="light"]: darker signal colours that read on white.
+   Loaded last (tools/build-web.js) so these rules win. The note's own text (.nb-rich, outside widgets) is never restyled here. */
+
+/* ---------- light themes: signal and topic colours that read on a light page (4.5:1 on white) ---------- */
+html[data-tone="light"]{
+  --amber:#A86400; --cyan:#0B7487; --pink:#BE3463; --violet:#6747CF; --green:#1C7A38; --magenta:#9C33AF; --lime:#55760F; --red:#C2352A;
+  --g-stem:#0B7487; --g-hum:#9C33AF; --g-soc:#55760F; --on-sig:#FFFFFF;
+  --sh:color-mix(in srgb,var(--text) 28%,transparent); /* the stylesheets' dark wells (var(--sh) n%) become faint grey on a light page */
+}
+/* the dimmed page behind Settings and windows: lighter on a light theme */
+html[data-tone="light"] :is(.set-ov,.mw-ov,.ask-ov){background:rgba(30,30,28,.32)!important}
+
+/* ---------- labels: the body font, normal case, normal spacing ---------- */
+html[data-style="plain"]{--ui:var(--sans)}
+html[data-style="plain"] :not(.nb-rich *),html[data-style="plain"] .nb-rich .nw *{text-transform:none!important;letter-spacing:normal!important;text-shadow:none!important}
+html[data-style="plain"] .brand-name{font-weight:600;font-size:15px}
+
+/* ---------- surfaces: solid, flat, rounded ---------- */
+html[data-style="plain"] #app{background:var(--void)}
+html[data-style="plain"] .topbar{background:var(--panel);border-bottom-color:var(--line)}
+html[data-style="plain"] .win{background:var(--panel);border-color:var(--line);border-radius:10px}
+html[data-style="plain"] .win::before,html[data-style="plain"] .win::after,html[data-style="plain"] .np-holo::after{display:none}
+html[data-style="plain"] .win-h{background:none;font-weight:600;font-size:13px;color:var(--muted)}
+html[data-style="plain"] .win-h .dot,html[data-style="plain"] .set-h .dot,html[data-style="plain"] .np-peek-gem{display:none}
+html[data-style="plain"] .slot{background:var(--panel);border-color:var(--line);border-radius:10px}
+html[data-style="plain"] .slot:hover{background:var(--slot-h1);border-color:var(--frame)}
+html[data-style="plain"] .slot.locked:hover{background:var(--panel);border-color:var(--line)}
+html[data-style="plain"] .slot .glyph{background:var(--panel-2);border-color:var(--line)}
+html[data-style="plain"] .slot h3{font-weight:600}
+
+html[data-style="plain"] .np-holo{background:var(--panel);border-color:var(--line-2);border-radius:10px}
+html[data-style="plain"] .np-holo::before{display:none}
+
+/* ---------- no glows anywhere; floating boxes keep one soft shadow so they lift off the page ---------- */
+html[data-style="plain"] :not(.nb-rich *){box-shadow:none!important}
+html[data-style="plain"] :is(.mw-win,.set-win,.ask-box,.tm-menu,.np-pop,.nr-panel,.np-holo,.np-peek,.np-share-pop,.nb-fmenu,.upd,.np-new,.nk-pick,.nv-pop,.toast,.np-toast){
+  box-shadow:0 10px 30px rgba(0,0,0,.18),0 2px 6px rgba(0,0,0,.08)!important}
+html[data-style="plain"][data-tone="dark"] :is(.mw-win,.set-win,.ask-box,.tm-menu,.np-pop,.nr-panel,.np-holo,.np-peek,.np-share-pop,.nb-fmenu,.upd,.np-new,.nk-pick,.nv-pop,.toast,.np-toast){
+  box-shadow:0 12px 34px rgba(0,0,0,.5)!important}
+
+/* ---------- buttons ---------- */
+html[data-style="plain"] :is(.btn,.btn-s,.topstat,.np-back,.search,.np-newb){border-radius:6px}
+html[data-style="plain"] .np-newb{background:var(--frame);border-color:var(--frame)}
+html[data-style="plain"] .np-newb:hover{filter:brightness(1.06)}

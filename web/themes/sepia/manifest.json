@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "id": "sepia",
+  "name": "Sepia",
+  "author": "NotePath",
+  "version": "1.0.0",
+  "weight": "light",
+  "family": "Light",
+  "style": "plain",
+  "license": {
+    "type": "free"
+  },
+  "description": "Warm cream, like a reading app",
+  "colors": {
+    "bg": "#F1E9DA",
+    "surface": "#FBF6EC",
+    "accent": "#9A4F12",
+    "tint": "#7A6A3A",
+    "text": "#2B2118",
+    "muted": "#5B4C3C",
+    "faint": "#6F5F4B"
+  }
+}

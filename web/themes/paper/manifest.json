@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "id": "paper",
+  "name": "Paper",
+  "author": "NotePath",
+  "version": "1.0.0",
+  "weight": "light",
+  "family": "Light",
+  "style": "plain",
+  "license": {
+    "type": "free"
+  },
+  "description": "Clean white pages, light grey around them",
+  "colors": {
+    "bg": "#F6F5F2",
+    "surface": "#FFFFFF",
+    "accent": "#2563C9",
+    "tint": "#6B5FB5",
+    "text": "#1F1F1E",
+    "muted": "#55554F",
+    "faint": "#6B6A64"
+  }
+}

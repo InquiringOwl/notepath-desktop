@@ -1,7 +1,7 @@
 {
   "name": "notepath-desktop",
   "productName": "NotePath",
-  "version": "0.5.8",
+  "version": "0.5.9",
   "description": "NotePath: a notepad console for every kind of note: rich text, folders, photos, video, code and music.",
   "author": "Wolfie's Coven <devon@ashleyhoffmann.com>",
   "license": "UNLICENSED",
@@ -16,7 +16,11 @@
     "start": "node tools/build-web.js && electron .",
     "dist": "node tools/build-web.js && electron-builder --publish never",
     "release": "node tools/release.js",
-    "publish:local": "node tools/build-web.js && electron-builder --publish always"
+    "publish:local": "node tools/build-web.js && electron-builder --publish always",
+    "theme:check": "node tools/theme-check.js",
+    "theme:pack": "node tools/theme-pack.js",
+    "theme:keygen": "node tools/theme-keygen.js",
+    "theme:e2e": "electron tools/themes-e2e.js"
   },
   "dependencies": {
     "electron-log": "^5.4.4",
@@ -48,6 +52,8 @@
       "main.js",
       "preload.js",
       "updater-mac.js",
+      "theme-key.json",
+      "themes-core.js",
       "app/**/*",
       "ai.config.json",
       "package.json"

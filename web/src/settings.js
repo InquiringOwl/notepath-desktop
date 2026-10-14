@@ -25,6 +25,17 @@ const load = () => {
 let S = load();
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+/* (Phase 1 of theme packs, Devon Oct 14, 2026) A first start with no theme saved: an install that already has NotePath data keeps the
+   console look it had (Deep Space) and is marked grandfathered for the Holographic pack (S.holoKeep, free for good); a new install
+   follows the system (Paper in light mode, Graphite in dark mode). Written once, so the choice sticks. */
+(function firstTheme() {
+  if (S.tv) return; // decided before
+  let stored = null; try { stored = JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) {}
+  let old = !!stored;
+  try { for (let i = 0; i < localStorage.length && !old; i++) { const k = localStorage.key(i); if (/^notepath\./.test(k) && !/^notepath\.(settings|perf\.auto|i18n\.cache|seen056)$/.test(k)) old = true; } } catch (e) {}
+  if (old) { S.holoKeep = true; if (!(stored && stored.theme)) S.theme = "capsuleer"; } else S.theme = "system";
+  S.tv = 1; save();
+})();
 
 /* ---------- themes ----------
    bg = primary (window background), surface = secondary (panels), accent = detail (frames, glows).
@@ -44,19 +55,27 @@ const THEMES = [
   { id: "frost", fam: "Glass", name: "Frosted Glass", bg: "#0A1424", surface: "#1C2D48", accent: "#C4E8FF", tint: "#B49BFF", glow: "#5CC8E0", glass: true, note: "Clear panels over blue light" },
   { id: "aurora", fam: "Glass", name: "Aurora Glass", bg: "#06100F", surface: "#15282B", accent: "#9CF0C8", tint: "#D97AE6", glow: "#4FD1A5", glass: true, note: "Smoked glass, northern lights" }
 ];
+/* (Devon, Oct 14, 2026) The four minimal presets: built in, always free, never paid (licence class Bundled). plain = the plain style
+   (flat panels, no corner ticks or glow, normal-case labels: html[data-style=plain]); tone = light / dark (html[data-tone]). "system" =
+   Paper while the system is in light mode, Graphite in dark mode. The console themes above are the Holographic collection. */
+const MINIS = (window.NP_BUNDLED_THEMES || []).map(m => Object.assign({ id: m.id, fam: "Minimal", tone: m.family === "Light" ? "light" : "dark", plain: (m.style || "plain") === "plain",
+  name: m.name, note: m.description || "", bundled: true }, m.colors)); // web/themes/<id>/manifest.json, put in the page by tools/build-web.js
+const osDark = () => { try { return !!(window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches); } catch (e) { return true; } };
 const FAMS = [["Dark", "Darker tones"], ["Nature", "Nature tones"], ["Water", "Watery tones"], ["Earth", "Red & earthy tones"], ["Airy", "Lighter, airy tones"], ["Glass", "Glassy tones"]];
 const VARS = ["--void", "--ink", "--panel", "--panel-2", "--panel-3", "--line", "--line-2", "--text", "--muted", "--faint", "--tint-1", "--tint-2",
   "--chrome-1", "--chrome-2", "--win-1", "--win-2", "--slot-1", "--slot-2", "--slot-h1", "--slot-h2", "--wash", "--sky", "--stage-sky", "--frame", "--blur", "--glow",
-  "--node-1", "--node-2", "--node-line", "--node-line-2", "--node-text", "--orb-1", "--orb-2", "--era-1", "--era-2"];
+  "--node-1", "--node-2", "--node-line", "--node-line-2", "--node-text", "--orb-1", "--orb-2", "--era-1", "--era-2", "--on-accent"];
 
 const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
 const toHex = c => "#" + c.map(v => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("");
 const mix = (a, b, t) => { const A = hex(a), B = hex(b); return toHex(A.map((v, i) => v + (B[i] - v) * t)); };
 const rgba = (h, a) => `rgba(${hex(h).join(",")},${a})`;
+const onAccent = a => { const l = lum(a); return (l + .05) / (lum("#10141C") + .05) >= 1.05 / (l + .05) ? "#10141C" : "#FFFFFF"; }; // words on an accent-coloured button: whichever reads better
 function themeVars(t) {
+  if (t.plain) return plainVars(t);
   const text = t.text || "#DDE4EF", W = "#FFFFFF", g = !!t.glass, al = g ? .5 : .92;
   const panel2 = mix(t.surface, W, .035), panel3 = mix(t.surface, W, .07);
-  return {
+  return { "--on-accent": onAccent(t.accent),
     "--void": t.bg, "--ink": mix(t.bg, t.surface, .3), "--panel": t.surface, "--panel-2": panel2, "--panel-3": panel3,
     "--line": mix(t.surface, text, .13), "--line-2": mix(t.surface, text, .23), "--text": text,
     "--muted": t.muted || mix(text, t.bg, .38), "--faint": t.faint || mix(text, t.bg, .6),
@@ -74,6 +93,21 @@ function themeVars(t) {
     "--era-1": rgba(mix(mix(t.surface, text, .05), t.accent, .1), g ? .8 : .95), "--era-2": rgba(mix(t.bg, t.surface, .6), g ? .8 : .95)
   };
 }
+/* The plain style (minimal presets and plain Your colours): solid panels and bars, no glows or tints; light themes step their
+   panels toward the text colour instead of toward white. */
+function plainVars(t) {
+  const text = t.text, s = t.surface, b = t.bg, light = (t.tone || (lum(s) > .4 ? "light" : "dark")) === "light";
+  const p2 = mix(s, text, light ? .035 : .045), p3 = mix(s, text, light ? .07 : .09);
+  return {
+    "--void": b, "--ink": light ? s : mix(b, s, .45), "--panel": s, "--panel-2": p2, "--panel-3": p3,
+    "--line": mix(s, text, light ? .12 : .14), "--line-2": mix(s, text, light ? .22 : .24), "--text": text, "--muted": t.muted, "--faint": t.faint,
+    "--tint-1": "transparent", "--tint-2": "transparent", "--chrome-1": s, "--chrome-2": s, "--win-1": s, "--win-2": s,
+    "--slot-1": s, "--slot-2": s, "--slot-h1": mix(s, t.accent, .06), "--slot-h2": mix(s, t.accent, .06),
+    "--wash": rgba(s, .9), "--sky": b, "--stage-sky": p2, "--frame": t.accent, "--blur": "0px", "--glow": "transparent", "--on-accent": onAccent(t.accent),
+    "--node-1": p2, "--node-2": b, "--node-line": mix(s, text, .25), "--node-line-2": mix(s, text, .32), "--node-text": t.muted,
+    "--orb-1": p3, "--orb-2": b, "--era-1": p2, "--era-2": b
+  };
+}
 /* Your colours (Appearance → Your colours): S.custom = { bg, surface, accent, glass } is the live "custom" theme while you
    pick; S.presets = 3 × (null | { name, bg, surface, accent, glass }) are saved as themes "preset-1" … "preset-3".
    Text, lines and the second glow are derived; a light secondary colour gets dark text. */
@@ -81,14 +115,50 @@ const lum = c => { const [r, g, b] = hex(c).map(v => { v /= 255; return v <= .03
 function userTheme(c, id, name) {
   if (!c || !hexOk(c.bg) || !hexOk(c.surface) || !hexOk(c.accent)) return null;
   const light = lum(c.surface) > .4;
-  return { id, fam: "Custom", name, bg: c.bg, surface: c.surface, accent: c.accent, tint: mix(c.accent, light ? "#000000" : c.surface, .45), glass: !!c.glass,
-    text: light ? "#151A22" : lum(c.surface) > .18 ? "#F6F8FB" : undefined, note: id === "custom" ? "Not saved yet" : "Your preset" };
+  return { id, fam: "Custom", name, bg: c.bg, surface: c.surface, accent: c.accent, tint: mix(c.accent, light ? "#000000" : c.surface, .45), glass: !c.plain && !!c.glass,
+    plain: !!c.plain, tone: light ? "light" : "dark", muted: c.plain ? mix(light ? "#151A22" : "#F6F8FB", c.surface, .32) : undefined, faint: c.plain ? mix(light ? "#151A22" : "#F6F8FB", c.surface, .5) : undefined,
+    text: light ? "#151A22" : lum(c.surface) > .18 || c.plain ? "#F6F8FB" : undefined, note: id === "custom" ? "Not saved yet" : "Your preset" };
+}
+/* Installed theme packs (Phase 1, Oct 14, 2026): main.js keeps them in <userData>/themes (themes-core.js); S.packs is a copy of their
+   summaries so the theme is right from the first paint; syncPacks() refreshes it from the main process at start. Theme id "pack:<id>". */
+const packOk = p => p && typeof p === "object" && typeof p.id === "string" && p.colors;
+S.packs = Array.isArray(S.packs) ? S.packs.filter(packOk) : [];
+function packTheme(pid) {
+  const p = S.packs.find(x => x && x.id === pid); if (!p || !p.colors) return null;
+  const c = p.colors, plain = (p.style || "plain") === "plain";
+  return Object.assign({}, c, { id: "pack:" + p.id, fam: "Pack", name: p.name, note: (p.author ? "By " + p.author : ""), plain, glass: !plain && c.glass > 0,
+    glow: c.glow ? c.glow.slice(0, 7) : undefined, tone: p.family === "Light" ? "light" : p.family === "Dark" ? "dark" : undefined, pack: p });
+}
+const bridgeThemes = () => window.inquireDesktop && window.inquireDesktop.themes;
+async function syncPacks() {
+  const B = bridgeThemes(); if (!B) return;
+  let r; try { r = await B.list(); } catch (e) { return; }
+  if (!r || !r.ok) return;
+  const before = JSON.stringify(S.packs) + S.theme;
+  S.packs = (r.packs || []).filter(p => packOk(p) && !p.broken); S.signing = !!r.signing;
+  const broken = (r.packs || []).find(p => p && p.broken && S.theme === "pack:" + p.id);
+  if (/^pack:/.test(S.theme) && !packTheme(S.theme.slice(5))) {
+    const was = broken ? broken.name : S.theme.slice(5);
+    S.theme = S.lastBuilt && !/^pack:/.test(S.lastBuilt) ? S.lastBuilt : "system";
+    setTimeout(() => { const NS = window.InquireNotes; if (NS && NS.toast) NS.toast(`The theme pack “${esc(was)}” couldn’t be loaded, so NotePath went back to ${esc(findTheme(S.theme).name)}. Reinstall it from Settings → Appearance.`, null, 8000); }, 600);
+  }
+  if (JSON.stringify(S.packs) + S.theme === before) return; // nothing changed: no redraw (Appearance asks again each time it opens)
+  save(); applyAll();
+  if (!ov.hidden && tab === "look") { const y = pane.scrollTop; show("look"); pane.scrollTop = y; }
 }
 function findTheme(id) {
   const m = /^preset-([123])$/.exec(id || "");
-  if (m) { const p = S.presets[m[1] - 1]; return userTheme(p, id, p ? p.name : "") || THEMES[0]; }
-  if (id === "custom") return userTheme(S.custom, "custom", "Custom") || THEMES[0];
-  return THEMES.find(x => x.id === id) || THEMES[0];
+  if (m) { const p = S.presets[m[1] - 1]; return userTheme(p, id, p ? p.name : "") || findTheme("system"); }
+  if (id === "custom") return userTheme(S.custom, "custom", "Custom") || findTheme("system");
+  if (id === "system") return Object.assign({}, MINIS.find(x => x.id === (osDark() ? "graphite" : "paper")), { sys: true });
+  if (/^pack:/.test(id || "")) { const t = packTheme(id.slice(5)); if (t) return t; return findTheme(S.lastBuilt && !/^pack:/.test(S.lastBuilt) ? S.lastBuilt : "system"); }
+  return MINIS.find(x => x.id === id) || THEMES.find(x => x.id === id) || MINIS.find(x => x.id === (osDark() ? "graphite" : "paper"));
+}
+const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + .05) / (Math.min(x, y) + .05); };
+function readable(c, bg) { // only on light backgrounds: step the colour toward black until it reads at 4.5:1
+  if (!hexOk(c) || !hexOk(bg) || lum(bg) < .4) return c;
+  let out = c; for (let i = 1; i <= 20 && ratio(out, bg) < 4.5; i++) out = mix(c, "#000000", i * .04);
+  return out;
 }
 function applyTheme(id) {
   const t = findTheme(id), st = document.documentElement.style;
@@ -96,6 +166,9 @@ function applyTheme(id) {
   else { const v = themeVars(t); VARS.forEach(k => st.setProperty(k, v[k])); }
   document.documentElement.dataset.theme = t.id;
   document.documentElement.toggleAttribute("data-glass", !!t.glass);
+  if (t.plain) document.documentElement.dataset.style = "plain"; else delete document.documentElement.dataset.style;
+  const tone = t.tone || (lum(t.surface) > .4 ? "light" : "dark");
+  document.documentElement.dataset.tone = tone; document.documentElement.style.colorScheme = tone;
 }
 /* Text size: every px font size and px line height in the stylesheets becomes calc(… * var(--ts, 1)).
    Font shorthands that use var(--ui) keep their text form in the CSSOM, so the size token is rewritten in place. */
@@ -187,16 +260,19 @@ const perfNow = () => PERFS.includes(S.perf) ? S.perf : osReduced() ? "lite" : a
 function applyAll() {
   applyTheme(S.theme);
   { const th = findTheme(S.theme); document.documentElement.toggleAttribute("data-glass", !!(th && th.glass)); document.documentElement.dataset.perf = perfNow(); }
-  document.documentElement.style.setProperty("--note-link", hexOk(S.noteLink) ? S.noteLink : DEF.noteLink);
-  document.documentElement.style.setProperty("--note-indent", hexOk(S.indent) ? S.indent : DEF.indent); // paranotes (notes.js)
-  Object.keys(TABDEF).forEach(k => document.documentElement.style.setProperty("--tab-" + k, hexOk(S.tabs[k]) ? S.tabs[k] : TABDEF[k]));
+  const th0 = findTheme(S.theme), rd = c => readable(c, th0.surface); // light themes darken colours that would be too pale to read (4.5:1)
+  document.documentElement.style.setProperty("--note-link", rd(hexOk(S.noteLink) ? S.noteLink : DEF.noteLink));
+  document.documentElement.style.setProperty("--note-indent", rd(hexOk(S.indent) ? S.indent : DEF.indent)); // paranotes (notes.js)
+  Object.keys(TABDEF).forEach(k => document.documentElement.style.setProperty("--tab-" + k, rd(hexOk(S.tabs[k]) ? S.tabs[k] : TABDEF[k])));
   applySizes();
   document.documentElement.toggleAttribute("data-reduce-motion", !!S.reduceMotion || osReduced()); // the system setting counts too (v0.5.7)
   if (CVDS.some(c => c[0] === S.cvd) && S.cvd !== "off") document.documentElement.dataset.cvd = S.cvd; else delete document.documentElement.dataset.cvd; // colour-blind mode (v0.5.8)
   window.dispatchEvent(new CustomEvent("inquire:theme")); // canvases that paint with the theme (Note Office) repaint
 }
 applyAll();
+setTimeout(syncPacks, 0); // installed theme packs (main process)
 try { if (window.matchMedia) matchMedia("(prefers-reduced-motion: reduce)").addEventListener("change", () => applyAll()); } catch (e) {}
+try { if (window.matchMedia) matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { if (S.theme === "system") applyAll(); }); } catch (e) {} // Follow the system
 setTimeout(jankWatch, 2500); // after start-up has settled
 
 /* ---------- window ---------- */
@@ -213,12 +289,13 @@ let tab = "look", lastFocus = null, mode = "settings";
 TABS.forEach(([id, label]) => {
   const b = document.createElement("button");
   b.type = "button"; b.className = "set-tab"; b.setAttribute("role", "tab"); b.dataset.tab = id; b.textContent = label;
-  b.onclick = () => show(id);
+  b.onclick = () => { LOOKSUB = ""; show(id); };
   tabsEl.appendChild(b);
 });
 function open(which) {
   mode = "settings"; win.classList.remove("is-doc"); titleEl.textContent = "Settings"; tabsEl.hidden = false;
   if (!ov.hidden) { show(which || tab); return; }
+  LOOKSUB = "";
   lastFocus = document.activeElement;
   ov.hidden = false; requestAnimationFrame(() => { if (!ov.hidden) document.body.classList.add("set-open"); });
   show(which || tab);
@@ -280,22 +357,46 @@ function swatch(t) {
   return `<span class="set-sw${t.glass ? " set-glass" : ""}" style="--p:${t.bg};--s:${t.surface};--d:${t.accent};--t:${t.glow || t.tint}" aria-hidden="true">
     <i class="set-swp"></i><i class="set-sws"></i><i class="set-swd"></i></span>`;
 }
+function swatchPlain(t) { // a little page: the background, a white card with two lines of words and an accent button
+  return `<span class="set-sw set-swpl" style="--p:${t.bg};--s:${t.surface};--d:${t.accent};--x:${t.text};--m:${t.muted || t.text}" aria-hidden="true">
+    <i class="set-plc"></i><i class="set-pl1"></i><i class="set-pl2"></i><i class="set-plb"></i></span>`;
+}
+function swatchSystem() {
+  const a = MINIS.find(x => x.id === "paper"), b = MINIS.find(x => x.id === "graphite");
+  return `<span class="set-sw set-swsys" aria-hidden="true"><span class="set-sysh">${swatchPlain(a)}</span><span class="set-sysh">${swatchPlain(b)}</span></span>`;
+}
+let LOOKSUB = ""; // "" = Appearance, "holo" = Themes › Holographic (Devon, Oct 14, 2026)
+function themeCard(t, wrap, opt) {
+  opt = opt || {};
+  const sw = opt.sys ? swatchSystem() : t.plain ? swatchPlain(t) : swatch(t);
+  const chips = opt.sys ? "" : `<span class="set-thchips"><i style="background:${t.bg}" title="Primary ${t.bg}"></i><i style="background:${t.surface}" title="Secondary ${t.surface}"></i><i style="background:${t.accent}" title="Detail ${t.accent}"></i></span>`;
+  const b = h(`<button type="button" class="set-th" role="radio" aria-checked="${S.theme === t.id}" data-id="${t.id}">
+    ${sw}<span class="set-thname">${esc(t.name)}</span><span class="set-thnote">${esc(t.note)}</span>${chips}</button>`);
+  b.onclick = () => { const was = S.theme; S.theme = t.id; if (!/^pack:/.test(t.id)) S.lastBuilt = t.id; save(); applyAll();
+    if (/^pack:/.test(t.id) && was !== t.id) { const NS = window.InquireNotes; if (NS && NS.toast) NS.toast(`Applied “${esc(t.name)}”.`, { label: "Undo", run: () => { S.theme = was; save(); applyAll(); if (!ov.hidden && tab === "look") show("look"); } }, 6000); } wrap.querySelectorAll(".set-th[data-id]").forEach(x => x.setAttribute("aria-checked", String(x.dataset.id === t.id))); if (wrap._cust) wrap._cust(findTheme(t.id)); };
+  return b;
+}
 function paneLook() {
   // (v0.5.8, Devon) two parts, each under a bold header with a solid line: the app's own look, then the colours of tools and features
   const sect = (t, d) => h(`<div class="set-sect" role="group" aria-label="${t}"><h3 class="set-secth">${t}</h3><p class="set-sectd">${d}</p></div>`);
-  const wrap = h(`<div>${""}<p class="set-lede">Pick the colours of the console. Each square shows the theme's <b>primary</b> (background), <b>secondary</b> (panels) and <b>detail</b> (frames and glow) colours. Topic colours stay the same in every theme so diagrams keep their meaning. To make your own, scroll to <b>Your colours</b> below.</p></div>`);
-  FAMS.forEach(([fam, label]) => {
-    const g = h(`<div class="set-thfam"><h3>${label}</h3><div class="set-thgrid" role="radiogroup" aria-label="${label}"></div></div>`);
-    THEMES.filter(t => t.fam === fam).forEach(t => {
-      const b = h(`<button type="button" class="set-th" role="radio" aria-checked="${S.theme === t.id}" data-id="${t.id}">
-        ${swatch(t)}<span class="set-thname">${esc(t.name)}</span><span class="set-thnote">${esc(t.note)}</span>
-        <span class="set-thchips"><i style="background:${t.bg}" title="Primary ${t.bg}"></i><i style="background:${t.surface}" title="Secondary ${t.surface}"></i><i style="background:${t.accent}" title="Detail ${t.accent}"></i></span></button>`);
-      b.onclick = () => { S.theme = t.id; save(); applyTheme(t.id); wrap.querySelectorAll(".set-th").forEach(x => x.setAttribute("aria-checked", String(x.dataset.id === t.id))); if (wrap._cust) wrap._cust(t); };
-      g.querySelector(".set-thgrid").appendChild(b);
-    });
-    if (!wrap.querySelector(".set-sect")) wrap.insertBefore(sect("Application colours &amp; themes", "The look of NotePath itself: its theme, your own colours, the Main Menu and colour-blind mode."), wrap.querySelector(".set-lede"));
-    wrap.appendChild(g);
-  });
+  if (LOOKSUB === "holo") return paneHolo(sect);
+  setTimeout(syncPacks, 0); // packs added or removed outside this window show up
+  const wrap = h(`<div></div>`);
+  wrap.appendChild(sect("Application colours &amp; themes", "The look of NotePath itself: its theme, your own colours, the Main Menu and colour-blind mode."));
+  wrap.appendChild(h(`<p class="set-lede">Pick the colours of NotePath. Each square shows a theme's background, panel and accent colours. To make your own, use Your colours below. The original console looks are under Holographic themes.</p>`));
+  const g = h(`<div class="set-thfam"><h3>Themes</h3><div class="set-thgrid" role="radiogroup" aria-label="Themes"></div></div>`), grid = g.querySelector(".set-thgrid");
+  grid.appendChild(themeCard({ id: "system", name: "Follow the system", note: "Paper while your computer is in light mode, Graphite in dark mode" }, wrap, { sys: true }));
+  MINIS.forEach(t => grid.appendChild(themeCard(t, wrap)));
+  grid.appendChild(themeCard(THEMES.find(t => t.id === "high-contrast"), wrap));
+  wrap.appendChild(g);
+  const cur = findTheme(S.theme), onHolo = THEMES.some(t => t.id === cur.id && t.id !== "high-contrast");
+  const hb = h(`<button type="button" class="set-holob" data-a="holo">
+      <span class="set-holosw" aria-hidden="true">${["capsuleer", "aurora", "ember", "old-growth"].map(id => swatch(THEMES.find(t => t.id === id))).join("")}</span>
+      <span class="set-holot"><b>Holographic themes</b><small>The original NotePath console: glass panels, glows and corner trim. ${THEMES.length - 1} themes.</small>${onHolo ? `<small class="set-holou">In use: ${esc(cur.name)}</small>` : ""}</span>
+      <span class="set-holoa" aria-hidden="true">›</span></button>`);
+  hb.onclick = () => { LOOKSUB = "holo"; show("look"); };
+  wrap.appendChild(hb);
+  const pk = packsSection(wrap); if (pk) wrap.appendChild(pk);
   wrap.appendChild(customLook(wrap));
   // colour of linked words in notes (links to other notes)
   const lc = h(`<div class="set-thfam"><h3>Note links</h3><div class="set-item set-lcitem"><div><p>Colour of linked words in your notes: words that open another note.
@@ -342,32 +443,91 @@ function paneLook() {
   pane.appendChild(wrap);
 }
 
+const kb = n => n >= 1048576 ? (n / 1048576).toFixed(1) + " MB" : Math.max(0.1, n / 1024).toFixed(1) + " KB";
+const WEIGHTS = { light: "Light pack", medium: "Medium pack", rich: "Rich pack" };
+// Theme packs you installed: a card each (pick, weight, size on disk, Remove), the storage line, Install a pack from a file…
+function packsSection(wrap) {
+  const B = bridgeThemes(); if (!B && !S.packs.length) return null;
+  const total = S.packs.reduce((a, p) => a + (p.bytes || 0), 0);
+  const el = h(`<div class="set-thfam set-packs"><h3>Theme packs</h3>
+    <p class="set-cl">${S.packs.length ? `Theme packs use ${kb(total)} on this computer. They work without a connection.` : "No theme packs installed. Packs you add appear here."}</p>
+    <div class="set-thgrid" role="radiogroup" aria-label="Theme packs"></div>
+    ${B ? `<div class="set-packrow"><button type="button" class="btn-s" data-a="packfile">Install a pack from a file…</button><span class="set-msg" role="status"></span></div>` : ""}</div>`);
+  const grid = el.querySelector(".set-thgrid"), msg = el.querySelector(".set-msg");
+  S.packs.forEach(p => {
+    const t = packTheme(p.id); if (!t) return;
+    const card = themeCard(t, wrap);
+    card.querySelector(".set-thnote").textContent = `${WEIGHTS[p.weight] || WEIGHTS.light} · ${kb(p.bytes || 0)}`;
+    const w = h(`<div class="set-pwrap"></div>`); w.appendChild(card);
+    const del = h(`<button type="button" class="set-pdel" data-premove="${esc(p.id)}" title="Remove ${esc(p.name)}" aria-label="Remove the theme pack ${esc(p.name)}">✕</button>`);
+    del.onclick = async () => {
+      if (del.dataset.armed !== "1") { del.dataset.armed = "1"; del.textContent = "Remove?"; del.classList.add("armed"); return; }
+      const r = await B.remove(p.id).catch(() => null);
+      if (S.theme === "pack:" + p.id) S.theme = S.lastBuilt && !/^pack:/.test(S.lastBuilt) ? S.lastBuilt : "system";
+      S.packs = S.packs.filter(x => x.id !== p.id); save(); applyAll(); show("look");
+      const m2 = pane.querySelector(".set-packs .set-msg"); if (m2) say(m2, r && r.ok ? `Removed “${p.name}”.` : `“${p.name}” was already gone.`, true);
+    };
+    w.appendChild(del); grid.appendChild(w);
+  });
+  if (!S.packs.length) grid.remove();
+  const f = el.querySelector('[data-a="packfile"]');
+  if (f) f.onclick = async () => {
+    say(msg, "Choose a .nptheme file…");
+    let r; try { r = await B.installFile(); } catch (e) { r = { ok: false, error: "Couldn’t install that pack." }; }
+    if (!r || r.canceled) { say(msg, ""); return; }
+    if (!r.ok || !packOk(r.pack)) { say(msg, r.error || "Couldn’t install that pack."); return; }
+    S.packs = S.packs.filter(x => x.id !== r.pack.id).concat([r.pack]); save(); show("look");
+    const m2 = pane.querySelector(".set-packs .set-msg"); if (m2) say(m2, `Installed “${r.pack.name}”. Pick it above to use it.`, true);
+  };
+  return el;
+}
+
+/* Themes › Holographic: the console themes (Deep Space, Obsidian … Aurora Glass), grouped as before. Built in for now (Phase 1);
+   Phase 2 makes them a download, kept free for installs from before the change (S.holoKeep). */
+function paneHolo(sect) {
+  const wrap = h(`<div class="set-holo"></div>`);
+  const back = h(`<button type="button" class="btn-s set-back" data-a="lookback">‹ Appearance</button>`);
+  back.onclick = () => { LOOKSUB = ""; show("look"); };
+  wrap.appendChild(back);
+  wrap.appendChild(sect("Holographic themes", "The original NotePath console: dark glass windows, glowing frames, corner trim and letter-spaced labels."));
+  FAMS.forEach(([fam, label]) => {
+    const list = THEMES.filter(t => t.fam === fam && t.id !== "high-contrast");
+    if (!list.length) return;
+    const g = h(`<div class="set-thfam"><h3>${label}</h3><div class="set-thgrid" role="radiogroup" aria-label="${label}"></div></div>`);
+    list.forEach(t => g.querySelector(".set-thgrid").appendChild(themeCard(t, wrap)));
+    wrap.appendChild(g);
+  });
+  pane.appendChild(wrap);
+  setTimeout(() => { try { back.focus({ preventScroll: true }); } catch (e) {} }, 0);
+}
+
 /* Your colours: three pickers (live), a preview square, and three preset slots drawn like the theme cards */
-const CFIELDS = [["bg", "Primary", "Background"], ["surface", "Secondary", "Panels"], ["accent", "Detail", "Frames & glow"]];
+const CFIELDS = [["bg", "Background", "Around the panels"], ["surface", "Panels", "Pages and windows"], ["accent", "Accent", "Buttons, links, selection"]];
 function customLook(wrap) {
-  const cur = () => { const t = findTheme(S.theme); return { bg: t.bg, surface: t.surface, accent: t.accent, glass: !!t.glass }; };
+  // (Oct 14, 2026) Your colours make plain-style looks; presets saved before then (no plain flag) keep the console look they had
+  const cur = () => { const t = findTheme(S.theme); return { bg: t.bg, surface: t.surface, accent: t.accent, glass: false, plain: true }; };
   let C = S.theme === "custom" && S.custom ? Object.assign({}, S.custom) : cur();
   const card = (p, i) => {
     const id = "preset-" + (i + 1), t = userTheme(p, id, p && p.name);
     if (!t) return `<div class="set-pwrap"><div class="set-th set-pempty"><span class="set-sw set-swempty" aria-hidden="true">${i + 1}</span><span class="set-thname">Preset ${i + 1}</span><span class="set-thnote">Empty. Pick colours above, then save them here.</span></div></div>`;
     return `<div class="set-pwrap"><button type="button" class="set-th" role="radio" aria-checked="${S.theme === id}" data-id="${id}">
-      ${swatch(t)}<span class="set-thname">${esc(t.name)}</span><span class="set-thnote">Your preset · slot ${i + 1}</span>
+      ${t.plain ? swatchPlain(t) : swatch(t)}<span class="set-thname">${esc(t.name)}</span><span class="set-thnote">Your preset · slot ${i + 1}</span>
       <span class="set-thchips"><i style="background:${t.bg}" title="Primary ${t.bg}"></i><i style="background:${t.surface}" title="Secondary ${t.surface}"></i><i style="background:${t.accent}" title="Detail ${t.accent}"></i></span></button>
       <button type="button" class="set-pdel" data-del="${i}" title="Delete preset ${i + 1}" aria-label="Delete preset ${esc(t.name)}">✕</button></div>`;
   };
   const el = h(`<div class="set-thfam set-cust"><h3>Your colours</h3>
-    <p class="set-cl">Choose your own <b>primary</b>, <b>secondary</b> and <b>detail</b> colours; the console changes as you pick. Save a look into one of three presets to come back to it.</p>
+    <p class="set-cl">Choose your own background, panel and accent colours; NotePath changes as you pick. The words take a colour that reads on your panels. Save a look into one of three presets to come back to it.</p>
     <div class="set-cedit"><span class="set-cprev"></span>
       <div class="set-cfields">${CFIELDS.map(([k, n, d]) => `<div class="set-cf"><span class="set-cfl">${n}<small>${d}</small></span>
         <label class="set-cpick" style="--c:${C[k]}"><input type="color" data-c="${k}" value="${C[k]}" aria-label="${n} colour"></label>
         <input class="set-hex" data-h="${k}" value="${C[k].toUpperCase()}" maxlength="7" spellcheck="false" autocomplete="off" aria-label="${n} colour, hex"></div>`).join("")}
-        <label class="set-cglass"><input type="checkbox" data-glass${C.glass ? " checked" : ""}> Glass panels <small>translucent, blurred</small></label></div></div>
+</div></div>
     <div class="set-csave"><input class="set-cname" maxlength="24" placeholder="Name this look" aria-label="Preset name">
       <span class="set-cto">Save to</span>${[0, 1, 2].map(i => `<button type="button" class="btn-s" data-save="${i}">Preset ${i + 1}</button>`).join("")}<span class="set-msg" role="status"></span></div>
     <div class="set-thgrid set-presets" role="radiogroup" aria-label="Your presets">${S.presets.map(card).join("")}</div></div>`);
   const msg = el.querySelector(".set-msg");
-  const prev = () => { el.querySelector(".set-cprev").innerHTML = swatch({ bg: C.bg, surface: C.surface, accent: C.accent, tint: mix(C.accent, C.surface, .45), glass: C.glass }); };
-  const fill = () => { CFIELDS.forEach(([k]) => { el.querySelector(`[data-c="${k}"]`).value = C[k]; el.querySelector(`[data-h="${k}"]`).value = C[k].toUpperCase(); el.querySelector(`[data-c="${k}"]`).parentNode.style.setProperty("--c", C[k]); }); el.querySelector("[data-glass]").checked = !!C.glass; prev(); };
+  const prev = () => { const t = userTheme(C, "custom", ""); el.querySelector(".set-cprev").innerHTML = t && t.plain ? swatchPlain(Object.assign({}, t, { text: t.text || "#F6F8FB" })) : swatch({ bg: C.bg, surface: C.surface, accent: C.accent, tint: mix(C.accent, C.surface, .45), glass: C.glass }); };
+  const fill = () => { CFIELDS.forEach(([k]) => { el.querySelector(`[data-c="${k}"]`).value = C[k]; el.querySelector(`[data-h="${k}"]`).value = C[k].toUpperCase(); el.querySelector(`[data-c="${k}"]`).parentNode.style.setProperty("--c", C[k]); }); prev(); };
   const mark = () => wrap.querySelectorAll(".set-th[data-id]").forEach(x => x.setAttribute("aria-checked", String(x.dataset.id === S.theme)));
   const live = keep => { S.custom = Object.assign({}, C); S.theme = "custom"; applyTheme("custom"); mark(); prev(); if (keep) save(); };
   CFIELDS.forEach(([k]) => {
@@ -378,14 +538,13 @@ function customLook(wrap) {
       if (hexOk(v)) { C[k] = v.toLowerCase(); col.value = C[k]; col.parentNode.style.setProperty("--c", C[k]); hx.classList.remove("bad"); live(true); } else hx.classList.add("bad"); };
     hx.onblur = () => { hx.value = C[k].toUpperCase(); hx.classList.remove("bad"); };
   });
-  el.querySelector("[data-glass]").onchange = e => { C.glass = e.target.checked; live(true); };
   let armed = null;
   el.querySelectorAll("[data-save]").forEach(b => b.onclick = () => {
     const i = +b.dataset.save, had = S.presets[i];
     if (had && armed !== b) { if (armed) armed.textContent = "Preset " + (+armed.dataset.save + 1); armed = b; b.textContent = "Replace?"; say(msg, `Preset ${i + 1} holds “${had.name}”. Click Replace? to save over it.`); return; }
     armed = null;
     const name = el.querySelector(".set-cname").value.trim() || "Preset " + (i + 1);
-    S.presets[i] = { name, bg: C.bg, surface: C.surface, accent: C.accent, glass: !!C.glass }; S.theme = "preset-" + (i + 1); save(); applyTheme(S.theme);
+    S.presets[i] = { name, bg: C.bg, surface: C.surface, accent: C.accent, glass: !!C.glass, plain: !!C.plain }; S.theme = "preset-" + (i + 1); save(); applyTheme(S.theme);
     redraw(`Saved “${name}” as preset ${i + 1}.`);
   });
   el.querySelector(".set-presets").addEventListener("click", e => {
@@ -394,10 +553,10 @@ function customLook(wrap) {
       const nm = S.presets[i].name; S.presets[i] = null; if (S.theme === "preset-" + (i + 1)) { S.custom = Object.assign({}, C); S.theme = "custom"; } save(); applyTheme(S.theme); redraw(`Deleted “${nm}”.`); return; }
     const b = e.target.closest(".set-th[data-id]"); if (!b) return;
     S.theme = b.dataset.id; save(); applyTheme(S.theme); mark();
-    const p = S.presets[+b.dataset.id.slice(7) - 1]; C = { bg: p.bg, surface: p.surface, accent: p.accent, glass: !!p.glass }; fill(); el.querySelector(".set-cname").value = p.name;
+    const p = S.presets[+b.dataset.id.slice(7) - 1]; C = { bg: p.bg, surface: p.surface, accent: p.accent, glass: !!p.glass, plain: !!p.plain }; fill(); el.querySelector(".set-cname").value = p.name;
   });
   function redraw(note) { const y = pane.scrollTop; show("look"); pane.scrollTop = y; const m2 = pane.querySelector(".set-cust .set-msg"); if (m2 && note) say(m2, note, true); }
-  wrap._cust = t => { C = { bg: t.bg, surface: t.surface, accent: t.accent, glass: !!t.glass }; fill(); }; // a built-in theme picked: start from its colours
+  wrap._cust = t => { C = { bg: t.bg, surface: t.surface, accent: t.accent, glass: false, plain: true }; fill(); }; // a built-in theme picked: start from its colours
   prev();
   return el;
 }

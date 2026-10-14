@@ -1,0 +1,144 @@
+/* NotePath base styles, cut from Inquire's style.css (app frame, console windows, menu slots, buttons, desktop chrome). Single dark look; Settings themes rewrite the surface variables. */
+[hidden]{display:none!important}
+:root{
+  color-scheme: dark;
+  --void:#070A10; --ink:#0B1019; --panel:#111827; --panel-2:#162033; --panel-3:#1B2740;
+  --line:#243149; --line-2:#34445F; --text:#DDE4EF; --muted:#8B97AE; --faint:#58647D;
+  --amber:#F2B84B; --cyan:#5CC8E0; --pink:#F07CA0; --violet:#B49BFF; --green:#7BD88F; --magenta:#D97AE6; --lime:#B5D65A; --red:#E5675B;
+  --g-stem:#5CC8E0; --g-hum:#D97AE6; --g-soc:#B5D65A; /* subject-group colours: STEM cyan (as its Subjects heading), Arts & Humanities magenta, Social Sciences lime */
+  --glow:rgba(92,200,224,.35);
+  /* theme surfaces (Settings → Appearance rewrites these; defaults = "Capsuleer") */
+  --tint-1:rgba(92,200,224,.10); --tint-2:rgba(180,155,255,.08); --chrome-1:#0F1624; --chrome-2:#0A0F18;
+  --win-1:rgba(22,32,51,.92); --win-2:rgba(13,19,31,.94); --slot-1:rgba(27,39,64,.85); --slot-2:rgba(14,21,34,.9);
+  --slot-h1:rgba(35,55,86,.9); --slot-h2:rgba(14,24,40,.95); --wash:rgba(11,16,25,.7); --sky:#101A2C; --stage-sky:#16203A; --frame:var(--cyan); --blur:0px;
+  /* neutral (locked / planned) tree nodes, node orbs and the era bar: settings.js themeVars recomputes these per theme; amber (ready) and green (mastered) never change */
+  --node-1:#1C2537; --node-2:#121927; --node-line:#3A475F; --node-line-2:#4A5874; --node-text:#9AA6BC; --orb-1:#3A4A66; --orb-2:#0D1422; --era-1:rgba(28,42,68,.95); --era-2:rgba(16,24,39,.95);
+  --math:"STIX Two Text","Noto Sans Symbols","Cambria Math",Cambria,Georgia,serif;
+  --sans:"IBM Plex Sans","Noto Sans Symbols",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --ui:"Saira Semi Condensed","Arial Narrow","IBM Plex Sans",sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%;background:var(--void)}
+body{margin:0;color:var(--text);font:15px/1.6 var(--sans);-webkit-font-smoothing:antialiased;overflow:hidden}
+button{font:inherit;color:inherit}
+button:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--frame);outline-offset:2px}
+::selection{background:color-mix(in srgb,var(--frame) 35%,transparent)}
+
+/* ---------- math typography (shared with content) ---------- */
+.m{font-family:var(--math);font-style:normal;white-space:nowrap}
+.m i,.display i{font-style:italic}
+sup{font-size:.68em;vertical-align:.62em;line-height:0}
+sub{font-size:.68em;vertical-align:-.25em;line-height:0}
+.c1{color:var(--amber)} .c2{color:var(--cyan)} .c3{color:var(--pink)} .c4{color:var(--violet)} .c5{color:var(--green)}
+.fr{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;line-height:1.05;font-size:.86em;margin:0 .12em}
+.fr>span:first-child{border-bottom:1px solid currentColor;padding:0 .15em}
+.fr>span{display:block}
+.mat{display:inline-block;position:relative;vertical-align:middle;padding:0 .38em;margin:0 .2em;line-height:1.25}
+.mat::before,.mat::after{content:"";position:absolute;top:.05em;bottom:.05em;width:.28em;border:1.5px solid currentColor}
+.mat::before{left:0;border-right:none}.mat::after{right:0;border-left:none}
+.mat.det::before,.mat.det::after{width:0;border-top:none;border-bottom:none}
+.mat>table{border-collapse:collapse;font-size:.95em}
+.mat td{padding:.06em .42em;text-align:center}
+.mat.aug td:nth-last-child(2){border-right:1px solid currentColor;padding-right:.55em}
+.mat.aug td:last-child{padding-left:.55em}
+.mat td.bar{border-right:1px solid currentColor;padding-right:.55em}
+.mat td.bar+td{padding-left:.55em}
+.display{font:400 18px/1.9 var(--math);background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:12px 16px;overflow-x:auto;white-space:nowrap;margin:10px 0}
+/* Computer Science: inline code and code blocks in page text (colours c1–c5 work inside) */
+code{font:400 .92em/1.4 var(--mono);color:var(--text);background:color-mix(in srgb,var(--frame) 7%,transparent);border:1px solid var(--line);border-radius:3px;padding:0 4px;white-space:pre-wrap}
+pre.code{font:400 14px/1.6 var(--mono);color:var(--text);background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--violet);border-radius:4px;padding:10px 14px;margin:10px 0;overflow-x:auto;white-space:pre}
+pre.code code{background:none;border:0;padding:0;font-size:inherit}
+pre.code .out{color:var(--pink)}
+/* ---------- app frame ---------- */
+#app{height:100%;display:grid;grid-template-rows:auto minmax(0,1fr);grid-template-columns:minmax(0,1fr);
+  background:
+   radial-gradient(1200px 600px at 78% -10%, var(--tint-1), transparent 60%),
+   radial-gradient(900px 700px at -10% 110%, var(--tint-2), transparent 60%),
+   var(--void)}
+.topbar{display:flex;align-items:center;gap:16px;padding:8px 16px;padding-top:calc(8px + env(safe-area-inset-top,0px));
+  border-bottom:1px solid var(--line);background:linear-gradient(180deg,var(--chrome-1),var(--chrome-2));min-height:44px}
+.brand{display:flex;align-items:center;gap:10px;cursor:pointer;background:none;border:0;padding:0}
+.brand-mark{width:26px;height:26px;border:1px solid var(--frame);display:grid;place-items:center;font:600 14px/1 var(--math);color:var(--frame);
+  clip-path:polygon(0 0,80% 0,100% 20%,100% 100%,20% 100%,0 80%);background:color-mix(in srgb,var(--frame) 8%,transparent)}
+.brand-mark{width:30px;height:30px;border:0;clip-path:none;background:none;display:block}
+.brand-mark img{display:block;width:30px;height:30px}
+.brand-name{font:600 15px/1 var(--ui);letter-spacing:.28em;text-transform:uppercase}
+.crumbs{display:flex;align-items:center;gap:6px;font:500 13px/1 var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);min-width:0;overflow:hidden;white-space:nowrap}
+.crumbs button{background:none;border:0;padding:4px 2px;color:var(--muted);cursor:pointer;letter-spacing:inherit;text-transform:inherit}
+.crumbs button:hover{color:var(--text)}
+.crumbs .sep{color:var(--faint)}
+.crumbs .here{color:var(--text)}
+.topstat{background:none;border:1px solid transparent;border-radius:2px;padding:5px 8px;cursor:pointer;margin-left:auto;display:flex;align-items:center;gap:10px;font:500 12px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.topstat:hover{border-color:var(--line-2);color:var(--text)}
+.topstat:focus-visible{outline:2px solid var(--frame);outline-offset:1px}
+.topstat.tracked{color:var(--text)}
+.stat-star{color:var(--amber);margin-right:6px;letter-spacing:0}
+/* screen transition (go() in app.js): the same fade-in as the Settings window */
+@keyframes vt-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.vt-in{animation:vt-in .45s cubic-bezier(.2,.7,.2,1)}
+.meter{width:120px;height:6px;background:var(--panel-3);border:1px solid var(--line);position:relative}
+.meter>i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,var(--green),#B8F0C4);width:0}
+.view{min-height:0;position:relative}
+
+/* EVE window panel */
+.win{background:linear-gradient(180deg,var(--win-1),var(--win-2));border:1px solid var(--line);position:relative}
+.win::before{content:"";position:absolute;left:-1px;top:-1px;width:14px;height:14px;border-left:2px solid var(--frame);border-top:2px solid var(--frame);opacity:.7;pointer-events:none}
+.win::after{content:"";position:absolute;right:-1px;bottom:-1px;width:14px;height:14px;border-right:2px solid var(--frame);border-bottom:2px solid var(--frame);opacity:.35;pointer-events:none}
+.win-h{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,rgba(255,255,255,.04),transparent);
+  font:600 12px/1 var(--ui);letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+.win-h .dot{width:6px;height:6px;background:var(--frame);box-shadow:0 0 8px var(--frame)}
+.eyebrow{font:500 12px/1 var(--ui);letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+
+/* ---------- menu screens ---------- */
+.screen{height:100%;overflow:auto;padding-inline:16px;padding-block:clamp(24px,6vh,64px) 48px}
+.screen-in{max-width:1080px;margin:0 auto;display:grid;gap:28px}
+.hello h1{font:400 clamp(34px,5vw,56px)/1.05 var(--math);margin:0;letter-spacing:-.005em;text-wrap:balance}
+.hello p{color:var(--muted);max-width:60ch;margin:12px 0 0}
+.slots{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.subj-group .slots{grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+.slot{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center;padding:18px;min-height:112px;
+  background:linear-gradient(180deg,var(--slot-1),var(--slot-2));border:1px solid var(--line-2);position:relative;transition:border-color .2s,background .2s}
+.slot:hover{border-color:var(--frame);background:linear-gradient(180deg,var(--slot-h1),var(--slot-h2))}
+.slot:focus-visible{outline:2px solid var(--frame);outline-offset:2px}
+.slot .glyph{width:56px;height:56px;display:grid;place-items:center;font:400 28px/1 var(--math);color:var(--frame);border:1px solid var(--line-2);border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,color-mix(in srgb,var(--frame) 25%,transparent),rgba(11,16,25,.8) 70%)}
+.slot h3{margin:0;font:600 18px/1.2 var(--ui);letter-spacing:.14em;text-transform:uppercase}
+.slot p{margin:4px 0 0;color:var(--muted);font-size:13px;line-height:1.45}
+.slot .tag{position:absolute;right:10px;bottom:8px;font:500 10px/1 var(--ui);letter-spacing:.18em;text-transform:uppercase;color:var(--green)}
+.slot.locked{cursor:default;opacity:.5;border-style:dashed}
+.slot.locked:hover{border-color:var(--line-2);background:linear-gradient(180deg,var(--slot-1),var(--slot-2))}
+.slot.locked .glyph{color:var(--faint)}
+.slot.locked .tag{color:var(--faint)}
+.slot.big{min-height:150px}
+
+.search{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--ink);padding:6px 10px}
+.search input{all:unset;flex:1;font:13px var(--sans);color:var(--text);min-width:0}
+.search input::placeholder{color:var(--faint)}
+.search svg{flex:none}
+/* buttons */
+.btn{font:600 13px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--on-sig,var(--ink));background:var(--amber);border:0;border-radius:2px;padding:10px 14px;cursor:pointer;min-width:84px}
+.btn:hover{filter:brightness(1.1)}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line-2)}
+.btn.ghost:hover{border-color:var(--frame);color:var(--frame)}
+.btn.good{background:var(--green)}
+.btn-s{font:600 11px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);background:var(--panel-2);border:1px solid var(--line-2);border-radius:2px;padding:6px 9px;cursor:pointer}
+.btn-s:hover{color:var(--text);border-color:var(--frame)}
+.btn-s[aria-pressed="true"]{color:var(--on-sig,var(--ink));background:var(--amber);border-color:var(--amber)}
+
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+/* ---------- desktop app chrome ---------- */
+.desktop .topbar{-webkit-app-region:drag}
+.desktop .topbar button,.desktop .topbar input{-webkit-app-region:no-drag}
+/* windows over the app sit on top of the top bar's drag strip; Electron still treats the strip as "drag" through them, so a
+   window's ✕ (and anything else up there) only clicked at its edges. Overlays opt out, and the strip stops dragging while one is open. */
+.desktop .mw-ov,.desktop .set-ov,.desktop .ask-ov,.desktop .nr-panel,.desktop .tm-menu,.desktop .np-pop,.desktop .np-ck{-webkit-app-region:no-drag}
+.desktop body.mw-open .topbar,.desktop body.set-open .topbar,.desktop body.ask-open .topbar{-webkit-app-region:no-drag}
+.os-darwin .topbar{padding-left:84px}
+.verline{display:flex;align-items:center;gap:12px;font:500 12px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+.upd{position:fixed;right:16px;top:calc(56px + env(safe-area-inset-top,0px));z-index:50;display:flex;flex-wrap:wrap;align-items:center;gap:10px;max-width:min(560px,calc(100% - 32px));
+  padding:10px 14px;background:linear-gradient(180deg,var(--panel-3),var(--panel));border:1px solid var(--frame);box-shadow:0 8px 30px rgba(0,0,0,.5),0 0 18px var(--glow);font-size:13.5px;color:var(--text)}
+.upd .dot{width:7px;height:7px;background:var(--frame);box-shadow:0 0 8px var(--frame);flex:none}
+.upd .dot.err{background:var(--red);box-shadow:0 0 8px var(--red)}
+.upd .btn{padding:8px 12px}
+

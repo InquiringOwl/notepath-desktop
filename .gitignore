@@ -9,3 +9,5 @@ __pycache__/
 app/vendor/
 ai.config.json
 Claude outputs/*.tgz
+dist-themes/
+*.pem

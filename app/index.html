@@ -125,14 +125,14 @@ pre.code .out{color:var(--pink)}
 .search input::placeholder{color:var(--faint)}
 .search svg{flex:none}
 /* buttons */
-.btn{font:600 13px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--ink);background:var(--amber);border:0;border-radius:2px;padding:10px 14px;cursor:pointer;min-width:84px}
+.btn{font:600 13px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--on-sig,var(--ink));background:var(--amber);border:0;border-radius:2px;padding:10px 14px;cursor:pointer;min-width:84px}
 .btn:hover{filter:brightness(1.1)}
 .btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line-2)}
 .btn.ghost:hover{border-color:var(--frame);color:var(--frame)}
 .btn.good{background:var(--green)}
 .btn-s{font:600 11px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);background:var(--panel-2);border:1px solid var(--line-2);border-radius:2px;padding:6px 9px;cursor:pointer}
 .btn-s:hover{color:var(--text);border-color:var(--frame)}
-.btn-s[aria-pressed="true"]{color:var(--ink);background:var(--amber);border-color:var(--amber)}
+.btn-s[aria-pressed="true"]{color:var(--on-sig,var(--ink));background:var(--amber);border-color:var(--amber)}
 
 .num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 /* ---------- desktop app chrome ---------- */
@@ -175,7 +175,7 @@ body.set-open .set-win{transform:none}
 .set-x:hover{color:var(--text);border-color:var(--line-2)}
 .set-body{flex:1;min-height:0;display:grid;grid-template-columns:200px minmax(0,1fr)}
 .set-win.is-doc .set-body{grid-template-columns:minmax(0,1fr)}
-.set-tabs{display:flex;flex-direction:column;gap:2px;padding:12px 8px;border-right:1px solid var(--line);background:rgba(0,0,0,.12)}
+.set-tabs{display:flex;flex-direction:column;gap:2px;padding:12px 8px;border-right:1px solid var(--line);background:color-mix(in srgb,var(--sh,#000) 12%,transparent)}
 .set-tab{background:none;border:0;text-align:left;cursor:pointer;padding:9px 12px;font:600 12px/1.2 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);position:relative}
 .set-tab:hover{color:var(--text);background:rgba(255,255,255,.03)}
 .set-tab[aria-selected="true"]{color:var(--text);background:linear-gradient(90deg,color-mix(in srgb,var(--frame) 18%,transparent),transparent)}
@@ -194,7 +194,7 @@ body.set-open .set-win{transform:none}
 .set-thfam>h3{color:var(--muted);margin-bottom:8px}
 .set-thgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .set-th{display:grid;grid-template-columns:64px minmax(0,1fr);grid-template-rows:auto auto 1fr;column-gap:12px;row-gap:2px;align-items:start;text-align:left;cursor:pointer;
-  padding:10px;background:rgba(0,0,0,.18);border:1px solid var(--line);border-radius:3px;transition:border-color .15s,background .15s}
+  padding:10px;background:color-mix(in srgb,var(--sh,#000) 18%,transparent);border:1px solid var(--line);border-radius:3px;transition:border-color .15s,background .15s}
 .set-th:hover{border-color:var(--line-2);background:rgba(255,255,255,.03)}
 .set-th[aria-checked="true"]{border-color:var(--frame);box-shadow:0 0 0 1px var(--frame),0 0 16px var(--glow)}
 .set-sw{grid-row:1/4;width:64px;height:64px;position:relative;display:block;background:var(--p);border:1px solid rgba(255,255,255,.14);overflow:hidden}
@@ -217,7 +217,7 @@ body.set-open .set-win{transform:none}
 .set-seg{display:inline-flex;border:1px solid var(--line-2);border-radius:2px;overflow:hidden}
 .set-seg button{background:none;border:0;border-left:1px solid var(--line-2);padding:7px 10px;cursor:pointer;font:600 11px/1 var(--ui);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 .set-seg button:first-child{border-left:0}
-.set-seg button[aria-checked="true"]{background:var(--frame);color:var(--ink)}
+.set-seg button[aria-checked="true"]{background:var(--frame);color:var(--on-accent,var(--ink))}
 .set-tog{position:relative;width:42px;height:22px;cursor:pointer;display:inline-block}
 .set-tog input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
 .set-tog span{position:absolute;inset:0;border:1px solid var(--line-2);border-radius:11px;background:var(--ink);transition:background .2s,border-color .2s}
@@ -295,7 +295,7 @@ a.btn-s{text-decoration:none;display:inline-block}
 @media (max-width:700px){ .set-fader{width:100%} .set-keys>div{grid-template-columns:minmax(0,1fr);gap:6px} }
 
 /* Usage: scroll test box */
-.set-scrolltry{margin-top:14px;height:120px;overflow:auto;border:1px dashed var(--line-2);border-radius:2px;padding:4px 12px;background:rgba(0,0,0,.15);font-size:13px;color:var(--muted)}
+.set-scrolltry{margin-top:14px;height:120px;overflow:auto;border:1px dashed var(--line-2);border-radius:2px;padding:4px 12px;background:color-mix(in srgb,var(--sh,#000) 15%,transparent);font-size:13px;color:var(--muted)}
 .set-scrolltry p{margin:6px 0}
 .set-scrolltry:focus-visible{outline:2px solid var(--frame);outline-offset:2px}
 
@@ -349,7 +349,7 @@ body.ask-open .ask-win{transform:none}
 /* Your colours + presets (Appearance) */
 .set-cl{margin:0 0 12px;font-size:13px;color:var(--muted);max-width:66ch}
 .set-cl b{color:var(--text);font-weight:600}
-.set-cedit{display:grid;grid-template-columns:96px minmax(0,1fr);gap:16px;align-items:start;padding:14px;border:1px solid var(--line);background:rgba(0,0,0,.18);border-radius:3px}
+.set-cedit{display:grid;grid-template-columns:96px minmax(0,1fr);gap:16px;align-items:start;padding:14px;border:1px solid var(--line);background:color-mix(in srgb,var(--sh,#000) 18%,transparent);border-radius:3px}
 .set-cprev .set-sw{width:96px;height:96px}
 .set-cfields{display:grid;gap:8px}
 .set-cf{display:grid;grid-template-columns:150px 40px 96px;gap:10px;align-items:center}
@@ -383,7 +383,7 @@ body.ask-open .ask-win{transform:none}
 /* New note: which kind (NotePath) */
 .ask-win:has(.ask-kinds){width:min(560px,100%)}
 .ask-kinds{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:6px}
-.ask-kind{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:5px;padding:12px;border:1px solid var(--line-2);border-radius:3px;background:rgba(0,0,0,.18);color:var(--muted);text-align:left}
+.ask-kind{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:5px;padding:12px;border:1px solid var(--line-2);border-radius:3px;background:color-mix(in srgb,var(--sh,#000) 18%,transparent);color:var(--muted);text-align:left}
 .ask-kind b{font:600 13px/1.2 var(--sans);color:var(--text)}
 .ask-kind small{font:400 11.5px/1.35 var(--sans)}
 .ask-kg{font:600 20px/1 var(--math);color:var(--frame)}
@@ -413,6 +413,39 @@ body.ask-open .ask-win{transform:none}
 .set-win div.set-sect>h3.set-secth{margin:0 0 4px;font:700 17px/1.25 var(--sans);letter-spacing:.01em;text-transform:none;color:var(--text)}
 .set-sectd{margin:0;font:400 12.5px/1.45 var(--sans);color:var(--muted)}
 
+/* ---------- Appearance (theme packs Phase 1, Devon Oct 14, 2026): plain swatches, Follow the system, Themes › Holographic ---------- */
+.set-swpl{background:var(--p);border-color:color-mix(in srgb,var(--x) 14%,transparent);border-radius:8px}
+.set-swpl i{position:absolute;display:block}
+.set-plc{left:10px;top:10px;right:10px;bottom:10px;background:var(--s);border-radius:5px;border:1px solid color-mix(in srgb,var(--x) 12%,transparent)}
+.set-pl1{left:17px;top:19px;width:26px;height:4px;border-radius:2px;background:var(--x)}
+.set-pl2{left:17px;top:28px;width:32px;height:3px;border-radius:2px;background:var(--m);opacity:.7}
+.set-plb{left:17px;bottom:17px;width:18px;height:8px;border-radius:3px;background:var(--d)}
+.set-swsys{display:flex!important;padding:0;border-radius:8px;border-color:var(--line-2);background:none}
+.set-sysh{flex:1;position:relative;overflow:hidden}
+.set-sysh .set-sw{position:absolute;top:-1px;bottom:-1px;width:64px;height:auto;border:0;border-radius:0}
+.set-sysh:first-child .set-sw{left:-1px}
+.set-sysh:last-child .set-sw{right:-1px}
+.set-holob{all:unset;box-sizing:border-box;cursor:pointer;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:14px;width:100%;
+  margin:0 0 18px;padding:12px 14px;border:1px solid var(--line-2);border-radius:3px;background:color-mix(in srgb,var(--sh,#000) 12%,transparent)}
+.set-holob:hover{border-color:var(--frame)}
+.set-holob:focus-visible{outline:2px solid var(--frame);outline-offset:2px}
+.set-holosw{display:flex}
+.set-holosw .set-sw{width:40px;height:40px;margin-right:-10px;border-radius:4px;box-shadow:0 0 0 2px var(--panel)}
+.set-holosw .set-sws{left:7px;top:9px;right:5px;bottom:5px}
+.set-holosw .set-swd{left:7px;top:9px;width:7px;height:7px}
+.set-holosw .set-swd::after{left:5px;top:5px;width:16px;height:2px}
+.set-holot{display:grid;gap:3px;padding-left:10px}
+.set-holot b{font-size:14px;color:var(--text)}
+.set-holot small{font-size:12.5px;color:var(--muted);line-height:1.4}
+.set-holoa{font-size:22px;color:var(--muted)}
+.set-back{margin:0 0 12px}
+html[data-style="plain"] .set-holob,html[data-style="plain"] .set-th{border-radius:8px}
+html[data-tone="light"] .set-thchips i{border-color:rgba(0,0,0,.18)}
+.set-packrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:10px}
+.set-packs .set-thgrid{margin-top:8px}
+.set-swsys{direction:ltr} /* the Paper / Graphite halves stay in their order in right-to-left languages */
+[dir="rtl"] .set-holoa{transform:scaleX(-1)}
+
 /* Menu notes strip (.mnotes), My notes (.nb), rich editor, toolbar, widgets, picker, right-click menu, toast, windows over the app (.mw-*). Cut from Inquire's menu.css (display box, Assist dock and Achievements removed). */
 /* ---- notes on the menu ---- */
 .mnotes{border:1px solid var(--line);background:linear-gradient(180deg,var(--slot-1),var(--slot-2));padding:14px 16px}
@@ -423,11 +456,11 @@ body.ask-open .ask-win{transform:none}
 .mnotes-go{margin-right:auto;font:600 11px/1 var(--ui);letter-spacing:.16em;text-transform:uppercase;color:var(--faint);transition:color .15s}
 .mnotes-h:hover .mnotes-go{color:var(--frame)}
 .mnotes-new{font:600 13px/1 var(--ui);letter-spacing:.16em;padding:10px 16px;color:var(--text);border-color:color-mix(in srgb,var(--frame) 55%,var(--line-2));background:color-mix(in srgb,var(--frame) 12%,var(--panel-2))}
-.mnotes-new:hover{color:var(--ink);background:var(--frame);border-color:var(--frame);box-shadow:0 0 16px color-mix(in srgb,var(--frame) 45%,transparent)}
+.mnotes-new:hover{color:var(--on-accent,var(--ink));background:var(--frame);border-color:var(--frame);box-shadow:0 0 16px color-mix(in srgb,var(--frame) 45%,transparent)}
 .mnotes-h h2{margin:0;font:600 15px/1 var(--ui);letter-spacing:.2em;text-transform:uppercase}
 .mnotes-h .num{color:var(--faint);font:500 12px/1 var(--mono)}
 .mnotes-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-.mnote{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:6px;padding:12px 14px;min-height:96px;border:1px solid var(--line);border-left:3px solid var(--frame);background:rgba(0,0,0,.18)}
+.mnote{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:6px;padding:12px 14px;min-height:96px;border:1px solid var(--line);border-left:3px solid var(--frame);background:color-mix(in srgb,var(--sh,#000) 18%,transparent)}
 .mnote:hover{border-color:var(--line-2);border-left-color:var(--frame);background:rgba(255,255,255,.03)}
 .mnote:focus-visible{outline:2px solid var(--frame);outline-offset:2px}
 .mnote-t{font:600 14px/1.3 var(--sans);color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -458,7 +491,7 @@ body.ask-open .ask-win{transform:none}
 .nb-title:focus-visible{box-shadow:inset 2px 0 0 var(--frame)}
 
 /* ---------- notes: folders, list extras, editor bar, rich editor ---------- */
-.nb-folders{display:flex;flex-direction:column;gap:1px;padding:10px 8px;border-right:1px solid var(--line);overflow:auto;background:rgba(0,0,0,.12);min-height:0}
+.nb-folders{display:flex;flex-direction:column;gap:1px;padding:10px 8px;border-right:1px solid var(--line);overflow:auto;background:color-mix(in srgb,var(--sh,#000) 12%,transparent);min-height:0}
 .nb-fh{font:600 10px/1 var(--ui);letter-spacing:.2em;text-transform:uppercase;color:var(--faint);padding:10px 8px 6px}
 .nb-fd{display:flex;align-items:center;border-radius:2px;position:relative}
 .nb-fd.sel{background:linear-gradient(90deg,color-mix(in srgb,var(--frame) 18%,transparent),transparent)}
@@ -556,7 +589,7 @@ a.nlink.gone{color:var(--faint);text-decoration-style:dashed;cursor:default}
 }
 
 /* ---------- notes toolbar, text colours, emoji/symbol panel (web/src/notes-widgets.js) ---------- */
-.nr-tools{display:flex;flex-wrap:wrap;align-items:center;gap:3px;padding:6px 14px;border-bottom:1px solid var(--line);background:rgba(0,0,0,.1)}
+.nr-tools{display:flex;flex-wrap:wrap;align-items:center;gap:3px;padding:6px 14px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--sh,#000) 10%,transparent)}
 .nr-tools>button,.nr-tools .nr-sym{all:unset;box-sizing:border-box;cursor:pointer;min-width:28px;height:28px;padding:0 7px;display:inline-grid;place-items:center;border:1px solid transparent;border-radius:2px;color:var(--muted);font:500 13px/1 var(--sans)}
 .nr-tools>button:hover{color:var(--text);border-color:var(--line-2);background:rgba(255,255,255,.04)}
 .nr-tools>button[aria-pressed="true"]{color:var(--text);border-color:var(--frame);background:color-mix(in srgb,var(--frame) 16%,transparent)}
@@ -598,11 +631,11 @@ a.nlink.gone{color:var(--faint);text-decoration-style:dashed;cursor:default}
 .nw-b{all:unset;cursor:pointer;padding:5px 8px;border:1px solid var(--line-2);border-radius:2px;font:600 10.5px/1 var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);background:var(--panel-2)}
 .nw-b:hover{color:var(--text);border-color:var(--frame)}
 .nw-b:focus-visible{outline:2px solid var(--frame)}
-.nw-b[aria-pressed="true"]{color:var(--ink);background:var(--magenta);border-color:var(--magenta)}
+.nw-b[aria-pressed="true"]{color:var(--on-sig,var(--ink));background:var(--magenta);border-color:var(--magenta)}
 .nw-del.armed{color:var(--red);border-color:var(--red)}
 .nw-play{color:var(--text)}
 .nw-code{display:grid;grid-template-columns:auto minmax(0,1fr);font:400 13.5px/1.55 var(--mono)}
-.nw-gut{display:flex;flex-direction:column;padding:10px 8px 10px 10px;text-align:right;color:var(--faint);border-right:1px solid var(--line);user-select:none;background:rgba(0,0,0,.12)}
+.nw-gut{display:flex;flex-direction:column;padding:10px 8px 10px 10px;text-align:right;color:var(--faint);border-right:1px solid var(--line);user-select:none;background:color-mix(in srgb,var(--sh,#000) 12%,transparent)}
 .nw-gut span{font:inherit}
 .nw-edit{position:relative;min-width:0}
 .nw-hl,.nw-ta{margin:0;padding:10px 12px;font:inherit;white-space:pre;tab-size:4;overflow:hidden;box-sizing:border-box;width:100%}
@@ -792,9 +825,9 @@ body.mw-open .mw-win{transform:none}
 .nb-rich strike,.nb-rich s{text-decoration-thickness:1.5px}
 .nb-rich ul[data-ck]{list-style:none;padding-left:30px}
 .nb-rich ul[data-ck]>li{position:relative}
-.nb-rich ul[data-ck]>li::before{content:"";position:absolute;left:-26px;top:.32em;width:15px;height:15px;border:1.5px solid color-mix(in srgb,var(--frame) 70%,var(--line-2));border-radius:3px;cursor:pointer;background:rgba(0,0,0,.2);box-sizing:border-box}
+.nb-rich ul[data-ck]>li::before{content:"";position:absolute;left:-26px;top:.32em;width:15px;height:15px;border:1.5px solid color-mix(in srgb,var(--frame) 70%,var(--line-2));border-radius:3px;cursor:pointer;background:color-mix(in srgb,var(--sh,#000) 20%,transparent);box-sizing:border-box}
 .nb-rich ul[data-ck]>li:hover::before{border-color:var(--frame);box-shadow:0 0 8px color-mix(in srgb,var(--frame) 40%,transparent)}
-.nb-rich ul[data-ck]>li[data-done]::before{content:"✓";display:grid;place-items:center;font:700 11px/1 var(--sans);color:var(--ink);background:var(--green);border-color:var(--green)}
+.nb-rich ul[data-ck]>li[data-done]::before{content:"✓";display:grid;place-items:center;font:700 11px/1 var(--sans);color:var(--on-sig,var(--ink));background:var(--green);border-color:var(--green)}
 .nb-rich ul[data-ck]>li[data-done]{color:var(--muted);text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--muted) 70%,transparent)}
 .nr-tools>button[data-blk]{font:600 12.5px/1 var(--sans)}
 /* top bar: Settings on the right (Inquire's progress meter used to push it there) */
@@ -827,7 +860,7 @@ body.mw-open .mw-win{transform:none}
 .nb-rich span[data-f="courier"]{font-family:"Courier New",Courier,monospace}
 .nb-rich span[data-f="comic"]{font-family:"Comic Sans MS","Comic Neue",cursive}
 .nb-rich span[data-f="brush"]{font-family:"Brush Script MT","Snell Roundhand",cursive}
-.nr-tools .nr-dd{all:unset;box-sizing:border-box;cursor:pointer;height:28px;display:inline-flex;align-items:center;gap:5px;padding:0 6px;border:1px solid var(--line-2);border-radius:2px;color:var(--text);background:rgba(0,0,0,.18);font:500 12.5px/1 var(--sans)}
+.nr-tools .nr-dd{all:unset;box-sizing:border-box;cursor:pointer;height:28px;display:inline-flex;align-items:center;gap:5px;padding:0 6px;border:1px solid var(--line-2);border-radius:2px;color:var(--text);background:color-mix(in srgb,var(--sh,#000) 18%,transparent);font:500 12.5px/1 var(--sans)}
 .nr-tools .nr-dd+.nr-dd{margin-left:3px}
 .nr-tools .nr-dd:hover{border-color:var(--frame)}
 .nr-tools .nr-dd:focus-visible{outline:2px solid var(--frame)}
@@ -873,7 +906,7 @@ body.mw-open .mw-win{transform:none}
 .nw[data-w="graph"] .nw-tag{color:var(--green);font-size:15px}
 .ng-body{display:grid;grid-template-columns:minmax(0,1fr) 240px;min-height:0}
 .ng-plot{padding:8px;border-right:1px solid var(--line);min-width:0}
-.ng-svg{display:block;width:100%;height:auto;max-height:440px;background:rgba(0,0,0,.18);border:1px solid var(--line);border-radius:2px;cursor:crosshair;touch-action:none;user-select:none}
+.ng-svg{display:block;width:100%;height:auto;max-height:440px;background:color-mix(in srgb,var(--sh,#000) 18%,transparent);border:1px solid var(--line);border-radius:2px;cursor:crosshair;touch-action:none;user-select:none}
 .ng-grid{stroke:var(--line);stroke-width:1}
 .ng-axis{stroke:var(--muted);stroke-width:1.4}
 .ng-lab{fill:var(--faint);font:400 11px var(--mono)}
@@ -885,7 +918,7 @@ body.mw-open .mw-win{transform:none}
 .ng-pt text{fill:var(--amber);font:600 12px var(--sans);paint-order:stroke;stroke:var(--ink);stroke-width:3px}
 .ng-hint{margin-top:6px;font:400 11.5px/1.3 var(--sans);color:var(--faint)}
 .ng-side{padding:10px 12px;display:flex;flex-direction:column;gap:8px;min-width:0;user-select:text}
-.ng-eq{display:flex;flex-direction:column;gap:3px;padding:7px 9px;border:1px solid var(--line-2);border-left:2px solid var(--cyan);border-radius:2px;background:rgba(0,0,0,.16)}
+.ng-eq{display:flex;flex-direction:column;gap:3px;padding:7px 9px;border:1px solid var(--line-2);border-left:2px solid var(--cyan);border-radius:2px;background:color-mix(in srgb,var(--sh,#000) 16%,transparent)}
 .ng-eql{font:600 9.5px/1 var(--ui);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
 .ng-eqv{font:400 17px/1.3 var(--math);color:var(--text);overflow-wrap:anywhere}
 .ng-dom{font:400 11.5px/1.2 var(--sans);color:var(--faint)}
@@ -910,7 +943,7 @@ body.mw-open .mw-win{transform:none}
 .np-win{flex:1;min-height:0;width:min(1440px,100%);margin:0 auto;display:flex;flex-direction:column}
 .np-win .mw-body>.nb{flex:1;min-height:0;height:auto}
 .np-newb{all:unset;box-sizing:border-box;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:2px;
-  font:700 12px/1 var(--ui);letter-spacing:.16em;text-transform:uppercase;color:var(--ink);
+  font:700 12px/1 var(--ui);letter-spacing:.16em;text-transform:uppercase;color:var(--on-accent,var(--ink));
   background:linear-gradient(180deg,color-mix(in srgb,var(--frame) 82%,#fff),var(--frame));border:1px solid color-mix(in srgb,var(--frame) 70%,#fff);
   box-shadow:0 0 18px color-mix(in srgb,var(--frame) 45%,transparent),inset 0 1px 0 rgba(255,255,255,.35);transition:box-shadow .15s,filter .15s}
 .np-newb:hover{filter:brightness(1.08);box-shadow:0 0 26px color-mix(in srgb,var(--frame) 65%,transparent),inset 0 1px 0 rgba(255,255,255,.4)}
@@ -946,13 +979,13 @@ body.mw-open .mw-win{transform:none}
 .nb-panes{flex:1;min-height:0;display:flex}
 .nb-pane{flex:1 1 0;min-width:0;min-height:0;display:flex;flex-direction:column}
 .nb-pane[hidden]{display:none}
-.nb-pane.p2{border-left:1px solid var(--line);background:rgba(0,0,0,.08)}
+.nb-pane.p2{border-left:1px solid var(--line);background:color-mix(in srgb,var(--sh,#000) 8%,transparent)}
 .nb-p2h{display:flex;align-items:center;gap:6px;padding:8px 10px 8px 14px;border-bottom:1px solid var(--line)}
 .nb-p2tag{margin-right:auto;font:600 10.5px/1 var(--ui);letter-spacing:.18em;text-transform:uppercase;color:var(--frame)}
 .nb-p2b{all:unset;cursor:pointer;width:28px;height:28px;display:grid;place-items:center;border:1px solid transparent;border-radius:2px;color:var(--muted);font-size:13px}
 .nb-p2b:hover{color:var(--text);border-color:var(--line-2)}
 .nb-p2b:focus-visible{outline:2px solid var(--frame)}
-.nb-tabs{display:flex;gap:6px;padding:6px 10px 0;border-bottom:1px solid var(--line);background:rgba(0,0,0,.12)}
+.nb-tabs{display:flex;gap:6px;padding:6px 10px 0;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--sh,#000) 12%,transparent)}
 .nb-tabs[hidden]{display:none}
 .nb-tab{display:flex;align-items:center;max-width:300px;border:1px solid var(--line-2);border-bottom:0;border-radius:3px 3px 0 0;background:linear-gradient(180deg,color-mix(in srgb,var(--frame) 12%,var(--panel-2)),var(--panel-2));box-shadow:inset 0 2px 0 var(--frame)}
 .nb-tab-t{all:unset;cursor:pointer;min-width:0;display:flex;gap:6px;align-items:center;padding:7px 10px;font:500 13px/1.2 var(--sans);color:var(--text)}
@@ -981,7 +1014,7 @@ body.mw-open .mw-win{transform:none}
 
 /* ↶ Undo / ↷ Redo in the My notes header */
 .np-hist{display:inline-flex;gap:4px}
-.np-hb{all:unset;box-sizing:border-box;cursor:pointer;padding:8px 11px;border:1px solid var(--line-2);border-radius:2px;color:var(--muted);font:600 11px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;background:rgba(0,0,0,.18)}
+.np-hb{all:unset;box-sizing:border-box;cursor:pointer;padding:8px 11px;border:1px solid var(--line-2);border-radius:2px;color:var(--muted);font:600 11px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;background:color-mix(in srgb,var(--sh,#000) 18%,transparent)}
 .np-hb:hover:not(:disabled){color:var(--text);border-color:var(--frame)}
 .np-hb:focus-visible{outline:2px solid var(--frame)}
 .np-hb:disabled{opacity:.4;cursor:default}
@@ -1015,7 +1048,7 @@ body.mw-open .mw-win{transform:none}
 .sh-all[open] summary{color:var(--text)}
 
 /* right-click → Translate: the language box under the menu (textmenu.js) */
-.tm-tr{margin-top:5px;padding:8px;border:1px solid color-mix(in srgb,var(--frame) 45%,var(--line-2));border-radius:3px;background:rgba(0,0,0,.22);display:grid;gap:8px;animation:vt-in .16s ease}
+.tm-tr{margin-top:5px;padding:8px;border:1px solid color-mix(in srgb,var(--frame) 45%,var(--line-2));border-radius:3px;background:color-mix(in srgb,var(--sh,#000) 22%,transparent);display:grid;gap:8px;animation:vt-in .16s ease}
 .tm-trh{font:600 10px/1 var(--ui);letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
 .tm-langs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
 .tm-menu .tm-lang{display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:8px 9px;border:1px solid var(--line-2);border-radius:2px;grid-template-columns:none}
@@ -1081,7 +1114,7 @@ body.office-on #app{visibility:hidden}
 .nc-gut{overflow:hidden;padding:10px 10px 10px 14px;text-align:right;color:var(--faint);user-select:none;border-right:1px solid var(--line)}
 .nc-gut span{display:block}
 .nc-ta{all:unset;box-sizing:border-box;width:100%;height:100%;padding:10px 12px;white-space:pre;overflow:auto;color:var(--text);font:inherit;tab-size:4;caret-color:var(--frame)}
-.nc-panel{flex:none;display:flex;flex-direction:column;height:168px;border-top:1px solid var(--line-2);background:rgba(0,0,0,.22)}
+.nc-panel{flex:none;display:flex;flex-direction:column;height:168px;border-top:1px solid var(--line-2);background:color-mix(in srgb,var(--sh,#000) 22%,transparent)}
 .nc-panel[data-open="0"]{height:auto}
 .nc-panel[data-open="0"] .nc-out,.nc-panel[data-open="0"] .nc-in{display:none}
 .nc-ptabs{display:flex;align-items:center;gap:2px;padding:0 8px;border-bottom:1px solid var(--line)}
@@ -1149,7 +1182,7 @@ body.office-on #app{visibility:hidden}
 .nt-pri{font-style:normal;font-size:.8em;margin-right:6px;vertical-align:1px}
 .nt-pri[data-pri="high"]{color:#E5675B} .nt-pri[data-pri="med"]{color:#F2B84B} .nt-pri[data-pri="low"]{color:#5CC8E0}
 .nt-ck{all:unset;box-sizing:border-box;cursor:pointer;flex:none;width:20px;height:20px;border-radius:50%;border:1.5px solid color-mix(in srgb,var(--pc,var(--muted)) 75%,var(--line-2));display:grid;place-items:center;transition:background .15s,border-color .15s}
-.nt-ck::after{content:"✓";font:700 12px/1 var(--sans);color:var(--ink);opacity:0}
+.nt-ck::after{content:"✓";font:700 12px/1 var(--sans);color:var(--on-sig,var(--ink));opacity:0}
 .nt-ck:hover{background:color-mix(in srgb,var(--green) 18%,transparent);border-color:var(--green)}
 .nt-ck[aria-checked="true"]{background:var(--green);border-color:var(--green)}
 .nt-ck[aria-checked="true"]::after{opacity:1}
@@ -1178,7 +1211,7 @@ body.office-on #app{visibility:hidden}
 .nt-hb{display:flex;flex-direction:column;gap:6px;align-items:stretch}
 .nt-hb .btn-s:disabled{opacity:.45;cursor:default}
 .nt-body{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:16px 18px 20px;align-content:start}
-.nt-card{border:1px solid var(--line);border-radius:3px;background:rgba(0,0,0,.14);padding:12px 14px 14px;min-width:0;display:flex;flex-direction:column;gap:10px}
+.nt-card{border:1px solid var(--line);border-radius:3px;background:color-mix(in srgb,var(--sh,#000) 14%,transparent);padding:12px 14px 14px;min-width:0;display:flex;flex-direction:column;gap:10px}
 .nt-card h3{margin:0;font:600 10.5px/1 var(--ui);letter-spacing:.2em;text-transform:uppercase;color:var(--faint);display:flex;gap:8px}
 .nt-wide{grid-column:1 / -1}
 .nt-row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
@@ -1193,7 +1226,7 @@ body.office-on #app{visibility:hidden}
 .nt-seg{display:flex;border:1px solid var(--line-2);border-radius:2px;overflow:hidden;align-self:flex-start;flex-wrap:wrap}
 .nt-seg button{all:unset;cursor:pointer;padding:7px 11px;font:500 12px/1 var(--sans);color:var(--muted)}
 .nt-seg button+button{border-left:1px solid var(--line-2)}
-.nt-seg button[aria-checked="true"]{color:var(--ink);background:var(--frame)}
+.nt-seg button[aria-checked="true"]{color:var(--on-accent,var(--ink));background:var(--frame)}
 .nt-chips{display:flex;flex-wrap:wrap;gap:6px}
 .nt-chip{all:unset;cursor:pointer;padding:6px 10px;border:1px solid var(--line-2);border-radius:14px;font:500 12px/1 var(--sans);color:var(--muted)}
 .nt-chip[aria-pressed="true"]{color:var(--text);border-color:var(--frame);background:color-mix(in srgb,var(--frame) 16%,transparent)}
@@ -1255,7 +1288,7 @@ body.office-on #app{visibility:hidden}
 .io-col+.io-col{border-left:1px solid var(--line)}
 .io-h{margin:0;font:600 11px/1 var(--ui);letter-spacing:.22em;text-transform:uppercase;color:var(--frame)}
 .io-scope{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.io-scope button,.io-fmt{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:4px;padding:10px 12px;border:1px solid var(--line-2);border-radius:3px;background:rgba(0,0,0,.16);min-width:0}
+.io-scope button,.io-fmt{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:4px;padding:10px 12px;border:1px solid var(--line-2);border-radius:3px;background:color-mix(in srgb,var(--sh,#000) 16%,transparent);min-width:0}
 .io-scope b,.io-fmt b{font:600 13px/1.2 var(--sans);color:var(--text)}
 .io-scope small,.io-fmt small{font:400 11.5px/1.35 var(--sans);color:var(--muted);overflow:hidden;text-overflow:ellipsis}
 .io-scope button:disabled{opacity:.45;cursor:default}
@@ -1269,12 +1302,12 @@ body.office-on #app{visibility:hidden}
 .io-msg,.io-log{margin:0;font:400 12.5px/1.45 var(--sans);color:var(--muted)}
 .io-msg.ok,.io-log.ok{color:var(--green)} .io-msg.bad,.io-log.bad{color:var(--red)}
 /* (v0.5.8, Devon) Import & Export progress: size, speed, time left and a % meter (io.js progUI) */
-.io-prog{margin:12px 0 4px;padding:10px 12px 9px;border:1px solid color-mix(in srgb,var(--frame) 40%,var(--line-2));border-radius:3px;background:color-mix(in srgb,var(--frame) 6%,rgba(0,0,0,.18))}
+.io-prog{margin:12px 0 4px;padding:10px 12px 9px;border:1px solid color-mix(in srgb,var(--frame) 40%,var(--line-2));border-radius:3px;background:color-mix(in srgb,var(--frame) 6%,color-mix(in srgb,var(--sh,#000) 18%,transparent))}
 .io-prog[hidden]{display:none}
 .io-prog-top{display:flex;align-items:baseline;gap:10px;margin-bottom:7px}
 .io-prog-t{font:600 10.5px/1.2 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--frame)}
 .io-prog-size{margin-left:auto;font:500 11.5px/1.2 var(--mono);color:var(--text)}
-.io-prog-bar{position:relative;height:20px;border:1px solid color-mix(in srgb,var(--frame) 55%,var(--line-2));border-radius:2px;background:rgba(0,0,0,.3);overflow:hidden}
+.io-prog-bar{position:relative;height:20px;border:1px solid color-mix(in srgb,var(--frame) 55%,var(--line-2));border-radius:2px;background:color-mix(in srgb,var(--sh,#000) 30%,transparent);overflow:hidden}
 .io-prog-fill{position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,color-mix(in srgb,var(--frame) 55%,transparent),var(--frame));box-shadow:0 0 12px color-mix(in srgb,var(--frame) 60%,transparent);transition:width .15s linear}
 .io-prog.run .io-prog-fill{background-image:linear-gradient(90deg,color-mix(in srgb,var(--frame) 55%,transparent),var(--frame)),repeating-linear-gradient(-45deg,rgba(255,255,255,.14) 0 6px,transparent 6px 12px);background-blend-mode:overlay;background-size:auto,17px 17px;animation:io-stripes .8s linear infinite}
 @keyframes io-stripes{to{background-position:0 0,17px 0}}
@@ -1298,7 +1331,7 @@ body.office-on #app{visibility:hidden}
 .io-works .io-soon{color:var(--faint);list-style:"◇ "}
 @media (max-width:860px){ .io{grid-template-columns:minmax(0,1fr)} .io-col+.io-col{border-left:0;border-top:1px solid var(--line)} .io-scope,.io-fmts{grid-template-columns:minmax(0,1fr)} }
 /* ‹ Back to the Main Menu: first thing in the header of My notes, My Tasks and Note Office (Devon, Oct 2026) */
-.np-back{all:unset;box-sizing:border-box;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:7px 12px 7px 9px;margin-right:2px;border:1px solid var(--line-2);border-radius:2px;color:var(--muted);font:600 11px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;background:rgba(0,0,0,.18);-webkit-app-region:no-drag}
+.np-back{all:unset;box-sizing:border-box;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:7px 12px 7px 9px;margin-right:2px;border:1px solid var(--line-2);border-radius:2px;color:var(--muted);font:600 11px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;background:color-mix(in srgb,var(--sh,#000) 18%,transparent);-webkit-app-region:no-drag}
 .np-back span{font-size:16px;line-height:0;letter-spacing:0;color:var(--frame);transform:translateY(-1px)}
 .np-back:hover{color:var(--text);border-color:var(--frame)}
 .np-back:focus-visible{outline:2px solid var(--frame);outline-offset:1px}
@@ -1344,7 +1377,7 @@ body.office-on #app{visibility:hidden}
   background:radial-gradient(circle at 50% 35%,color-mix(in srgb,var(--frame) 26%,var(--panel-2)),color-mix(in srgb,var(--frame) 8%,var(--panel)));
   box-shadow:0 0 16px color-mix(in srgb,var(--frame) 35%,transparent),0 4px 14px rgba(0,0,0,.35);transition:transform .15s,box-shadow .15s}
 .nb-holob:hover{transform:translateY(-1px);box-shadow:0 0 24px color-mix(in srgb,var(--frame) 55%,transparent),0 6px 16px rgba(0,0,0,.4)}
-.nb-holob[aria-expanded="true"]{color:var(--ink);background:var(--frame)}
+.nb-holob[aria-expanded="true"]{color:var(--on-accent,var(--ink));background:var(--frame)}
 .nb-holob:focus-visible{outline:2px solid var(--text);outline-offset:2px}
 .np-holo{position:absolute;z-index:7;display:flex;flex-direction:column;min-width:240px;min-height:180px;border:1px solid color-mix(in srgb,var(--frame) 55%,transparent);border-radius:3px;color:var(--text);
   background:linear-gradient(160deg,color-mix(in srgb,var(--frame) 14%,rgba(8,14,22,.97)),color-mix(in srgb,var(--frame) 5%,rgba(6,10,16,.98)));
@@ -1412,7 +1445,7 @@ body.office-on #app{visibility:hidden}
 .np-views button+button{border-left:1px solid var(--line-2)}
 .np-views svg{fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round}
 .np-views button:hover{color:var(--text);background:rgba(255,255,255,.04)}
-.np-views button[aria-checked="true"]{color:var(--ink);background:var(--frame)}
+.np-views button[aria-checked="true"]{color:var(--on-accent,var(--ink));background:var(--frame)}
 .np-views button:focus-visible{outline:2px solid var(--frame);outline-offset:-2px}
 .nb-items[data-view="icons"]{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));align-content:start;gap:6px;padding:8px}
 .nb-it.nb-tile{align-items:center;text-align:center;gap:5px;padding:12px 6px 9px;border:1px solid transparent;border-radius:3px}
@@ -1445,7 +1478,7 @@ body.office-on #app{visibility:hidden}
 .np-ind-add:hover,.np-ind-add:focus-visible{background:color-mix(in srgb,var(--note-indent,#B5D65A) 14%,transparent)}
 .np-ind-ed{display:flex;flex-direction:column;gap:7px;margin:4px 0 12px;padding:9px;border:1px solid color-mix(in srgb,var(--note-indent,#B5D65A) 45%,transparent);border-radius:2px;background:color-mix(in srgb,var(--note-indent,#B5D65A) 6%,transparent)}
 .np-ind-w{margin:0;font-size:12px;color:var(--muted);font-style:italic;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.np-ind-ed textarea{resize:vertical;min-height:70px;box-sizing:border-box;width:100%;padding:7px 8px;border:1px solid var(--line-2);border-radius:2px;background:rgba(0,0,0,.25);color:var(--note-indent,#B5D65A);font:400 13px/1.45 var(--sans)}
+.np-ind-ed textarea{resize:vertical;min-height:70px;box-sizing:border-box;width:100%;padding:7px 8px;border:1px solid var(--line-2);border-radius:2px;background:color-mix(in srgb,var(--sh,#000) 25%,transparent);color:var(--note-indent,#B5D65A);font:400 13px/1.45 var(--sans)}
 .np-ind-ed textarea:focus{outline:none;border-color:var(--note-indent,#B5D65A)}
 .np-ind-acts{display:flex;gap:6px}
 .np-ind-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:3px}
@@ -1564,7 +1597,7 @@ a.nlink[data-folder]::before{content:"";display:inline-block;width:.95em;height:
 .nb-rich [data-ps="12"],.nb-rich [data-ps="12"]>li{margin-bottom:12px}
 .nb-rich [data-ps="24"],.nb-rich [data-ps="24"]>li{margin-bottom:24px}
 /* ---------- Search above the folders (v0.5.4): never folded away with the columns ---------- */
-.nb-sbar{flex:none;display:flex;align-items:center;padding:8px 10px;border-bottom:1px solid var(--line);background:rgba(0,0,0,.12)}
+.nb-sbar{flex:none;display:flex;align-items:center;padding:8px 10px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--sh,#000) 12%,transparent)}
 .nb-sbar .nb-search{width:var(--sbw,220px);max-width:100%;box-sizing:border-box}
 @media (max-width:860px){ .nb-sbar .nb-search{width:100%} }
 /* ---------- ⇪ Share (v0.5.4) ---------- */
@@ -1710,7 +1743,7 @@ div.nb{--nb-lw:64px}
 .nb-spath{flex-basis:100%;padding-left:22px;font:400 10.5px/1.2 var(--sans);color:var(--faint)}
 .nb-sres .nb-fnote.nb-it{--d:0}
 /* the Tool bar */
-.nb-rail{display:flex;flex-direction:column;align-items:stretch;gap:4px;padding:8px 6px;border-right:1px solid var(--line);background:rgba(0,0,0,.14);overflow:hidden;min-width:0}
+.nb-rail{display:flex;flex-direction:column;align-items:stretch;gap:4px;padding:8px 6px;border-right:1px solid var(--line);background:color-mix(in srgb,var(--sh,#000) 14%,transparent);overflow:hidden;min-width:0}
 .nb-tool{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 2px 7px;border-radius:3px;border:1px solid transparent;color:var(--muted);text-align:center;position:relative}
 .nb-tooli{display:grid;place-items:center;height:18px;font:600 14px/1 var(--sans)}
 .nb-tooln{font:600 8.5px/1.1 var(--ui);letter-spacing:.1em;text-transform:uppercase}
@@ -1781,10 +1814,10 @@ div.nb{--nb-lw:64px}
 @media (min-width:861px){
   .nb.ffold{--nb-fw:30px} .nb.lfold{--nb-lw:30px}
   .nb .nb-fold{top:0;bottom:0;height:auto;width:30px;transform:none;display:flex;flex-direction:column;align-items:center;gap:12px;padding:14px 0;
-    border:0;border-right:1px solid var(--line);border-radius:0;background:rgba(0,0,0,.16);box-shadow:none;color:var(--muted);transition:background .15s,color .15s}
+    border:0;border-right:1px solid var(--line);border-radius:0;background:color-mix(in srgb,var(--sh,#000) 16%,transparent);box-shadow:none;color:var(--muted);transition:background .15s,color .15s}
   .nb .nb-fold[data-p="f"]{left:0}
   .nb .nb-fold[data-p="l"]{left:var(--nb-fw)}
-  .nb .nb-fold:hover{background:color-mix(in srgb,var(--frame) 14%,rgba(0,0,0,.16));color:var(--text);box-shadow:none}
+  .nb .nb-fold:hover{background:color-mix(in srgb,var(--frame) 14%,color-mix(in srgb,var(--sh,#000) 16%,transparent));color:var(--text);box-shadow:none}
   .nb .nb-fold:focus-visible{outline:2px solid var(--frame);outline-offset:-2px}
   .nb-foldi{flex:none;width:22px;height:22px;display:grid;place-items:center;border:1px solid color-mix(in srgb,var(--frame) 70%,transparent);border-radius:50%;color:var(--frame);font-size:10px;line-height:1}
   .nb .nb-fold:hover .nb-foldi{background:var(--frame);color:var(--ink,#0b0f16)}
@@ -1816,7 +1849,7 @@ div.nb{--nb-lw:64px}
 .nm-title{flex:1;min-width:0;background:transparent;border:0;border-bottom:1px solid transparent;color:var(--text);font:600 14px/1.3 var(--sans);padding:2px 0}
 .nm-title:focus{outline:none;border-bottom-color:var(--frame)}
 .nm-search{display:flex;gap:6px;flex-wrap:wrap}
-.nm-q{flex:1 1 220px;min-width:0;height:34px;padding:0 10px;background:rgba(0,0,0,.2);border:1px solid var(--line-2);border-radius:2px;color:var(--text);font:400 14px/1 var(--sans)}
+.nm-q{flex:1 1 220px;min-width:0;height:34px;padding:0 10px;background:color-mix(in srgb,var(--sh,#000) 20%,transparent);border:1px solid var(--line-2);border-radius:2px;color:var(--text);font:400 14px/1 var(--sans)}
 .nm-q:focus{outline:2px solid var(--frame);outline-offset:-1px}
 .nm-msg{margin:8px 0 0;font:400 12.5px/1.4 var(--sans);color:var(--muted)} .nm-msg.bad{color:var(--red)}
 .nm-res{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:3px}
@@ -1870,7 +1903,7 @@ div.nb{--nb-lw:64px}
 :root[data-perf="lite"] .nb-aifig{filter:none}
 .nb-gramg{font:700 17px/1 var(--serif,Georgia);position:relative}
 .nb-gramg small{position:absolute;right:-9px;bottom:-3px;font:700 11px/1 var(--sans);color:var(--green,#7BD88F)}
-.nb-holob[aria-expanded="true"] .nb-gramg small{color:var(--ink)}
+.nb-holob[aria-expanded="true"] .nb-gramg small{color:var(--on-accent,var(--ink))}
 .np-as-t{font:600 10.5px/1 var(--ui);letter-spacing:.18em;text-transform:uppercase;color:var(--frame);padding:7px 2px 9px}
 .np-as-new{all:unset;cursor:pointer;margin:0 4px 4px auto;padding:5px 9px;border:1px solid var(--line-2);border-radius:2px;font:600 10px/1 var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
 .np-as-new:hover{color:var(--text);border-color:var(--frame)}
@@ -1887,7 +1920,7 @@ div.nb{--nb-lw:64px}
 .np-ai-acts button:hover{text-decoration:underline}
 .np-ai-off{padding:10px;border:1px dashed var(--line-2);border-radius:3px;font:400 12.5px/1.5 var(--sans);color:var(--muted)} .np-ai-off b{color:var(--text)} .np-ai-off p{margin:6px 0 0}
 .np-ai-f{position:relative;display:flex;gap:6px;padding:8px 10px 10px;border-top:1px solid color-mix(in srgb,var(--frame) 25%,transparent)}
-.np-ai-f textarea{flex:1;min-width:0;resize:none;background:rgba(0,0,0,.3);color:var(--text);border:1px solid var(--line-2);border-radius:3px;padding:8px 10px;font:400 14px/1.4 var(--sans);outline:none}
+.np-ai-f textarea{flex:1;min-width:0;resize:none;background:color-mix(in srgb,var(--sh,#000) 30%,transparent);color:var(--text);border:1px solid var(--line-2);border-radius:3px;padding:8px 10px;font:400 14px/1.4 var(--sans);outline:none}
 .np-ai-f textarea:focus{border-color:var(--frame)}
 .np-ai-send{all:unset;cursor:pointer;align-self:stretch;padding:0 14px;display:grid;place-items:center;border-radius:3px;background:var(--frame);color:var(--ink,#0b0f16);font:700 11px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase}
 .np-ai-send:disabled{opacity:.45;cursor:default}
@@ -1900,7 +1933,7 @@ div.nb{--nb-lw:64px}
 .np-gr-n{margin:0 0 8px;font:600 10px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 .np-gr-ok{margin:4px 0;font:500 14px/1.4 var(--sans);color:var(--green,#7BD88F)}
 .np-gr-msg{margin:4px 0;font:400 12.5px/1.4 var(--sans);color:var(--muted)} .np-gr-msg.bad{color:var(--red)}
-.np-gr-m{position:relative;padding:8px 10px;margin-bottom:6px;border:1px solid var(--line-2);border-left:3px solid var(--amber);border-radius:2px;background:rgba(0,0,0,.18)}
+.np-gr-m{position:relative;padding:8px 10px;margin-bottom:6px;border:1px solid var(--line-2);border-left:3px solid var(--amber);border-radius:2px;background:color-mix(in srgb,var(--sh,#000) 18%,transparent)}
 .np-gr-m.k-spelling{border-left-color:var(--red)} .np-gr-m.k-style{border-left-color:var(--cyan,#5CC8E0)}
 .np-gr-m p{margin:4px 0 6px;font:400 12.5px/1.4 var(--sans);color:var(--text)}
 .np-gr-w{all:unset;cursor:pointer;display:flex;align-items:baseline;gap:8px;width:100%}
@@ -1920,7 +1953,7 @@ div.nb{--nb-lw:64px}
 .tm-aiq{display:flex;gap:6px;align-items:stretch}
 .tm-aiq textarea{flex:1;box-sizing:border-box;min-width:220px;resize:vertical;background:var(--ink);color:var(--text);border:1px solid var(--line-2);border-radius:2px;padding:6px 8px;font:400 12.5px/1.4 var(--sans);outline:none}
 .tm-aiq textarea:focus{border-color:var(--frame)}
-.tm-aitext{max-height:200px;overflow:auto;font:400 13.5px/1.5 var(--sans);color:var(--text);user-select:text;padding:6px 8px;border:1px solid var(--line-2);border-radius:2px;background:rgba(0,0,0,.2)}
+.tm-aitext{max-height:200px;overflow:auto;font:400 13.5px/1.5 var(--sans);color:var(--text);user-select:text;padding:6px 8px;border:1px solid var(--line-2);border-radius:2px;background:color-mix(in srgb,var(--sh,#000) 20%,transparent)}
 .tm-menu .tm-ai .tm-aichip{display:inline-block;padding:6px 10px;border:1px solid var(--line-2);border-radius:14px;font:500 12.5px/1 var(--sans);color:var(--muted);white-space:nowrap}
 .tm-menu .tm-ai .tm-aichip:hover,.tm-menu .tm-ai .tm-aichip:focus-visible{color:var(--text);border-color:var(--frame)}
 .tm-menu .tm-ai .tm-aiq .tm-dgo{display:grid;place-items:center;align-self:stretch;padding:0 12px;border:1px solid var(--frame);border-radius:2px}
@@ -1930,7 +1963,7 @@ div.nb{--nb-lw:64px}
 .nw[data-w="code"] .nw-code{font-size:var(--nw-fs,13.5px)}
 .nw[data-w="code"] .nw-h .nw-b{white-space:nowrap}
 .nw-optb[aria-expanded="true"]{color:var(--ink,#0b0f16);background:var(--frame);border-color:var(--frame)}
-.nw-opts{display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px 12px;padding:8px 10px;border-bottom:1px solid var(--line);background:rgba(0,0,0,.14)}
+.nw-opts{display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px 12px;padding:8px 10px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--sh,#000) 14%,transparent)}
 .nw-o{display:flex;flex-direction:column;gap:4px;font:600 9.5px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 .nw-o input,.nw-o select{height:28px;min-width:110px;box-sizing:border-box;background:var(--ink);color:var(--text);border:1px solid var(--line-2);border-radius:2px;padding:0 7px;font:400 12.5px/1 var(--sans);text-transform:none;letter-spacing:0}
 .nw-o input:focus,.nw-o select:focus{outline:2px solid var(--frame);outline-offset:-1px}
@@ -1965,7 +1998,7 @@ div.nb{--nb-lw:64px}
 .nw-cs{display:grid;grid-template-columns:auto minmax(0,1fr) auto minmax(0,1fr);min-width:560px}
 .nw-cs .nw-cr,.nw-cs .nw-csh{display:contents}
 .nw-csh span{position:sticky;top:0;padding:5px 10px;background:var(--panel-2);border-bottom:1px solid var(--line);font:600 10px/1 var(--ui);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);z-index:1}
-.nw-cn{padding:0 8px;text-align:right;color:var(--faint);user-select:none;background:rgba(0,0,0,.12)}
+.nw-cn{padding:0 8px;text-align:right;color:var(--faint);user-select:none;background:color-mix(in srgb,var(--sh,#000) 12%,transparent)}
 .nw-cc{padding:0 12px;white-space:pre;overflow:hidden;color:var(--text)}
 .nw-cc.del{background:color-mix(in srgb,var(--red) 18%,transparent)}
 .nw-cc.add{background:color-mix(in srgb,var(--green) 18%,transparent)}
@@ -2057,7 +2090,7 @@ div.nb{--nb-lw:64px}
 :root[data-perf="lite"] .set-win,:root[data-perf="lite"] .mw-win,:root[data-perf="lite"] .ask-win,:root[data-perf="lite"] .np-pop,:root[data-perf="lite"] .tm-menu,:root[data-perf="lite"] .nr-panel,:root[data-perf="lite"] .nk-pick{box-shadow:0 6px 18px rgba(0,0,0,.5);transition-property:opacity;transform:none}
 :root[data-perf="lite"] .set-sw.set-glass .set-sws{backdrop-filter:none}
 /* ---------- v0.5.8 (Devon): Simple / Professional versions of My notes (app.js noteMode, .np-mode; .nb[data-mode]) ---------- */
-.np-mode{display:inline-flex;border:1px solid color-mix(in srgb,var(--frame) 55%,var(--line-2));border-radius:2px;overflow:hidden;background:rgba(0,0,0,.18)}
+.np-mode{display:inline-flex;border:1px solid color-mix(in srgb,var(--frame) 55%,var(--line-2));border-radius:2px;overflow:hidden;background:color-mix(in srgb,var(--sh,#000) 18%,transparent)}
 .np-mode button{all:unset;box-sizing:border-box;cursor:pointer;padding:8px 11px;color:var(--muted);font:600 11px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase}
 .np-mode button+button{border-left:1px solid color-mix(in srgb,var(--frame) 40%,var(--line-2))}
 .np-mode button:hover{color:var(--text)}
@@ -2090,7 +2123,7 @@ div.nb[data-mode="simple"]{--nb-lw:0px}
 .nb-reclv{flex:none;width:46px;height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
 .nb-reclv i{display:block;height:100%;background:linear-gradient(90deg,var(--green,#7BD88F),var(--amber,#F2B84B) 70%,var(--red,#E5675B));transform-origin:left;transform:scaleX(0);transition:transform .08s linear}
 .nb-recs{font:500 11.5px/1.2 var(--sans);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.nb-recx{all:unset;flex:none;cursor:pointer;height:30px;min-width:30px;padding:0 9px;box-sizing:border-box;display:grid;place-items:center;border-radius:15px;border:1px solid var(--line-2);color:var(--text);font:600 11px/1 var(--ui);letter-spacing:.1em;text-transform:uppercase;background:rgba(0,0,0,.25)}
+.nb-recx{all:unset;flex:none;cursor:pointer;height:30px;min-width:30px;padding:0 9px;box-sizing:border-box;display:grid;place-items:center;border-radius:15px;border:1px solid var(--line-2);color:var(--text);font:600 11px/1 var(--ui);letter-spacing:.1em;text-transform:uppercase;background:color-mix(in srgb,var(--sh,#000) 25%,transparent)}
 .nb-recx:hover{border-color:var(--frame)} .nb-recx:focus-visible{outline:2px solid var(--frame)}
 .nb-recstop{background:var(--red,#E5675B);border-color:var(--red,#E5675B);color:#fff}
 @media (prefers-reduced-motion:reduce){ .nb-recdot{animation:none} .nb-recb{transition:none} }
@@ -2160,7 +2193,7 @@ div.nb[data-mode="simple"]{--nb-lw:0px}
 .ns-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .ns-row[hidden]{display:none}
 .ns-row small{font:400 11.5px/1.35 var(--sans);color:var(--faint)}
-.ns-in{box-sizing:border-box;height:30px;padding:4px 9px;border:1px solid var(--line-2);border-radius:2px;background:rgba(0,0,0,.25);color:var(--text);font:400 13.5px/1.2 var(--sans);min-width:0}
+.ns-in{box-sizing:border-box;height:30px;padding:4px 9px;border:1px solid var(--line-2);border-radius:2px;background:color-mix(in srgb,var(--sh,#000) 25%,transparent);color:var(--text);font:400 13.5px/1.2 var(--sans);min-width:0}
 .ns-in:focus{outline:none;border-color:var(--frame)}
 .ns-tname{flex:1 1 200px}
 .ns-lab{flex:1 1 260px;display:flex;align-items:center;gap:8px;font:600 10.5px/1 var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
@@ -2192,7 +2225,7 @@ div.nb[data-mode="simple"]{--nb-lw:0px}
 .nb-fd.user{position:relative}
 .nb-pickbar{flex:none;display:flex;align-items:center;gap:8px;padding:6px 8px 6px 12px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--frame) 14%,var(--panel,#0d141d));font:600 11.5px/1.2 var(--sans);color:var(--text)}
 .nb-pickn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.nb-pickx{all:unset;cursor:pointer;padding:5px 9px;border:1px solid var(--line-2);border-radius:2px;font:600 10px/1 var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--text);background:rgba(0,0,0,.2)}
+.nb-pickx{all:unset;cursor:pointer;padding:5px 9px;border:1px solid var(--line-2);border-radius:2px;font:600 10px/1 var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--text);background:color-mix(in srgb,var(--sh,#000) 20%,transparent)}
 .nb-pickx:hover{border-color:var(--frame)} .nb-pickx:focus-visible{outline:2px solid var(--frame)}
 .nb-pickx.armed,.nb-fmenu .nb-fmdel.armed{color:#fff;background:var(--red,#E5675B);border-color:var(--red,#E5675B)}
 .nb-fmsep{height:1px;margin:4px 6px;background:var(--line-2)}
@@ -2208,7 +2241,7 @@ div.nb[data-mode="simple"]{--nb-lw:0px}
 .io-dupr:empty{display:none}
 .io-dupnone{margin:0;font:500 13px/1.4 var(--sans);color:var(--green)}
 .io-dupsum{margin:0;font:600 11px/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
-.io-dupg{border:1px solid var(--line-2);border-left:3px solid var(--frame);border-radius:3px;background:rgba(0,0,0,.14)}
+.io-dupg{border:1px solid var(--line-2);border-left:3px solid var(--frame);border-radius:3px;background:color-mix(in srgb,var(--sh,#000) 14%,transparent)}
 .io-dupgh{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:8px 10px;border-bottom:1px solid var(--line)}
 .io-dupgh b{font:600 13px/1.2 var(--sans);color:var(--text)}
 .io-dupk{font:400 12px/1.3 var(--sans);color:var(--faint)}
@@ -2226,7 +2259,7 @@ div.nb[data-mode="simple"]{--nb-lw:0px}
 @media (max-width:760px){ .io-dupn{flex-wrap:wrap} .io-dupga{margin-left:0} }
 /* ---------- v0.5.8 (Devon): the word count's on / off switch (app.js wordCount, store notepath.wordcount) ---------- */
 .nb-wct{all:unset;box-sizing:border-box;position:absolute;z-index:6;left:72px;bottom:24px;height:26px;display:inline-flex;align-items:center;gap:6px;padding:0 9px 0 5px;border:1px solid var(--line-2);border-radius:13px;cursor:pointer;
-  font:600 9.5px/1 var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--faint);background:rgba(0,0,0,.18)}
+  font:600 9.5px/1 var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--faint);background:color-mix(in srgb,var(--sh,#000) 18%,transparent)}
 .nb-wct:hover{color:var(--text);border-color:var(--frame)}
 .nb-wct:focus-visible{outline:2px solid var(--frame);outline-offset:2px}
 .nb-wcti{position:relative;width:24px;height:14px;border-radius:7px;background:var(--line-2);transition:background .15s}
@@ -2238,6 +2271,56 @@ div.nb[data-mode="simple"]{--nb-lw:0px}
 .nb-rec.on~.nb-wct{display:none}
 @media (prefers-reduced-motion:reduce){ .nb-wcti,.nb-wcti::after{transition:none} }
 @media (max-width:760px){ .nb-wctl{display:none} .nb-wct{padding:0 5px} .nb-pane.p1 .nb-wc{left:116px} }
+
+/* Plain style (theme packs Phase 1, Devon Oct 14, 2026): the minimal presets (Paper, Sepia, Graphite, Midnight) and plain Your
+   colours set html[data-style="plain"] (settings.js applyTheme). Flat solid panels, no corner ticks, glows or tints, normal-case labels
+   in the body font, softly rounded corners: the look of a typical document or note app. The console look (Holographic themes) is the
+   rest of the stylesheets, untouched. Light themes also set html[data-tone="light"]: darker signal colours that read on white.
+   Loaded last (tools/build-web.js) so these rules win. The note's own text (.nb-rich, outside widgets) is never restyled here. */
+
+/* ---------- light themes: signal and topic colours that read on a light page (4.5:1 on white) ---------- */
+html[data-tone="light"]{
+  --amber:#9A5B00; --cyan:#0B7487; --pink:#BE3463; --violet:#6747CF; --green:#1C7A38; --magenta:#9C33AF; --lime:#55760F; --red:#C2352A;
+  --g-stem:#0B7487; --g-hum:#9C33AF; --g-soc:#55760F; --on-sig:#FFFFFF;
+  --sh:color-mix(in srgb,var(--text) 28%,transparent); /* the stylesheets' dark wells (var(--sh) n%) become faint grey on a light page */
+}
+/* the dimmed page behind Settings and windows: lighter on a light theme */
+html[data-tone="light"] :is(.set-ov,.mw-ov,.ask-ov){background:rgba(30,30,28,.32)!important}
+
+/* ---------- labels: the body font, normal case, normal spacing ---------- */
+html[data-style="plain"]{--ui:var(--sans)}
+html[data-style="plain"] :not(.nb-rich *),html[data-style="plain"] .nb-rich .nw *{text-transform:none!important;letter-spacing:normal!important;text-shadow:none!important}
+html[data-style="plain"] .brand-name{font-weight:600;font-size:15px}
+
+/* ---------- surfaces: solid, flat, rounded ---------- */
+html[data-style="plain"] #app{background:var(--void)}
+html[data-style="plain"] .topbar{background:var(--panel);border-bottom-color:var(--line)}
+html[data-style="plain"] .win{background:var(--panel);border-color:var(--line);border-radius:10px}
+html[data-style="plain"] .win::before,html[data-style="plain"] .win::after,html[data-style="plain"] .np-holo::after{display:none}
+html[data-style="plain"] .win-h{background:none;font-weight:600;font-size:13px;color:var(--muted)}
+html[data-style="plain"] .win-h .dot,html[data-style="plain"] .set-h .dot,html[data-style="plain"] .np-peek-gem{display:none}
+html[data-style="plain"] .slot{background:var(--panel);border-color:var(--line);border-radius:10px}
+html[data-style="plain"] .slot:hover{background:var(--slot-h1);border-color:var(--frame)}
+html[data-style="plain"] .slot.locked:hover{background:var(--panel);border-color:var(--line)}
+html[data-style="plain"] .slot .glyph{background:var(--panel-2);border-color:var(--line)}
+html[data-style="plain"] .slot h3{font-weight:600}
+
+html[data-style="plain"] .np-holo{background:var(--panel);border-color:var(--line-2);border-radius:10px}
+html[data-style="plain"] .np-holo::before{display:none}
+
+/* ---------- no glows anywhere; floating boxes keep one soft shadow so they lift off the page ---------- */
+html[data-style="plain"] :not(.nb-rich *){box-shadow:none!important}
+html[data-style="plain"] :is(.mw-win,.set-win,.ask-box,.tm-menu,.np-pop,.nr-panel,.np-holo,.np-peek,.np-share-pop,.nb-fmenu,.upd,.np-new,.nk-pick,.nv-pop,.tm-toast,.np-toast){
+  box-shadow:0 10px 30px rgba(0,0,0,.18),0 2px 6px rgba(0,0,0,.08)!important}
+html[data-style="plain"][data-tone="dark"] :is(.mw-win,.set-win,.ask-box,.tm-menu,.np-pop,.nr-panel,.np-holo,.np-peek,.np-share-pop,.nb-fmenu,.upd,.np-new,.nk-pick,.nv-pop,.tm-toast,.np-toast){
+  box-shadow:0 12px 34px rgba(0,0,0,.5)!important}
+
+/* ---------- buttons ---------- */
+html[data-style="plain"] :is(.btn,.btn-s,.topstat,.np-back,.search,.np-newb){border-radius:6px}
+html[data-style="plain"] .np-newb{background:var(--frame);border-color:var(--frame)}
+html[data-style="plain"] .np-newb:hover{filter:brightness(1.06)}
+/* the lit tool's name in the Tool bar sits on an accent-tinted square: plain words there keep 4.5:1 on light themes */
+html[data-tone="light"] .nb-rail .on .nb-tooln{color:var(--text)}
 
 </style>
 </head><body>
@@ -2251,7 +2334,7 @@ div.nb[data-mode="simple"]{--nb-lw:0px}
   <main class="view" id="view" tabindex="-1"></main>
   <div class="upd" id="upd" role="status" hidden></div>
 </div>
-<script>window.NP_I18N_V = {"ar":"89b1116915","de":"6ae115dbc4","es":"11dad6dad3","fr":"9c27796547","ja":"92c66a70d8","ko":"4fd682cdf6","nl":"25d8577a6b","pt":"141b9a313a","ru":"05bcbfce45","zh":"8bcc6a137d"};</script>
+<script>window.NP_I18N_V = {"ar":"566e3f0550","de":"f5ee24f534","es":"0a4c03d8cb","fr":"e0b243244b","ja":"503be447b8","ko":"df48fd80c2","nl":"d95b57ed31","pt":"39f7bb9990","ru":"06a2f49941","zh":"d767464c0d"}; window.NP_BUNDLED_THEMES = [{"schema":1,"id":"paper","name":"Paper","author":"NotePath","version":"1.0.0","weight":"light","family":"Light","style":"plain","license":{"type":"free"},"description":"Clean white pages, light grey around them","colors":{"bg":"#F6F5F2","surface":"#FFFFFF","accent":"#2563C9","tint":"#6B5FB5","text":"#1F1F1E","muted":"#55554F","faint":"#6B6A64"}},{"schema":1,"id":"sepia","name":"Sepia","author":"NotePath","version":"1.0.0","weight":"light","family":"Light","style":"plain","license":{"type":"free"},"description":"Warm cream, like a reading app","colors":{"bg":"#F1E9DA","surface":"#FBF6EC","accent":"#9A4F12","tint":"#7A6A3A","text":"#2B2118","muted":"#5B4C3C","faint":"#6F5F4B"}},{"schema":1,"id":"graphite","name":"Graphite","author":"NotePath","version":"1.0.0","weight":"light","family":"Dark","style":"plain","license":{"type":"free"},"description":"Neutral dark grey, easy on the eyes","colors":{"bg":"#191919","surface":"#232323","accent":"#6AA2F5","tint":"#9D8CF0","text":"#E8E8E6","muted":"#B4B4B0","faint":"#8C8C88"}},{"schema":1,"id":"midnight","name":"Midnight","author":"NotePath","version":"1.0.0","weight":"light","family":"Dark","style":"plain","license":{"type":"free"},"description":"Deep navy, for late nights","colors":{"bg":"#0E1320","surface":"#161D2E","accent":"#7AA7FF","tint":"#A58CFF","text":"#E6EAF2","muted":"#A9B3C7","faint":"#7F8AA0"}}];</script>
 <script>/* web/lib/lazy.js */
 /* NotePath lazy modules (v0.5.7). Big, rarely used scripts (Note Office, Import & Export, Sheet, Graph, Map, AI Chat helpers) sit in the
    page as inert <script type="text/plain" data-np-lazy="name"> text and run the first time something touches their global
@@ -5641,15 +5724,17 @@ function theme(m) {
   if (!m) return;
   const cs = getComputedStyle(document.documentElement), v = n => cs.getPropertyValue(n).trim();
   const bg = hexA(v("--ink") || "#070A10"), fr = v("--frame") || "#5CC8E0";
-  m.editor.defineTheme("notepath", { base: "vs-dark", inherit: true,
-    rules: [{ token: "comment", foreground: hexA(v("--faint") || "#6b7790").slice(1, 7), fontStyle: "italic" }, { token: "keyword", foreground: "B49BFF" }, { token: "string", foreground: "7BD88F" },
-      { token: "number", foreground: "F2B84B" }, { token: "type", foreground: "5CC8E0" }, { token: "type.identifier", foreground: "5CC8E0" }, { token: "delimiter", foreground: hexA(v("--muted") || "#a0aec0").slice(1, 7) },
-      { token: "regexp", foreground: "F07CA0" }, { token: "annotation", foreground: "D97AE6" }],
+  const light = document.documentElement.dataset.tone === "light"; // Paper, Sepia, light Your colours (Oct 14, 2026): the light editor and darker words
+  const K = light ? { kw: "6747CF", str: "1C7A38", num: "A86400", ty: "0B7487", re: "BE3463", an: "9C33AF" } : { kw: "B49BFF", str: "7BD88F", num: "F2B84B", ty: "5CC8E0", re: "F07CA0", an: "D97AE6" };
+  m.editor.defineTheme("notepath", { base: light ? "vs" : "vs-dark", inherit: true,
+    rules: [{ token: "comment", foreground: hexA(v("--faint") || "#6b7790").slice(1, 7), fontStyle: "italic" }, { token: "keyword", foreground: K.kw }, { token: "string", foreground: K.str },
+      { token: "number", foreground: K.num }, { token: "type", foreground: K.ty }, { token: "type.identifier", foreground: K.ty }, { token: "delimiter", foreground: hexA(v("--muted") || "#a0aec0").slice(1, 7) },
+      { token: "regexp", foreground: K.re }, { token: "annotation", foreground: K.an }],
     colors: { "editor.background": bg, "editor.foreground": hexA(v("--text") || "#e6edf7"), "editorLineNumber.foreground": hexA(v("--faint") || "#56627a"),
       "editorLineNumber.activeForeground": hexA(fr), "editorCursor.foreground": hexA(fr), "editor.selectionBackground": hexA(fr, .28), "editor.inactiveSelectionBackground": hexA(fr, .14),
-      "editor.lineHighlightBackground": "#ffffff08", "editor.lineHighlightBorder": "#00000000", "editorIndentGuide.background1": "#ffffff12", "editorIndentGuide.activeBackground1": hexA(fr, .45),
+      "editor.lineHighlightBackground": light ? "#00000008" : "#ffffff08", "editor.lineHighlightBorder": "#00000000", "editorIndentGuide.background1": light ? "#00000014" : "#ffffff12", "editorIndentGuide.activeBackground1": hexA(fr, .45),
       "editorWidget.background": hexA(v("--panel") || "#111827"), "editorWidget.border": hexA(v("--line-2") || "#2a3446"), "editorSuggestWidget.selectedBackground": hexA(fr, .22),
-      "minimap.background": bg, "scrollbarSlider.background": "#ffffff14", "scrollbarSlider.hoverBackground": hexA(fr, .3), "editorBracketMatch.border": hexA(fr, .7) } });
+      "minimap.background": bg, "scrollbarSlider.background": light ? "#0000001a" : "#ffffff14", "scrollbarSlider.hoverBackground": hexA(fr, .3), "editorBracketMatch.border": hexA(fr, .7) } });
   m.editor.setTheme("notepath");
 }
 window.addEventListener("inquire:theme", () => { if (window.monaco && monaco.editor) theme(window.monaco); });
@@ -9960,6 +10045,17 @@ const load = () => {
 let S = load();
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+/* (Phase 1 of theme packs, Devon Oct 14, 2026) A first start with no theme saved: an install that already has NotePath data keeps the
+   console look it had (Deep Space) and is marked grandfathered for the Holographic pack (S.holoKeep, free for good); a new install
+   follows the system (Paper in light mode, Graphite in dark mode). Written once, so the choice sticks. */
+(function firstTheme() {
+  if (S.tv) return; // decided before
+  let stored = null; try { stored = JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) {}
+  let old = !!stored;
+  try { for (let i = 0; i < localStorage.length && !old; i++) { const k = localStorage.key(i); if (/^notepath\./.test(k) && !/^notepath\.(settings|perf\.auto|i18n\.cache|seen056)$/.test(k)) old = true; } } catch (e) {}
+  if (old) { S.holoKeep = true; if (!(stored && stored.theme)) S.theme = "capsuleer"; } else S.theme = "system";
+  S.tv = 1; save();
+})();
 
 /* ---------- themes ----------
    bg = primary (window background), surface = secondary (panels), accent = detail (frames, glows).
@@ -9979,19 +10075,27 @@ const THEMES = [
   { id: "frost", fam: "Glass", name: "Frosted Glass", bg: "#0A1424", surface: "#1C2D48", accent: "#C4E8FF", tint: "#B49BFF", glow: "#5CC8E0", glass: true, note: "Clear panels over blue light" },
   { id: "aurora", fam: "Glass", name: "Aurora Glass", bg: "#06100F", surface: "#15282B", accent: "#9CF0C8", tint: "#D97AE6", glow: "#4FD1A5", glass: true, note: "Smoked glass, northern lights" }
 ];
+/* (Devon, Oct 14, 2026) The four minimal presets: built in, always free, never paid (licence class Bundled). plain = the plain style
+   (flat panels, no corner ticks or glow, normal-case labels: html[data-style=plain]); tone = light / dark (html[data-tone]). "system" =
+   Paper while the system is in light mode, Graphite in dark mode. The console themes above are the Holographic collection. */
+const MINIS = (window.NP_BUNDLED_THEMES || []).map(m => Object.assign({ id: m.id, fam: "Minimal", tone: m.family === "Light" ? "light" : "dark", plain: (m.style || "plain") === "plain",
+  name: m.name, note: m.description || "", bundled: true }, m.colors)); // web/themes/<id>/manifest.json, put in the page by tools/build-web.js
+const osDark = () => { try { return !!(window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches); } catch (e) { return true; } };
 const FAMS = [["Dark", "Darker tones"], ["Nature", "Nature tones"], ["Water", "Watery tones"], ["Earth", "Red & earthy tones"], ["Airy", "Lighter, airy tones"], ["Glass", "Glassy tones"]];
 const VARS = ["--void", "--ink", "--panel", "--panel-2", "--panel-3", "--line", "--line-2", "--text", "--muted", "--faint", "--tint-1", "--tint-2",
   "--chrome-1", "--chrome-2", "--win-1", "--win-2", "--slot-1", "--slot-2", "--slot-h1", "--slot-h2", "--wash", "--sky", "--stage-sky", "--frame", "--blur", "--glow",
-  "--node-1", "--node-2", "--node-line", "--node-line-2", "--node-text", "--orb-1", "--orb-2", "--era-1", "--era-2"];
+  "--node-1", "--node-2", "--node-line", "--node-line-2", "--node-text", "--orb-1", "--orb-2", "--era-1", "--era-2", "--on-accent"];
 
 const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
 const toHex = c => "#" + c.map(v => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, "0")).join("");
 const mix = (a, b, t) => { const A = hex(a), B = hex(b); return toHex(A.map((v, i) => v + (B[i] - v) * t)); };
 const rgba = (h, a) => `rgba(${hex(h).join(",")},${a})`;
+const onAccent = a => { const l = lum(a); return (l + .05) / (lum("#10141C") + .05) >= 1.05 / (l + .05) ? "#10141C" : "#FFFFFF"; }; // words on an accent-coloured button: whichever reads better
 function themeVars(t) {
+  if (t.plain) return plainVars(t);
   const text = t.text || "#DDE4EF", W = "#FFFFFF", g = !!t.glass, al = g ? .5 : .92;
   const panel2 = mix(t.surface, W, .035), panel3 = mix(t.surface, W, .07);
-  return {
+  return { "--on-accent": onAccent(t.accent),
     "--void": t.bg, "--ink": mix(t.bg, t.surface, .3), "--panel": t.surface, "--panel-2": panel2, "--panel-3": panel3,
     "--line": mix(t.surface, text, .13), "--line-2": mix(t.surface, text, .23), "--text": text,
     "--muted": t.muted || mix(text, t.bg, .38), "--faint": t.faint || mix(text, t.bg, .6),
@@ -10009,6 +10113,21 @@ function themeVars(t) {
     "--era-1": rgba(mix(mix(t.surface, text, .05), t.accent, .1), g ? .8 : .95), "--era-2": rgba(mix(t.bg, t.surface, .6), g ? .8 : .95)
   };
 }
+/* The plain style (minimal presets and plain Your colours): solid panels and bars, no glows or tints; light themes step their
+   panels toward the text colour instead of toward white. */
+function plainVars(t) {
+  const text = t.text, s = t.surface, b = t.bg, light = (t.tone || (lum(s) > .4 ? "light" : "dark")) === "light";
+  const p2 = mix(s, text, light ? .035 : .045), p3 = mix(s, text, light ? .07 : .09);
+  return {
+    "--void": b, "--ink": light ? s : mix(b, s, .45), "--panel": s, "--panel-2": p2, "--panel-3": p3,
+    "--line": mix(s, text, light ? .12 : .14), "--line-2": mix(s, text, light ? .22 : .24), "--text": text, "--muted": t.muted, "--faint": t.faint,
+    "--tint-1": "transparent", "--tint-2": "transparent", "--chrome-1": s, "--chrome-2": s, "--win-1": s, "--win-2": s,
+    "--slot-1": s, "--slot-2": s, "--slot-h1": mix(s, t.accent, .06), "--slot-h2": mix(s, t.accent, .06),
+    "--wash": rgba(s, .9), "--sky": b, "--stage-sky": p2, "--frame": t.accent, "--blur": "0px", "--glow": "transparent", "--on-accent": onAccent(t.accent),
+    "--node-1": p2, "--node-2": b, "--node-line": mix(s, text, .25), "--node-line-2": mix(s, text, .32), "--node-text": t.muted,
+    "--orb-1": p3, "--orb-2": b, "--era-1": p2, "--era-2": b
+  };
+}
 /* Your colours (Appearance → Your colours): S.custom = { bg, surface, accent, glass } is the live "custom" theme while you
    pick; S.presets = 3 × (null | { name, bg, surface, accent, glass }) are saved as themes "preset-1" … "preset-3".
    Text, lines and the second glow are derived; a light secondary colour gets dark text. */
@@ -10016,14 +10135,50 @@ const lum = c => { const [r, g, b] = hex(c).map(v => { v /= 255; return v <= .03
 function userTheme(c, id, name) {
   if (!c || !hexOk(c.bg) || !hexOk(c.surface) || !hexOk(c.accent)) return null;
   const light = lum(c.surface) > .4;
-  return { id, fam: "Custom", name, bg: c.bg, surface: c.surface, accent: c.accent, tint: mix(c.accent, light ? "#000000" : c.surface, .45), glass: !!c.glass,
-    text: light ? "#151A22" : lum(c.surface) > .18 ? "#F6F8FB" : undefined, note: id === "custom" ? "Not saved yet" : "Your preset" };
+  return { id, fam: "Custom", name, bg: c.bg, surface: c.surface, accent: c.accent, tint: mix(c.accent, light ? "#000000" : c.surface, .45), glass: !c.plain && !!c.glass,
+    plain: !!c.plain, tone: light ? "light" : "dark", muted: c.plain ? mix(light ? "#151A22" : "#F6F8FB", c.surface, .32) : undefined, faint: c.plain ? mix(light ? "#151A22" : "#F6F8FB", c.surface, .5) : undefined,
+    text: light ? "#151A22" : lum(c.surface) > .18 || c.plain ? "#F6F8FB" : undefined, note: id === "custom" ? "Not saved yet" : "Your preset" };
+}
+/* Installed theme packs (Phase 1, Oct 14, 2026): main.js keeps them in <userData>/themes (themes-core.js); S.packs is a copy of their
+   summaries so the theme is right from the first paint; syncPacks() refreshes it from the main process at start. Theme id "pack:<id>". */
+const packOk = p => p && typeof p === "object" && typeof p.id === "string" && p.colors;
+S.packs = Array.isArray(S.packs) ? S.packs.filter(packOk) : [];
+function packTheme(pid) {
+  const p = S.packs.find(x => x && x.id === pid); if (!p || !p.colors) return null;
+  const c = p.colors, plain = (p.style || "plain") === "plain";
+  return Object.assign({}, c, { id: "pack:" + p.id, fam: "Pack", name: p.name, note: (p.author ? "By " + p.author : ""), plain, glass: !plain && c.glass > 0,
+    glow: c.glow ? c.glow.slice(0, 7) : undefined, tone: p.family === "Light" ? "light" : p.family === "Dark" ? "dark" : undefined, pack: p });
+}
+const bridgeThemes = () => window.inquireDesktop && window.inquireDesktop.themes;
+async function syncPacks() {
+  const B = bridgeThemes(); if (!B) return;
+  let r; try { r = await B.list(); } catch (e) { return; }
+  if (!r || !r.ok) return;
+  const before = JSON.stringify(S.packs) + S.theme;
+  S.packs = (r.packs || []).filter(p => packOk(p) && !p.broken); S.signing = !!r.signing;
+  const broken = (r.packs || []).find(p => p && p.broken && S.theme === "pack:" + p.id);
+  if (/^pack:/.test(S.theme) && !packTheme(S.theme.slice(5))) {
+    const was = broken ? broken.name : S.theme.slice(5);
+    S.theme = S.lastBuilt && !/^pack:/.test(S.lastBuilt) ? S.lastBuilt : "system";
+    setTimeout(() => { const NS = window.InquireNotes; if (NS && NS.toast) NS.toast(`The theme pack “${esc(was)}” couldn’t be loaded, so NotePath went back to ${esc(findTheme(S.theme).name)}. Reinstall it from Settings → Appearance.`, null, 8000); }, 600);
+  }
+  if (JSON.stringify(S.packs) + S.theme === before) return; // nothing changed: no redraw (Appearance asks again each time it opens)
+  save(); applyAll();
+  if (!ov.hidden && tab === "look") { const y = pane.scrollTop; show("look"); pane.scrollTop = y; }
 }
 function findTheme(id) {
   const m = /^preset-([123])$/.exec(id || "");
-  if (m) { const p = S.presets[m[1] - 1]; return userTheme(p, id, p ? p.name : "") || THEMES[0]; }
-  if (id === "custom") return userTheme(S.custom, "custom", "Custom") || THEMES[0];
-  return THEMES.find(x => x.id === id) || THEMES[0];
+  if (m) { const p = S.presets[m[1] - 1]; return userTheme(p, id, p ? p.name : "") || findTheme("system"); }
+  if (id === "custom") return userTheme(S.custom, "custom", "Custom") || findTheme("system");
+  if (id === "system") return Object.assign({}, MINIS.find(x => x.id === (osDark() ? "graphite" : "paper")), { sys: true });
+  if (/^pack:/.test(id || "")) { const t = packTheme(id.slice(5)); if (t) return t; return findTheme(S.lastBuilt && !/^pack:/.test(S.lastBuilt) ? S.lastBuilt : "system"); }
+  return MINIS.find(x => x.id === id) || THEMES.find(x => x.id === id) || MINIS.find(x => x.id === (osDark() ? "graphite" : "paper"));
+}
+const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + .05) / (Math.min(x, y) + .05); };
+function readable(c, bg) { // only on light backgrounds: step the colour toward black until it reads at 4.5:1
+  if (!hexOk(c) || !hexOk(bg) || lum(bg) < .4) return c;
+  let out = c; for (let i = 1; i <= 20 && ratio(out, bg) < 4.5; i++) out = mix(c, "#000000", i * .04);
+  return out;
 }
 function applyTheme(id) {
   const t = findTheme(id), st = document.documentElement.style;
@@ -10031,6 +10186,9 @@ function applyTheme(id) {
   else { const v = themeVars(t); VARS.forEach(k => st.setProperty(k, v[k])); }
   document.documentElement.dataset.theme = t.id;
   document.documentElement.toggleAttribute("data-glass", !!t.glass);
+  if (t.plain) document.documentElement.dataset.style = "plain"; else delete document.documentElement.dataset.style;
+  const tone = t.tone || (lum(t.surface) > .4 ? "light" : "dark");
+  document.documentElement.dataset.tone = tone; document.documentElement.style.colorScheme = tone;
 }
 /* Text size: every px font size and px line height in the stylesheets becomes calc(… * var(--ts, 1)).
    Font shorthands that use var(--ui) keep their text form in the CSSOM, so the size token is rewritten in place. */
@@ -10122,16 +10280,19 @@ const perfNow = () => PERFS.includes(S.perf) ? S.perf : osReduced() ? "lite" : a
 function applyAll() {
   applyTheme(S.theme);
   { const th = findTheme(S.theme); document.documentElement.toggleAttribute("data-glass", !!(th && th.glass)); document.documentElement.dataset.perf = perfNow(); }
-  document.documentElement.style.setProperty("--note-link", hexOk(S.noteLink) ? S.noteLink : DEF.noteLink);
-  document.documentElement.style.setProperty("--note-indent", hexOk(S.indent) ? S.indent : DEF.indent); // paranotes (notes.js)
-  Object.keys(TABDEF).forEach(k => document.documentElement.style.setProperty("--tab-" + k, hexOk(S.tabs[k]) ? S.tabs[k] : TABDEF[k]));
+  const th0 = findTheme(S.theme), rd = c => readable(c, th0.surface); // light themes darken colours that would be too pale to read (4.5:1)
+  document.documentElement.style.setProperty("--note-link", rd(hexOk(S.noteLink) ? S.noteLink : DEF.noteLink));
+  document.documentElement.style.setProperty("--note-indent", rd(hexOk(S.indent) ? S.indent : DEF.indent)); // paranotes (notes.js)
+  Object.keys(TABDEF).forEach(k => document.documentElement.style.setProperty("--tab-" + k, rd(hexOk(S.tabs[k]) ? S.tabs[k] : TABDEF[k])));
   applySizes();
   document.documentElement.toggleAttribute("data-reduce-motion", !!S.reduceMotion || osReduced()); // the system setting counts too (v0.5.7)
   if (CVDS.some(c => c[0] === S.cvd) && S.cvd !== "off") document.documentElement.dataset.cvd = S.cvd; else delete document.documentElement.dataset.cvd; // colour-blind mode (v0.5.8)
   window.dispatchEvent(new CustomEvent("inquire:theme")); // canvases that paint with the theme (Note Office) repaint
 }
 applyAll();
+setTimeout(syncPacks, 0); // installed theme packs (main process)
 try { if (window.matchMedia) matchMedia("(prefers-reduced-motion: reduce)").addEventListener("change", () => applyAll()); } catch (e) {}
+try { if (window.matchMedia) matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { if (S.theme === "system") applyAll(); }); } catch (e) {} // Follow the system
 setTimeout(jankWatch, 2500); // after start-up has settled
 
 /* ---------- window ---------- */
@@ -10148,12 +10309,13 @@ let tab = "look", lastFocus = null, mode = "settings";
 TABS.forEach(([id, label]) => {
   const b = document.createElement("button");
   b.type = "button"; b.className = "set-tab"; b.setAttribute("role", "tab"); b.dataset.tab = id; b.textContent = label;
-  b.onclick = () => show(id);
+  b.onclick = () => { LOOKSUB = ""; show(id); };
   tabsEl.appendChild(b);
 });
 function open(which) {
   mode = "settings"; win.classList.remove("is-doc"); titleEl.textContent = "Settings"; tabsEl.hidden = false;
   if (!ov.hidden) { show(which || tab); return; }
+  LOOKSUB = "";
   lastFocus = document.activeElement;
   ov.hidden = false; requestAnimationFrame(() => { if (!ov.hidden) document.body.classList.add("set-open"); });
   show(which || tab);
@@ -10215,22 +10377,46 @@ function swatch(t) {
   return `<span class="set-sw${t.glass ? " set-glass" : ""}" style="--p:${t.bg};--s:${t.surface};--d:${t.accent};--t:${t.glow || t.tint}" aria-hidden="true">
     <i class="set-swp"></i><i class="set-sws"></i><i class="set-swd"></i></span>`;
 }
+function swatchPlain(t) { // a little page: the background, a white card with two lines of words and an accent button
+  return `<span class="set-sw set-swpl" style="--p:${t.bg};--s:${t.surface};--d:${t.accent};--x:${t.text};--m:${t.muted || t.text}" aria-hidden="true">
+    <i class="set-plc"></i><i class="set-pl1"></i><i class="set-pl2"></i><i class="set-plb"></i></span>`;
+}
+function swatchSystem() {
+  const a = MINIS.find(x => x.id === "paper"), b = MINIS.find(x => x.id === "graphite");
+  return `<span class="set-sw set-swsys" aria-hidden="true"><span class="set-sysh">${swatchPlain(a)}</span><span class="set-sysh">${swatchPlain(b)}</span></span>`;
+}
+let LOOKSUB = ""; // "" = Appearance, "holo" = Themes › Holographic (Devon, Oct 14, 2026)
+function themeCard(t, wrap, opt) {
+  opt = opt || {};
+  const sw = opt.sys ? swatchSystem() : t.plain ? swatchPlain(t) : swatch(t);
+  const chips = opt.sys ? "" : `<span class="set-thchips"><i style="background:${t.bg}" title="Primary ${t.bg}"></i><i style="background:${t.surface}" title="Secondary ${t.surface}"></i><i style="background:${t.accent}" title="Detail ${t.accent}"></i></span>`;
+  const b = h(`<button type="button" class="set-th" role="radio" aria-checked="${S.theme === t.id}" data-id="${t.id}">
+    ${sw}<span class="set-thname">${esc(t.name)}</span><span class="set-thnote">${esc(t.note)}</span>${chips}</button>`);
+  b.onclick = () => { const was = S.theme; S.theme = t.id; if (!/^pack:/.test(t.id)) S.lastBuilt = t.id; save(); applyAll();
+    if (/^pack:/.test(t.id) && was !== t.id) { const NS = window.InquireNotes; if (NS && NS.toast) NS.toast(`Applied “${esc(t.name)}”.`, { label: "Undo", run: () => { S.theme = was; save(); applyAll(); if (!ov.hidden && tab === "look") show("look"); } }, 6000); } wrap.querySelectorAll(".set-th[data-id]").forEach(x => x.setAttribute("aria-checked", String(x.dataset.id === t.id))); if (wrap._cust) wrap._cust(findTheme(t.id)); };
+  return b;
+}
 function paneLook() {
   // (v0.5.8, Devon) two parts, each under a bold header with a solid line: the app's own look, then the colours of tools and features
   const sect = (t, d) => h(`<div class="set-sect" role="group" aria-label="${t}"><h3 class="set-secth">${t}</h3><p class="set-sectd">${d}</p></div>`);
-  const wrap = h(`<div>${""}<p class="set-lede">Pick the colours of the console. Each square shows the theme's <b>primary</b> (background), <b>secondary</b> (panels) and <b>detail</b> (frames and glow) colours. Topic colours stay the same in every theme so diagrams keep their meaning. To make your own, scroll to <b>Your colours</b> below.</p></div>`);
-  FAMS.forEach(([fam, label]) => {
-    const g = h(`<div class="set-thfam"><h3>${label}</h3><div class="set-thgrid" role="radiogroup" aria-label="${label}"></div></div>`);
-    THEMES.filter(t => t.fam === fam).forEach(t => {
-      const b = h(`<button type="button" class="set-th" role="radio" aria-checked="${S.theme === t.id}" data-id="${t.id}">
-        ${swatch(t)}<span class="set-thname">${esc(t.name)}</span><span class="set-thnote">${esc(t.note)}</span>
-        <span class="set-thchips"><i style="background:${t.bg}" title="Primary ${t.bg}"></i><i style="background:${t.surface}" title="Secondary ${t.surface}"></i><i style="background:${t.accent}" title="Detail ${t.accent}"></i></span></button>`);
-      b.onclick = () => { S.theme = t.id; save(); applyTheme(t.id); wrap.querySelectorAll(".set-th").forEach(x => x.setAttribute("aria-checked", String(x.dataset.id === t.id))); if (wrap._cust) wrap._cust(t); };
-      g.querySelector(".set-thgrid").appendChild(b);
-    });
-    if (!wrap.querySelector(".set-sect")) wrap.insertBefore(sect("Application colours &amp; themes", "The look of NotePath itself: its theme, your own colours, the Main Menu and colour-blind mode."), wrap.querySelector(".set-lede"));
-    wrap.appendChild(g);
-  });
+  if (LOOKSUB === "holo") return paneHolo(sect);
+  setTimeout(syncPacks, 0); // packs added or removed outside this window show up
+  const wrap = h(`<div></div>`);
+  wrap.appendChild(sect("Application colours &amp; themes", "The look of NotePath itself: its theme, your own colours, the Main Menu and colour-blind mode."));
+  wrap.appendChild(h(`<p class="set-lede">Pick the colours of NotePath. Each square shows a theme's background, panel and accent colours. To make your own, use Your colours below. The original console looks are under Holographic themes.</p>`));
+  const g = h(`<div class="set-thfam"><h3>Themes</h3><div class="set-thgrid" role="radiogroup" aria-label="Themes"></div></div>`), grid = g.querySelector(".set-thgrid");
+  grid.appendChild(themeCard({ id: "system", name: "Follow the system", note: "Paper while your computer is in light mode, Graphite in dark mode" }, wrap, { sys: true }));
+  MINIS.forEach(t => grid.appendChild(themeCard(t, wrap)));
+  grid.appendChild(themeCard(THEMES.find(t => t.id === "high-contrast"), wrap));
+  wrap.appendChild(g);
+  const cur = findTheme(S.theme), onHolo = THEMES.some(t => t.id === cur.id && t.id !== "high-contrast");
+  const hb = h(`<button type="button" class="set-holob" data-a="holo">
+      <span class="set-holosw" aria-hidden="true">${["capsuleer", "aurora", "ember", "old-growth"].map(id => swatch(THEMES.find(t => t.id === id))).join("")}</span>
+      <span class="set-holot"><b>Holographic themes</b><small>The original NotePath console: glass panels, glows and corner trim. ${THEMES.length - 1} themes.</small>${onHolo ? `<small class="set-holou">In use: ${esc(cur.name)}</small>` : ""}</span>
+      <span class="set-holoa" aria-hidden="true">›</span></button>`);
+  hb.onclick = () => { LOOKSUB = "holo"; show("look"); };
+  wrap.appendChild(hb);
+  const pk = packsSection(wrap); if (pk) wrap.appendChild(pk);
   wrap.appendChild(customLook(wrap));
   // colour of linked words in notes (links to other notes)
   const lc = h(`<div class="set-thfam"><h3>Note links</h3><div class="set-item set-lcitem"><div><p>Colour of linked words in your notes: words that open another note.
@@ -10277,32 +10463,91 @@ function paneLook() {
   pane.appendChild(wrap);
 }
 
+const kb = n => n >= 1048576 ? (n / 1048576).toFixed(1) + " MB" : Math.max(0.1, n / 1024).toFixed(1) + " KB";
+const WEIGHTS = { light: "Light pack", medium: "Medium pack", rich: "Rich pack" };
+// Theme packs you installed: a card each (pick, weight, size on disk, Remove), the storage line, Install a pack from a file…
+function packsSection(wrap) {
+  const B = bridgeThemes(); if (!B && !S.packs.length) return null;
+  const total = S.packs.reduce((a, p) => a + (p.bytes || 0), 0);
+  const el = h(`<div class="set-thfam set-packs"><h3>Theme packs</h3>
+    <p class="set-cl">${S.packs.length ? `Theme packs use ${kb(total)} on this computer. They work without a connection.` : "No theme packs installed. Packs you add appear here."}</p>
+    <div class="set-thgrid" role="radiogroup" aria-label="Theme packs"></div>
+    ${B ? `<div class="set-packrow"><button type="button" class="btn-s" data-a="packfile">Install a pack from a file…</button><span class="set-msg" role="status"></span></div>` : ""}</div>`);
+  const grid = el.querySelector(".set-thgrid"), msg = el.querySelector(".set-msg");
+  S.packs.forEach(p => {
+    const t = packTheme(p.id); if (!t) return;
+    const card = themeCard(t, wrap);
+    card.querySelector(".set-thnote").textContent = `${WEIGHTS[p.weight] || WEIGHTS.light} · ${kb(p.bytes || 0)}`;
+    const w = h(`<div class="set-pwrap"></div>`); w.appendChild(card);
+    const del = h(`<button type="button" class="set-pdel" data-premove="${esc(p.id)}" title="Remove ${esc(p.name)}" aria-label="Remove the theme pack ${esc(p.name)}">✕</button>`);
+    del.onclick = async () => {
+      if (del.dataset.armed !== "1") { del.dataset.armed = "1"; del.textContent = "Remove?"; del.classList.add("armed"); return; }
+      const r = await B.remove(p.id).catch(() => null);
+      if (S.theme === "pack:" + p.id) S.theme = S.lastBuilt && !/^pack:/.test(S.lastBuilt) ? S.lastBuilt : "system";
+      S.packs = S.packs.filter(x => x.id !== p.id); save(); applyAll(); show("look");
+      const m2 = pane.querySelector(".set-packs .set-msg"); if (m2) say(m2, r && r.ok ? `Removed “${p.name}”.` : `“${p.name}” was already gone.`, true);
+    };
+    w.appendChild(del); grid.appendChild(w);
+  });
+  if (!S.packs.length) grid.remove();
+  const f = el.querySelector('[data-a="packfile"]');
+  if (f) f.onclick = async () => {
+    say(msg, "Choose a .nptheme file…");
+    let r; try { r = await B.installFile(); } catch (e) { r = { ok: false, error: "Couldn’t install that pack." }; }
+    if (!r || r.canceled) { say(msg, ""); return; }
+    if (!r.ok || !packOk(r.pack)) { say(msg, r.error || "Couldn’t install that pack."); return; }
+    S.packs = S.packs.filter(x => x.id !== r.pack.id).concat([r.pack]); save(); show("look");
+    const m2 = pane.querySelector(".set-packs .set-msg"); if (m2) say(m2, `Installed “${r.pack.name}”. Pick it above to use it.`, true);
+  };
+  return el;
+}
+
+/* Themes › Holographic: the console themes (Deep Space, Obsidian … Aurora Glass), grouped as before. Built in for now (Phase 1);
+   Phase 2 makes them a download, kept free for installs from before the change (S.holoKeep). */
+function paneHolo(sect) {
+  const wrap = h(`<div class="set-holo"></div>`);
+  const back = h(`<button type="button" class="btn-s set-back" data-a="lookback">‹ Appearance</button>`);
+  back.onclick = () => { LOOKSUB = ""; show("look"); };
+  wrap.appendChild(back);
+  wrap.appendChild(sect("Holographic themes", "The original NotePath console: dark glass windows, glowing frames, corner trim and letter-spaced labels."));
+  FAMS.forEach(([fam, label]) => {
+    const list = THEMES.filter(t => t.fam === fam && t.id !== "high-contrast");
+    if (!list.length) return;
+    const g = h(`<div class="set-thfam"><h3>${label}</h3><div class="set-thgrid" role="radiogroup" aria-label="${label}"></div></div>`);
+    list.forEach(t => g.querySelector(".set-thgrid").appendChild(themeCard(t, wrap)));
+    wrap.appendChild(g);
+  });
+  pane.appendChild(wrap);
+  setTimeout(() => { try { back.focus({ preventScroll: true }); } catch (e) {} }, 0);
+}
+
 /* Your colours: three pickers (live), a preview square, and three preset slots drawn like the theme cards */
-const CFIELDS = [["bg", "Primary", "Background"], ["surface", "Secondary", "Panels"], ["accent", "Detail", "Frames & glow"]];
+const CFIELDS = [["bg", "Background", "Around the panels"], ["surface", "Panels", "Pages and windows"], ["accent", "Accent", "Buttons, links, selection"]];
 function customLook(wrap) {
-  const cur = () => { const t = findTheme(S.theme); return { bg: t.bg, surface: t.surface, accent: t.accent, glass: !!t.glass }; };
+  // (Oct 14, 2026) Your colours make plain-style looks; presets saved before then (no plain flag) keep the console look they had
+  const cur = () => { const t = findTheme(S.theme); return { bg: t.bg, surface: t.surface, accent: t.accent, glass: false, plain: true }; };
   let C = S.theme === "custom" && S.custom ? Object.assign({}, S.custom) : cur();
   const card = (p, i) => {
     const id = "preset-" + (i + 1), t = userTheme(p, id, p && p.name);
     if (!t) return `<div class="set-pwrap"><div class="set-th set-pempty"><span class="set-sw set-swempty" aria-hidden="true">${i + 1}</span><span class="set-thname">Preset ${i + 1}</span><span class="set-thnote">Empty. Pick colours above, then save them here.</span></div></div>`;
     return `<div class="set-pwrap"><button type="button" class="set-th" role="radio" aria-checked="${S.theme === id}" data-id="${id}">
-      ${swatch(t)}<span class="set-thname">${esc(t.name)}</span><span class="set-thnote">Your preset · slot ${i + 1}</span>
+      ${t.plain ? swatchPlain(t) : swatch(t)}<span class="set-thname">${esc(t.name)}</span><span class="set-thnote">Your preset · slot ${i + 1}</span>
       <span class="set-thchips"><i style="background:${t.bg}" title="Primary ${t.bg}"></i><i style="background:${t.surface}" title="Secondary ${t.surface}"></i><i style="background:${t.accent}" title="Detail ${t.accent}"></i></span></button>
       <button type="button" class="set-pdel" data-del="${i}" title="Delete preset ${i + 1}" aria-label="Delete preset ${esc(t.name)}">✕</button></div>`;
   };
   const el = h(`<div class="set-thfam set-cust"><h3>Your colours</h3>
-    <p class="set-cl">Choose your own <b>primary</b>, <b>secondary</b> and <b>detail</b> colours; the console changes as you pick. Save a look into one of three presets to come back to it.</p>
+    <p class="set-cl">Choose your own background, panel and accent colours; NotePath changes as you pick. The words take a colour that reads on your panels. Save a look into one of three presets to come back to it.</p>
     <div class="set-cedit"><span class="set-cprev"></span>
       <div class="set-cfields">${CFIELDS.map(([k, n, d]) => `<div class="set-cf"><span class="set-cfl">${n}<small>${d}</small></span>
         <label class="set-cpick" style="--c:${C[k]}"><input type="color" data-c="${k}" value="${C[k]}" aria-label="${n} colour"></label>
         <input class="set-hex" data-h="${k}" value="${C[k].toUpperCase()}" maxlength="7" spellcheck="false" autocomplete="off" aria-label="${n} colour, hex"></div>`).join("")}
-        <label class="set-cglass"><input type="checkbox" data-glass${C.glass ? " checked" : ""}> Glass panels <small>translucent, blurred</small></label></div></div>
+</div></div>
     <div class="set-csave"><input class="set-cname" maxlength="24" placeholder="Name this look" aria-label="Preset name">
       <span class="set-cto">Save to</span>${[0, 1, 2].map(i => `<button type="button" class="btn-s" data-save="${i}">Preset ${i + 1}</button>`).join("")}<span class="set-msg" role="status"></span></div>
     <div class="set-thgrid set-presets" role="radiogroup" aria-label="Your presets">${S.presets.map(card).join("")}</div></div>`);
   const msg = el.querySelector(".set-msg");
-  const prev = () => { el.querySelector(".set-cprev").innerHTML = swatch({ bg: C.bg, surface: C.surface, accent: C.accent, tint: mix(C.accent, C.surface, .45), glass: C.glass }); };
-  const fill = () => { CFIELDS.forEach(([k]) => { el.querySelector(`[data-c="${k}"]`).value = C[k]; el.querySelector(`[data-h="${k}"]`).value = C[k].toUpperCase(); el.querySelector(`[data-c="${k}"]`).parentNode.style.setProperty("--c", C[k]); }); el.querySelector("[data-glass]").checked = !!C.glass; prev(); };
+  const prev = () => { const t = userTheme(C, "custom", ""); el.querySelector(".set-cprev").innerHTML = t && t.plain ? swatchPlain(Object.assign({}, t, { text: t.text || "#F6F8FB" })) : swatch({ bg: C.bg, surface: C.surface, accent: C.accent, tint: mix(C.accent, C.surface, .45), glass: C.glass }); };
+  const fill = () => { CFIELDS.forEach(([k]) => { el.querySelector(`[data-c="${k}"]`).value = C[k]; el.querySelector(`[data-h="${k}"]`).value = C[k].toUpperCase(); el.querySelector(`[data-c="${k}"]`).parentNode.style.setProperty("--c", C[k]); }); prev(); };
   const mark = () => wrap.querySelectorAll(".set-th[data-id]").forEach(x => x.setAttribute("aria-checked", String(x.dataset.id === S.theme)));
   const live = keep => { S.custom = Object.assign({}, C); S.theme = "custom"; applyTheme("custom"); mark(); prev(); if (keep) save(); };
   CFIELDS.forEach(([k]) => {
@@ -10313,14 +10558,13 @@ function customLook(wrap) {
       if (hexOk(v)) { C[k] = v.toLowerCase(); col.value = C[k]; col.parentNode.style.setProperty("--c", C[k]); hx.classList.remove("bad"); live(true); } else hx.classList.add("bad"); };
     hx.onblur = () => { hx.value = C[k].toUpperCase(); hx.classList.remove("bad"); };
   });
-  el.querySelector("[data-glass]").onchange = e => { C.glass = e.target.checked; live(true); };
   let armed = null;
   el.querySelectorAll("[data-save]").forEach(b => b.onclick = () => {
     const i = +b.dataset.save, had = S.presets[i];
     if (had && armed !== b) { if (armed) armed.textContent = "Preset " + (+armed.dataset.save + 1); armed = b; b.textContent = "Replace?"; say(msg, `Preset ${i + 1} holds “${had.name}”. Click Replace? to save over it.`); return; }
     armed = null;
     const name = el.querySelector(".set-cname").value.trim() || "Preset " + (i + 1);
-    S.presets[i] = { name, bg: C.bg, surface: C.surface, accent: C.accent, glass: !!C.glass }; S.theme = "preset-" + (i + 1); save(); applyTheme(S.theme);
+    S.presets[i] = { name, bg: C.bg, surface: C.surface, accent: C.accent, glass: !!C.glass, plain: !!C.plain }; S.theme = "preset-" + (i + 1); save(); applyTheme(S.theme);
     redraw(`Saved “${name}” as preset ${i + 1}.`);
   });
   el.querySelector(".set-presets").addEventListener("click", e => {
@@ -10329,10 +10573,10 @@ function customLook(wrap) {
       const nm = S.presets[i].name; S.presets[i] = null; if (S.theme === "preset-" + (i + 1)) { S.custom = Object.assign({}, C); S.theme = "custom"; } save(); applyTheme(S.theme); redraw(`Deleted “${nm}”.`); return; }
     const b = e.target.closest(".set-th[data-id]"); if (!b) return;
     S.theme = b.dataset.id; save(); applyTheme(S.theme); mark();
-    const p = S.presets[+b.dataset.id.slice(7) - 1]; C = { bg: p.bg, surface: p.surface, accent: p.accent, glass: !!p.glass }; fill(); el.querySelector(".set-cname").value = p.name;
+    const p = S.presets[+b.dataset.id.slice(7) - 1]; C = { bg: p.bg, surface: p.surface, accent: p.accent, glass: !!p.glass, plain: !!p.plain }; fill(); el.querySelector(".set-cname").value = p.name;
   });
   function redraw(note) { const y = pane.scrollTop; show("look"); pane.scrollTop = y; const m2 = pane.querySelector(".set-cust .set-msg"); if (m2 && note) say(m2, note, true); }
-  wrap._cust = t => { C = { bg: t.bg, surface: t.surface, accent: t.accent, glass: !!t.glass }; fill(); }; // a built-in theme picked: start from its colours
+  wrap._cust = t => { C = { bg: t.bg, surface: t.surface, accent: t.accent, glass: false, plain: true }; fill(); }; // a built-in theme picked: start from its colours
   prev();
   return el;
 }

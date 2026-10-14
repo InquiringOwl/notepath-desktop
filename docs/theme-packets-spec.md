@@ -8,13 +8,38 @@ A theme packet is a downloadable bundle of colours, artwork and optional gentle 
 
 Every later section follows these rules:
 
-- **Small installer.** The installer ships only Deep Space, the plain themes and High Contrast. Everything else is downloaded on demand and stored outside the app.
+- **Small installer.** The installer ships only the four minimal presets (Paper, Sepia, Graphite, Midnight) and High Contrast. Everything else is downloaded on demand and stored outside the app.
 - **Themes are data, not programs.** A packet holds a manifest and image files. NotePath's own scene engine draws it. A packet can never run JavaScript.
 - **Performance mode wins.** A scene follows the Performance setting: Lite shows a still image, Moderate shows cheap motion, Full shows the richest version. Motion uses only transform and opacity.
 - **Motion stays out of the way.** Animation lives on the Main Menu and page margins, never behind the editor, and it pauses when the window is hidden, a dialog is open, or reduce motion is on.
 - **Accessibility is never paid.** Plain themes and High Contrast are always free. Paid packs may add scenes, not readability.
 - **Original art only.** No brand logos or known characters, so packs carry no licence risk. This is a design rule, not legal advice.
 - **Offline after install.** Once a pack is installed it works with no network. Removing it frees its space.
+
+## Decisions, Oct 14, 2026 (Devon)
+
+These override anything below that disagrees; the sections below are amended to match.
+
+- **Built into the installer, always free:** four minimal colour presets, **Paper** (light), **Sepia** (warm light), **Graphite** (dark) and **Midnight** (navy dark), plus **High Contrast**. They are authored as packs (same manifest, validated by `tools/theme-check.js`) but ship inside the app, cannot be removed, and must be treated as the **Bundled** licence class by any monetization framework: they never become paid.
+- **Your colours** (the existing picker with three save slots) moves to the main Appearance page beside the four presets and starts from the preset in use.
+- **Plain style:** the minimal presets get a plain look (flat panels, no corner ticks, no glow, normal-case labels), like a typical document or note app. The console look (glass gradient windows, corner ticks, glows, uppercase labels) belongs to the console themes.
+- **Holographic pack:** today's console themes (Deep Space, Obsidian, Old Growth, Moss & Lichen, Abyssal, Tidepool, Ember, Canyon Clay, Morning Mist, Lavender Dusk, Frosted Glass, Aurora Glass) become one collection, **Holographic**, on its own **Themes ›** page under Appearance. It is a **paid download**. Every install that existed before the update keeps it free (grandfathered) and has it installed automatically, so no one loses their look.
+- **Default for new installs:** follow the system: Paper in light mode, Graphite in dark mode, switching with the OS.
+- **Order:** Phase 1 builds the restructured Appearance, the four presets, the plain style and the pack foundation, with Holographic still built in on the Themes page. Phase 2 turns Holographic into a real download (with the grandfather install). Phase 4 adds its licence.
+- **Removed pack fallback:** the previous built-in theme, else the system default above.
+
+## Phase 1 as built (Oct 14, 2026)
+
+What Phase 1 settled while building; these also override the sections below.
+
+- **The four presets are real packs** in `web/themes/<id>/manifest.json`, checked by the same rules and built into the page. A built-in pack needs no `preview` or signature.
+- **Two optional manifest fields:** `style` (`plain`, the default, or `console` for the Holographic look) and `description` (up to 120 characters, shown on the card).
+- **`faint` must reach 4.5:1**, not 3:1. NotePath uses it for small hints and counts, and the accessibility check needs 4.5:1 there.
+- **SVGs with anything active are refused, not stripped:** scripts, event handlers, outside links, embedded documents or images, entities, stylesheets. Refusing is simpler and safer, and authors see why in `theme:check`.
+- **Signing:** `theme-key.json` holds the public key. It stays `null` until Devon runs `npm run theme:keygen` on his Mac, and until then no downloaded pack installs. `npm run theme:pack` signs with the private key in `~/.notepath/theme-signing-key.pem`.
+- **Local install:** Settings → Appearance → Theme packs → Install a pack from a file… stands in for the catalogue until Phase 2.
+- **Fallback:** a missing or broken pack falls back to the previous built-in theme, else Follow the system, with a message.
+- **Grandfathering:** the first start of the new version marks existing installs (`holoKeep`). They keep their theme, and Holographic stays free for them.
 
 ## Where packs live
 
@@ -34,7 +59,7 @@ The renderer reads packs through a `notepath://theme/<pack-id>/<path>` address h
 
 | Item | Where it lives | In the installer | In backups |
 | --- | --- | --- | --- |
-| Deep Space, plain themes, High Contrast | App code | Yes | Selection only |
+| Paper, Sepia, Graphite, Midnight, High Contrast | App code | Yes | Selection only |
 | Downloaded packs | `<userData>/themes/` | No | No (the pack is re-downloaded) |
 | Selected theme and pack list | Settings | Settings only | Yes |
 | Licence files | `<userData>/themes/licences/` | No | Yes, so a restore keeps purchases |
@@ -54,7 +79,7 @@ Installing a pack is a download handled entirely by the main process, so a faile
 
 Updates: NotePath checks the catalogue at most once a day and on opening the Theme packs screen. A newer version downloads in the background only if the user taps Update. The old version stays until the new one validates, then is deleted.
 
-Remove: deleting the pack folder and its `index.json` entry. If the removed pack was selected, NotePath returns to the previous plain theme. Licence files stay so a purchase can be reinstalled.
+Remove: deleting the pack folder and its `index.json` entry. If the removed pack was selected, NotePath returns to the previous built-in theme, else the system default (Paper or Graphite). Licence files stay so a purchase can be reinstalled.
 
 | Situation | What NotePath does |
 | --- | --- |
@@ -62,7 +87,7 @@ Remove: deleting the pack folder and its `index.json` entry. If the removed pack
 | Download interrupted | Keeps nothing partial; shows Try again. |
 | Checksum or signature fails | Deletes the file and says the pack could not be verified. |
 | Disk full | Cancels, cleans up, and shows how much space is needed. |
-| Pack fails to load later | Falls back to Deep Space with a toast and marks the pack as needing reinstall. |
+| Pack fails to load later | Falls back to the system default (Paper or Graphite) with a toast and marks the pack as needing reinstall. |
 | Catalogue unreachable | Shows installed packs only, with no error banner. |
 
 ## Packet format (.nptheme)
@@ -102,7 +127,7 @@ Why no CSS: a packet supplies values, and NotePath turns them into its own style
 | `id` | Yes | Unique pack id, e.g. `city-night` |
 | `name`, `author`, `version` | Yes | Display name, creator, semantic version |
 | `weight` | Yes | `light`, `medium` or `rich` (see Performance contract) |
-| `family` | Yes | `Dark` or `Light`, so it files under the right theme group |
+| `family` | Yes | `Light` or `Dark` for minimal packs; collection packs may use their own groups (Holographic keeps Dark, Nature, Water, Earth, Airy, Glass) |
 | `minApp` | No | Oldest NotePath version that can run it |
 | `license` | Yes | `free` or `paid`, plus a product id for paid packs |
 | `preview` | Yes | Path to the 640 × 360 card image |
@@ -162,7 +187,7 @@ A packet's `colors` block uses the same names NotePath's built-in themes use tod
 Rules:
 
 - Colours are 6- or 8-digit hex only. No gradients, no images as colours.
-- The validator checks contrast: `text` on `bg` and `surface` at least 4.5:1, `muted` at least 4.5:1, `faint` at least 3:1, and `accent` against `bg` at least 3:1. A pack that fails is rejected, not adjusted.
+- The validator checks contrast: `text`, `muted` and `faint` on `bg` and `surface` at least 4.5:1 (faint was 3:1 in draft 1), and `accent` against `bg` at least 3:1. A pack that fails is rejected, not adjusted.
 - `glow` and `glass` are ignored in Lite, matching how Performance mode already strips them.
 - High Contrast overrides any pack. If the user picks it, no pack colours or scene show.
 - Art behind the editor is never used. Scenes colour the menu and margins, and the editor keeps `surface`.
@@ -231,7 +256,7 @@ A theme may change how NotePath looks, never whether people can use it. These ru
 - **No flashing.** No layer may change brightness faster than once per second, and `twinkle` is limited to slow, shallow pulses.
 - **Nothing carries meaning alone.** Art is decorative. Focus rings, selection and errors keep their own shapes and text, and a pack cannot recolour them below the contrast minimums.
 - **Screen readers.** Scene images are hidden from assistive technology. Pack names and weight labels in Settings are real text.
-- **Always an escape.** High Contrast and the plain themes ship in the installer and are never moved behind a purchase.
+- **Always an escape.** High Contrast and the four minimal presets ship in the installer and are never moved behind a purchase.
 
 ## Security
 
@@ -251,7 +276,8 @@ Free packs need no licence. Paid packs unlock with a small signed licence file, 
 
 | Kind | Unlock | Who gets it |
 | --- | --- | --- |
-| Bundled | None | Everyone: Deep Space, plain themes, High Contrast |
+| Bundled | None | Everyone: Paper, Sepia, Graphite, Midnight, High Contrast. Never paid. |
+| Grandfathered | Local entitlement written by the update | Installs that existed before Holographic became a pack keep it free |
 | Free download | None | Everyone, for the cost of the download |
 | Paid | Signed `.lic` file | Buyers of that pack only; every pack is its own product on your website |
 
@@ -268,14 +294,14 @@ The catalogue is one small signed `catalog.json` file on a website or CDN. It li
 - **Hosting.** Static files on a CDN or object storage, HTTPS only. A static site is enough to start, and the same files can serve both the in-app browser and a web page.
 - **Signing.** The catalogue is signed with the same key as packets, so a hijacked host cannot add packs.
 - **Versioning.** Each pack version has its own folder and file, so an old version never changes under a user. Each manifest sets `minApp`; the catalogue hides packs the installed app cannot run.
-- **Delisting.** A pack removed from the catalogue stops being offered but stays on the machines that have it. A pack withdrawn for safety is listed in a `revoked` array, and NotePath removes it on the next catalogue check and falls back to Deep Space.
+- **Delisting.** A pack removed from the catalogue stops being offered but stays on the machines that have it. A pack withdrawn for safety is listed in a `revoked` array, and NotePath removes it on the next catalogue check and falls back to the system default.
 - **Caching.** NotePath keeps the last catalogue it fetched so Browse still shows packs when offline, marked as unavailable to download.
 
 ## In-app experience
 
 Theme packs live in Settings under Display, beside the Performance control, with two tabs: Installed and Browse.
 
-- **Installed.** Cards for Deep Space, plain themes, High Contrast and each downloaded pack, each with its preview, weight label (Light, Medium, Rich), size on disk, Apply and Remove.
+- **Installed.** Cards for the four presets, High Contrast and each downloaded pack (Holographic among them), each with its preview, weight label (Light, Medium, Rich), size on disk, Apply and Remove.
 - **Browse.** Cards from the catalogue with preview, weight label, download size, Free or price, and Install. A line says what the card costs in speed, for example "Rich: best with Full performance mode".
 - **Recommendation.** In Auto mode, Browse marks packs the computer will run well and says plainly when a pack will show as a still image.
 - **Preview before download.** Tapping a card shows the still image and, where the pack allows, a short loop played at the current performance level.

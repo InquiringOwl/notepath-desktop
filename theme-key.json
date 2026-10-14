@@ -1,0 +1,4 @@
+{
+  "note": "NotePath's public key for theme packs (ed25519, base64 SPKI). Made by npm run theme:keygen on Devon's computer; the private key never leaves it. While publicKey is null, NotePath installs no downloaded packs (the built-in themes need no key).",
+  "publicKey": null
+}

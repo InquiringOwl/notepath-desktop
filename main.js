@@ -6,13 +6,14 @@ const fs = require('fs');
 const { pathToFileURL } = require('url');
 const log = require('electron-log');
 const { MacUpdater } = require('./updater-mac');
+const TC = require('./themes-core'); // theme packs (docs/theme-packets-spec.md)
 
 const OWNER = 'InquiringOwl';
 const RELEASES_REPO = 'notepath-desktop';
 const APP_DIR = path.join(__dirname, 'app');
 const CHECK_EVERY_MS = 4 * 60 * 60 * 1000; // every 4 hours while NotePath is open
 const IS_MAC = process.platform === 'darwin';
-const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.ttf': 'font/ttf', '.mp4': 'video/mp4' };
+const MIME = { '.webp': 'image/webp', '.avif': 'image/avif', '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.ttf': 'font/ttf', '.mp4': 'video/mp4' };
 
 // NotePath keeps its own data folder (named after productName "NotePath"), separate from Inquire's.
 
@@ -147,8 +148,20 @@ function setupUpdates() {
 
 /* ---------------- app lifecycle ---------------- */
 app.whenReady().then(() => {
+  // Theme packs (Phase 1, Oct 14, 2026): installed in <userData>/themes/<id>/<version>/, read through notepath://theme/<id>/<path>.
+  // Only files inside the installed version of a known pack, of an allowed type (themes-core.js resolve); partial downloads go at start.
+  const THEMES_DIR = path.join(app.getPath('userData'), 'themes');
+  TC.clearDownloads(THEMES_DIR);
+  const themeKey = () => { try { return require('./theme-key.json').publicKey || null; } catch (e) { return null; } };
   protocol.handle('notepath', req => {
     const u = new URL(req.url);
+    if (u.hostname === 'theme') {
+      const parts = decodeURIComponent(u.pathname).replace(/^\/+/, '').split('/'), id = parts.shift();
+      const f = TC.resolve(THEMES_DIR, id, parts.join('/'));
+      if (!f) return new Response('Not found', { status: 404 });
+      try { return new Response(fs.readFileSync(f), { headers: { 'Content-Type': MIME[path.extname(f).toLowerCase()] || 'application/octet-stream', 'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'" } }); }
+      catch (e) { return new Response('Not readable', { status: 403 }); }
+    }
     const rel = decodeURIComponent(u.pathname).replace(/^\/+/, '') || 'index.html';
     const file = path.normalize(path.join(APP_DIR, rel));
     if (!file.startsWith(APP_DIR)) return new Response('Not found', { status: 404 });
@@ -163,6 +176,16 @@ app.whenReady().then(() => {
         catch (e) { return new Response('Not readable', { status: 403 }); }
       });
   });
+  ipcMain.handle('themes:list', () => { try { return { ok: true, packs: TC.list(THEMES_DIR), signing: !!themeKey() }; } catch (e) { return { ok: false, packs: [], error: String(e.message || e) }; } });
+  ipcMain.handle('themes:installFile', async () => { // Settings → Appearance → Install a pack from a file… (local packs until the catalogue, Phase 2)
+    const r = await dialog.showOpenDialog(win, { title: 'Install a theme pack', properties: ['openFile'], filters: [{ name: 'NotePath theme pack', extensions: ['nptheme'] }] });
+    if (r.canceled || !r.filePaths[0]) return { ok: false, canceled: true };
+    let st; try { st = fs.statSync(r.filePaths[0]); } catch (e) { return { ok: false, error: 'Couldn\'t open that file.' }; }
+    if (st.size > TC.LIMITS.weight.rich.bytes + 1024 * 1024) return { ok: false, error: 'That file is too big to be a theme pack (15 MB at most).' };
+    try { return TC.install(THEMES_DIR, fs.readFileSync(r.filePaths[0]), { pub: themeKey(), appVersion: app.getVersion(), bundledIds: TC.RESERVED }); }
+    catch (e) { log.warn('theme install', e); return { ok: false, error: 'Couldn\'t install that pack: ' + (e.message || e) }; }
+  });
+  ipcMain.handle('themes:remove', (_e, id) => { try { return TC.remove(THEMES_DIR, String(id || '')); } catch (e) { return { ok: false, error: String(e.message || e) }; } });
   const check = setupUpdates();
   ipcMain.handle('update:check', () => { check(true); return updateState; });
   ipcMain.handle('update:install', () => {

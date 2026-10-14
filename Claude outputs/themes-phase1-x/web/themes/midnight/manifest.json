@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "id": "midnight",
+  "name": "Midnight",
+  "author": "NotePath",
+  "version": "1.0.0",
+  "weight": "light",
+  "family": "Dark",
+  "style": "plain",
+  "license": {
+    "type": "free"
+  },
+  "description": "Deep navy, for late nights",
+  "colors": {
+    "bg": "#0E1320",
+    "surface": "#161D2E",
+    "accent": "#7AA7FF",
+    "tint": "#A58CFF",
+    "text": "#E6EAF2",
+    "muted": "#A9B3C7",
+    "faint": "#7F8AA0"
+  }
+}

@@ -8,7 +8,7 @@ const vm = require('vm');
 const R = path.join(__dirname, '..');
 const read = p => fs.readFileSync(path.join(R, p), 'utf8');
 
-const css = ['web/src/style.css', 'web/src/settings.css', 'web/src/menu.css', 'web/src/notepath.css'].map(read).join('\n');
+const css = ['web/src/style.css', 'web/src/settings.css', 'web/src/menu.css', 'web/src/notepath.css', 'web/src/plain.css'].map(read).join('\n');
 // Top-bar mark, inlined so the page works anywhere.
 const markUri = 'data:image/png;base64,' + fs.readFileSync(path.join(R, 'app/brand/np-mark-64.png')).toString('base64');
 // Order matters: helper rules (Python highlighting, music theory) → notes engine → widgets → app → right-click menu → documents → settings.
@@ -63,6 +63,16 @@ const I18N_V = {};
       if (!fs.existsSync(path.join(out, f)) || fs.readFileSync(path.join(out, f), 'utf8') !== txt) fs.writeFileSync(path.join(out, f), txt); } } }
 const monacoTag = base => `<script>window.NP_MONACO_BASE = ${JSON.stringify(base)};</script>`;
 
+// Theme packs (Phase 1, Oct 14, 2026): the four minimal presets are packs built into the app (web/themes/<id>/manifest.json, checked by
+// the same rules as downloaded packs, themes-core.js); their manifests go into the page as NP_BUNDLED_THEMES (settings.js MINIS).
+const TC = require('../themes-core.js');
+const BUNDLED_ORDER = ['paper', 'sepia', 'graphite', 'midnight'];
+const BUNDLED = BUNDLED_ORDER.map(id => {
+  const v = TC.validate(TC.readFolder(path.join(R, 'web/themes', id)), { bundled: true });
+  if (!v.ok) throw new Error(`web/themes/${id}: ${v.errors.join('; ')}`);
+  return v.manifest;
+});
+if (fs.readdirSync(path.join(R, 'web/themes')).sort().join() !== [...BUNDLED_ORDER].sort().join()) throw new Error('web/themes holds a pack that is not in BUNDLED_ORDER (tools/build-web.js)');
 const body = `<div id="app">
   <header class="topbar" aria-label="NotePath">
     <button type="button" class="brand" id="brand" aria-label="NotePath main menu"><span class="brand-mark"><img src="${markUri}" alt="" width="30" height="30"></span><span class="brand-name">NotePath</span></button>
@@ -72,7 +82,7 @@ const body = `<div id="app">
   <main class="view" id="view" tabindex="-1"></main>
   <div class="upd" id="upd" role="status" hidden></div>
 </div>
-<script>window.NP_I18N_V = ${JSON.stringify(I18N_V)};</script>
+<script>window.NP_I18N_V = ${JSON.stringify(I18N_V)}; window.NP_BUNDLED_THEMES = ${JSON.stringify(BUNDLED)};</script>
 ${scripts}
 `;
 
@@ -109,7 +119,7 @@ ${body}
 </body></html>
 `;
 
-module.exports = { files, LAZY, desktop, R, copyMonaco, I18N_V };
+module.exports = { files, LAZY, desktop, R, copyMonaco, I18N_V, BUNDLED };
 if (require.main !== module) return;
 copyMonaco();
 fs.writeFileSync(path.join(R, 'app/index.html'), desktop);

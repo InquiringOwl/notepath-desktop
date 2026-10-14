@@ -123,5 +123,67 @@ vm.runInContext(read('web/src/office.js'), ctx);
     const miss = Object.keys(cat).filter(k => typeof d[k] !== 'string' || !d[k]), bad = Object.keys(cat).filter(k => typeof d[k] === 'string' && ph(k) !== ph(d[k]));
     ok(!miss.length && !bad.length, 'i18n: ' + f + ' is complete and keeps every placeholder', { miss: miss.slice(0, 3), bad: bad.slice(0, 3) }); } }
 
+// 10. theme packs (Phase 1, Oct 14, 2026; themes-core.js, docs/theme-packets-spec.md): the rules, signing, zip, install / remove, the handler's paths
+{ const T = require('../themes-core.js'), os = require('os'), zlib = require('zlib');
+  const png = (w, h) => { const sig = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), ih = Buffer.alloc(25); ih.writeUInt32BE(13, 0); ih.write('IHDR', 4); ih.writeUInt32BE(w, 8); ih.writeUInt32BE(h, 12); ih[16] = 8; ih[17] = 6; return Buffer.concat([sig, ih, Buffer.from('0000000049454e44ae426082', 'hex')]); };
+  const man = o => Buffer.from(JSON.stringify(Object.assign({ schema: 1, id: 'test-pack', name: 'Test Pack', author: 'NotePath', version: '1.0.0', weight: 'light', family: 'Dark', license: { type: 'free' }, preview: 'preview.png',
+    colors: { bg: '#191919', surface: '#232323', accent: '#6AA2F5', tint: '#9D8CF0', text: '#E8E8E6', muted: '#B4B4B0', faint: '#8C8C88' } }, o)));
+  const pack = (o, extra) => new Map([['manifest.json', man(o)], ['preview.png', png(640, 360)], ...(extra || [])]);
+  const keys = T.keyPair(), keys2 = T.keyPair();
+  const signed = (files, k) => { const f = new Map(files); f.set('signature.json', T.sign(f, (k || keys).privateKeyPem)); return f; };
+  const errs = (files, o) => T.validate(files, o).errors.join(' | ');
+  ok(T.validate(signed(pack())).ok, 'packs: a good light pack passes', errs(signed(pack())));
+  ok(/signature\.json is missing/.test(errs(pack())), 'packs: an unsigned pack is refused');
+  for (const id of ['paper', 'sepia', 'graphite', 'midnight']) { const v = T.validate(T.readFolder(path.join(R, 'web/themes', id)), { bundled: true }); ok(v.ok && v.manifest.license.type === 'free' && v.manifest.weight === 'light', 'packs: the built-in ' + id + ' pack passes the same rules (free, light)', v.errors); }
+  ok(/text on bg is/.test(errs(signed(pack({ colors: { bg: '#191919', surface: '#232323', accent: '#6AA2F5', tint: '#9D8CF0', text: '#555555', muted: '#B4B4B0', faint: '#8C8C88' } })))), 'packs: words that do not reach 4.5:1 are refused, not adjusted');
+  ok(/accent on bg/.test(errs(signed(pack({ colors: { bg: '#191919', surface: '#232323', accent: '#303030', tint: '#9D8CF0', text: '#E8E8E6', muted: '#B4B4B0', faint: '#8C8C88' } })))), 'packs: an accent under 3:1 is refused');
+  ok(/not allowed/.test(errs(signed(pack({}, [['art/run.js', Buffer.from('alert(1)')]])))) && /not allowed/.test(errs(signed(pack({}, [['art/x.css', Buffer.from('a{}')]])))) && /not allowed/.test(errs(signed(pack({}, [['art/x.html', Buffer.from('<p>')]])))), 'packs: JavaScript, CSS and HTML files are refused');
+  ok(/contains a script/.test(errs(signed(pack({}, [['art/a.svg', Buffer.from('<svg width="10" height="10"><script>x()</script></svg>')]])))) && /event handler/.test(errs(signed(pack({}, [['art/a.svg', Buffer.from('<svg width="10" height="10" onload="x()"></svg>')]])))) && /outside/.test(errs(signed(pack({}, [['art/a.svg', Buffer.from('<svg width="10" height="10"><rect fill="url(https://x.test/a)"/></svg>')]])))), 'packs: SVGs with scripts, handlers or outside links are refused');
+  ok(T.validate(signed(pack({}, [['art/a.svg', Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><defs><linearGradient id="g"/></defs><rect fill="url(#g)" width="10" height="10"/></svg>')]]))).ok, 'packs: a plain SVG (inner #links only) passes');
+  ok(/lowercase/.test(errs(signed(pack({}, [['Art/Sky.png', png(10, 10)]])))) && /deeper/.test(errs(signed(pack({}, [['a/b/c/d.png', png(10, 10)]])))), 'packs: capital letters and folders deeper than 2 levels are refused');
+  ok(/at most 64/.test(errs(signed(pack({}, Array.from({ length: 64 }, (_, i) => ['art/p' + i + '.png', png(4, 4)]))))), 'packs: more than 64 files are refused');
+  ok(/longest side/.test(errs(signed(pack({}, [['art/big.png', png(5000, 100)]])))), 'packs: an image over 4096 px is refused');
+  ok(/named in the manifest but is not in the pack/.test(errs(signed(new Map([['manifest.json', man()]])))), 'packs: a missing preview is caught');
+  const scene = (layers, w) => ({ weight: w || 'medium', scenes: { menu: { still: 'preview.png', layers } } });
+  ok(T.validate(signed(pack(scene([{ image: 'preview.png', motion: 'twinkle', period: 8, depth: 0.3, min: 'moderate' }])))).ok, 'packs: a medium pack with a slow twinkle passes');
+  ok(/moving layers is more than a light pack/.test(errs(signed(pack(scene([{ image: 'preview.png', motion: 'drift', speed: 40 }], 'light'))))), 'packs: a light pack may not move');
+  ok(/at least 6 seconds/.test(errs(signed(pack(scene([{ image: 'preview.png', motion: 'pulse', period: 2 }]))))) && /no flashing/.test(errs(signed(pack(scene([{ image: 'preview.png', motion: 'twinkle', period: 8, depth: 0.9 }]))))), 'packs: fast loops and deep twinkles (flashing) are refused');
+  ok(/never behind the editor/.test(errs(signed(pack({ weight: 'medium', scenes: { editor: { still: 'preview.png' } } })))), 'packs: no scenes behind the editor');
+  // signatures
+  const good = signed(pack());
+  ok(T.verify(good, keys.publicKey) === '', 'packs: a signature checks out with its key');
+  ok(/does not match/.test(T.verify(good, keys2.publicKey)), 'packs: another key does not verify it');
+  { const t = new Map(good); t.set('preview.png', png(640, 361)); ok(/changed after/.test(T.verify(t, keys.publicKey)), 'packs: a file changed after signing is caught'); }
+  { const t = new Map(good); t.set('art/new.png', png(4, 4)); ok(/different files/.test(T.verify(t, keys.publicKey)), 'packs: a file added after signing is caught'); }
+  ok(/no signing key/.test(T.verify(good, null)), 'packs: with no key in theme-key.json nothing installs');
+  // zip
+  const zipped = T.writeZip(good), back = T.readZip(zipped);
+  ok([...good.keys()].sort().join() === [...back.keys()].sort().join() && [...good].every(([k, v]) => v.equals(back.get(k))), 'packs: the zip writer and reader round-trip every file');
+  { const evil = T.writeZip(new Map([['../escape.json', Buffer.from('{}')]])); let threw = ''; try { T.readZip(evil); } catch (e) { threw = e.message; } ok(/unsafe path/.test(threw), 'packs: a zip entry that climbs out (..) is refused', threw); }
+  { const z = Buffer.from(T.writeZip(new Map([['manifest.json', Buffer.from('{}')]]))), cd = z.indexOf(Buffer.from([0x50, 0x4b, 0x01, 0x02])); z.writeUInt16LE((3 << 8) | 20, cd + 4); z.writeUInt32LE((0o120777 << 16) >>> 0, cd + 38);
+    let threw = ''; try { T.readZip(z); } catch (e) { threw = e.message; } ok(/link/.test(threw), 'packs: a symlink inside the zip is refused', threw); }
+  // install, list, remove, the handler
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'np-themes-'));
+  ok(/no signing key/.test(T.install(dir, zipped, { pub: null }).error || ''), 'packs: install refuses everything while NotePath has no key');
+  const r1 = T.install(dir, zipped, { pub: keys.publicKey, appVersion: '0.6.0' });
+  ok(r1.ok && r1.pack.id === 'test-pack' && fs.existsSync(path.join(dir, 'test-pack/1.0.0/manifest.json')) && T.readIndex(dir).packs['test-pack'].version === '1.0.0', 'packs: install unpacks into themes/<id>/<version>/ and records it in index.json', r1);
+  ok(!T.install(dir, T.writeZip(signed(pack({ id: 'paper' }))), { pub: keys.publicKey, bundledIds: T.RESERVED }).ok, 'packs: a pack may not take the name of a built-in theme');
+  ok(/needs NotePath 9\.0\.0/.test(T.install(dir, T.writeZip(signed(pack({ minApp: '9.0.0' }))), { pub: keys.publicKey, appVersion: '0.6.0' }).error || ''), 'packs: minApp is honoured');
+  const r2 = T.install(dir, T.writeZip(signed(pack({ version: '1.1.0' }))), { pub: keys.publicKey });
+  ok(r2.ok && r2.replaced === '1.0.0' && !fs.existsSync(path.join(dir, 'test-pack/1.0.0')) && fs.existsSync(path.join(dir, 'test-pack/1.1.0')), 'packs: an update replaces the old version only once the new one is in');
+  ok(T.list(dir).length === 1 && T.list(dir)[0].version === '1.1.0' && !T.list(dir)[0].broken, 'packs: list reports the installed pack');
+  ok(T.resolve(dir, 'test-pack', 'preview.png') === path.join(dir, 'test-pack', '1.1.0', 'preview.png'), 'packs: notepath://theme/<id>/preview.png reaches the file');
+  ok([['test-pack', '../index.json'], ['test-pack', '..%2Findex.json'], ['test-pack', '/etc/passwd'], ['test-pack', 'manifest.js'], ['../x', 'a.png'], ['nope', 'preview.png'], ['test-pack', 'art/missing.png']].every(([i, f]) => T.resolve(dir, i, f) === null), 'packs: the handler refuses paths that climb out, other types, unknown packs and missing files');
+  fs.writeFileSync(path.join(dir, 'test-pack/1.1.0/manifest.json'), '{"broken"');
+  ok(T.list(dir)[0].broken, 'packs: a damaged pack is reported broken (the app falls back)');
+  ok(T.remove(dir, 'test-pack').ok && !fs.existsSync(path.join(dir, 'test-pack')) && !T.list(dir).length, 'packs: remove deletes the folder and its index entry');
+  fs.rmSync(dir, { recursive: true, force: true });
+  // the built-in theme ids are reserved, and the public key file ships with the app
+  const sj = read('web/src/settings.js'), ids = [...sj.matchAll(/\{ id: "([a-z0-9-]+)", fam:/g)].map(m => m[1]);
+  ok(ids.length >= 13 && ids.every(i => T.RESERVED.includes(i)) && ['paper', 'sepia', 'graphite', 'midnight', 'system', 'custom'].every(i => T.RESERVED.includes(i)), 'packs: every built-in theme id is reserved in themes-core.js', ids.filter(i => !T.RESERVED.includes(i)));
+  ok(pkg.build.files.includes('themes-core.js') && pkg.build.files.includes('theme-key.json') && /require\('\.\/themes-core'\)/.test(main), 'packs: themes-core.js and theme-key.json are packaged and main.js uses them');
+  const tk = JSON.parse(read('theme-key.json')); ok(tk.publicKey === null || (typeof tk.publicKey === 'string' && T.verify(signed(pack()), tk.publicKey) !== undefined), 'packs: theme-key.json holds a public key or null');
+}
+
 console.log(`unit: ${pass.length} passed${fails.length ? ', ' + fails.length + ' failed' : ''}`);
 if (fails.length) { console.error(fails.map(x => '  ✗ ' + x).join('\n')); process.exit(1); }

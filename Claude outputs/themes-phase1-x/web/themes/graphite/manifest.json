@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "id": "graphite",
+  "name": "Graphite",
+  "author": "NotePath",
+  "version": "1.0.0",
+  "weight": "light",
+  "family": "Dark",
+  "style": "plain",
+  "license": {
+    "type": "free"
+  },
+  "description": "Neutral dark grey, easy on the eyes",
+  "colors": {
+    "bg": "#191919",
+    "surface": "#232323",
+    "accent": "#6AA2F5",
+    "tint": "#9D8CF0",
+    "text": "#E8E8E6",
+    "muted": "#B4B4B0",
+    "faint": "#8C8C88"
+  }
+}
